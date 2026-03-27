@@ -1,66 +1,54 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import Link from "next/link";
+import GradientBackground from "@/components/GradientBackground";
+import { Button } from "@/components/ui";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="relative min-h-screen w-full flex flex-col items-center justify-center p-6 overflow-hidden">
+      <GradientBackground />
+
+      <div className="relative z-10 flex flex-col items-center gap-8 max-w-[480px] text-center">
+        {/* Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/50 border border-border/40 rounded-full backdrop-blur-sm shadow-sm transition-all hover:bg-white/80">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-[11px] font-semibold text-primary tracking-tight uppercase">
+            Confirmed Attendee
+          </span>
+        </div>
+
+        {/* Hero Section */}
+        <div className="flex flex-col gap-4">
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-heading leading-[1.15]">
+            Your Smart <span className="text-primary">Networking</span> Card
+          </h1>
+          <p className="text-base sm:text-lg text-muted leading-relaxed max-w-[420px] mx-auto">
+            Register once. Fill in your details. Download a stunning attendee card
+            ready to share with the world.
           </p>
         </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-2">
+          <Link href="/signup" className="w-full sm:w-auto">
+            <Button size="lg" className="w-full sm:w-48">
+              Create your card
+            </Button>
+          </Link>
+          <Link href="/login" className="w-full sm:w-auto">
+            <Button variant="secondary" className="w-full sm:w-32">
+              Log in
+            </Button>
+          </Link>
         </div>
-      </main>
-    </div>
+
+        {/* Branding Footer */}
+        <div className="mt-12">
+          <span className="text-[12px] font-medium tracking-[0.2em] text-muted/40 uppercase">
+            Powered by AVTIVE
+          </span>
+        </div>
+      </div>
+    </main>
   );
 }
