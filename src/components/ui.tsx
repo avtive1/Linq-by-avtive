@@ -11,6 +11,7 @@ type InputProps = {
   onChange?: (v: string) => void;
   prefix?: string;
   icon?: "email" | "lock";
+  error?: string;
 };
 
 export function TextInput({
@@ -22,22 +23,30 @@ export function TextInput({
   onChange,
   prefix,
   icon,
+  error,
 }: InputProps) {
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (showPass ? "text" : "password") : type;
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div className="flex flex-col gap-1.5 w-full group">
       {label && (
         <div className="flex items-center gap-1">
           <label className="text-sm font-medium text-heading leading-none">
             {label}
           </label>
-          {required && <span className="text-primary text-sm">*</span>}
+          {required && <span className="text-primary text-sm font-bold">*</span>}
         </div>
       )}
-      <div className="flex items-center bg-white border border-border rounded-xl shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary overflow-hidden">
+      <div 
+        className={`
+          flex items-center bg-white border rounded-xl shadow-sm transition-all focus-within:ring-2 overflow-hidden
+          ${error 
+            ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
+            : "border-border focus-within:ring-primary/20 focus-within:border-primary"}
+        `}
+      >
         {prefix && (
           <div className="flex items-center">
             <span className="px-3 text-sm text-muted bg-surface/50 whitespace-nowrap">
@@ -67,6 +76,7 @@ export function TextInput({
           </button>
         )}
       </div>
+      {error && <p className="text-[11px] font-medium text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }

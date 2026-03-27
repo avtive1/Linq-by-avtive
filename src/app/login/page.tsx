@@ -16,57 +16,69 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center p-6">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-20 px-6 overflow-hidden">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[440px] bg-white border border-border rounded-3xl p-10 shadow-xl shadow-primary/5 group">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          {/* Brand */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
-              AVTIVE
-            </span>
-            <h1 className="text-2xl font-bold text-heading">Welcome back</h1>
-            <p className="text-sm text-muted">Please enter your details to sign in.</p>
-          </div>
+      <div className="relative z-10 w-full max-w-[480px]">
+        {/* Card Header Label */}
+        <div className="mb-6 flex justify-center">
+          <span className="text-[12px] font-bold tracking-[0.2em] text-muted/30 uppercase">
+            AVTIVE
+          </span>
+        </div>
 
-          {/* Form fields */}
-          <div className="flex flex-col gap-4">
-            <TextInput
-              label="Email Address"
-              required
-              type="email"
-              placeholder="hello@example.com"
-              icon="email"
-              value={email}
-              onChange={setEmail}
-            />
-            <TextInput
-              label="Password"
-              required
-              type="password"
-              placeholder="Enter password"
-              icon="lock"
-              value={password}
-              onChange={setPassword}
-            />
-          </div>
+        {/* Login Card */}
+        <div className="bg-white/80 backdrop-blur-2xl border border-border rounded-[32px] p-8 md:p-12 shadow-2xl shadow-primary/5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            <div className="flex flex-col gap-2">
+              <h1 className="text-3xl font-bold text-heading tracking-tight">Welcome back</h1>
+              <p className="text-sm text-muted leading-relaxed">
+                Please enter your details to sign in.
+              </p>
+            </div>
 
-          <Button type="submit" variant="primary" fullWidth className="h-12 text-base">
-            Sign in
-          </Button>
+            <div className="flex flex-col gap-5">
+              <TextInput
+                label="Email Address"
+                required
+                type="email"
+                placeholder="hello@alignui.com"
+                icon="email"
+                value={email}
+                onChange={setEmail}
+              />
+              <TextInput
+                label="Password"
+                required
+                type="password"
+                placeholder="••••••••••••"
+                icon="lock"
+                value={password}
+                onChange={setPassword}
+              />
+            </div>
 
-          {/* Footer link */}
-          <div className="flex items-center justify-center gap-1 text-sm text-muted">
-            <span>No account?</span>
-            <Link
-              href="/signup"
-              className="font-semibold text-primary hover:underline underline-offset-4 transition-all"
+            <Button 
+              type="submit" 
+              variant="primary" 
+              fullWidth 
+              size="lg"
+              className="h-12 text-base shadow-lg shadow-primary/20"
             >
-              Create one
-            </Link>
-          </div>
-        </form>
+              Sign in
+            </Button>
+
+            <div className="flex items-center justify-center gap-1 text-sm text-muted">
+              <span>No account?</span>
+              <Link
+                href="/signup"
+                className="font-semibold text-primary hover:underline underline-offset-4 transition-all"
+              >
+                Create one
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </main>
   );

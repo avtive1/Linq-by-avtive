@@ -29,14 +29,14 @@ export default function HomePage() {
         </div>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto mt-2">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-4">
           <Link href="/signup" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:w-48">
+            <Button size="lg" className="w-full sm:min-w-[200px] whitespace-nowrap">
               Create your card
             </Button>
           </Link>
           <Link href="/login" className="w-full sm:w-auto">
-            <Button variant="secondary" className="w-full sm:w-32">
+            <Button variant="secondary" size="lg" className="w-full sm:min-w-[120px] whitespace-nowrap">
               Log in
             </Button>
           </Link>
