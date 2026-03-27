@@ -16,6 +16,16 @@ export default function SignupPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const extractLinkedInHandle = (val: string) => {
+    if (!val) return "";
+    // Remove protocol, domain, and common paths to get the handle
+    return val
+      .replace(/https?:\/\//, "")
+      .replace(/www\.linkedin\.com\/in\//, "")
+      .replace(/\/$/, "") // remove trailing slash
+      .split("/")[0]; // take first segment after /in/ if any
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = {};
     
@@ -31,10 +41,8 @@ export default function SignupPage() {
     if (!form.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
     else if (form.confirmPassword !== form.password) newErrors.confirmPassword = "Passwords do not match";
     
-    // LinkedIn (Optional but must be valid handle if provided)
-    if (form.linkedin && form.linkedin.includes("/")) {
-      newErrors.linkedin = "Enter just the handle (e.g. yourhandle)";
-    }
+    // LinkedIn (Optional)
+    // Removed strict "/" check to allow full URLs
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -45,11 +53,17 @@ export default function SignupPage() {
     if (!validate()) return;
     
     setIsSubmitting(true);
+    // Extract handle if URL was provided
+    const cleanHandle = extractLinkedInHandle(form.linkedin);
+    
     // Simulate API call
     await new Promise(r => setTimeout(r, 1000));
     
     if (typeof window !== "undefined") {
-      localStorage.setItem("avtive_user", JSON.stringify({ email: form.email, linkedin: form.linkedin }));
+      localStorage.setItem("avtive_user", JSON.stringify({ 
+        email: form.email, 
+        linkedin: cleanHandle 
+      }));
     }
     router.push("/dashboard");
     setIsSubmitting(false);

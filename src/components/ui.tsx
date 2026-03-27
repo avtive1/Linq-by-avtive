@@ -129,4 +129,60 @@ export function Button({
     </button>
   );
 }
+
+export function FilePicker({
+  label,
+  value,
+  onChange,
+  required,
+  error,
+}: {
+  label?: string;
+  value?: string;
+  onChange: (base64: string) => void;
+  required?: boolean;
+  error?: string;
+}) {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      onChange(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && (
+        <div className="flex items-center gap-1">
+          <label className="text-sm font-medium text-heading">
+            {label}
+          </label>
+          {required && <span className="text-primary text-sm font-bold">*</span>}
+        </div>
+      )}
+      <div className={`
+        relative flex items-center bg-white border rounded-xl shadow-sm overflow-hidden transition-all
+        ${error ? "border-red-500" : "border-border hover:border-muted/40"}
+      `}>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="absolute inset-0 opacity-0 cursor-pointer z-10"
+        />
+        <div className="flex-1 px-4 py-2.5 text-sm text-muted/60 truncate">
+          {value ? "Photo selected" : "Choose File"}
+        </div>
+        <div className="px-4 py-2.5 bg-surface border-l border-border text-xs font-semibold text-muted">
+          Browse
+        </div>
+      </div>
+      {error && <p className="text-[11px] font-medium text-red-500">{error}</p>}
+    </div>
+  );
+}
 
