@@ -9,18 +9,43 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/dashboard");
+    setError("");
+
+    // Check if user has signed up
+    const stored =
+      typeof window !== "undefined"
+        ? localStorage.getItem("avtive_user")
+        : null;
+
+    if (!stored) {
+      setError("No account found. Please sign up first.");
+      return;
+    }
+
+    try {
+      const user = JSON.parse(stored);
+      if (user.email !== email) {
+        setError("Email does not match our records.");
+        return;
+      }
+      // Password is not stored in plaintext in this demo — just check email matches
+      // In a real app you'd compare hashed passwords server-side
+      router.push("/dashboard");
+    } catch {
+      setError("Something went wrong. Please try again.");
+    }
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-20 px-6 overflow-hidden">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 overflow-hidden">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[480px]">
-        {/* Card Header Label */}
+        {/* Brand */}
         <div className="mb-6 flex justify-center">
           <span className="text-[12px] font-bold tracking-[0.2em] text-muted/30 uppercase">
             AVTIVE
@@ -58,10 +83,17 @@ export default function LoginPage() {
               />
             </div>
 
-            <Button 
-              type="submit" 
-              variant="primary" 
-              fullWidth 
+            {/* Inline error message */}
+            {error && (
+              <p className="text-sm text-red-500 font-medium -mt-4 text-center">
+                {error}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
               size="lg"
               className="h-12 text-base shadow-lg shadow-primary/20"
             >

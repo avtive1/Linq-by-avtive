@@ -90,6 +90,7 @@ type ButtonProps = {
   type?: "button" | "submit";
   icon?: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 };
 
 export function Button({
@@ -101,6 +102,7 @@ export function Button({
   type = "button",
   icon,
   className = "",
+  disabled,
 }: ButtonProps) {
   const isPrimary = variant === "primary";
   
@@ -113,13 +115,14 @@ export function Button({
   return (
     <button
       type={type}
-      onClick={onClick}
+      onClick={!disabled ? onClick : undefined}
+      disabled={disabled}
       className={`
         flex items-center justify-center gap-2 rounded-xl font-medium transition-all active:scale-[0.98]
         ${sizeClasses[size]}
         ${isPrimary 
-          ? "bg-primary text-white shadow-[0_1px_2px_rgba(37,62,167,0.4),0_0_0_1px_#375dfb] hover:opacity-90" 
-          : "bg-white border border-border text-muted hover:border-muted/40 hover:text-heading"}
+          ? "bg-primary text-white shadow-[0_1px_2px_rgba(37,62,167,0.4),0_0_0_1px_#375dfb] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100" 
+          : "bg-white border border-border text-muted hover:border-muted/40 hover:text-heading disabled:opacity-50 disabled:cursor-not-allowed"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
       `}

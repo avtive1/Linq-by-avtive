@@ -113,6 +113,7 @@ export default function NewCardPage() {
     { key: "sessionDate", label: "Session Date", placeholder: "Session Date", required: true },
     { key: "location", label: "Location", placeholder: "Location", required: true },
     { key: "track", label: "Track (Optional)", placeholder: "Track" },
+    { key: "linkedin", label: "LinkedIn (Optional)", placeholder: "linkedin.com/in/yourhandle" },
     { key: "photo", label: "Photo (Optional)", placeholder: "Choose File" },
   ];
 
@@ -170,18 +171,62 @@ export default function NewCardPage() {
         </form>
       </div>
 
-      {/* Right Content - Preview */}
-      <div className="flex-1 flex flex-col items-center p-6 md:p-8 md:pt-20 bg-surface/30 lg:h-screen min-h-[700px] lg:min-h-0 overflow-y-auto">
-        <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase mb-8">
+      {/* Right Content - Preview with same scale as download screen */}
+      <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 bg-surface/30 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto">
+        <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase mb-6">
           Live Preview
         </h2>
-        <div className="w-full max-w-[480px] transform transition-transform duration-300 hover:scale-[1.02]">
-          <CardPreview data={form} preview />
+
+        {/* Same responsive scale wrapper as the download page */}
+        <div className="preview-scale-wrapper w-full">
+          <div
+            className="preview-card-capture"
+            style={{ width: "800px", aspectRatio: "800/420" }}
+          >
+            <CardPreview data={form} preview />
+          </div>
         </div>
-        <p className="mt-8 text-xs text-muted text-center max-w-xs leading-relaxed">
-          Your card will be generated in 1080x1080 format. Click the card to zoom and preview details.
+
+        <p className="mt-6 text-xs text-muted text-center max-w-xs leading-relaxed">
+          Click the card to zoom in. Add a LinkedIn URL to show a scannable QR code.
         </p>
       </div>
+
+      {/* Responsive scale styles — same logic as download page */}
+      <style>{`
+        .preview-scale-wrapper {
+          display: flex;
+          justify-content: center;
+          overflow: visible;
+        }
+        .preview-card-capture {
+          transform-origin: top center;
+        }
+        @media (max-width: 1024px) {
+          /* On < lg screens, the preview panel is full width */
+          .preview-scale-wrapper { overflow: hidden; }
+          .preview-card-capture {
+            transform: scale(calc((100vw - 48px) / 800));
+            margin-bottom: calc((420px * ((100vw - 48px) / 800)) - 420px);
+          }
+        }
+        @media (min-width: 1025px) {
+          /* On lg+ screens, preview panel is flex-1. We scale to fit that panel. */
+          .preview-scale-wrapper { overflow: hidden; }
+          .preview-card-capture {
+            transform: scale(calc((100vw - 480px - 48px) / 800));
+            margin-bottom: calc((420px * ((100vw - 480px - 48px) / 800)) - 420px);
+          }
+        }
+        @media (min-width: 1600px) {
+          /* On very large screens render at natural size */
+          .preview-scale-wrapper { overflow: visible; }
+          .preview-card-capture {
+            transform: scale(1);
+            margin-bottom: 0;
+          }
+        }
+      `}</style>
     </main>
   );
 }

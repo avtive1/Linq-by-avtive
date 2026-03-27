@@ -103,7 +103,7 @@ export default function SignupPage() {
                 label="Email Address"
                 required
                 type="email"
-                placeholder="hello@alignui.com"
+                placeholder="Enter your email"
                 icon="email"
                 value={form.email}
                 error={errors.email}
@@ -163,4 +163,4 @@ export default function SignupPage() {
       </div>
     </main>
   );
-}
+}
