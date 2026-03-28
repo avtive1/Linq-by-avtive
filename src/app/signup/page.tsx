@@ -23,7 +23,7 @@ export default function SignupPage() {
       .replace(/https?:\/\//, "")
       .replace(/www\.linkedin\.com\/in\//, "")
       .replace(/\/$/, "") // remove trailing slash
-      .split("/")[0]; // take first segment after /in/ if any
+      .split("/")[0]; // takeee first segment after /in/ if any
   };
 
   const validate = () => {
