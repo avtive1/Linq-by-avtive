@@ -104,13 +104,13 @@ export default function NewCardPage() {
     router.push(`/cards/${id}`);
   };
 
-  const fields = [
+  const fields: Array<{ key: string; label: string; placeholder: string; required?: boolean; icon?: string; type?: string }> = [
     { key: "name", label: "Full Name", placeholder: "Full Name", required: true },
     { key: "role", label: "Role/Title", placeholder: "Role/Title", required: true },
     { key: "company", label: "Organization", placeholder: "Organization", required: true },
     { key: "email", label: "Email", placeholder: "hello@alignui.com", required: true, icon: "email" },
     { key: "eventName", label: "Event Name", placeholder: "Event Name", required: true },
-    { key: "sessionDate", label: "Session Date", placeholder: "Session Date", required: true },
+    { key: "sessionDate", label: "Session Date", placeholder: "Session Date", required: true, type: "date" },
     { key: "location", label: "Location", placeholder: "Location", required: true },
     { key: "track", label: "Track (Optional)", placeholder: "Track" },
     { key: "linkedin", label: "LinkedIn (Optional)", placeholder: "linkedin.com/in/yourhandle" },
@@ -155,6 +155,7 @@ export default function NewCardPage() {
                   key={f.key}
                   label={f.label}
                   required={f.required}
+                  type={f.type}
                   placeholder={f.placeholder}
                   icon={f.key === "email" ? "email" : undefined}
                   value={(form as Record<string, string>)[f.key]}

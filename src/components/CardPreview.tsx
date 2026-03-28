@@ -30,13 +30,10 @@ export function CardPreview({
       className={`
         relative bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xl
         transition-all duration-500 w-full cursor-pointer select-none
-        ${isZoomed && !preview ? "scale-[1.04] shadow-2xl z-50" : "scale-100"}
+        ${isZoomed ? "scale-[1.04] shadow-2xl z-50" : "scale-100"}
       `}
       style={{ aspectRatio: "800/420", maxWidth: "800px", margin: "0 auto" }}
     >
-      {/* Top accent bar */}
-      <div className="absolute top-0 inset-x-0 h-[3px] bg-primary" />
-
       {/* ── Main layout: left (info) | divider | right (photo + qr) ── */}
       <div className="h-full flex">
 
