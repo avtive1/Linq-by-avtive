@@ -15,25 +15,30 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
 
-    // Check if user has signed up
-    const stored =
-      typeof window !== "undefined"
-        ? localStorage.getItem("avtive_user")
-        : null;
-
-    if (!stored) {
-      setError("No account found. Please sign up first.");
-      return;
-    }
-
+    const storedUsers = typeof window !== "undefined" ? localStorage.getItem("avtive_users") : null;
+    
     try {
-      const user = JSON.parse(stored);
-      if (user.email !== email) {
-        setError("Email does not match our records.");
+      const users = storedUsers ? JSON.parse(storedUsers) : [];
+      const foundUser = users.find((u: any) => u.email === email);
+
+      if (!foundUser) {
+        setError("No account found. Please sign up first.");
         return;
       }
-      // Password is not stored in plaintext in this demo — just check email matches
-      // In a real app you'd compare hashed passwords server-side
+
+      if (foundUser.password !== password) {
+        setError("Incorrect password.");
+        return;
+      }
+
+      // Set active session
+      if (typeof window !== "undefined") {
+        localStorage.setItem("avtive_user", JSON.stringify({
+          email: foundUser.email,
+          linkedin: foundUser.linkedin || "",
+        }));
+      }
+
       router.push("/dashboard");
     } catch {
       setError("Something went wrong. Please try again.");

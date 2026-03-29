@@ -60,6 +60,24 @@ export default function SignupPage() {
     await new Promise(r => setTimeout(r, 1000));
     
     if (typeof window !== "undefined") {
+      const newUser = {
+        email: form.email,
+        password: form.password,
+        linkedin: cleanHandle,
+      };
+
+      const existingUsers = localStorage.getItem("avtive_users");
+      const users = existingUsers ? JSON.parse(existingUsers) : [];
+      
+      if (users.some((u: any) => u.email === form.email)) {
+        setErrors({ email: "An account with this email already exists" });
+        setIsSubmitting(false);
+        return;
+      }
+
+      users.push(newUser);
+      localStorage.setItem("avtive_users", JSON.stringify(users));
+
       localStorage.setItem("avtive_user", JSON.stringify({ 
         email: form.email, 
         linkedin: cleanHandle 

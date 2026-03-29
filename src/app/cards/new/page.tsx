@@ -90,9 +90,18 @@ export default function NewCardPage() {
     if (!validate()) return;
 
     const id = Date.now().toString();
+    let userEmail = form.email;
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("avtive_user");
+      if (storedUser) {
+        userEmail = JSON.parse(storedUser).email;
+      }
+    }
+
     const newCard = {
       id,
       ...form,
+      userEmail,
       linkedin: extractLinkedInHandle(form.linkedin),
     };
     if (typeof window !== "undefined") {

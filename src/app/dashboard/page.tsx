@@ -20,15 +20,18 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
+    let parsedUser: any = {};
     try {
-      const parsed = JSON.parse(user);
-      setUserName(parsed.email?.split("@")[0] || "");
+      parsedUser = JSON.parse(user);
+      setUserName(parsedUser.email?.split("@")[0] || "");
     } catch {}
 
     const stored = localStorage.getItem("avtive_cards");
     if (stored) {
       try {
-        setCards(JSON.parse(stored));
+        const allCards = JSON.parse(stored);
+        const userCards = allCards.filter((c: any) => c.userEmail === parsedUser.email || c.email === parsedUser.email);
+        setCards(userCards);
       } catch (err) {
         console.error("Error parsing cards:", err);
       }
