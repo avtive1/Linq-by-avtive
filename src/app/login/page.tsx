@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
+import { pb } from "@/lib/pocketbase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,37 +12,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    const storedUsers = typeof window !== "undefined" ? localStorage.getItem("avtive_users") : null;
-    
     try {
-      const users = storedUsers ? JSON.parse(storedUsers) : [];
-      const foundUser = users.find((u: any) => u.email === email);
-
-      if (!foundUser) {
-        setError("No account found. Please sign up first.");
-        return;
-      }
-
-      if (foundUser.password !== password) {
-        setError("Incorrect password.");
-        return;
-      }
-
-      // Set active session
-      if (typeof window !== "undefined") {
-        localStorage.setItem("avtive_user", JSON.stringify({
-          email: foundUser.email,
-          linkedin: foundUser.linkedin || "",
-        }));
-      }
-
+      await pb.collection("users").authWithPassword(email, password);
       router.push("/dashboard");
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err: any) {
+      setError("Incorrect email or password.");
     }
   };
 

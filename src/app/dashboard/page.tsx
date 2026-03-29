@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
+import { pb } from "@/lib/pocketbase";
 import { Plus, LogOut, ExternalLink, Calendar, MapPin, User } from "lucide-react";
 import { CardData } from "@/types/card";
 
@@ -12,35 +13,47 @@ export default function DashboardPage() {
   const [cards, setCards] = useState<CardData[]>([]);
   const [userName, setUserName] = useState("");
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    // Guard: redirect to login if not signed up
-    const user = localStorage.getItem("avtive_user");
-    if (!user) {
+    if (!pb.authStore.isValid) {
       router.replace("/login");
       return;
     }
-    let parsedUser: any = {};
-    try {
-      parsedUser = JSON.parse(user);
-      setUserName(parsedUser.email?.split("@")[0] || "");
-    } catch {}
+    
+    setUserName(pb.authStore.model?.email?.split("@")[0] || "");
 
-    const stored = localStorage.getItem("avtive_cards");
-    if (stored) {
+    const fetchCards = async () => {
       try {
-        const allCards = JSON.parse(stored);
-        const userCards = allCards.filter((c: any) => c.userEmail === parsedUser.email || c.email === parsedUser.email);
-        setCards(userCards);
+        const records = await pb.collection("attendees").getFullList({
+          sort: '-created',
+          $autoCancel: false,
+        });
+        
+        const mappedCards = records.map(r => ({
+          id: r.id,
+          name: r.name,
+          role: r.role,
+          company: r.company,
+          email: r.cardEmail,
+          eventName: r.eventName,
+          sessionDate: r.sessionDate,
+          location: r.location,
+          track: r.track,
+          year: r.year,
+          linkedin: r.linkedin,
+          photo: r.photo ? `${pb.baseUrl}/api/files/attendees/${r.id}/${r.photo}` : undefined,
+        }));
+        setCards(mappedCards);
       } catch (err) {
-        console.error("Error parsing cards:", err);
+        console.error("Error fetching cards:", err);
       }
-    }
+    };
+    
+    fetchCards();
   }, [router]);
 
   const handleLogout = () => {
-    // Clear session and go to login
-    localStorage.removeItem("avtive_user");
+    pb.authStore.clear();
     router.push("/login");
   };
 

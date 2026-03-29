@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
+import { pb } from "@/lib/pocketbase";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -59,32 +60,23 @@ export default function SignupPage() {
     // Simulate API call
     await new Promise(r => setTimeout(r, 1000));
     
-    if (typeof window !== "undefined") {
-      const newUser = {
+    try {
+      const data = {
         email: form.email,
         password: form.password,
+        passwordConfirm: form.confirmPassword,
         linkedin: cleanHandle,
       };
 
-      const existingUsers = localStorage.getItem("avtive_users");
-      const users = existingUsers ? JSON.parse(existingUsers) : [];
+      await pb.collection("users").create(data);
+      await pb.collection("users").authWithPassword(form.email, form.password);
       
-      if (users.some((u: any) => u.email === form.email)) {
-        setErrors({ email: "An account with this email already exists" });
-        setIsSubmitting(false);
-        return;
-      }
-
-      users.push(newUser);
-      localStorage.setItem("avtive_users", JSON.stringify(users));
-
-      localStorage.setItem("avtive_user", JSON.stringify({ 
-        email: form.email, 
-        linkedin: cleanHandle 
-      }));
+      router.push("/dashboard");
+    } catch (err: any) {
+      setErrors({ email: err?.message || "Failed to create account. Email may already exist." });
+    } finally {
+      setIsSubmitting(false);
     }
-    router.push("/dashboard");
-    setIsSubmitting(false);
   };
 
   const update = (key: keyof typeof form) => (val: string) => {

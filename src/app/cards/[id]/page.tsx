@@ -8,6 +8,7 @@ import { CardPreview } from "@/components/CardPreview";
 import { ArrowLeft, Download, Info } from "lucide-react";
 import { CardData } from "@/types/card";
 import { toPng } from "html-to-image";
+import { pb } from "@/lib/pocketbase";
 
 export default function CardViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -16,13 +17,32 @@ export default function CardViewPage() {
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && id) {
-      const stored = localStorage.getItem(`avtive_card_${id}`);
-      if (stored) {
+    if (id) {
+      const fetchCard = async () => {
         try {
-          setCard(JSON.parse(stored));
-        } catch {}
-      }
+          const record = await pb.collection("attendees").getOne(id as string, {
+            $autoCancel: false,
+          });
+          setCard({
+            id: record.id,
+            name: record.name,
+            role: record.role,
+            company: record.company,
+            email: record.cardEmail,
+            eventName: record.eventName,
+            sessionDate: record.sessionDate,
+            location: record.location,
+            track: record.track,
+            year: record.year,
+            linkedin: record.linkedin,
+            photo: record.photo ? `${pb.baseUrl}/api/files/attendees/${record.id}/${record.photo}` : undefined,
+          });
+        } catch {
+          setCard(null);
+        }
+      };
+      
+      fetchCard();
     }
   }, [id]);
 

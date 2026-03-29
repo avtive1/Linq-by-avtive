@@ -6,6 +6,7 @@ import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker } from "@/components/ui";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
+import { pb } from "@/lib/pocketbase";
 
 export default function NewCardPage() {
   const router = useRouter();
@@ -24,16 +25,12 @@ export default function NewCardPage() {
   });
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("avtive_user");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setForm((f) => ({
-          ...f,
-          email: user.email || f.email,
-          linkedin: user.linkedin || f.linkedin,
-        }));
-      }
+    if (pb.authStore.isValid && pb.authStore.model) {
+      setForm((f) => ({
+        ...f,
+        email: pb.authStore.model!.email || f.email,
+        linkedin: pb.authStore.model!.linkedin || f.linkedin,
+      }));
     }
   }, []);
 
@@ -85,32 +82,40 @@ export default function NewCardPage() {
       .split("/")[0];
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const id = Date.now().toString();
-    let userEmail = form.email;
-    if (typeof window !== "undefined") {
-      const storedUser = localStorage.getItem("avtive_user");
-      if (storedUser) {
-        userEmail = JSON.parse(storedUser).email;
-      }
+    if (!pb.authStore.isValid || !pb.authStore.model) {
+      router.push("/login");
+      return;
     }
 
-    const newCard = {
-      id,
-      ...form,
-      userEmail,
-      linkedin: extractLinkedInHandle(form.linkedin),
-    };
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("avtive_cards");
-      const existing = stored ? JSON.parse(stored) : [];
-      localStorage.setItem("avtive_cards", JSON.stringify([...existing, newCard]));
-      localStorage.setItem(`avtive_card_${id}`, JSON.stringify(newCard));
+    try {
+      const data = new FormData();
+      data.append('user', pb.authStore.model.id);
+      data.append('name', form.name);
+      data.append('role', form.role);
+      data.append('company', form.company);
+      data.append('cardEmail', form.email);
+      data.append('eventName', form.eventName);
+      data.append('sessionDate', form.sessionDate);
+      data.append('location', form.location);
+      data.append('track', form.track);
+      data.append('linkedin', extractLinkedInHandle(form.linkedin));
+      data.append('year', form.year);
+      
+      if (form.photo && form.photo.startsWith('data:')) {
+        const res = await fetch(form.photo);
+        const blob = await res.blob();
+        data.append('photo', blob, 'photo.jpg');
+      }
+
+      const record = await pb.collection('attendees').create(data);
+      router.push(`/cards/${record.id}`);
+    } catch (err: any) {
+       console.error("Error creating card:", err);
     }
-    router.push(`/cards/${id}`);
   };
 
   const fields: Array<{ key: string; label: string; placeholder: string; required?: boolean; icon?: string; type?: string }> = [
