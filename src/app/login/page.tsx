@@ -28,7 +28,7 @@ export default function LoginPage() {
     <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 overflow-hidden">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[480px]">
+      <div className="relative z-10 w-full max-w-[400px]">
         {/* Brand */}
         <div className="mb-6 flex justify-center">
           <span className="text-[12px] font-bold tracking-[0.2em] text-muted/30 uppercase">
@@ -37,16 +37,16 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white/80 backdrop-blur-2xl border border-border rounded-[32px] p-8 md:p-12 shadow-2xl shadow-primary/5">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-3xl font-bold text-heading tracking-tight">Welcome back</h1>
+        <div className="bg-white/80 backdrop-blur-2xl border border-border rounded-[24px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div className="flex flex-col gap-1.5">
+              <h1 className="text-2xl font-bold text-heading tracking-tight">Welcome back</h1>
               <p className="text-sm text-muted leading-relaxed">
                 Please enter your details to sign in.
               </p>
             </div>
 
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4">
               <TextInput
                 label="Email Address"
                 required
