@@ -37,7 +37,8 @@ export default function CardViewPage() {
             linkedin: record.linkedin,
             photo: record.photo ? `${pb.baseUrl}/api/files/attendees/${record.id}/${record.photo}` : undefined,
           });
-        } catch {
+        } catch (err: any) {
+          console.error("Failed to fetch card from PocketBase:", err.data || err);
           setCard(null);
         }
       };

@@ -34,6 +34,7 @@ export default function NewCardPage() {
     }
   }, []);
 
+  const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const update = (key: string) => (val: string) => {
@@ -48,7 +49,7 @@ export default function NewCardPage() {
   };
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
+    const newErrors: Record<string, string> = { ...errors };
     const requiredFields = [
       { key: "name", label: "Full Name" },
       { key: "role", label: "Role/Title" },
@@ -85,6 +86,7 @@ export default function NewCardPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+    setLoading(true);
 
     try {
       const data = new FormData();
@@ -98,22 +100,34 @@ export default function NewCardPage() {
       data.append('eventName', form.eventName);
       data.append('sessionDate', form.sessionDate);
       data.append('location', form.location);
-      data.append('track', form.track);
+      data.append('track', form.track || "");
       data.append('linkedin', extractLinkedInHandle(form.linkedin));
       data.append('year', form.year);
       
       if (form.photo && form.photo.startsWith('data:')) {
         const res = await fetch(form.photo);
         const blob = await res.blob();
+        
+        // Prevent generic oversized uploads
+        if (blob.size > 5 * 1024 * 1024) {
+          alert("Photo is too large! Please use an image under 5MB.");
+          setLoading(false);
+          return;
+        }
+        
         data.append('photo', blob, 'photo.jpg');
       }
 
       const record = await pb.collection('attendees').create(data);
       router.push(`/cards/${record.id}`);
     } catch (err: any) {
-       console.error("Error creating card:", err);
+       console.error("Error creating card. Server responded with:", err.data || err);
+       alert("Failed to save card: " + (err.message || "Check your connection"));
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const fields: Array<{ key: string; label: string; placeholder: string; required?: boolean; icon?: string; type?: string }> = [
     { key: "name", label: "Full Name", placeholder: "Full Name", required: true },
@@ -177,8 +191,14 @@ export default function NewCardPage() {
             ))}
           </div>
 
-          <Button type="submit" variant="primary" fullWidth className="h-12 text-base mt-4 shadow-lg shadow-primary/20">
-            Save Card
+          <Button 
+            type="submit" 
+            variant="primary" 
+            fullWidth 
+            className="h-12 text-base mt-4 shadow-lg shadow-primary/20"
+            disabled={loading}
+          >
+            {loading ? "Saving..." : "Save Card"}
           </Button>
         </form>
       </div>
