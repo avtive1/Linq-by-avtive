@@ -85,7 +85,7 @@ export default function LoginPage() {
             </Button>
 
             <div className="flex items-center justify-center gap-1 text-sm text-muted">
-              <span>No account?</span>
+              <span>Don't have an account?</span>
               <Link
                 href="/signup"
                 className="font-semibold text-primary hover:underline underline-offset-4 transition-all"

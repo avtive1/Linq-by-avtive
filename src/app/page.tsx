@@ -30,7 +30,7 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-4">
-          <Link href="/signup" className="w-full sm:w-auto">
+          <Link href="/cards/new" className="w-full sm:w-auto">
             <Button size="lg" className="w-full sm:min-w-[200px] whitespace-nowrap">
               Create your card
             </Button>

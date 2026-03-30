@@ -86,14 +86,11 @@ export default function NewCardPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    if (!pb.authStore.isValid || !pb.authStore.model) {
-      router.push("/login");
-      return;
-    }
-
     try {
       const data = new FormData();
-      data.append('user', pb.authStore.model.id);
+      if (pb.authStore.isValid && pb.authStore.model) {
+        data.append('user', pb.authStore.model.id);
+      }
       data.append('name', form.name);
       data.append('role', form.role);
       data.append('company', form.company);
