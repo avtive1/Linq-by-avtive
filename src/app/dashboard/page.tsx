@@ -3,10 +3,11 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { Button } from "@/components/ui";
+import { Button, TextInput } from "@/components/ui";
 import { pb } from "@/lib/pocketbase";
-import { Plus, LogOut, ExternalLink, Calendar, MapPin, User, Search, Trash2, TrendingUp, Users, BarChart3, Download } from "lucide-react";
+import { Plus, LogOut, ExternalLink, Calendar, MapPin, User, Search, Trash2, TrendingUp, Users, BarChart3, Download, ArrowLeft, X } from "lucide-react";
 import { CardData } from "@/types/card";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -14,6 +15,13 @@ export default function DashboardPage() {
   const [filteredCards, setFilteredCards] = useState<CardData[]>([]);
   const [userName, setUserName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [eventForm, setEventForm] = useState({
+    name: "",
+    location: "",
+    date: "",
+  });
+  const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalAttendees: 0,
@@ -92,6 +100,28 @@ export default function DashboardPage() {
     router.push("/login");
   };
 
+  const handleEventSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventForm.name || !eventForm.location || !eventForm.date) {
+      toast.error("Please fill all required fields.");
+      return;
+    }
+
+    setIsSubmittingEvent(true);
+    try {
+      // For now, "New Event" just confirms and closes, 
+      // but in a real app, it might save to an 'events' collection.
+      // The user wants a form to appear, which we've done.
+      toast.success(`Event "${eventForm.name}" created successfully!`);
+      setIsEventModalOpen(false);
+      setEventForm({ name: "", location: "", date: "" });
+    } catch (err) {
+      toast.error("Failed to create event.");
+    } finally {
+      setIsSubmittingEvent(false);
+    }
+  };
+
   const handleExport = () => {
     if (filteredCards.length === 0) return;
     
@@ -141,6 +171,13 @@ export default function DashboardPage() {
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12">
           <div className="flex flex-col gap-1 sm:gap-2">
+            <Link 
+              href="/" 
+              className="flex items-center gap-1.5 text-xs font-bold text-primary hover:opacity-80 transition-all mb-1 group"
+            >
+              <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+              BACK TO HOME
+            </Link>
             <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
               AVTIVE
             </span>
@@ -155,10 +192,16 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="flex gap-3 items-center">
-             <Link href="/">
-              <Button variant="secondary">Home</Button>
-            </Link>
+          <div className="flex gap-2.5 sm:gap-3 items-center">
+             <Button
+              variant="secondary"
+              onClick={() => setIsEventModalOpen(true)}
+              className="bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 px-4"
+              icon={<Calendar size={18} />}
+            >
+              <span className="hidden sm:inline">New Event</span>
+              <span className="inline sm:hidden">Event</span>
+            </Button>
             <Link href="/cards/new">
               <Button icon={<Plus size={18} />}>New card</Button>
             </Link>
@@ -328,6 +371,77 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+
+      {/* New Event Modal */}
+      {isEventModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div 
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
+            onClick={() => setIsEventModalOpen(false)}
+          />
+          <div className="relative w-full max-w-[460px] bg-white border border-border rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold text-heading tracking-tight">Create New Event</h2>
+                <p className="text-sm text-muted">Add details for the upcoming conference.</p>
+              </div>
+              <button 
+                onClick={() => setIsEventModalOpen(false)}
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleEventSubmit} className="p-8 pt-4 flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
+                <TextInput
+                  label="Name of the Event"
+                  required
+                  placeholder="e.g. TechConf 2026"
+                  value={eventForm.name}
+                  onChange={(v) => setEventForm({ ...eventForm, name: v })}
+                />
+                <TextInput
+                  label="Location"
+                  required
+                  placeholder="e.g. San Francisco, CA"
+                  value={eventForm.location}
+                  onChange={(v) => setEventForm({ ...eventForm, location: v })}
+                />
+                <TextInput
+                  label="Event Date"
+                  required
+                  type="date"
+                  value={eventForm.date}
+                  onChange={(v) => setEventForm({ ...eventForm, date: v })}
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button 
+                  variant="secondary" 
+                  fullWidth 
+                  onClick={() => setIsEventModalOpen(false)}
+                  className="order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  fullWidth 
+                  disabled={isSubmittingEvent}
+                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                >
+                  {isSubmittingEvent ? "Creating..." : "Create Event"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

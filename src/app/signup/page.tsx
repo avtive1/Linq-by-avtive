@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { pb } from "@/lib/pocketbase";
+import { toast } from "sonner";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -71,6 +72,7 @@ export default function SignupPage() {
       await pb.collection("users").create(data);
       await pb.collection("users").authWithPassword(form.email, form.password);
       
+      toast.success("Account created successfully!");
       router.push("/dashboard");
     } catch (err: any) {
       setErrors({ email: err?.message || "Failed to create account. Email may already exist." });

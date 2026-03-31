@@ -24,6 +24,8 @@ export default function NewCardPage() {
     linkedin: "",
   });
 
+  // Prepopulation from auth store removed to ensure manual entry per user request
+  /* 
   useEffect(() => {
     if (pb.authStore.isValid && pb.authStore.model) {
       setForm((f) => ({
@@ -33,6 +35,7 @@ export default function NewCardPage() {
       }));
     }
   }, []);
+  */
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

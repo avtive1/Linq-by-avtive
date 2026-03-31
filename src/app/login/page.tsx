@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { pb } from "@/lib/pocketbase";
+import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +20,7 @@ export default function LoginPage() {
 
     try {
       await pb.collection("users").authWithPassword(email, password);
+      toast.success("Welcome back!");
       router.push("/dashboard");
     } catch (err: any) {
       setError("Incorrect email or password.");
@@ -29,6 +32,17 @@ export default function LoginPage() {
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[400px]">
+        {/* Back Button */}
+        <Link 
+          href="/" 
+          className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-muted hover:text-primary transition-all group"
+        >
+          <div className="w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          <span>Back to Home</span>
+        </Link>
+
         {/* Brand */}
         <div className="mb-6 flex justify-center">
           <span className="text-[12px] font-bold tracking-[0.2em] text-muted/30 uppercase">
