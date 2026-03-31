@@ -42,16 +42,25 @@ export default function CardView({ card }: { card: CardData }) {
 
       <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10">
         <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-primary transition-colors group"
-          >
-            <ArrowLeft
-              size={16}
-              className="group-hover:-translate-x-1 transition-transform"
-            />
-            Dashboard
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
+            >
+              <ArrowLeft
+                size={14}
+                className="group-hover:-translate-x-1 transition-transform"
+              />
+              Home
+            </Link>
+            <span className="text-muted/20">/</span>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
+            >
+              Dashboard
+            </Link>
+          </div>
 
           <Button
             onClick={handleDownload}

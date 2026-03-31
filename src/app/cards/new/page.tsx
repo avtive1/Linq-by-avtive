@@ -148,13 +148,22 @@ export default function NewCardPage() {
 
       {/* Left Sidebar - Form */}
       <div className="relative z-10 w-full lg:w-[480px] bg-white/80 backdrop-blur-xl border-r border-border p-6 md:p-12 overflow-y-auto lg:h-screen">
-        <Link 
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm text-muted hover:text-primary transition-colors mb-8 group"
-        >
-          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-          Dashboard
-        </Link>
+        <div className="flex items-center gap-3 mb-8">
+          <Link 
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors group"
+          >
+            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+            Home
+          </Link>
+          <span className="text-muted/20">/</span>
+          <Link 
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors group"
+          >
+            Dashboard
+          </Link>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           <div className="flex flex-col gap-1.5">
