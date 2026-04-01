@@ -133,6 +133,71 @@ export function Button({
   );
 }
 
+export function Select({
+  label,
+  required,
+  options,
+  value,
+  onChange,
+  error,
+  placeholder = "Select an option",
+  disabled,
+}: {
+  label?: string;
+  required?: boolean;
+  options: Array<{ value: string; label: string }>;
+  value?: string;
+  onChange?: (v: string) => void;
+  error?: string;
+  placeholder?: string;
+  disabled?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 w-full group ${disabled ? "opacity-60" : ""}`}>
+      {label && (
+        <div className="flex items-center gap-1">
+          <label className="text-sm font-medium text-heading leading-none">
+            {label}
+          </label>
+          {required && <span className="text-primary text-sm font-bold">*</span>}
+        </div>
+      )}
+      <div 
+        className={`
+          flex items-center bg-white border rounded-xl shadow-sm transition-all focus-within:ring-2 overflow-hidden
+          ${error 
+            ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
+            : "border-border focus-within:ring-primary/20 focus-within:border-primary"}
+          ${disabled ? "bg-surface/50 cursor-not-allowed" : ""}
+        `}
+      >
+        <select
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          disabled={disabled}
+          className={`
+            flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
+            ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
+          `}
+        >
+          <option value="" disabled>{placeholder}</option>
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value || opt.label}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+        <div className="pr-4 pointer-events-none text-muted">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      {error && <p className="text-[11px] font-medium text-red-500 mt-0.5">{error}</p>}
+    </div>
+  );
+}
+
 export function FilePicker({
   label,
   value,

@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker } from "@/components/ui";
+import { TextInput, Button, FilePicker, Select } from "@/components/ui";
 import { ArrowLeft, Sparkles, Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { pb } from "@/lib/pocketbase";
@@ -26,6 +26,16 @@ function NewCardForm() {
     year: new Date().getFullYear().toString(),
     linkedin: "",
   });
+
+  // Fetch all events for the dropdown
+  const [availableEvents, setAvailableEvents] = useState<any[]>([]);
+  useEffect(() => {
+    pb.collection("events").getFullList({ sort: "name", $autoCancel: false })
+      .then(setAvailableEvents)
+      .catch(err => {
+        if (err?.status !== 0) console.error("Could not fetch events list:", err);
+      });
+  }, []);
 
   // If an eventId is present, fetch event details and pre-fill the form
   const [eventLocked, setEventLocked] = useState(false);
@@ -58,6 +68,23 @@ function NewCardForm() {
 
   const update = (key: string) => (val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
+    
+    // Auto-fill logic when selecting an event from dropdown
+    if (key === "eventName") {
+      const selectedEvent = availableEvents.find(e => e.id === val || e.name === val);
+      if (selectedEvent) {
+        setForm(f => ({
+          ...f,
+          eventName: selectedEvent.name,
+          sessionDate: selectedEvent.date || "",
+          location: selectedEvent.location || "",
+        }));
+        setEventLocked(true);
+      } else {
+        setEventLocked(false);
+      }
+    }
+
     if (errors[key]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -228,16 +255,40 @@ function NewCardForm() {
           )}
           <div className="flex flex-col gap-5">
             {fields.map((f) => {
-              const isLockedField = eventLocked && ["eventName", "sessionDate", "location"].includes(f.key);
-              return f.key === "photo" ? (
-                <FilePicker
-                  key={f.key}
-                  label={f.label}
-                  value={form.photo}
-                  onChange={update("photo")}
-                  error={errors.photo}
-                />
-              ) : (
+              const isEventField = ["sessionDate", "location"].includes(f.key);
+              const isLockedField = eventLocked && (isEventField || f.key === "eventName");
+              
+              // Hide date/location if no event is selected (and not locked by URL)
+              if (isEventField && !form.eventName && !eventId) return null;
+
+              if (f.key === "photo") {
+                return (
+                  <FilePicker
+                    key={f.key}
+                    label={f.label}
+                    value={form.photo}
+                    onChange={update("photo")}
+                    error={errors.photo}
+                  />
+                );
+              }
+
+              if (f.key === "eventName" && !eventId) {
+                return (
+                  <Select
+                    key={f.key}
+                    label={f.label}
+                    required={f.required}
+                    options={availableEvents.map(e => ({ value: e.id, label: e.name }))}
+                    value={availableEvents.find(e => e.name === form.eventName)?.id || ""}
+                    onChange={update("eventName")}
+                    error={errors.eventName}
+                    placeholder="Select an Event"
+                  />
+                );
+              }
+
+              return (
                 <div key={f.key} className={isLockedField ? "opacity-60 pointer-events-none" : ""}>
                   <TextInput
                     label={isLockedField ? `${f.label} 🔒` : f.label}
