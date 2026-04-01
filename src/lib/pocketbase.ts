@@ -18,9 +18,10 @@ if (IS_NGROK) {
 /**
  * Build a PocketBase file URL that works both locally AND through ngrok on Vercel.
  *
- * `<img src>` tags cannot send custom headers, so the ngrok browser-warning
- * interstitial blocks images on Vercel. Appending the bypass as a query param
- * is the only reliable way to skip it for direct browser requests.
+ * `<img src>` tags cannot send custom headers, and ngrok doesn't accept query 
+ * parameter bypasses for browser requests either. To fix this, we created a local 
+ * Next.js API route (/api/proxy-image) that fetches the image on the server using 
+ * the HTTP header bypass, then streams it back to the client.
  */
 export function getFileUrl(
     collection: string,
@@ -28,7 +29,7 @@ export function getFileUrl(
     filename: string
 ): string {
     const base = `${pb.baseUrl}/api/files/${collection}/${recordId}/${filename}`;
-    return IS_NGROK ? `${base}?ngrok-skip-browser-warning=true` : base;
+    return IS_NGROK ? `/api/proxy-image?url=${encodeURIComponent(base)}` : base;
 }
 
 // Helper to check if a user is logged in
