@@ -44,8 +44,11 @@ function NewCardForm() {
         }));
         setEventLocked(true);
       })
-      .catch((err) => {
-        console.error("Could not fetch event:", err);
+      .catch((err: any) => {
+        // Ignore auto-cancellation (status 0); log real errors
+        if (err?.status !== 0) {
+          console.error("Could not fetch event:", err);
+        }
       })
       .finally(() => setEventLoading(false));
   }, [eventId]);

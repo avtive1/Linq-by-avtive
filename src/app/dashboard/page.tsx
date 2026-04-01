@@ -37,12 +37,16 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
-    
     setUserName(pb.authStore.model?.email?.split("@")[0] || "");
-    fetchData();
+    // Only fetch data once we've confirmed the user is authenticated
+    if (pb.authStore.token) {
+      fetchData();
+    }
   }, [router]);
 
   const fetchData = async () => {
+    // Abort if somehow called without a valid session
+    if (!pb.authStore.isValid) return;
     try {
       const [attendeeRecords, eventRecords] = await Promise.all([
         pb.collection("attendees").getFullList({ sort: '-created', $autoCancel: false }),
@@ -75,8 +79,12 @@ export default function DashboardPage() {
         totalAttendees: attendeeRecords.length,
       });
 
-    } catch (err) {
-      console.error("Error fetching dashboard data:", err);
+    } catch (err: any) {
+      // Ignore auto-cancel noise; surface real errors
+      if (err?.status !== 0) {
+        console.error("Error fetching dashboard data:", err);
+        toast.error("Could not load data. Check your database connection.");
+      }
     }
   };
 

@@ -28,7 +28,8 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
     const fetchEventData = async () => {
       setIsLoading(true);
       try {
-        // Fetch Event Details
+        // Fetch Event Details — $autoCancel: false prevents React StrictMode
+        // double-invoke from cancelling the first in-flight request
         const eventRecord = await pb.collection("events").getOne(id, { $autoCancel: false });
         setEventData({
           id: eventRecord.id,
@@ -38,7 +39,6 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         });
 
         // Fetch Attendees for this event
-        // Note: Filtering by eventId. For legacy records, we might also filter by eventName if needed.
         const attendeeRecords = await pb.collection("attendees").getFullList({
           sort: '-created',
           filter: `eventId = "${id}"`,
@@ -64,8 +64,11 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         setCards(mappedCards);
         setFilteredCards(mappedCards);
 
-      } catch (err) {
-        console.error("Error fetching event data:", err);
+      } catch (err: any) {
+        // status 0 = request was auto-cancelled (harmless in StrictMode), ignore it
+        if (err?.status !== 0) {
+          console.error("Error fetching event data:", err);
+        }
       } finally {
         setIsLoading(false);
       }
