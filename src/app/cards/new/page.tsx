@@ -1,15 +1,18 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker } from "@/components/ui";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Sparkles, Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { pb } from "@/lib/pocketbase";
 
-export default function NewCardPage() {
+function NewCardForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("eventId") || "";
+
   const [form, setForm] = useState({
     name: "",
     role: "",
@@ -24,18 +27,28 @@ export default function NewCardPage() {
     linkedin: "",
   });
 
-  // Prepopulation from auth store removed to ensure manual entry per user request
-  /* 
+  // If an eventId is present, fetch event details and pre-fill the form
+  const [eventLocked, setEventLocked] = useState(false);
+  const [eventLoading, setEventLoading] = useState(!!eventId);
+
   useEffect(() => {
-    if (pb.authStore.isValid && pb.authStore.model) {
-      setForm((f) => ({
-        ...f,
-        email: pb.authStore.model!.email || f.email,
-        linkedin: pb.authStore.model!.linkedin || f.linkedin,
-      }));
-    }
-  }, []);
-  */
+    if (!eventId) return;
+    setEventLoading(true);
+    pb.collection("events").getOne(eventId, { $autoCancel: false })
+      .then((record) => {
+        setForm((f) => ({
+          ...f,
+          eventName: record.name || "",
+          location: record.location || "",
+          sessionDate: record.date || "",
+        }));
+        setEventLocked(true);
+      })
+      .catch((err) => {
+        console.error("Could not fetch event:", err);
+      })
+      .finally(() => setEventLoading(false));
+  }, [eventId]);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -107,6 +120,11 @@ export default function NewCardPage() {
       data.append('linkedin', extractLinkedInHandle(form.linkedin));
       data.append('year', form.year);
       
+      // Link to the event if creating from an event page
+      if (eventId) {
+        data.append('eventId', eventId);
+      }
+      
       if (form.photo && form.photo.startsWith('data:')) {
         const res = await fetch(form.photo);
         const blob = await res.blob();
@@ -122,7 +140,12 @@ export default function NewCardPage() {
       }
 
       const record = await pb.collection('attendees').create(data);
-      router.push(`/cards/${record.id}`);
+      // Navigate back to the event page if we came from one, otherwise to the card view
+      if (eventId) {
+        router.push(`/dashboard/events/${eventId}`);
+      } else {
+        router.push(`/cards/${record.id}`);
+      }
     } catch (err: any) {
        console.error("Error creating card. Server responded with:", err.data || err);
        alert("Failed to save card: " + (err.message || "Check your connection"));
@@ -166,6 +189,17 @@ export default function NewCardPage() {
           >
             Dashboard
           </Link>
+          {eventId && (
+            <>
+              <span className="text-muted/20">/</span>
+              <Link 
+                href={`/dashboard/events/${eventId}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors"
+              >
+                Event
+              </Link>
+            </>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
@@ -177,9 +211,22 @@ export default function NewCardPage() {
             <p className="text-sm text-muted">Fill in your details to generate your attendee card.</p>
           </div>
 
+          {eventLoading && (
+            <div className="flex items-center gap-2 text-sm text-primary bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+              <Lock size={14} />
+              Loading event details...
+            </div>
+          )}
+          {eventLocked && !eventLoading && (
+            <div className="flex items-center gap-2 text-sm text-primary bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+              <Lock size={14} />
+              Event fields are pre-filled and locked.
+            </div>
+          )}
           <div className="flex flex-col gap-5">
-            {fields.map((f) => (
-              f.key === "photo" ? (
+            {fields.map((f) => {
+              const isLockedField = eventLocked && ["eventName", "sessionDate", "location"].includes(f.key);
+              return f.key === "photo" ? (
                 <FilePicker
                   key={f.key}
                   label={f.label}
@@ -188,19 +235,20 @@ export default function NewCardPage() {
                   error={errors.photo}
                 />
               ) : (
-                <TextInput
-                  key={f.key}
-                  label={f.label}
-                  required={f.required}
-                  type={f.type}
-                  placeholder={f.placeholder}
-                  icon={f.key === "email" ? "email" : undefined}
-                  value={(form as Record<string, string>)[f.key]}
-                  onChange={update(f.key)}
-                  error={errors[f.key]}
-                />
-              )
-            ))}
+                <div key={f.key} className={isLockedField ? "opacity-60 pointer-events-none" : ""}>
+                  <TextInput
+                    label={isLockedField ? `${f.label} 🔒` : f.label}
+                    required={f.required}
+                    type={f.type}
+                    placeholder={f.placeholder}
+                    icon={f.key === "email" ? "email" : undefined}
+                    value={(form as Record<string, string>)[f.key]}
+                    onChange={update(f.key)}
+                    error={errors[f.key]}
+                  />
+                </div>
+              );
+            })}
           </div>
 
           <Button 
@@ -272,5 +320,19 @@ export default function NewCardPage() {
         }
       `}</style>
     </main>
+  );
+}
+
+// Default export wraps the form in Suspense (required for useSearchParams)
+export default function NewCardPage() {
+  return (
+    <Suspense fallback={
+      <main className="relative min-h-screen w-full bg-white flex items-center justify-center">
+        <GradientBackground />
+        <div className="relative z-10 text-muted">Loading...</div>
+      </main>
+    }>
+      <NewCardForm />
+    </Suspense>
   );
 }

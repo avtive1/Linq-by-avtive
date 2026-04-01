@@ -11,4 +11,14 @@ export type CardData = {
   linkedin?: string;
   track?: string;
   photo?: string;
+  eventId?: string; // Links to events collection
+};
+
+export type EventData = {
+  id: string;
+  name: string;
+  location: string;
+  date: string;
+  user?: string;
+  created?: string;
 };
