@@ -2,7 +2,7 @@ import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { Info } from "lucide-react";
-import { pb } from "@/lib/pocketbase";
+import { pb, getFileUrl } from "@/lib/pocketbase";
 import CardView from "./CardView";
 import { CardData } from "@/types/card";
 
@@ -30,7 +30,7 @@ export default async function CardViewPage(props: { params: Promise<{ id: string
         track: record.track,
         year: record.year,
         linkedin: record.linkedin,
-        photo: record.photo ? `${pb.baseUrl}/api/files/attendees/${record.id}/${record.photo}` : undefined,
+        photo: record.photo ? getFileUrl("attendees", record.id, record.photo) : undefined,
     };
   } catch (err) {
     console.error("Server-side fetch error:", err);

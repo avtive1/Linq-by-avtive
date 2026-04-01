@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
-import { pb } from "@/lib/pocketbase";
+import { pb, getFileUrl } from "@/lib/pocketbase";
 import { Plus, Users, Calendar, MapPin, Search, Trash2, Download, ArrowLeft, User, ExternalLink, BarChart3 } from "lucide-react";
 import { CardData, EventData } from "@/types/card";
 
@@ -58,7 +58,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
           year: r.year,
           linkedin: r.linkedin,
           eventId: r.eventId,
-          photo: r.photo ? `${pb.baseUrl}/api/files/attendees/${r.id}/${r.photo}` : undefined,
+          photo: r.photo ? getFileUrl("attendees", r.id, r.photo) : undefined,
         }));
         
         setCards(mappedCards);
