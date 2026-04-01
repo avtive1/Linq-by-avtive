@@ -1,6 +1,6 @@
 import PocketBase from 'pocketbase';
 
-const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'http://127.0.0.1:8090';
+const PB_URL = process.env.NEXT_PUBLIC_POCKETBASE_URL || 'https://be0d-103-149-240-98.ngrok-free.app';
 
 export const pb = new PocketBase(PB_URL);
 
