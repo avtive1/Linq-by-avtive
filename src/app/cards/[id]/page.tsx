@@ -2,7 +2,7 @@ import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { Info } from "lucide-react";
-import { pb, getFileUrl } from "@/lib/pocketbase";
+import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
 import CardView from "./CardView";
 import { CardData } from "@/types/card";
 
@@ -13,25 +13,32 @@ export default async function CardViewPage(props: { params: Promise<{ id: string
   let card: CardData | null = null;
 
   try {
-    // Fetch directly from PocketBase on the server (no CORS issues!)
-    const record = await pb.collection("attendees").getOne(id, {
-        $autoCancel: false,
-    });
+    // Fetch directly from Supabase
+    const { data: record, error } = await supabase
+      .from("attendees")
+      .select("*")
+      .eq("id", id)
+      .single();
     
-    card = {
+    if (error) throw error;
+    
+    if (record) {
+      card = {
         id: record.id,
         name: record.name,
-        role: record.role,
+        // Since I'm refactoring, I'll assume 'role' will be added to the DB
+        role: record.role || "Attendee", 
         company: record.company,
-        email: record.cardEmail,
-        eventName: record.eventName,
-        sessionDate: record.sessionDate,
+        email: record.card_email,
+        eventName: record.event_name,
+        sessionDate: record.session_date,
         location: record.location,
         track: record.track,
         year: record.year,
         linkedin: record.linkedin,
-        photo: record.photo ? getFileUrl("attendees", record.id, record.photo) : undefined,
-    };
+        photo: record.photo_url ? getSupabaseFileUrl("attendee_photos", record.photo_url) : undefined,
+      };
+    }
   } catch (err) {
     console.error("Server-side fetch error:", err);
     card = null;

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput } from "@/components/ui";
-import { pb } from "@/lib/pocketbase";
+import { supabase } from "@/lib/supabase";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
@@ -31,35 +31,39 @@ export default function DashboardPage() {
     totalAttendees: 0,
   });
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!pb.authStore.isValid) {
-      router.replace("/login");
-      return;
-    }
-    setUserName(pb.authStore.model?.email?.split("@")[0] || "");
-    // Only fetch data once we've confirmed the user is authenticated
-    if (pb.authStore.token) {
-      fetchData();
-    }
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+      setUserName(session.user.email?.split("@")[0] || "");
+      fetchData(session.user.id);
+    };
+    checkUser();
   }, [router]);
 
-  const fetchData = async () => {
-    // Abort if somehow called without a valid session
-    if (!pb.authStore.isValid) return;
+  const fetchData = async (userId: string) => {
     try {
-      const [attendeeRecords, eventRecords] = await Promise.all([
-        pb.collection("attendees").getFullList({ sort: '-created', $autoCancel: false }),
-        pb.collection("events").getFullList({ sort: '-created', $autoCancel: false })
+      const [attendeeRes, eventRes] = await Promise.all([
+        supabase.from("attendees").select("*", { count: 'exact' }).eq('user_id', userId).order('created_at', { ascending: false }),
+        supabase.from("events").select("*").eq('user_id', userId).order('created_at', { ascending: false })
       ]);
+      
+      if (attendeeRes.error) throw attendeeRes.error;
+      if (eventRes.error) throw eventRes.error;
+
+      const attendeeRecords = attendeeRes.data || [];
+      const eventRecords = eventRes.data || [];
       
       const eventCounts = new Map<string, number>();
       attendeeRecords.forEach(a => {
-        // Count by eventId if it exists, otherwise fallback to eventName for legacy records
-        if (a.eventId) {
-          eventCounts.set(a.eventId, (eventCounts.get(a.eventId) || 0) + 1);
-        } else if (a.eventName) {
-          eventCounts.set(a.eventName, (eventCounts.get(a.eventName) || 0) + 1);
+        // In Supabase we use snake_case
+        if (a.event_id) {
+          eventCounts.set(a.event_id, (eventCounts.get(a.event_id) || 0) + 1);
+        } else if (a.event_name) {
+          eventCounts.set(a.event_name, (eventCounts.get(a.event_name) || 0) + 1);
         }
       });
 
@@ -80,11 +84,8 @@ export default function DashboardPage() {
       });
 
     } catch (err: any) {
-      // Ignore auto-cancel noise; surface real errors
-      if (err?.status !== 0) {
-        console.error("Error fetching dashboard data:", err);
-        toast.error("Could not load data. Check your database connection.");
-      }
+      console.error("Error fetching dashboard data:", err);
+      toast.error("Could not load data. Check your database connection.");
     }
   };
 
@@ -96,8 +97,8 @@ export default function DashboardPage() {
     setFilteredEvents(filtered);
   }, [searchQuery, events]);
 
-  const handleLogout = () => {
-    pb.authStore.clear();
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     router.push("/login");
   };
 
@@ -110,18 +111,22 @@ export default function DashboardPage() {
 
     setIsSubmittingEvent(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
       const data = {
         name: eventForm.name,
         location: eventForm.location,
         date: eventForm.date,
-        user: pb.authStore.model?.id
+        user_id: user?.id
       };
       
-      await pb.collection("events").create(data);
+      const { error } = await supabase.from("events").insert(data);
+      if (error) throw error;
+
       toast.success(`Event "${eventForm.name}" created successfully!`);
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", date: "" });
-      fetchData(); // Refresh the list
+      if (user) fetchData(user.id);
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to create event. Is your database running?");

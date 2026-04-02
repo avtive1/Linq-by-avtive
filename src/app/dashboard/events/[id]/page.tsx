@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
-import { pb, getFileUrl } from "@/lib/pocketbase";
+import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
 import { Plus, Users, Calendar, MapPin, Search, Trash2, Download, ArrowLeft, User, ExternalLink, BarChart3 } from "lucide-react";
 import { CardData, EventData } from "@/types/card";
+import { toast } from "sonner";
 
 export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -18,19 +19,29 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!pb.authStore.isValid) {
-      router.replace("/login");
-      return;
-    }
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace("/login");
+        return;
+      }
+      fetchEventData();
+    };
 
     const fetchEventData = async () => {
+      if (!id || id === "id") return; // Guard against initial render/invalid params
+      
       setIsLoading(true);
       try {
-        // Fetch Event Details — $autoCancel: false prevents React StrictMode
-        // double-invoke from cancelling the first in-flight request
-        const eventRecord = await pb.collection("events").getOne(id, { $autoCancel: false });
+        const { data: eventRecord, error: eventError } = await supabase
+          .from("events")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (eventError) throw eventError;
+
         setEventData({
           id: eventRecord.id,
           name: eventRecord.name,
@@ -38,43 +49,42 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
           date: eventRecord.date,
         });
 
-        // Fetch Attendees for this event
-        const attendeeRecords = await pb.collection("attendees").getFullList({
-          sort: '-created',
-          filter: `eventId = "${id}"`,
-          $autoCancel: false,
-        });
+        const { data: attendeeRecords, error: attendeeError } = await supabase
+          .from("attendees")
+          .select("*")
+          .eq("event_id", id)
+          .order('created_at', { ascending: false });
+
+        if (attendeeError) throw attendeeError;
         
-        const mappedCards = attendeeRecords.map(r => ({
+        const mappedCards = (attendeeRecords || []).map(r => ({
           id: r.id,
           name: r.name,
-          role: r.role,
+          role: r.role || "Attendee",
           company: r.company,
-          email: r.cardEmail,
-          eventName: r.eventName,
-          sessionDate: r.sessionDate,
+          email: r.card_email,
+          eventName: r.event_name,
+          sessionDate: r.session_date,
           location: r.location,
           track: r.track,
           year: r.year,
           linkedin: r.linkedin,
-          eventId: r.eventId,
-          photo: r.photo ? getFileUrl("attendees", r.id, r.photo) : undefined,
+          event_id: r.event_id,
+          photo: r.photo_url ? getSupabaseFileUrl("attendee_photos", r.photo_url) : undefined,
         }));
         
         setCards(mappedCards);
         setFilteredCards(mappedCards);
 
       } catch (err: any) {
-        // status 0 = request was auto-cancelled (harmless in StrictMode), ignore it
-        if (err?.status !== 0) {
-          console.error("Error fetching event data:", err);
-        }
+        console.error("Supabase Fetch Error:", err.message || err);
+        toast.error(`Error: ${err.message || "Failed to load event data"}`);
       } finally {
         setIsLoading(false);
       }
     };
     
-    fetchEventData();
+    checkUser();
   }, [id, router]);
 
   useEffect(() => {
@@ -89,11 +99,14 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
     if (!confirm("Are you sure you want to delete this attendee card?")) return;
     
     try {
-      await pb.collection("attendees").delete(cardId);
+      const { error } = await supabase.from("attendees").delete().eq("id", cardId);
+      if (error) throw error;
+      
       setCards(prev => prev.filter(c => c.id !== cardId));
+      toast.success("Card deleted successfully.");
     } catch (err) {
       console.error("Error deleting card:", err);
-      alert("Failed to delete card.");
+      toast.error("Failed to delete card.");
     }
   };
 

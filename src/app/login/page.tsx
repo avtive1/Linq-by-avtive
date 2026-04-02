@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
-import { pb } from "@/lib/pocketbase";
+import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,11 +19,17 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await pb.collection("users").authWithPassword(email, password);
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) throw signInError;
+
       toast.success("Welcome back!");
       router.push("/dashboard");
     } catch (err: any) {
-      setError("Incorrect email or password.");
+      setError(err.message || "Incorrect email or password.");
     }
   };
 

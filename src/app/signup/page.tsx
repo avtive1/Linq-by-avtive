@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
-import { pb } from "@/lib/pocketbase";
+import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -58,19 +58,18 @@ export default function SignupPage() {
     // Extract handle if URL was provided
     const cleanHandle = extractLinkedInHandle(form.linkedin);
     
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1000));
-    
     try {
-      const data = {
+      const { data, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
-        passwordConfirm: form.confirmPassword,
-        linkedin: cleanHandle,
-      };
+        options: {
+          data: {
+            linkedin: cleanHandle,
+          }
+        }
+      });
 
-      await pb.collection("users").create(data);
-      await pb.collection("users").authWithPassword(form.email, form.password);
+      if (signUpError) throw signUpError;
       
       toast.success("Account created successfully!");
       router.push("/dashboard");

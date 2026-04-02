@@ -6,7 +6,7 @@ import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Select } from "@/components/ui";
 import { ArrowLeft, Sparkles, Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
-import { pb } from "@/lib/pocketbase";
+import { supabase } from "@/lib/supabase";
 
 function NewCardForm() {
   const router = useRouter();
@@ -30,11 +30,15 @@ function NewCardForm() {
   // Fetch all events for the dropdown
   const [availableEvents, setAvailableEvents] = useState<any[]>([]);
   useEffect(() => {
-    pb.collection("events").getFullList({ sort: "name", $autoCancel: false })
-      .then(setAvailableEvents)
-      .catch(err => {
-        if (err?.status !== 0) console.error("Could not fetch events list:", err);
-      });
+    const fetchEvents = async () => {
+      const { data, error } = await supabase.from("events").select("*").order("name");
+      if (error) {
+        console.error("Could not fetch events list:", error);
+      } else {
+        setAvailableEvents(data || []);
+      }
+    };
+    fetchEvents();
   }, []);
 
   // If an eventId is present, fetch event details and pre-fill the form
@@ -43,24 +47,23 @@ function NewCardForm() {
 
   useEffect(() => {
     if (!eventId) return;
-    setEventLoading(true);
-    pb.collection("events").getOne(eventId, { $autoCancel: false })
-      .then((record) => {
+    const fetchEvent = async () => {
+      setEventLoading(true);
+      const { data, error } = await supabase.from("events").select("*").eq("id", eventId).single();
+      if (error) {
+        console.error("Could not fetch event:", error);
+      } else if (data) {
         setForm((f) => ({
           ...f,
-          eventName: record.name || "",
-          location: record.location || "",
-          sessionDate: record.date || "",
+          eventName: data.name || "",
+          location: data.location || "",
+          sessionDate: data.date || "",
         }));
         setEventLocked(true);
-      })
-      .catch((err: any) => {
-        // Ignore auto-cancellation (status 0); log real errors
-        if (err?.status !== 0) {
-          console.error("Could not fetch event:", err);
-        }
-      })
-      .finally(() => setEventLoading(false));
+      }
+      setEventLoading(false);
+    };
+    fetchEvent();
   }, [eventId]);
 
   const [loading, setLoading] = useState(false);
@@ -107,7 +110,7 @@ function NewCardForm() {
     ];
 
     requiredFields.forEach((field) => {
-      if (!form[field.key as keyof typeof form]) {
+      if (!(form as any)[field.key]) {
         newErrors[field.key] = `${field.label} is required`;
       }
     });
@@ -135,49 +138,62 @@ function NewCardForm() {
     setLoading(true);
 
     try {
-      const data = new FormData();
-      if (pb.authStore.isValid && pb.authStore.model) {
-        data.append('user', pb.authStore.model.id);
-      }
-      data.append('name', form.name);
-      data.append('role', form.role);
-      data.append('company', form.company);
-      data.append('cardEmail', form.email);
-      data.append('eventName', form.eventName);
-      data.append('sessionDate', form.sessionDate);
-      data.append('location', form.location);
-      data.append('track', form.track || "");
-      data.append('linkedin', extractLinkedInHandle(form.linkedin));
-      data.append('year', form.year);
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Link to the event if creating from an event page
-      if (eventId) {
-        data.append('eventId', eventId);
-      }
+      let photo_url = "";
       
+      // Handle Photo Upload to Supabase Storage
       if (form.photo && form.photo.startsWith('data:')) {
         const res = await fetch(form.photo);
         const blob = await res.blob();
         
-        // Prevent generic oversized uploads
         if (blob.size > 5 * 1024 * 1024) {
           alert("Photo is too large! Please use an image under 5MB.");
           setLoading(false);
           return;
         }
-        
-        data.append('photo', blob, 'photo.jpg');
+
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('attendee_photos')
+          .upload(fileName, blob);
+
+        if (uploadError) throw uploadError;
+        photo_url = uploadData.path;
       }
 
-      const record = await pb.collection('attendees').create(data);
+      const attendeeData = {
+        user_id: session?.user?.id || null,
+        name: form.name,
+        role: form.role,
+        company: form.company,
+        card_email: form.email,
+        event_name: form.eventName,
+        session_date: form.sessionDate,
+        location: form.location,
+        track: form.track || "",
+        linkedin: extractLinkedInHandle(form.linkedin),
+        year: form.year,
+        photo_url: photo_url,
+        event_id: eventId || null
+      };
+      
+      const { data: record, error: insertError } = await supabase
+        .from('attendees')
+        .insert(attendeeData)
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
       // Navigate back to the event page if we came from one, otherwise to the card view
       if (eventId) {
         router.push(`/dashboard/events/${eventId}`);
-      } else {
+      } else if (record) {
         router.push(`/cards/${record.id}`);
       }
     } catch (err: any) {
-       console.error("Error creating card. Server responded with:", err.data || err);
+       console.error("Error creating card:", err);
        alert("Failed to save card: " + (err.message || "Check your connection"));
     } finally {
       setLoading(false);
@@ -389,4 +405,4 @@ export default function NewCardPage() {
       <NewCardForm />
     </Suspense>
   );
-}
+}
