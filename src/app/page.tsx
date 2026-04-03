@@ -31,7 +31,7 @@ export default function HomePage() {
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-6 animate-slide-up delay-200">
           <Link href="/cards/new" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:min-w-[220px] whitespace-nowrap shadow-[0_4px_24px_-6px_rgba(121,217,128,0.6)]">
+            <Button variant="blue" size="lg" className="w-full sm:min-w-[220px] whitespace-nowrap">
               Create your card
             </Button>
           </Link>

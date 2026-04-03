@@ -50,10 +50,6 @@ export function CardPreview({
                 {data.eventName || "Event Name"}
               </h3>
             </div>
-            {/* Initial badge */}
-            <div className="w-[clamp(20px,3.5%,36px)] h-[clamp(20px,3.5%,36px)] rounded-lg bg-light-1/50 border border-primary/20 flex items-center justify-center text-primary font-bold italic text-[clamp(8px,1.2vw,14px)] flex-shrink-0">
-              {data.name?.charAt(0) || "A"}
-            </div>
           </div>
 
           {/* Small profile row (name + role) */}

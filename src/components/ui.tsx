@@ -84,7 +84,7 @@ export function TextInput({
 type ButtonProps = {
   children: React.ReactNode;
   onClick?: () => void;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "blue";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   type?: "button" | "submit";
@@ -105,6 +105,7 @@ export function Button({
   disabled,
 }: ButtonProps) {
   const isPrimary = variant === "primary";
+  const isBlue = variant === "blue";
   
   const sizeClasses = {
     sm: "px-3 py-1.5 text-xs",
@@ -122,13 +123,15 @@ export function Button({
         ${sizeClasses[size]}
         ${isPrimary 
           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
+          : isBlue
+          ? "bg-heading text-white shadow-lg shadow-heading/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-heading/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
           : "bg-white border border-border text-heading hover:border-primary/40 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
       `}
     >
       <span>{children}</span>
-      {icon || (isPrimary && <ChevronRight size={size === "lg" ? 18 : 16} />)}
+      {icon || ((isPrimary || isBlue) && <ChevronRight size={size === "lg" ? 18 : 16} />)}
     </button>
   );
 }
