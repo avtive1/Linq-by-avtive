@@ -149,43 +149,38 @@ export default function DashboardPage() {
     }
   };
 
-  if (isCheckingAuth) {
-    return (
-      <main className="relative min-h-screen w-full bg-transparent">
-        <GradientBackground />
-        <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
-          <div className="flex flex-col gap-6 mb-12">
-            <Skeleton className="w-24 h-4" />
-            <Skeleton className="w-48 h-10" />
-            <Skeleton className="w-32 h-4" />
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
-            <Skeleton className="md:col-span-2 h-32" />
-            <Skeleton className="md:col-span-1 h-32" />
-            <Skeleton className="md:col-span-1 h-32" />
-          </div>
-
-          <div className="flex gap-3 mb-6">
-            <Skeleton className="flex-1 h-12" />
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Skeleton className="h-48" />
-            <Skeleton className="h-48" />
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+        {isCheckingAuth ? (
+          <>
+            <div className="flex flex-col gap-6 mb-12">
+              <Skeleton className="w-24 h-4" />
+              <Skeleton className="w-48 h-10" />
+              <Skeleton className="w-32 h-4" />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+              <Skeleton className="md:col-span-2 h-32" />
+              <Skeleton className="md:col-span-1 h-32" />
+              <Skeleton className="md:col-span-1 h-32" />
+            </div>
+
+            <div className="flex gap-3 mb-6">
+              <Skeleton className="flex-1 h-12" />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Skeleton className="h-48" />
+              <Skeleton className="h-48" />
+            </div>
+          </>
+        ) : (
+          <>
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12">
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/" 
@@ -230,9 +225,9 @@ export default function DashboardPage() {
         </div>
         
         {/* Bento Grid Statistics Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 animate-slide-up delay-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-8 rounded-[32px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
             <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 mb-6 group-hover:scale-110 transition-transform">
               <Users size={24} />
             </div>
@@ -248,7 +243,7 @@ export default function DashboardPage() {
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-8 rounded-[32px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 mb-4 group-hover:rotate-6 transition-transform hover:bg-primary/20">
               <BarChart3 size={20} />
             </div>
@@ -266,7 +261,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-slide-up delay-200">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200">
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={18} />
             <input
@@ -288,10 +283,10 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 animate-slide-up delay-300">
+          <div className="grid gap-4 sm:grid-cols-2 delay-300">
             {filteredEvents.length > 0 ? (
               filteredEvents.map((evt) => (
-                <div key={evt.id} className="group flex flex-col justify-between h-full glass-panel p-5 rounded-3xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/40">
+                <div key={evt.id} className="group flex flex-col justify-between h-full glass-panel p-4 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/40">
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-10 h-10 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
                       <Calendar size={18} />
@@ -331,9 +326,11 @@ export default function DashboardPage() {
             )}
           </div>
         )}
+          </>
+        )}
       </div>
 
-      {/* New Event Modal */}
+      {/* Event Creation Modal */}
       {isEventModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div 

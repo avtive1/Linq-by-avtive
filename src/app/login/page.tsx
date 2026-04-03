@@ -34,10 +34,10 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-6 px-4 sm:px-6 overflow-hidden bg-transparent">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[480px] animate-slide-up">
+      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         {/* Back Button */}
         <Link 
           href="/" 
@@ -57,16 +57,16 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="glass-panel rounded-[32px] p-8 sm:p-12 shadow-2xl shadow-primary/5">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <div className="glass-panel rounded-[32px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
-              <h1 className="text-2xl font-bold text-heading tracking-tight">Welcome back</h1>
+              <h1 className="text-xl font-bold text-heading tracking-tight">Welcome back</h1>
               <p className="text-sm text-muted leading-relaxed">
                 Please enter your details to sign in.
               </p>
             </div>
 
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               <TextInput
                 label="Email Address"
                 required

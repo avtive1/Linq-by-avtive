@@ -17,7 +17,6 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
     if (!cardRef.current) return;
     setIsDownloading(true);
     try {
-      toast.info("Generating high-quality card...");
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 2,

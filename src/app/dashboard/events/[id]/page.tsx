@@ -187,7 +187,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
     <main className="relative min-h-screen w-full bg-transparent">
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up">
           <div className="flex flex-col gap-1 sm:gap-2">
@@ -247,7 +247,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         </div>
 
         {/* Stats Section */}
-        <div className="glass-panel p-6 sm:p-8 rounded-[32px] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm mb-10 animate-slide-up delay-100">
+        <div className="glass-panel p-5 sm:p-6 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm mb-10 animate-slide-up delay-100">
           <div className="flex items-center gap-5">
             <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 shrink-0">
               <Users size={28} />
@@ -302,7 +302,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               filteredCards.map((card) => (
                 <div
                   key={card.id}
-                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-4 sm:p-6 rounded-[28px] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-3.5 sm:p-4.5 rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
                 >
                   <div className="flex items-center gap-5 min-w-0">
                     <div className="relative">
