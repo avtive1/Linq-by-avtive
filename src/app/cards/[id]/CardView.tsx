@@ -55,7 +55,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
             <div className="flex items-center gap-3">
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors group"
               >
                 <ArrowLeft
                   size={14}
@@ -66,7 +66,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
               <span className="text-muted/20">/</span>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors group"
               >
                 Dashboard
               </Link>
@@ -98,7 +98,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
         <div className="text-center flex flex-col gap-2">
           <p className="text-sm text-slate-400 font-medium leading-relaxed">
             Your attendee card is ready. Click{" "}
-            <span className="text-primary font-semibold">Download Card</span> to
+            <span className="text-muted font-bold">Download Card</span> to
             save it as a high-quality PNG image (800 × 420 px).
           </p>
           <span className="text-[10px] font-bold tracking-[0.25em] text-heading/30 uppercase">

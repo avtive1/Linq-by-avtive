@@ -184,7 +184,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/" 
-              className="flex items-center gap-1.5 text-xs font-bold text-primary hover:opacity-80 transition-all mb-1 group"
+              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-5 sm:-ml-10"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               BACK TO HOME
@@ -263,7 +263,7 @@ export default function DashboardPage() {
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-heading" size={18} />
             <input
               type="text"
               placeholder="Search events..."
