@@ -1,24 +1,24 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput } from "@/components/ui";
+import { Button, TextInput, Skeleton, AnimatedCounter } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
-// Extended event type for the dashboard view
 type DashboardEventData = EventData & { attendeeCount: number };
 
 export default function DashboardPage() {
   const router = useRouter();
   const [events, setEvents] = useState<DashboardEventData[]>([]);
-  const [filteredEvents, setFilteredEvents] = useState<DashboardEventData[]>([]);
   const [userName, setUserName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -32,19 +32,24 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    let isMounted = true;
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      
       if (!session) {
         router.replace("/login");
         return;
       }
       setUserName(session.user.email?.split("@")[0] || "");
-      fetchData(session.user.id);
+      fetchData(session.user.id, () => isMounted);
+      setIsCheckingAuth(false);
     };
     checkUser();
+    return () => { isMounted = false; };
   }, [router]);
 
-  const fetchData = async (userId: string) => {
+  const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
       const [attendeeRes, eventRes] = await Promise.all([
         supabase.from("attendees").select("*", { count: 'exact' }).eq('user_id', userId).order('created_at', { ascending: false }),
@@ -75,8 +80,10 @@ export default function DashboardPage() {
         attendeeCount: eventCounts.get(r.id) || eventCounts.get(r.name) || 0,
       }));
       
+      if (getIsMounted && !getIsMounted()) return;
+
+      if (getIsMounted && !getIsMounted()) return;
       setEvents(mappedEvents);
-      setFilteredEvents(mappedEvents);
       
       setStats({
         totalEvents: mappedEvents.length,
@@ -89,12 +96,18 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    const filtered = events.filter(evt => {
-      const searchStr = `${evt.name} ${evt.location} ${evt.date}`.toLowerCase();
-      return searchStr.includes(searchQuery.toLowerCase());
+  const filteredEvents = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return events;
+    
+    return events.filter(evt => {
+      const name = (evt.name || "").toLowerCase();
+      const location = (evt.location || "").toLowerCase();
+      const date = (evt.date || "").toLowerCase();
+      // Concatenate for a broader search matches
+      const searchBlob = `${name} ${location} ${date}`;
+      return searchBlob.includes(query);
     });
-    setFilteredEvents(filtered);
   }, [searchQuery, events]);
 
   const handleLogout = async () => {
@@ -124,6 +137,7 @@ export default function DashboardPage() {
       if (error) throw error;
 
       toast.success(`Event "${eventForm.name}" created successfully!`);
+
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", date: "" });
       if (user) fetchData(user.id);
@@ -135,13 +149,43 @@ export default function DashboardPage() {
     }
   };
 
+  if (isCheckingAuth) {
+    return (
+      <main className="relative min-h-screen w-full bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+          <div className="flex flex-col gap-6 mb-12">
+            <Skeleton className="w-24 h-4" />
+            <Skeleton className="w-48 h-10" />
+            <Skeleton className="w-32 h-4" />
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+            <Skeleton className="md:col-span-2 h-32" />
+            <Skeleton className="md:col-span-1 h-32" />
+            <Skeleton className="md:col-span-1 h-32" />
+          </div>
+
+          <div className="flex gap-3 mb-6">
+            <Skeleton className="flex-1 h-12" />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-48" />
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
-    <main className="relative min-h-screen w-full bg-white">
+    <main className="relative min-h-screen w-full bg-transparent">
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[860px] mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-10 sm:py-16 md:py-20">
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up">
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/" 
@@ -185,37 +229,50 @@ export default function DashboardPage() {
           </div>
         </div>
         
-        {/* Statistics Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-          <div className="bg-white/50 backdrop-blur-sm border border-border p-6 rounded-3xl flex items-center gap-5 shadow-sm transition-all hover:shadow-md hover:bg-white/80">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <BarChart3 size={24} />
+        {/* Bento Grid Statistics Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 animate-slide-up delay-100">
+          {/* Main Stat - Large Tile */}
+          <div className="glass-panel p-8 rounded-[32px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 mb-6 group-hover:scale-110 transition-transform">
+              <Users size={24} />
             </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.1em]">Total Events</span>
-              <span className="text-2xl font-bold text-heading tracking-tight">{stats.totalEvents}</span>
+            <div className="flex flex-col gap-1">
+              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.2em]">Live Network Presence</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-heading tracking-tight">
+                  <AnimatedCounter value={stats.totalAttendees} />
+                </span>
+                <span className="text-sm font-semibold text-primary">Attendees</span>
+              </div>
             </div>
           </div>
           
-          <div className="bg-white/50 backdrop-blur-sm border border-border p-6 rounded-3xl flex items-center gap-5 shadow-sm transition-all hover:shadow-md hover:bg-white/80">
-            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-              <Users size={24} />
+          {/* Secondary Stat - Active Events */}
+          <div className="glass-panel p-8 rounded-[32px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 mb-4 group-hover:rotate-6 transition-transform hover:bg-primary/20">
+              <BarChart3 size={20} />
             </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.1em]">Total Attendees</span>
-              <span className="text-2xl font-bold text-heading tracking-tight">{stats.totalAttendees}</span>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Activity Tracking</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-bold text-heading tracking-tight">
+                  <AnimatedCounter value={stats.totalEvents} />
+                </span>
+                <span className="text-xs font-semibold text-primary">Total Events</span>
+              </div>
             </div>
           </div>
+
         </div>
 
         {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-slide-up delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/50" size={18} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary" size={18} />
             <input
               type="text"
               placeholder="Search events..."
-              className="w-full pl-11 pr-4 py-3 bg-white border border-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all text-sm"
+              className="w-full pl-11 pr-4 py-3 bg-white/70 backdrop-blur-md border border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm shadow-sm"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -231,46 +288,44 @@ export default function DashboardPage() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 animate-slide-up delay-300">
             {filteredEvents.length > 0 ? (
               filteredEvents.map((evt) => (
-                <Link key={evt.id} href={`/dashboard/events/${evt.id}`}>
-                  <div className="group flex flex-col justify-between h-full bg-white border border-border p-5 rounded-3xl shadow-sm hover:shadow-md hover:border-primary/30 transition-all cursor-pointer">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-10 h-10 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
-                        <Calendar size={18} />
-                      </div>
-                      <div className="flex items-center text-xs font-bold text-primary bg-primary/5 px-2.5 py-1 rounded-full">
-                        {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
-                      </div>
+                <div key={evt.id} className="group flex flex-col justify-between h-full glass-panel p-5 rounded-3xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/40">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
+                      <Calendar size={18} />
                     </div>
-                    
-                    <div className="flex flex-col gap-1.5 grow">
-                      <h3 className="font-bold text-xl text-heading group-hover:text-primary transition-colors line-clamp-2">
-                        {evt.name}
-                      </h3>
-                      
-                      <div className="flex flex-col gap-2 mt-auto pt-4 text-[13px] text-muted font-medium">
-                        <span className="flex items-center gap-2">
-                          <Calendar size={14} className="opacity-60" />
-                          {evt.date}
-                        </span>
-                        <span className="flex items-center gap-2">
-                          <MapPin size={14} className="opacity-60" />
-                          {evt.location}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-5 pt-4 border-t border-border flex items-center justify-between text-sm font-bold text-heading group-hover:text-primary transition-colors">
-                      View Event
-                      <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    <div className="flex items-center text-xs font-bold text-primary bg-primary/5 px-2.5 py-1 rounded-full">
+                      {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                     </div>
                   </div>
-                </Link>
+                  
+                  <div className="flex flex-col gap-1.5 grow">
+                    <h3 className="font-bold text-xl text-heading group-hover:text-primary transition-colors line-clamp-2">
+                      {evt.name}
+                    </h3>
+                    
+                    <div className="flex flex-col gap-2 mt-auto pt-4 text-[13px] text-muted font-medium">
+                      <span className="flex items-center gap-2">
+                        <Calendar size={14} className="opacity-60" />
+                        {evt.date}
+                      </span>
+                      <span className="flex items-center gap-2">
+                        <MapPin size={14} className="opacity-60" />
+                        {evt.location}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-5 pt-4 border-t border-border flex items-center justify-between text-sm font-bold text-heading hover:text-primary transition-colors cursor-pointer group-hover:text-primary">
+                    View Event
+                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </div>
               ))
             ) : (
-              <div className="col-span-full text-center py-12 bg-surface/20 rounded-2xl border border-dashed border-border">
+              <div className="col-span-full text-center py-12 glass-panel rounded-3xl border-dashed">
                 <p className="text-muted text-sm">No events found matching your search.</p>
               </div>
             )}
@@ -285,7 +340,7 @@ export default function DashboardPage() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
             onClick={() => setIsEventModalOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] bg-white border border-border rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">

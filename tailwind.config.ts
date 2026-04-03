@@ -10,13 +10,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          DEFAULT: "#375dfb",
-          foreground: "#ffffff",
+          DEFAULT: "#79D980", // Light Green
+          foreground: "#23468C", // Dark Blue inside Green
         },
         surface: "#F9FAFB",
         border: "#E5E7EB",
         muted: "#6B7280",
-        heading: "#111827",
+        heading: "#23468C", // Dark Blue
+        "light-1": "#DCE7D5",
+        "light-2": "#EDF2E9",
+        "light-3": "#DCE4F0",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "ui-sans-serif", "system-ui"],

@@ -10,41 +10,41 @@ export default function HomePage() {
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-[480px] text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/50 border border-border/40 rounded-full backdrop-blur-sm shadow-sm transition-all hover:bg-white/80">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-[11px] font-semibold text-primary tracking-tight uppercase">
+        <div className="animate-slide-up inline-flex items-center gap-2 px-3.5 py-1.5 glass-panel rounded-full transition-transform hover:scale-105">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(121,217,128,0.8)]" />
+          <span className="text-[11px] font-bold text-heading/80 tracking-[0.05em] uppercase">
             Confirmed Attendee
           </span>
         </div>
 
         {/* Hero Section */}
-        <div className="flex flex-col gap-4">
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-heading leading-[1.15]">
-            Your Smart <span className="text-primary">Networking</span> Card
+        <div className="flex flex-col gap-4 animate-slide-up delay-100">
+          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-heading leading-[1.1] text-balance">
+            Your Smart <span className="bg-gradient-to-r from-heading to-primary bg-clip-text text-transparent drop-shadow-sm">Networking</span> Card
           </h1>
-          <p className="text-base sm:text-lg text-muted leading-relaxed max-w-[420px] mx-auto">
-            Register once. Fill in your details. Download a stunning attendee card
+          <p className="text-base sm:text-[17px] text-heading/70 leading-relaxed max-w-[440px] mx-auto text-balance font-medium">
+            Register once. Fill in your details. Download a breathtaking attendee card
             ready to share with the world.
           </p>
         </div>
 
         {/* CTAs */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-4">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-6 animate-slide-up delay-200">
           <Link href="/cards/new" className="w-full sm:w-auto">
-            <Button size="lg" className="w-full sm:min-w-[200px] whitespace-nowrap">
+            <Button size="lg" className="w-full sm:min-w-[220px] whitespace-nowrap shadow-[0_4px_24px_-6px_rgba(121,217,128,0.6)]">
               Create your card
             </Button>
           </Link>
           <Link href="/login" className="w-full sm:w-auto">
-            <Button variant="secondary" size="lg" className="w-full sm:min-w-[120px] whitespace-nowrap">
+            <Button variant="secondary" size="lg" className="w-full sm:min-w-[140px] whitespace-nowrap glass-panel border-white/40 hover:bg-white/40">
               Log in
             </Button>
           </Link>
         </div>
 
         {/* Branding Footer */}
-        <div className="mt-12">
-          <span className="text-[12px] font-medium tracking-[0.2em] text-muted/40 uppercase">
+        <div className="mt-14 animate-slide-up delay-300">
+          <span className="text-[12px] font-bold tracking-[0.25em] text-heading/30 uppercase">
             Powered by AVTIVE
           </span>
         </div>

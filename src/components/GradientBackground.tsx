@@ -2,23 +2,35 @@
 
 export default function GradientBackground() {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-white">
-      {/* Soft blue glow in top-left */}
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-[#EDF2E9]">
+      {/* Glow 1 - Light Blue/Grey */}
       <div 
-        className="absolute -left-[10%] -top-[10%] w-[70%] h-[70%] rounded-full opacity-50 blur-[100px]"
+        className="absolute -left-[20%] -top-[20%] w-[80%] h-[80%] rounded-full mix-blend-multiply filter blur-[120px] opacity-70 animate-pulse"
         style={{
-          background: "radial-gradient(circle at center, #D1E1FF 0%, transparent 70%)"
+          background: "radial-gradient(circle at center, #DCE4F0 0%, transparent 70%)",
+          animationDuration: "8s"
         }}
       />
-      {/* Soft blue glow in bottom-right */}
+      {/* Glow 2 - Light Green/Grey */}
       <div 
-        className="absolute -right-[10%] -bottom-[10%] w-[60%] h-[60%] rounded-full opacity-30 blur-[100px]"
+        className="absolute -right-[20%] -bottom-[20%] w-[80%] h-[80%] rounded-full mix-blend-multiply filter blur-[120px] opacity-70 animate-pulse"
         style={{
-          background: "radial-gradient(circle at center, #EBF5FF 0%, transparent 70%)"
+          background: "radial-gradient(circle at center, #DCE7D5 0%, transparent 70%)",
+          animationDuration: "12s",
+          animationDelay: "2s"
         }}
       />
-      {/* Subtle center grain/texture (optional but premium) */}
-      <div className="absolute inset-0 opacity-[0.015] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/p6.png')]" />
+      {/* Glow 3 - Central soft highlight */}
+      <div 
+        className="absolute left-[10%] top-[40%] w-[60%] h-[60%] rounded-full mix-blend-multiply filter blur-[100px] opacity-50 animate-pulse"
+        style={{
+          background: "radial-gradient(circle at center, #DCE4F0 0%, transparent 60%)",
+          animationDuration: "10s",
+          animationDelay: "1s"
+        }}
+      />
+      {/* Subtle grain/texture */}
+      <div className="absolute inset-0 opacity-[0.025] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
     </div>
   );
 }

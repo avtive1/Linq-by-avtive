@@ -7,8 +7,9 @@ import { CardPreview } from "@/components/CardPreview";
 import { ArrowLeft, Download } from "lucide-react";
 import { toPng } from "html-to-image";
 import { CardData } from "@/types/card";
+import { toast } from "sonner";
 
-export default function CardView({ card }: { card: CardData }) {
+export default function CardView({ card, isShareMode = false }: { card: CardData; isShareMode?: boolean }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -16,6 +17,7 @@ export default function CardView({ card }: { card: CardData }) {
     if (!cardRef.current) return;
     setIsDownloading(true);
     try {
+      toast.info("Generating high-quality card...");
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 2,
@@ -29,38 +31,48 @@ export default function CardView({ card }: { card: CardData }) {
       }.png`;
       link.href = dataUrl;
       link.click();
+      toast.success("Card downloaded successfully!");
     } catch (err) {
       console.error("Failed to download card:", err);
+      toast.error("Failed to generate download. Please try again.");
     } finally {
       setIsDownloading(false);
     }
   };
 
   return (
-    <main className="relative min-h-screen w-full bg-white flex flex-col items-center py-10 md:py-16 px-4 sm:px-6 overflow-x-hidden">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-10 md:py-16 px-4 sm:px-6 overflow-x-hidden">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10">
+      <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
-            >
-              <ArrowLeft
-                size={14}
-                className="group-hover:-translate-x-1 transition-transform"
-              />
-              Home
-            </Link>
-            <span className="text-muted/20">/</span>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
-            >
-              Dashboard
-            </Link>
-          </div>
+          {isShareMode ? (
+            <div className="flex items-center gap-3">
+               <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+                 AVTIVE ATTENDEE PORTAL
+               </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
+              >
+                <ArrowLeft
+                  size={14}
+                  className="group-hover:-translate-x-1 transition-transform"
+                />
+                Home
+              </Link>
+              <span className="text-muted/20">/</span>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-primary transition-colors group"
+              >
+                Dashboard
+              </Link>
+            </div>
+          )}
 
           <Button
             onClick={handleDownload}
@@ -90,7 +102,7 @@ export default function CardView({ card }: { card: CardData }) {
             <span className="text-primary font-semibold">Download Card</span> to
             save it as a high-quality PNG image (800 × 420 px).
           </p>
-          <span className="text-[10px] font-bold tracking-[0.2em] text-slate-300 uppercase">
+          <span className="text-[10px] font-bold tracking-[0.25em] text-heading/30 uppercase">
             Badge ID: {card.id.slice(-8).toUpperCase()}
           </span>
         </div>

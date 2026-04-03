@@ -3,15 +3,18 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker, Select } from "@/components/ui";
+import { TextInput, Button, FilePicker, Select, Skeleton } from "@/components/ui";
 import { ArrowLeft, Sparkles, Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
 
 function NewCardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId") || "";
+  const isShareMode = searchParams.get("share") === "true";
 
   const [form, setForm] = useState({
     name: "",
@@ -30,15 +33,18 @@ function NewCardForm() {
   // Fetch all events for the dropdown
   const [availableEvents, setAvailableEvents] = useState<any[]>([]);
   useEffect(() => {
+    let isMounted = true;
     const fetchEvents = async () => {
       const { data, error } = await supabase.from("events").select("*").order("name");
+      if (!isMounted) return;
       if (error) {
-        console.error("Could not fetch events list:", error);
+        toast.error("Could not fetch events list");
       } else {
         setAvailableEvents(data || []);
       }
     };
     fetchEvents();
+    return () => { isMounted = false; };
   }, []);
 
   // If an eventId is present, fetch event details and pre-fill the form
@@ -47,11 +53,14 @@ function NewCardForm() {
 
   useEffect(() => {
     if (!eventId) return;
+    let isMounted = true;
     const fetchEvent = async () => {
       setEventLoading(true);
       const { data, error } = await supabase.from("events").select("*").eq("id", eventId).single();
+      if (!isMounted) return;
+      
       if (error) {
-        console.error("Could not fetch event:", error);
+        toast.error("Could not fetch event details");
       } else if (data) {
         setForm((f) => ({
           ...f,
@@ -64,6 +73,7 @@ function NewCardForm() {
       setEventLoading(false);
     };
     fetchEvent();
+    return () => { isMounted = false; };
   }, [eventId]);
 
   const [loading, setLoading] = useState(false);
@@ -147,8 +157,15 @@ function NewCardForm() {
         const res = await fetch(form.photo);
         const blob = await res.blob();
         
+        // Granular validation before starting upload
         if (blob.size > 5 * 1024 * 1024) {
-          alert("Photo is too large! Please use an image under 5MB.");
+          toast.error("Photo is too large! Maximum limit is 5MB.");
+          setLoading(false);
+          return;
+        }
+
+        if (!blob.type.startsWith('image/')) {
+          toast.error("Invalid file type. Please upload an image.");
           setLoading(false);
           return;
         }
@@ -158,7 +175,10 @@ function NewCardForm() {
           .from('attendee_photos')
           .upload(fileName, blob);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          toast.error("Failed to upload photo. Check your connection.");
+          throw uploadError;
+        }
         photo_url = uploadData.path;
       }
 
@@ -184,17 +204,21 @@ function NewCardForm() {
         .select()
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        toast.error("Failed to save card. Record may already exist.");
+        throw insertError;
+      }
 
+      toast.success("Attendee card saved successfully!");
+      
       // Navigate back to the event page if we came from one, otherwise to the card view
-      if (eventId) {
+      if (eventId && !isShareMode) {
         router.push(`/dashboard/events/${eventId}`);
       } else if (record) {
-        router.push(`/cards/${record.id}`);
+        router.push(`/cards/${record.id}?share=${isShareMode}`);
       }
     } catch (err: any) {
        console.error("Error creating card:", err);
-       alert("Failed to save card: " + (err.message || "Check your connection"));
     } finally {
       setLoading(false);
     }
@@ -205,7 +229,7 @@ function NewCardForm() {
     { key: "name", label: "Full Name", placeholder: "Full Name", required: true },
     { key: "role", label: "Role/Title", placeholder: "Role/Title", required: true },
     { key: "company", label: "Organization", placeholder: "Organization", required: true },
-    { key: "email", label: "Email", placeholder: "hello@alignui.com", required: true, icon: "email" },
+    { key: "email", label: "Email", placeholder: "hello@example.com", required: true, icon: "email" },
     { key: "eventName", label: "Event Name", placeholder: "Event Name", required: true },
     { key: "sessionDate", label: "Session Date", placeholder: "Session Date", required: true, type: "date" },
     { key: "location", label: "Location", placeholder: "Location", required: true },
@@ -215,46 +239,60 @@ function NewCardForm() {
   ];
 
   return (
-    <main className="relative min-h-screen w-full bg-white flex flex-col lg:flex-row overflow-x-hidden">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-x-hidden">
       <GradientBackground />
 
       {/* Left Sidebar - Form */}
-      <div className="relative z-10 w-full lg:w-[480px] bg-white/80 backdrop-blur-xl border-r border-border p-6 md:p-12 overflow-y-auto lg:h-screen">
-        <div className="flex items-center gap-3 mb-8">
-          <Link 
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors group"
-          >
-            <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-            Home
-          </Link>
-          <span className="text-muted/20">/</span>
-          <Link 
-            href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors group"
-          >
-            Dashboard
-          </Link>
-          {eventId && (
-            <>
-              <span className="text-muted/20">/</span>
-              <Link 
-                href={`/dashboard/events/${eventId}`}
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors"
-              >
-                Event
-              </Link>
-            </>
-          )}
-        </div>
+      <div className="relative z-10 w-full lg:w-[480px] glass-panel border-r-border/30 p-6 md:p-12 overflow-y-auto lg:h-screen animate-slide-up">
+        {!isShareMode && (
+          <div className="flex items-center gap-3 mb-8">
+            <Link 
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors group"
+            >
+              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
+              Home
+            </Link>
+            <span className="text-muted/20">/</span>
+            <Link 
+              href="/dashboard"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors group"
+            >
+              Dashboard
+            </Link>
+            {eventId && (
+              <>
+                <span className="text-muted/20">/</span>
+                <Link 
+                  href={`/dashboard/events/${eventId}`}
+                  className="inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-primary transition-colors"
+                >
+                  Event
+                </Link>
+              </>
+            )}
+          </div>
+        )}
+        {isShareMode && (
+          <div className="flex items-center gap-3 mb-8">
+             <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+               AVTIVE ATTENDEE PORTAL
+             </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           <div className="flex flex-col gap-1.5">
             <h1 className="text-3xl font-bold text-heading tracking-tight flex items-center gap-2">
-              New Card
-              <Sparkles size={20} className="text-primary animate-pulse" />
+              {isShareMode ? "Event Registration" : "New Card"}
+              {!isShareMode && <Sparkles size={20} className="text-primary animate-pulse" />}
             </h1>
-            <p className="text-sm text-muted">Fill in your details to generate your attendee card.</p>
+            <p className="text-sm text-muted">
+               {isShareMode 
+                 ? (form.eventName ? `Register for ${form.eventName} and get your attendee card.` : "Register for the event to generate your attendee card.")
+                 : "Fill in your details to generate your attendee card."
+               }
+            </p>
           </div>
 
           {eventLoading && (
@@ -334,7 +372,7 @@ function NewCardForm() {
       </div>
 
       {/* Right Content - Preview with same scale as download screen */}
-      <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 bg-surface/30 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
         <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase mb-6">
           Live Preview
         </h2>
@@ -397,9 +435,33 @@ function NewCardForm() {
 export default function NewCardPage() {
   return (
     <Suspense fallback={
-      <main className="relative min-h-screen w-full bg-white flex items-center justify-center">
+      <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-Hidden">
         <GradientBackground />
-        <div className="relative z-10 text-muted">Loading...</div>
+        
+        {/* Skeleton Sidebar */}
+        <div className="relative z-10 w-full lg:w-[480px] glass-panel p-6 md:p-12 lg:h-screen">
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-2">
+              <Skeleton className="w-48 h-10" />
+              <Skeleton className="w-full h-4" />
+            </div>
+            <div className="flex flex-col gap-6">
+              <Skeleton className="w-full h-14 rounded-xl" />
+              <Skeleton className="w-full h-14 rounded-xl" />
+              <Skeleton className="w-full h-14 rounded-xl" />
+              <Skeleton className="w-full h-14 rounded-xl" />
+              <Skeleton className="w-full h-14 rounded-xl" />
+            </div>
+            <Skeleton className="w-full h-12 rounded-xl mt-4" />
+          </div>
+        </div>
+
+        {/* Skeleton Preview */}
+        <div className="flex-1 flex flex-col items-center py-8 px-6 lg:h-screen">
+          <Skeleton className="w-24 h-4 mb-6" />
+          <Skeleton className="w-full max-w-[600px] aspect-[800/420] rounded-2xl shadow-xl" />
+          <Skeleton className="w-48 h-4 mt-6" />
+        </div>
       </main>
     }>
       <NewCardForm />

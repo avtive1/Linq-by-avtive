@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Mail, Lock, Eye, EyeOff, ChevronRight } from "lucide-react";
 
 type InputProps = {
@@ -41,10 +41,10 @@ export function TextInput({
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-xl shadow-sm transition-all focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-xl shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
-            : "border-border focus-within:ring-primary/20 focus-within:border-primary"}
+            : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
         `}
       >
         {prefix && (
@@ -118,11 +118,11 @@ export function Button({
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
       className={`
-        flex items-center justify-center gap-2 rounded-xl font-medium transition-all active:scale-[0.98]
+        flex items-center justify-center gap-2 rounded-xl font-bold transition-all duration-300 active:scale-95
         ${sizeClasses[size]}
         ${isPrimary 
-          ? "bg-primary text-white shadow-[0_1px_2px_rgba(37,62,167,0.4),0_0_0_1px_#375dfb] hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100" 
-          : "bg-white border border-border text-muted hover:border-muted/40 hover:text-heading disabled:opacity-50 disabled:cursor-not-allowed"}
+          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
+          : "bg-white border border-border text-heading hover:border-primary/40 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
       `}
@@ -164,10 +164,10 @@ export function Select({
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-xl shadow-sm transition-all focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-xl shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
-            : "border-border focus-within:ring-primary/20 focus-within:border-primary"}
+            : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
           ${disabled ? "bg-surface/50 cursor-not-allowed" : ""}
         `}
       >
@@ -233,8 +233,8 @@ export function FilePicker({
         </div>
       )}
       <div className={`
-        relative flex items-center bg-white border rounded-xl shadow-sm overflow-hidden transition-all
-        ${error ? "border-red-500" : "border-border hover:border-muted/40"}
+        relative flex items-center bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-300
+        ${error ? "border-red-500" : "border-border/60 hover:border-primary/40 hover:bg-white"}
       `}>
         <input
           type="file"
@@ -253,4 +253,51 @@ export function FilePicker({
     </div>
   );
 }
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return (
+    <div className={`relative overflow-hidden bg-muted/20 rounded-xl ${className}`}>
+      <div className="absolute inset-0 animate-shimmer" />
+    </div>
+  );
+}
+
+export function AnimatedCounter({ value, duration = 1500 }: { value: number; duration?: number }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const countRef = useRef(0);
+  const startTimeRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const startValue = countRef.current;
+    const endValue = value;
+    startTimeRef.current = null;
+
+    if (startValue === endValue) {
+      setDisplayValue(endValue);
+      return;
+    }
+
+    const animate = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const progress = Math.min((timestamp - startTimeRef.current) / duration, 1);
+      
+      const ease = 1 - Math.pow(1 - progress, 4);
+      const currentCount = Math.floor(startValue + (endValue - startValue) * ease);
+      
+      setDisplayValue(currentCount);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(endValue);
+        countRef.current = endValue;
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value, duration]);
+
+  return <span>{displayValue}</span>;
+}
+
 
