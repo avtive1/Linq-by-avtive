@@ -184,7 +184,7 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/" 
-              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-5 sm:-ml-10"
+              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               BACK TO HOME
@@ -192,7 +192,7 @@ export default function DashboardPage() {
             <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
               AVTIVE
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight leading-none">
               Dashboard
             </h1>
             {userName && (
@@ -225,39 +225,38 @@ export default function DashboardPage() {
         </div>
         
         {/* Bento Grid Statistics Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10 delay-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-8 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 mb-6 group-hover:scale-110 transition-transform">
-              <Users size={24} />
+          <div className="glass-panel p-5 rounded-[20px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 mb-4 group-hover:scale-105 transition-transform">
+              <Users size={20} />
             </div>
-            <div className="flex flex-col gap-1">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.2em]">Live Network Presence</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-heading tracking-tight">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Live Presence</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-3xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-sm font-semibold text-primary">Attendees</span>
+                <span className="text-[12px] font-semibold text-primary">Attendees</span>
               </div>
             </div>
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 mb-4 group-hover:rotate-6 transition-transform hover:bg-primary/20">
-              <BarChart3 size={20} />
+          <div className="glass-panel p-5 rounded-[20px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 mb-3 group-hover:rotate-3 transition-transform hover:bg-primary/20">
+              <BarChart3 size={18} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Activity Tracking</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold text-heading tracking-tight">
+              <span className="text-[9px] font-bold text-muted uppercase tracking-[0.2em] mb-0.5">Activity Tracking</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-xs font-semibold text-primary">Total Events</span>
+                <span className="text-[11px] font-semibold text-primary">Total Events</span>
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Search Bar */}

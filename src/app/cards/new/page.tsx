@@ -243,31 +243,31 @@ function NewCardForm() {
       <GradientBackground />
 
       {/* Left Sidebar - Form */}
-      <div className="relative z-10 w-full lg:w-[480px] glass-panel border-r-border/30 p-6 md:p-12 overflow-y-auto lg:h-screen animate-slide-up">
+      <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-6 md:p-11 overflow-y-auto lg:h-screen animate-slide-up">
         {!isShareMode && (
           <div className="flex items-center gap-3 mb-8 -ml-1 sm:-ml-2">
             <Link 
               href="/"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors group"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all group"
             >
-              <ArrowLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-              Home
+              <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+              BACK TO HOME
             </Link>
             <span className="text-muted/20">/</span>
             <Link 
               href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors group"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all group"
             >
-              Dashboard
+              DASHBOARD
             </Link>
             {eventId && (
               <>
                 <span className="text-muted/20">/</span>
                 <Link 
                   href={`/dashboard/events/${eventId}`}
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all"
                 >
-                  Event
+                  EVENT
                 </Link>
               </>
             )}
@@ -439,7 +439,7 @@ export default function NewCardPage() {
         <GradientBackground />
         
         {/* Skeleton Sidebar */}
-        <div className="relative z-10 w-full lg:w-[480px] glass-panel p-6 md:p-12 lg:h-screen">
+        <div className="relative z-10 w-full lg:w-[460px] glass-panel p-6 md:p-11 lg:h-screen">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
               <Skeleton className="w-48 h-10" />

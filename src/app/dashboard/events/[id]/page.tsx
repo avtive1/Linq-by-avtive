@@ -193,7 +193,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/dashboard" 
-              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-4 sm:-ml-6"
+              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               BACK TO DASHBOARD
@@ -201,9 +201,9 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
               EVENT DETAILS
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight">
-              {eventData.name}
-            </h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight leading-none">
+                {eventData.name}
+              </h1>
             <div className="flex items-center gap-4 text-sm text-muted mt-1 font-medium">
               <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-lg border border-white/40 shadow-sm"><Calendar size={13} className="text-heading" /> {eventData.date}</span>
               <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-lg border border-white/40 shadow-sm"><MapPin size={13} className="text-heading" /> {eventData.location}</span>

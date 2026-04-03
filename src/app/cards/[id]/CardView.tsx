@@ -40,7 +40,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   };
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-10 md:py-16 px-4 sm:px-6 overflow-x-hidden">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-8 md:py-12 px-4 sm:px-6 overflow-x-hidden">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">
@@ -52,23 +52,23 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                </span>
             </div>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 -ml-4 sm:-ml-6">
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors group"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary transition-all group"
               >
                 <ArrowLeft
-                  size={14}
+                  size={12}
                   className="group-hover:-translate-x-1 transition-transform"
                 />
-                Home
+                HOME
               </Link>
               <span className="text-muted/20">/</span>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-sm font-medium text-heading hover:text-primary transition-colors group"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary transition-all group"
               >
-                Dashboard
+                DASHBOARD
               </Link>
             </div>
           )}

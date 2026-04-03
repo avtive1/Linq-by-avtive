@@ -64,7 +64,7 @@ export function TextInput({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60"
+          className="flex-1 px-3 py-2 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60"
         />
         {isPassword && (
           <button
@@ -108,9 +108,9 @@ export function Button({
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "px-3 py-1.5 text-xs",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-8 py-3.5 text-base",
+    sm: "px-2.5 py-1.5 text-[10px]",
+    md: "px-4 py-2 text-[12px]",
+    lg: "px-6 py-2.5 text-sm",
   };
 
   return (
@@ -179,7 +179,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
+            flex-1 px-3 py-2 text-[12px] text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
