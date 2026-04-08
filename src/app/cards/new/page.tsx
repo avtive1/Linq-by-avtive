@@ -3,18 +3,16 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker, Select, Skeleton } from "@/components/ui";
-import { ArrowLeft, Sparkles, Lock } from "lucide-react";
+import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
+import { Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import confetti from "canvas-confetti";
 
 function NewCardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId") || "";
-  const isShareMode = searchParams.get("share") === "true";
 
   const [form, setForm] = useState({
     name: "",
@@ -30,26 +28,9 @@ function NewCardForm() {
     linkedin: "",
   });
 
-  // Fetch all events for the dropdown
-  const [availableEvents, setAvailableEvents] = useState<any[]>([]);
-  useEffect(() => {
-    let isMounted = true;
-    const fetchEvents = async () => {
-      const { data, error } = await supabase.from("events").select("*").order("name");
-      if (!isMounted) return;
-      if (error) {
-        toast.error("Could not fetch events list");
-      } else {
-        setAvailableEvents(data || []);
-      }
-    };
-    fetchEvents();
-    return () => { isMounted = false; };
-  }, []);
-
-  // If an eventId is present, fetch event details and pre-fill the form
-  const [eventLocked, setEventLocked] = useState(false);
+  // Fetch event details for the locked header / preview.
   const [eventLoading, setEventLoading] = useState(!!eventId);
+  const [eventMissing, setEventMissing] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -58,17 +39,16 @@ function NewCardForm() {
       setEventLoading(true);
       const { data, error } = await supabase.from("events").select("*").eq("id", eventId).single();
       if (!isMounted) return;
-      
-      if (error) {
-        toast.error("Could not fetch event details");
-      } else if (data) {
+
+      if (error || !data) {
+        setEventMissing(true);
+      } else {
         setForm((f) => ({
           ...f,
           eventName: data.name || "",
           location: data.location || "",
           sessionDate: data.date || "",
         }));
-        setEventLocked(true);
       }
       setEventLoading(false);
     };
@@ -81,23 +61,6 @@ function NewCardForm() {
 
   const update = (key: string) => (val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
-    
-    // Auto-fill logic when selecting an event from dropdown
-    if (key === "eventName") {
-      const selectedEvent = availableEvents.find(e => e.id === val || e.name === val);
-      if (selectedEvent) {
-        setForm(f => ({
-          ...f,
-          eventName: selectedEvent.name,
-          sessionDate: selectedEvent.date || "",
-          location: selectedEvent.location || "",
-        }));
-        setEventLocked(true);
-      } else {
-        setEventLocked(false);
-      }
-    }
-
     if (errors[key]) {
       setErrors((prev) => {
         const next = { ...prev };
@@ -114,9 +77,6 @@ function NewCardForm() {
       { key: "role", label: "Role/Title" },
       { key: "company", label: "Organization" },
       { key: "email", label: "Email" },
-      { key: "eventName", label: "Event Name" },
-      { key: "sessionDate", label: "Session Date" },
-      { key: "location", label: "Location" },
     ];
 
     requiredFields.forEach((field) => {
@@ -148,29 +108,16 @@ function NewCardForm() {
     setLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       let photo_url = "";
-      
-      // Handle Photo Upload to Supabase Storage
+
+      // Handle photo upload to Supabase Storage. Validation already happened
+      // in FilePicker — by the time we get here the data URL is trusted.
       if (form.photo && form.photo.startsWith('data:')) {
         const res = await fetch(form.photo);
         const blob = await res.blob();
-        
-        // Granular validation before starting upload
-        if (blob.size > 5 * 1024 * 1024) {
-          toast.error("Photo is too large! Maximum limit is 5MB.");
-          setLoading(false);
-          return;
-        }
 
-        if (!blob.type.startsWith('image/')) {
-          toast.error("Invalid file type. Please upload an image.");
-          setLoading(false);
-          return;
-        }
-
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.jpg`;
+        const ext = blob.type.split("/")[1] || "jpg";
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('attendee_photos')
           .upload(fileName, blob);
@@ -183,7 +130,7 @@ function NewCardForm() {
       }
 
       const attendeeData = {
-        user_id: session?.user?.id || null,
+        user_id: null,
         name: form.name,
         role: form.role,
         company: form.company,
@@ -195,9 +142,9 @@ function NewCardForm() {
         linkedin: extractLinkedInHandle(form.linkedin),
         year: form.year,
         photo_url: photo_url,
-        event_id: eventId || null
+        event_id: eventId,
       };
-      
+
       const { data: record, error: insertError } = await supabase
         .from('attendees')
         .insert(attendeeData)
@@ -205,17 +152,14 @@ function NewCardForm() {
         .single();
 
       if (insertError) {
-        toast.error("Failed to save card. Record may already exist.");
+        toast.error("Failed to save card. Please try again.");
         throw insertError;
       }
 
       toast.success("Attendee card saved successfully!");
-      
-      // Navigate back to the event page if we came from one, otherwise to the card view
-      if (eventId && !isShareMode) {
-        router.push(`/dashboard/events/${eventId}`);
-      } else if (record) {
-        router.push(`/cards/${record.id}?share=${isShareMode}`);
+
+      if (record) {
+        router.push(`/cards/${record.id}?share=true`);
       }
     } catch (err: any) {
        console.error("Error creating card:", err);
@@ -224,19 +168,39 @@ function NewCardForm() {
     }
   };
 
+  if (!eventId) {
+    return (
+      <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[32px] shadow-2xl max-w-sm">
+          <p className="text-heading font-semibold">Invalid registration link</p>
+          <p className="text-sm text-muted">
+            This page can only be opened from an event registration link provided by your organizer.
+          </p>
+          <Link href="/" className="mt-2">
+            <Button variant="secondary">Back to home</Button>
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
-  const fields: Array<{ key: string; label: string; placeholder: string; required?: boolean; icon?: string; type?: string }> = [
-    { key: "name", label: "Full Name", placeholder: "Full Name", required: true },
-    { key: "role", label: "Role/Title", placeholder: "Role/Title", required: true },
-    { key: "company", label: "Organization", placeholder: "Organization", required: true },
-    { key: "email", label: "Email", placeholder: "hello@example.com", required: true, icon: "email" },
-    { key: "eventName", label: "Event Name", placeholder: "Event Name", required: true },
-    { key: "sessionDate", label: "Session Date", placeholder: "Session Date", required: true, type: "date" },
-    { key: "location", label: "Location", placeholder: "Location", required: true },
-    { key: "track", label: "Track (Optional)", placeholder: "Track" },
-    { key: "linkedin", label: "LinkedIn (Optional)", placeholder: "linkedin.com/in/yourhandle" },
-    { key: "photo", label: "Photo (Optional)", placeholder: "Choose File" },
-  ];
+  if (eventMissing) {
+    return (
+      <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[32px] shadow-2xl max-w-sm">
+          <p className="text-heading font-semibold">Event not found</p>
+          <p className="text-sm text-muted">
+            This registration link is no longer valid. Please ask your organizer for a new one.
+          </p>
+          <Link href="/" className="mt-2">
+            <Button variant="secondary">Back to home</Button>
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-x-hidden">
@@ -244,125 +208,96 @@ function NewCardForm() {
 
       {/* Left Sidebar - Form */}
       <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-6 md:p-11 overflow-y-auto lg:h-screen animate-slide-up">
-        {!isShareMode && (
-          <div className="flex items-center gap-3 mb-8 -ml-1 sm:-ml-2">
-            <Link 
-              href="/"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all group"
-            >
-              <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
-              BACK TO HOME
-            </Link>
-            <span className="text-muted/20">/</span>
-            <Link 
-              href="/dashboard"
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all group"
-            >
-              DASHBOARD
-            </Link>
-            {eventId && (
-              <>
-                <span className="text-muted/20">/</span>
-                <Link 
-                  href={`/dashboard/events/${eventId}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all"
-                >
-                  EVENT
-                </Link>
-              </>
-            )}
-          </div>
-        )}
-        {isShareMode && (
-          <div className="flex items-center gap-3 mb-8">
-             <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
-               AVTIVE ATTENDEE PORTAL
-             </span>
-          </div>
-        )}
+        <div className="flex items-center gap-3 mb-8">
+          <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+            AVTIVE ATTENDEE PORTAL
+          </span>
+        </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           <div className="flex flex-col gap-1.5">
-            <h1 className="text-3xl font-bold text-heading tracking-tight flex items-center gap-2">
-              {isShareMode ? "Event Registration" : "New Card"}
-              {!isShareMode && <Sparkles size={20} className="text-primary animate-pulse" />}
+            <h1 className="text-3xl font-bold text-heading tracking-tight">
+              Event Registration
             </h1>
             <p className="text-sm text-muted">
-               {isShareMode 
-                 ? (form.eventName ? `Register for ${form.eventName} and get your attendee card.` : "Register for the event to generate your attendee card.")
-                 : "Fill in your details to generate your attendee card."
-               }
+              {form.eventName
+                ? `Register for ${form.eventName} and get your attendee card.`
+                : "Register for the event to generate your attendee card."}
             </p>
           </div>
 
           {eventLoading && (
-            <div className="flex items-center gap-2 text-sm text-primary bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
               <Lock size={14} />
               Loading event details...
             </div>
           )}
-          {eventLocked && !eventLoading && (
-            <div className="flex items-center gap-2 text-sm text-primary bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+          {!eventLoading && (
+            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
               <Lock size={14} />
-              Event fields are pre-filled and locked.
+              Event details are pre-filled from the organizer.
             </div>
           )}
+
           <div className="flex flex-col gap-5">
-            {fields.map((f) => {
-              const isEventField = ["sessionDate", "location"].includes(f.key);
-              const isLockedField = eventLocked && (isEventField || f.key === "eventName");
-              
-              // Hide date/location if no event is selected (and not locked by URL)
-              if (isEventField && !form.eventName && !eventId) return null;
-
-              if (f.key === "photo") {
-                return (
-                  <FilePicker
-                    key={f.key}
-                    label={f.label}
-                    value={form.photo}
-                    onChange={update("photo")}
-                    error={errors.photo}
-                  />
-                );
-              }
-
-              if (f.key === "eventName" && !eventId) {
-                return (
-                  <Select
-                    key={f.key}
-                    label={f.label}
-                    required={f.required}
-                    options={availableEvents.map(e => ({ value: e.id, label: e.name }))}
-                    value={availableEvents.find(e => e.name === form.eventName)?.id || ""}
-                    onChange={update("eventName")}
-                    error={errors.eventName}
-                    placeholder="Select an Event"
-                  />
-                );
-              }
-
-              return (
-                <div key={f.key} className={isLockedField ? "opacity-60 pointer-events-none" : ""}>
-                  <TextInput
-                    label={isLockedField ? `${f.label} 🔒` : f.label}
-                    required={f.required}
-                    type={f.type}
-                    placeholder={f.placeholder}
-                    icon={f.key === "email" ? "email" : undefined}
-                    value={(form as Record<string, string>)[f.key]}
-                    onChange={update(f.key)}
-                    error={errors[f.key]}
-                  />
-                </div>
-              );
-            })}
+            <TextInput
+              label="Full Name"
+              required
+              placeholder="Full Name"
+              value={form.name}
+              error={errors.name}
+              onChange={update("name")}
+            />
+            <TextInput
+              label="Role/Title"
+              required
+              placeholder="Role/Title"
+              value={form.role}
+              error={errors.role}
+              onChange={update("role")}
+            />
+            <TextInput
+              label="Organization"
+              required
+              placeholder="Organization"
+              value={form.company}
+              error={errors.company}
+              onChange={update("company")}
+            />
+            <TextInput
+              label="Email"
+              required
+              icon="email"
+              placeholder="hello@example.com"
+              value={form.email}
+              error={errors.email}
+              onChange={update("email")}
+            />
+            <TextInput
+              label="Track (Optional)"
+              placeholder="Track"
+              value={form.track}
+              onChange={update("track")}
+            />
+            <TextInput
+              label="LinkedIn (Optional)"
+              placeholder="linkedin.com/in/yourhandle"
+              value={form.linkedin}
+              onChange={update("linkedin")}
+            />
+            <FilePicker
+              label="Photo (Optional)"
+              value={form.photo}
+              onChange={update("photo")}
+              onError={(msg) => toast.error(msg)}
+              error={errors.photo}
+            />
           </div>
 
-          <Button 
-            type="submit" 
-            variant="primary" 
-            fullWidth 
+          <Button
+            type="submit"
+            variant="primary"
+            fullWidth
             className="h-12 text-base mt-4 shadow-lg shadow-primary/20"
             disabled={loading}
           >
@@ -437,7 +372,7 @@ export default function NewCardPage() {
     <Suspense fallback={
       <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-Hidden">
         <GradientBackground />
-        
+
         {/* Skeleton Sidebar */}
         <div className="relative z-10 w-full lg:w-[460px] glass-panel p-6 md:p-11 lg:h-screen">
           <div className="flex flex-col gap-8">

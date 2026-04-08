@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Mail, Lock, Eye, EyeOff, ChevronRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB
+const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type InputProps = {
   label?: string;
@@ -36,7 +39,7 @@ export function TextInput({
           <label className="text-sm font-medium text-heading leading-none">
             {label}
           </label>
-          {required && <span className="text-primary text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
         </div>
       )}
       <div 
@@ -64,7 +67,7 @@ export function TextInput({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 px-3 py-2 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60"
+          className="flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60"
         />
         {isPassword && (
           <button
@@ -125,13 +128,13 @@ export function Button({
           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
           : isBlue
           ? "bg-heading text-white shadow-lg shadow-heading/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-heading/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
-          : "bg-white border border-border text-heading hover:border-primary/40 hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"}
+          : "bg-white border border-border text-heading hover:border-primary/40 hover:text-primary-strong disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
       `}
     >
       <span>{children}</span>
-      {icon || ((isPrimary || isBlue) && <ChevronRight size={size === "lg" ? 18 : 16} />)}
+      {icon}
     </button>
   );
 }
@@ -162,7 +165,7 @@ export function Select({
           <label className="text-sm font-medium text-heading leading-none">
             {label}
           </label>
-          {required && <span className="text-primary text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
         </div>
       )}
       <div 
@@ -179,7 +182,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-2 text-[12px] text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
+            flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -205,18 +208,31 @@ export function FilePicker({
   label,
   value,
   onChange,
+  onError,
   required,
   error,
 }: {
   label?: string;
   value?: string;
   onChange: (base64: string) => void;
+  onError?: (message: string) => void;
   required?: boolean;
   error?: string;
 }) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    if (!ACCEPTED_PHOTO_TYPES.includes(file.type)) {
+      onError?.("Please upload a JPEG, PNG, or WebP image.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      onError?.("Image must be 5 MB or smaller.");
+      e.target.value = "";
+      return;
+    }
 
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -232,7 +248,7 @@ export function FilePicker({
           <label className="text-sm font-medium text-heading">
             {label}
           </label>
-          {required && <span className="text-primary text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
         </div>
       )}
       <div className={`

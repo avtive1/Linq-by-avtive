@@ -41,7 +41,7 @@ export default function LoginPage() {
         {/* Back Button */}
         <Link 
           href="/" 
-          className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-muted hover:text-primary transition-all group"
+          className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong transition-all group"
         >
           <div className="w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -71,7 +71,7 @@ export default function LoginPage() {
                 label="Email Address"
                 required
                 type="email"
-                placeholder="hello@alignui.com"
+                placeholder="you@example.com"
                 icon="email"
                 value={email}
                 onChange={setEmail}
@@ -85,6 +85,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={setPassword}
               />
+              <Link
+                href="/forgot-password"
+                className="self-end text-xs font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
+              >
+                Forgot password?
+              </Link>
             </div>
 
             {/* Inline error message */}
@@ -108,7 +114,7 @@ export default function LoginPage() {
               <span>Don't have an account?</span>
               <Link
                 href="/signup"
-                className="font-semibold text-primary hover:underline underline-offset-4 transition-all"
+                className="font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
               >
                 Create one
               </Link>

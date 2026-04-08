@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import QRCode from "qrcode";
 import { CardData } from "@/types/card";
 
 export function CardPreview({
@@ -12,16 +13,34 @@ export function CardPreview({
   id?: string;
 }) {
   const [isZoomed, setIsZoomed] = useState(false);
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
 
-  const badgeId = data.id?.slice(-8).toUpperCase() || "WMKDEV";
-  // QR code: only show if user has a linkedin handle
-  const hasLinkedin = !!data.linkedin?.trim();
-  const linkedinUrl = hasLinkedin
-    ? `https://linkedin.com/in/${data.linkedin}`
-    : null;
-  const qrUrl = hasLinkedin
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(linkedinUrl!)}&margin=4&color=0-0-0&bgcolor=255-255-255`
-    : null;
+  const badgeId = data.id?.slice(-8).toUpperCase() || "PREVIEW";
+  // QR code: only generate if user has a linkedin handle
+  const linkedinHandle = data.linkedin?.trim() || "";
+
+  useEffect(() => {
+    let cancelled = false;
+    const updateQr = async () => {
+      if (!linkedinHandle) {
+        if (!cancelled) setQrUrl(null);
+        return;
+      }
+      try {
+        const linkedinUrl = `https://linkedin.com/in/${linkedinHandle}`;
+        const url = await QRCode.toDataURL(linkedinUrl, {
+          margin: 1,
+          width: 200,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+        if (!cancelled) setQrUrl(url);
+      } catch {
+        if (!cancelled) setQrUrl(null);
+      }
+    };
+    updateQr();
+    return () => { cancelled = true; };
+  }, [linkedinHandle]);
 
   return (
     <div
@@ -43,7 +62,7 @@ export function CardPreview({
           {/* Event header */}
           <div className="flex items-start justify-between mb-[4%]">
             <div>
-              <p className="text-[clamp(7px,1vw,10px)] font-bold tracking-[0.22em] text-primary uppercase mb-0.5">
+              <p className="text-[clamp(7px,1vw,10px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">
                 EVENT
               </p>
               <h3 className="text-[clamp(11px,1.5vw,18px)] font-bold text-heading leading-tight">
@@ -80,19 +99,19 @@ export function CardPreview({
           {/* Info grid — 2 col × 2 row */}
           <div className="grid grid-cols-2 gap-x-[6%] gap-y-[4%] flex-1">
             <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary uppercase mb-0.5">EMAIL</p>
+              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">EMAIL</p>
               <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.email || "hello@example.com"}</p>
             </div>
             <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary uppercase mb-0.5">LOCATION</p>
+              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">LOCATION</p>
               <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.location || "City, Country"}</p>
             </div>
             <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary uppercase mb-0.5">SESSION DATE</p>
+              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">SESSION DATE</p>
               <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.sessionDate || "March 2026"}</p>
             </div>
             <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary uppercase mb-0.5">BADGE ID</p>
+              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">BADGE ID</p>
               <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{badgeId}</p>
             </div>
           </div>

@@ -55,7 +55,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
             <div className="flex items-center gap-3 -ml-4 sm:-ml-6">
               <Link
                 href="/"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary transition-all group"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
               >
                 <ArrowLeft
                   size={12}
@@ -66,7 +66,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
               <span className="text-muted/20">/</span>
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary transition-all group"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
               >
                 DASHBOARD
               </Link>

@@ -8,7 +8,7 @@ import { supabase } from "@/lib/supabase";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
-import confetti from "canvas-confetti";
+import { getEventStatus } from "@/lib/utils";
 
 type DashboardEventData = EventData & { attendeeCount: number };
 
@@ -64,11 +64,9 @@ export default function DashboardPage() {
       
       const eventCounts = new Map<string, number>();
       attendeeRecords.forEach(a => {
-        // In Supabase we use snake_case
+        // Count by event_id only — public registrations always carry event_id.
         if (a.event_id) {
           eventCounts.set(a.event_id, (eventCounts.get(a.event_id) || 0) + 1);
-        } else if (a.event_name) {
-          eventCounts.set(a.event_name, (eventCounts.get(a.event_name) || 0) + 1);
         }
       });
 
@@ -77,7 +75,7 @@ export default function DashboardPage() {
         name: r.name,
         location: r.location,
         date: r.date,
-        attendeeCount: eventCounts.get(r.id) || eventCounts.get(r.name) || 0,
+        attendeeCount: eventCounts.get(r.id) || 0,
       }));
       
       if (getIsMounted && !getIsMounted()) return;
@@ -92,7 +90,7 @@ export default function DashboardPage() {
 
     } catch (err: any) {
       console.error("Error fetching dashboard data:", err);
-      toast.error("Could not load data. Check your database connection.");
+      toast.error("Could not load data. Please refresh and try again.");
     }
   };
 
@@ -143,7 +141,7 @@ export default function DashboardPage() {
       if (user) fetchData(user.id);
     } catch (err: any) {
       console.error(err);
-      toast.error("Failed to create event. Is your database running?");
+      toast.error("Failed to create event. Please try again.");
     } finally {
       setIsSubmittingEvent(false);
     }
@@ -197,7 +195,7 @@ export default function DashboardPage() {
             </h1>
             {userName && (
               <p className="text-sm text-muted flex items-center gap-1.5">
-                <User size={13} className="text-primary/50" />
+                <User size={13} className="text-primary-strong/70" />
                 {userName}
               </p>
             )}
@@ -207,7 +205,7 @@ export default function DashboardPage() {
              <Button
               variant="secondary"
               onClick={() => setIsEventModalOpen(true)}
-              className="bg-primary/5 border-primary/20 text-primary hover:bg-primary/10 px-4"
+              className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/15 px-4"
               icon={<Calendar size={18} />}
             >
               <span className="hidden sm:inline">New Event</span>
@@ -237,14 +235,14 @@ export default function DashboardPage() {
                 <span className="text-3xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-[12px] font-semibold text-primary">Attendees</span>
+                <span className="text-[12px] font-semibold text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
           
           {/* Secondary Stat - Active Events */}
           <div className="glass-panel p-5 rounded-[20px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 mb-3 group-hover:rotate-3 transition-transform hover:bg-primary/20">
+            <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 mb-3 group-hover:rotate-3 transition-transform hover:bg-primary/25">
               <BarChart3 size={18} />
             </div>
             <div className="flex flex-col">
@@ -253,7 +251,7 @@ export default function DashboardPage() {
                 <span className="text-xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-[11px] font-semibold text-primary">Total Events</span>
+                <span className="text-[11px] font-semibold text-primary-strong">Total Events</span>
               </div>
             </div>
           </div>
@@ -284,19 +282,26 @@ export default function DashboardPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 delay-300">
             {filteredEvents.length > 0 ? (
-              filteredEvents.map((evt) => (
+              filteredEvents.map((evt) => {
+                const status = getEventStatus(evt.date);
+                return (
                 <div key={evt.id} className="group flex flex-col justify-between h-full glass-panel p-4 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/40">
                   <div className="flex items-start justify-between mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-primary/5 flex items-center justify-center text-primary border border-primary/10">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary-strong border border-primary/20">
                       <Calendar size={18} />
                     </div>
-                    <div className="flex items-center text-xs font-bold text-primary bg-primary/5 px-2.5 py-1 rounded-full">
-                      {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full border ${status.classes}`}>
+                        {status.label}
+                      </span>
+                      <div className="flex items-center text-xs font-bold text-primary-strong bg-primary/10 px-2.5 py-1 rounded-full">
+                        {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
+                      </div>
                     </div>
                   </div>
                   
                   <div className="flex flex-col gap-1.5 grow">
-                    <h3 className="font-bold text-xl text-heading group-hover:text-primary transition-colors line-clamp-2">
+                    <h3 className="font-bold text-xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2">
                       {evt.name}
                     </h3>
                     
@@ -312,12 +317,13 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-5 pt-4 border-t border-border flex items-center justify-between text-sm font-bold text-heading hover:text-primary transition-colors cursor-pointer group-hover:text-primary">
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-5 pt-4 border-t border-border flex items-center justify-between text-sm font-bold text-heading hover:text-primary-strong transition-colors cursor-pointer group-hover:text-primary-strong">
                     View Event
                     <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="col-span-full text-center py-12 glass-panel rounded-3xl border-dashed">
                 <p className="text-muted text-sm">No events found matching your search.</p>

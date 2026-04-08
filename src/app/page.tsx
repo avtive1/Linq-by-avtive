@@ -13,26 +13,26 @@ export default function HomePage() {
         <div className="animate-slide-up inline-flex items-center gap-2 px-3.5 py-1.5 glass-panel rounded-full transition-transform hover:scale-105">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(121,217,128,0.8)]" />
           <span className="text-[11px] font-bold text-heading/80 tracking-[0.05em] uppercase">
-            Confirmed Attendee
+            For Event Organizers
           </span>
         </div>
 
         {/* Hero Section */}
         <div className="flex flex-col gap-4 animate-slide-up delay-100">
           <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-heading leading-[1.1] text-balance">
-            Your Smart <span className="bg-gradient-to-r from-heading to-primary bg-clip-text text-transparent drop-shadow-sm">Networking</span> Card
+            Run events. Share a link. <span className="bg-gradient-to-r from-heading to-primary bg-clip-text text-transparent drop-shadow-sm">Done.</span>
           </h1>
           <p className="text-base sm:text-[17px] text-heading/70 leading-relaxed max-w-[440px] mx-auto text-balance font-medium">
-            Register once. Fill in your details. Download a breathtaking attendee card
-            ready to share with the world.
+            Create your event, share a single registration link, and let attendees
+            generate their own beautiful, downloadable conference cards.
           </p>
         </div>
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-6 animate-slide-up delay-200">
-          <Link href="/cards/new" className="w-full sm:w-auto">
-            <Button variant="blue" size="lg" className="w-full sm:min-w-[220px] whitespace-nowrap">
-              Create your card
+          <Link href="/signup" className="w-full sm:w-auto">
+            <Button variant="blue" size="lg" className="w-full sm:min-w-[180px] whitespace-nowrap">
+              Get started
             </Button>
           </Link>
           <Link href="/login" className="w-full sm:w-auto">
@@ -44,7 +44,7 @@ export default function HomePage() {
 
         {/* Branding Footer */}
         <div className="mt-14 animate-slide-up delay-300">
-          <span className="text-[12px] font-bold tracking-[0.25em] text-heading/30 uppercase">
+          <span className="text-[12px] font-bold tracking-[0.25em] text-heading/60 uppercase">
             Powered by AVTIVE
           </span>
         </div>

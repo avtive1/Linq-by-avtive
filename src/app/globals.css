@@ -3,7 +3,8 @@
 @theme {
   --font-sans: var(--font-inter), "ui-sans-serif", "system-ui";
   
-  --color-primary: #79D980;
+  --color-primary: #79D980;          /* brand fill — buttons, tinted bgs, borders */
+  --color-primary-strong: #1E7A24;   /* darker variant for text/icons on light bgs (AA on white) */
   --color-primary-foreground: #23468C;
   --color-surface: #F9FAFB;
   --color-border: #E5E7EB;

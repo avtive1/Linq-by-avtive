@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { toast } from "sonner";
+import { Mail } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function SignupPage() {
@@ -17,6 +18,7 @@ export default function SignupPage() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const extractLinkedInHandle = (val: string) => {
     if (!val) return "";
@@ -70,7 +72,15 @@ export default function SignupPage() {
       });
 
       if (signUpError) throw signUpError;
-      
+
+      // If Supabase email confirmation is enabled, no session is returned —
+      // surface a "check your inbox" state instead of redirecting.
+      if (!data.session) {
+        setEmailSent(true);
+        toast.success("Check your inbox to confirm your email.");
+        return;
+      }
+
       toast.success("Account created successfully!");
       router.push("/dashboard");
     } catch (err: any) {
@@ -101,6 +111,25 @@ export default function SignupPage() {
 
         {/* Signup Card */}
         <div className="glass-panel rounded-[32px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
+          {emailSent ? (
+            <div className="flex flex-col items-center text-center gap-4 py-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center text-primary-strong">
+                <Mail size={26} />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <h1 className="text-xl font-bold text-heading tracking-tight">Check your inbox</h1>
+                <p className="text-sm text-muted leading-relaxed max-w-[320px]">
+                  We sent a confirmation link to <span className="font-semibold text-heading">{form.email}</span>.
+                  Click it to activate your account, then sign in.
+                </p>
+              </div>
+              <Link href="/login" className="w-full mt-2">
+                <Button variant="primary" fullWidth size="lg" className="h-12 text-base shadow-lg shadow-primary/20">
+                  Go to sign in
+                </Button>
+              </Link>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <h1 className="text-xl font-bold text-heading tracking-tight">Create your profile</h1>
@@ -164,12 +193,13 @@ export default function SignupPage() {
               <span>Already have an account?</span>
               <Link
                 href="/login"
-                className="font-semibold text-primary hover:underline underline-offset-4 transition-all"
+                className="font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
               >
                 Sign in
               </Link>
             </div>
           </form>
+          )}
         </div>
       </div>
     </main>
