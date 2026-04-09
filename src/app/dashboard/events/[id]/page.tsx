@@ -264,42 +264,45 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         logo_url = publicUrl;
       }
 
-      // Update event in DB — no user_id filter, RLS handles ownership
-      const updatePayload = {
+      // Create a duplicate/renewed event in DB instead of updating the old one
+      const { data: authData } = await supabase.auth.getUser();
+      if (!authData.user) {
+        throw new Error("You must be logged in to renew an event.");
+      }
+
+      const insertPayload = {
+        name: eventData?.name || "Renewed Event",
         location: renewForm.location.trim(),
         date: renewForm.date,
         logo_url: logo_url,
+        user_id: authData.user.id
       };
-      console.log("Renewing event:", id, updatePayload);
+      console.log("Creating renewed event copy:", insertPayload);
 
-      const { data: updatedRows, error } = await supabase
+      const { data: createdEvent, error } = await supabase
         .from("events")
-        .update(updatePayload)
-        .eq("id", id)
-        .select();
+        .insert(insertPayload)
+        .select()
+        .single();
 
       if (error) {
-        console.error("Supabase update error:", error);
-        throw new Error(`Database update failed: ${error.message}`);
+        console.error("Supabase insert error:", error);
+        throw new Error(`Database insert failed: ${error.message}`);
       }
 
-      if (!updatedRows || updatedRows.length === 0) {
-        console.error("Update ran but no rows were modified. Check RLS policies on events table.");
-        throw new Error("Update failed: no rows were modified. Check Supabase RLS policies.");
+      if (!createdEvent) {
+        throw new Error("Insert failed: no data returned.");
       }
 
-      console.log("Update successful:", updatedRows[0]);
+      console.log("Renew copy successful:", createdEvent);
 
-      setEventData((prev) => prev ? {
-        ...prev,
-        location: renewForm.location.trim(),
-        date: renewForm.date,
-        logo_url: logo_url,
-      } : prev);
-
-      toast.success(`Event renewed successfully until ${renewForm.date}!`);
+      toast.success(`Event renewed successfully! Redirecting...`);
       setIsRenewOpen(false);
-      // Stay on the same page — don't redirect
+      
+      // Redirect to the newly created event
+      if (createdEvent?.id) {
+        router.push(`/dashboard/events/${createdEvent.id}`);
+      }
     } catch (err: any) {
       console.error("Renewal error:", err);
       toast.error(err.message || "Failed to renew event. Please try again.");
