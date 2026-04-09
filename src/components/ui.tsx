@@ -15,6 +15,7 @@ type InputProps = {
   prefix?: string;
   icon?: "email" | "lock";
   error?: string;
+  className?: string;
 };
 
 export function TextInput({
@@ -27,13 +28,14 @@ export function TextInput({
   prefix,
   icon,
   error,
+  className = "",
 }: InputProps) {
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (showPass ? "text" : "password") : type;
 
   return (
-    <div className="flex flex-col gap-1.5 w-full group">
+    <div className={`flex flex-col gap-1.5 w-full group ${className}`}>
       {label && (
         <div className="flex items-center gap-1">
           <label className="text-base font-medium text-heading leading-none">
