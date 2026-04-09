@@ -36,10 +36,10 @@ export function TextInput({
     <div className="flex flex-col gap-1.5 w-full group">
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-sm font-medium text-heading leading-none">
+          <label className="text-base font-medium text-heading leading-none">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-base font-bold">*</span>}
         </div>
       )}
       <div 
@@ -67,7 +67,7 @@ export function TextInput({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60"
+          className="flex-1 px-3 py-3 text-base text-heading bg-transparent outline-none placeholder:text-muted/60"
         />
         {isPassword && (
           <button
@@ -111,9 +111,9 @@ export function Button({
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "px-2.5 py-1.5 text-[10px]",
-    md: "px-4 py-2 text-[12px]",
-    lg: "px-6 py-2.5 text-sm",
+    sm: "px-3 py-2 text-[12px]",
+    md: "px-5 py-2.5 text-sm",
+    lg: "px-7 py-3 text-base",
   };
 
   return (
@@ -162,10 +162,10 @@ export function Select({
     <div className={`flex flex-col gap-1.5 w-full group ${disabled ? "opacity-60" : ""}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-sm font-medium text-heading leading-none">
+          <label className="text-base font-medium text-heading leading-none">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-base font-bold">*</span>}
         </div>
       )}
       <div 
@@ -182,7 +182,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-2.5 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
+            flex-1 px-3 py-3 text-base text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -245,10 +245,10 @@ export function FilePicker({
     <div className="flex flex-col gap-1.5 w-full">
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-sm font-medium text-heading">
+          <label className="text-base font-medium text-heading">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-base font-bold">*</span>}
         </div>
       )}
       <div className={`
@@ -261,10 +261,10 @@ export function FilePicker({
           onChange={handleFileChange}
           className="absolute inset-0 opacity-0 cursor-pointer z-10"
         />
-        <div className="flex-1 px-4 py-2.5 text-sm text-muted/60 truncate">
+        <div className="flex-1 px-4 py-3 text-base text-muted/60 truncate">
           {value ? "Photo selected" : "Choose File"}
         </div>
-        <div className="px-4 py-2.5 bg-surface border-l border-border text-xs font-semibold text-muted">
+        <div className="px-4 py-3 bg-surface border-l border-border text-sm font-semibold text-muted">
           Browse
         </div>
       </div>

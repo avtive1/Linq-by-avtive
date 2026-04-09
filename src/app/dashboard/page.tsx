@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter } from "@/components/ui";
+import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles } from "lucide-react";
 import { EventData } from "@/types/card";
@@ -24,6 +24,7 @@ export default function DashboardPage() {
     name: "",
     location: "",
     date: "",
+    logo: "",
   });
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
   const [stats, setStats] = useState({
@@ -75,6 +76,7 @@ export default function DashboardPage() {
         name: r.name,
         location: r.location,
         date: r.date,
+        logo_url: r.logo_url,
         attendeeCount: eventCounts.get(r.id) || 0,
       }));
       
@@ -123,22 +125,49 @@ export default function DashboardPage() {
     setIsSubmittingEvent(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user found");
+      
+      let logoUrl = "";
+      if (eventForm.logo) {
+        try {
+          // Convert base64 to Blob
+          const base64Data = eventForm.logo.split(",")[1];
+          const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob());
+          const fileName = `${user.id}/${Date.now()}.png`;
+          
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from("event-logos")
+            .upload(fileName, blob, { contentType: 'image/png' });
+            
+          if (uploadError) throw uploadError;
+          
+          const { data: { publicUrl } } = supabase.storage
+            .from("event-logos")
+            .getPublicUrl(uploadData.path);
+            
+          logoUrl = publicUrl;
+        } catch (uploadErr) {
+          console.error("Logo upload failed:", uploadErr);
+          toast.error("Logo upload failed, but creating event anyway...");
+        }
+      }
       
       const data = {
         name: eventForm.name,
         location: eventForm.location,
         date: eventForm.date,
-        user_id: user?.id
+        user_id: user.id,
+        logo_url: logoUrl
       };
       
       const { error } = await supabase.from("events").insert(data);
       if (error) throw error;
-
+      
       toast.success(`Event "${eventForm.name}" created successfully!`);
-
+      
       setIsEventModalOpen(false);
-      setEventForm({ name: "", location: "", date: "" });
-      if (user) fetchData(user.id);
+      setEventForm({ name: "", location: "", date: "", logo: "" });
+      fetchData(user.id);
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to create event. Please try again.");
@@ -190,12 +219,12 @@ export default function DashboardPage() {
             <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
               AVTIVE
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight leading-none">
+            <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-none">
               Dashboard
             </h1>
             {userName && (
-              <p className="text-sm text-muted flex items-center gap-1.5">
-                <User size={13} className="text-primary-strong/70" />
+              <p className="text-base text-muted flex items-center gap-1.5">
+                <User size={15} className="text-primary-strong/70" />
                 {userName}
               </p>
             )}
@@ -225,33 +254,33 @@ export default function DashboardPage() {
         {/* Bento Grid Statistics Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-8 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-5 rounded-[20px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 mb-4 group-hover:scale-105 transition-transform">
-              <Users size={20} />
+          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+              <Users size={32} />
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Live Presence</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-3xl font-bold text-heading tracking-tight">
+              <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em]">Live Presence</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-[12px] font-semibold text-primary-strong">Attendees</span>
+                <span className="text-sm font-semibold text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-5 rounded-[20px] md:col-span-2 flex flex-col justify-between group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-9 h-9 rounded-lg bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 mb-3 group-hover:rotate-3 transition-transform hover:bg-primary/25">
-              <BarChart3 size={18} />
+          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-14 h-14 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 group-hover:rotate-3 transition-transform hover:bg-primary/25">
+              <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-muted uppercase tracking-[0.2em] mb-0.5">Activity Tracking</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-bold text-heading tracking-tight">
+              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.2em] mb-0.5">Activity Tracking</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-[11px] font-semibold text-primary-strong">Total Events</span>
+                <span className="text-sm font-semibold text-primary-strong">Total Events</span>
               </div>
             </div>
           </div>
@@ -260,11 +289,11 @@ export default function DashboardPage() {
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-heading" size={18} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#23468C] z-10 pointer-events-none" size={24} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search events..."
-              className="w-full pl-11 pr-4 py-3 bg-white/70 backdrop-blur-md border border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm shadow-sm"
+              className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur-md border border-white/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -285,41 +314,47 @@ export default function DashboardPage() {
               filteredEvents.map((evt) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className="group flex flex-col justify-between h-full glass-panel p-4 rounded-2xl transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/40">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary-strong border border-primary/20">
-                      <Calendar size={18} />
+                <div key={evt.id} className={`group flex flex-col justify-between min-h-[380px] glass-panel p-8 rounded-[32px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                  <div className="flex items-start justify-between mb-8">
+                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border border-border/50 shadow-sm overflow-hidden group-hover:scale-110 transition-transform duration-500 p-2">
+                      {evt.logo_url ? (
+                        <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary-strong">
+                          <Calendar size={32} />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-0.5 rounded-full border ${status.classes}`}>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-xs font-bold text-primary-strong bg-primary/10 px-2.5 py-1 rounded-full">
+                      <div className="flex items-center text-sm font-bold text-primary-strong bg-primary/10 px-3 py-1.5 rounded-full">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-col gap-1.5 grow">
-                    <h3 className="font-bold text-xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2">
+                  <div className="flex flex-col gap-2 grow">
+                    <h3 className="font-bold text-2xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-tight">
                       {evt.name}
                     </h3>
                     
-                    <div className="flex flex-col gap-2 mt-auto pt-4 text-[13px] text-muted font-medium">
-                      <span className="flex items-center gap-2">
-                        <Calendar size={14} className="opacity-60" />
-                        {evt.date}
-                      </span>
-                      <span className="flex items-center gap-2">
-                        <MapPin size={14} className="opacity-60" />
-                        {evt.location}
-                      </span>
+                    <div className="flex flex-col gap-2.5 mt-auto pt-8 border-t border-border/40">
+                      <div className="flex items-center gap-2.5 text-heading font-bold bg-white/40 w-fit px-3 py-1.5 rounded-lg border border-white/60 shadow-sm">
+                        <Calendar size={18} className="text-primary-strong" />
+                        <span className="text-base tracking-tight">{evt.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 text-muted font-semibold bg-white/20 w-fit px-3 py-1.5 rounded-lg border border-white/40">
+                        <MapPin size={18} className="text-muted/60" />
+                        <span className="text-sm tracking-tight truncate max-w-[150px]">{evt.location}</span>
+                      </div>
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-5 pt-4 border-t border-border flex items-center justify-between text-sm font-bold text-heading hover:text-primary-strong transition-colors cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-8 pt-6 border-t border-border/60 flex items-center justify-between text-base font-bold text-heading hover:text-primary-strong transition-all cursor-pointer group-hover:text-primary-strong">
                     View Event
-                    <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
                 </div>
                 );
@@ -380,6 +415,12 @@ export default function DashboardPage() {
                   type="date"
                   value={eventForm.date}
                   onChange={(v) => setEventForm({ ...eventForm, date: v })}
+                />
+                <FilePicker
+                  label="Event Logo"
+                  value={eventForm.logo}
+                  onChange={(v) => setEventForm({ ...eventForm, logo: v })}
+                  onError={(msg) => toast.error(msg)}
                 />
               </div>
 

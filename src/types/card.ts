@@ -21,4 +21,5 @@ export type EventData = {
   date: string;
   user?: string;
   created?: string;
+  logo_url?: string;
 };

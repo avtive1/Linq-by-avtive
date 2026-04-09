@@ -8,6 +8,7 @@ import { Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { getEventStatus } from "@/lib/utils";
 
 function NewCardForm() {
   const router = useRouter();
@@ -31,6 +32,7 @@ function NewCardForm() {
   // Fetch event details for the locked header / preview.
   const [eventLoading, setEventLoading] = useState(!!eventId);
   const [eventMissing, setEventMissing] = useState(false);
+  const [eventPast, setEventPast] = useState(false);
 
   useEffect(() => {
     if (!eventId) return;
@@ -43,6 +45,11 @@ function NewCardForm() {
       if (error || !data) {
         setEventMissing(true);
       } else {
+        const status = getEventStatus(data.date);
+        if (status.label === "Past") {
+          setEventPast(true);
+        }
+
         setForm((f) => ({
           ...f,
           eventName: data.name || "",
@@ -185,17 +192,26 @@ function NewCardForm() {
     );
   }
 
-  if (eventMissing) {
+  if (eventPast) {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[32px] shadow-2xl max-w-sm">
-          <p className="text-heading font-semibold">Event not found</p>
-          <p className="text-sm text-muted">
-            This registration link is no longer valid. Please ask your organizer for a new one.
+        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-[40px] shadow-2xl max-w-md border border-amber-500/20">
+          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+            <Lock size={32} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-2xl font-bold text-heading tracking-tight">Registration Expired</h2>
+            <p className="text-sm text-muted leading-relaxed">
+              We&apos;re sorry, but the registration for <span className="font-bold text-heading">{form.eventName}</span> has ended as the event date has passed.
+            </p>
+          </div>
+          <div className="w-full h-px bg-border/50" />
+          <p className="text-xs text-muted/60 font-medium italic">
+            If you are the organizer, please renew the event in your dashboard to reactivate registration.
           </p>
-          <Link href="/" className="mt-2">
-            <Button variant="secondary">Back to home</Button>
+          <Link href="/" className="mt-2 w-full">
+            <Button variant="secondary" fullWidth>Back to Home</Button>
           </Link>
         </div>
       </main>
