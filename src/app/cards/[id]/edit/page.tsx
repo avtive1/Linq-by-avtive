@@ -223,10 +223,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           <div className="flex flex-col gap-8">
             <Skeleton className="w-48 h-10" />
             <div className="flex flex-col gap-6">
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
             </div>
           </div>
         </div>
@@ -238,7 +238,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[32px] shadow-2xl max-w-sm">
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[12px] shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Card not found</p>
           <Link href="/dashboard" className="mt-2">
             <Button variant="secondary">Back to Dashboard</Button>
@@ -252,7 +252,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[32px] shadow-2xl max-w-sm">
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[12px] shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">You don&apos;t have permission to edit this card</p>
           <p className="text-sm text-muted">Only the event organizer can edit attendee cards.</p>
           <Link href="/dashboard" className="mt-2">

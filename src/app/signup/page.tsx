@@ -110,10 +110,10 @@ export default function SignupPage() {
         </div>
 
         {/* Signup Card */}
-        <div className="glass-panel rounded-[32px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
+        <div className="glass-panel rounded-[12px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
           {emailSent ? (
             <div className="flex flex-col items-center text-center gap-4 py-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center text-primary-strong">
+              <div className="w-14 h-14 rounded-[10px] bg-primary/15 flex items-center justify-center text-primary-strong">
                 <Mail size={26} />
               </div>
               <div className="flex flex-col gap-1.5">

@@ -46,7 +46,7 @@ export function TextInput({
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-xl shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-lg shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
             : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
@@ -124,7 +124,7 @@ export function Button({
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
       className={`
-        flex items-center justify-center gap-2 rounded-xl font-bold transition-all duration-300 active:scale-95
+        flex items-center justify-center gap-2 rounded-lg font-bold transition-all duration-300 active:scale-95
         ${sizeClasses[size]}
         ${isPrimary 
           ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
@@ -172,7 +172,7 @@ export function Select({
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-xl shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-lg shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
             : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
@@ -254,7 +254,7 @@ export function FilePicker({
         </div>
       )}
       <div className={`
-        relative flex items-center bg-white border rounded-xl shadow-sm overflow-hidden transition-all duration-300
+        relative flex items-center bg-white border rounded-lg shadow-sm overflow-hidden transition-all duration-300
         ${error ? "border-red-500" : "border-border/60 hover:border-primary/40 hover:bg-white"}
       `}>
         <input
@@ -286,7 +286,7 @@ export function FilePicker({
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative overflow-hidden bg-muted/20 rounded-xl ${className}`}>
+    <div className={`relative overflow-hidden bg-muted/20 rounded-lg ${className}`}>
       <div className="absolute inset-0 animate-shimmer" />
     </div>
   );

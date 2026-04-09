@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
           </span>
         </div>
 
-        <div className="glass-panel rounded-[32px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
+        <div className="glass-panel rounded-[12px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="flex flex-col gap-1.5">
               <h1 className="text-xl font-bold text-heading tracking-tight">Set a new password</h1>

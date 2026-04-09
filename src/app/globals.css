@@ -11,6 +11,10 @@
   --color-muted: #6B7280;
   --color-heading: #23468C;
   
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
   --radius-xl: 10px;
   --radius-2xl: 12px;
 }

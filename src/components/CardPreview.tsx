@@ -47,7 +47,7 @@ export function CardPreview({
       id={id}
       onClick={() => setIsZoomed((z) => !z)}
       className={`
-        relative bg-gradient-to-br from-white via-white to-light-2/40 border border-border rounded-2xl overflow-hidden shadow-xl
+        relative bg-gradient-to-br from-white via-white to-light-2/40 border border-border rounded-xl overflow-hidden shadow-xl
         transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] w-full cursor-pointer select-none
         ${isZoomed ? "scale-[1.04] shadow-2xl z-50 ring-4 ring-primary/20" : "scale-100"}
       `}
@@ -152,7 +152,7 @@ export function CardPreview({
           {/* QR Code — ONLY shown when user has a LinkedIn handle */}
           {qrUrl && (
             <div
-              className="bg-white border border-border/80 rounded-xl overflow-hidden flex-shrink-0 mt-[6%] p-1 shadow-sm"
+              className="bg-white border border-border/80 rounded-lg overflow-hidden flex-shrink-0 mt-[6%] p-1 shadow-sm"
               style={{ width: "clamp(40px, 55%, 90px)", height: "clamp(40px, 55%, 90px)" }}
             >
               <img

@@ -421,13 +421,13 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             </div>
           </div>
 
-          <Skeleton className="w-full h-32 rounded-[32px] mb-10" />
-          <Skeleton className="w-full h-14 rounded-2xl mb-8" />
+          <Skeleton className="w-full h-32 rounded-[12px] mb-10" />
+          <Skeleton className="w-full h-14 rounded-[10px] mb-8" />
 
           <div className="flex flex-col gap-4">
-            <Skeleton className="w-full h-24 rounded-[28px]" />
-            <Skeleton className="w-full h-24 rounded-[28px]" />
-            <Skeleton className="w-full h-24 rounded-[28px]" />
+            <Skeleton className="w-full h-24 rounded-[10px]" />
+            <Skeleton className="w-full h-24 rounded-[10px]" />
+            <Skeleton className="w-full h-24 rounded-[10px]" />
           </div>
         </div>
       </main>
@@ -468,13 +468,13 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-none">
                 {eventData.name}
               </h1>
-              <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${status.classes}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-[6px] border ${status.classes}`}>
                 {status.label}
               </span>
             </div>
             <div className="flex items-center gap-4 text-base text-muted mt-2 font-medium">
-              <span className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-xl border border-white/40 shadow-sm"><Calendar size={16} className="text-heading/80" /> {eventData.date}</span>
-              <span className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-xl border border-white/40 shadow-sm"><MapPin size={16} className="text-heading/80" /> {eventData.location}</span>
+              <span className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-lg border border-white/40 shadow-sm"><Calendar size={16} className="text-heading/80" /> {eventData.date}</span>
+              <span className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-lg border border-white/40 shadow-sm"><MapPin size={16} className="text-heading/80" /> {eventData.location}</span>
             </div>
           </div>
 
@@ -545,9 +545,9 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         </div>
 
         {/* Stats Section */}
-        <div className="glass-panel p-6 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm mb-10 group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 animate-slide-up delay-100">
+        <div className="glass-panel p-6 rounded-[12px] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm mb-10 group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 animate-slide-up delay-100">
           <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-16 h-16 rounded-[10px] bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-0.5">
@@ -580,7 +580,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             <input
               type="text"
               placeholder="Search attendees in this event..."
-              className="w-full pl-14 pr-6 py-4 bg-white/70 backdrop-blur-md border border-white/50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
+              className="w-full pl-14 pr-6 py-4 bg-white/70 backdrop-blur-md border border-white/50 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -589,7 +589,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
 
         {/* Cards list */}
         {cards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-[32px] gap-4 px-6 animate-slide-up delay-300">
+          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-[12px] gap-4 px-6 animate-slide-up delay-300">
             <div className="flex flex-col gap-1">
               <p className="text-heading font-bold text-lg">No attendees yet</p>
               <p className="text-sm text-muted">Share the registration link to invite attendees to register for this event.</p>
@@ -601,11 +601,11 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               filteredCards.map((card) => (
                 <div
                   key={card.id}
-                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-3.5 sm:p-4.5 rounded-[20px] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-3.5 sm:p-4.5 rounded-[10px] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
                 >
                   <div className="flex items-center gap-5 min-w-0">
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-2xl bg-white border border-border overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-500">
+                      <div className="w-14 h-14 rounded-[10px] bg-white border border-border overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-500">
                         {card.photo ? (
                           <img src={card.photo} alt={card.name} className="w-full h-full object-cover" />
                         ) : (
@@ -622,7 +622,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                           {card.name}
                         </h3>
                         {card.company && (
-                          <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded-full border border-primary/20 text-primary-strong font-bold uppercase tracking-tight shrink-0">
+                          <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded-[6px] border border-primary/20 text-primary-strong font-bold uppercase tracking-tight shrink-0">
                             {card.company}
                           </span>
                         )}
@@ -643,12 +643,12 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
 
                   <div className="flex items-center gap-2 sm:gap-3">
                     <Link href={`/cards/${card.id}`} className="flex-shrink-0">
-                      <Button variant="secondary" size="sm" icon={<ExternalLink size={14} />} className="rounded-xl h-10 px-4 font-bold text-xs bg-white/50 border-white/60">
+                      <Button variant="secondary" size="sm" icon={<ExternalLink size={14} />} className="rounded-lg h-10 px-4 font-bold text-xs bg-white/50 border-white/60">
                         View
                       </Button>
                     </Link>
                     <Link href={`/cards/${card.id}/edit`} className="flex-shrink-0">
-                      <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-xl h-10 px-4 font-bold text-xs bg-white/50 border-white/60">
+                      <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-lg h-10 px-4 font-bold text-xs bg-white/50 border-white/60">
                         Edit
                       </Button>
                     </Link>
@@ -656,7 +656,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                       variant="secondary"
                       size="sm"
                       onClick={() => handleDelete(card.id)}
-                      className="w-10 h-10 p-0 rounded-xl text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200 transition-all shrink-0"
+                      className="w-10 h-10 p-0 rounded-lg text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200 transition-all shrink-0"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -664,7 +664,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                 </div>
               ))
             ) : (
-              <div className="text-center py-16 glass-panel rounded-[32px] border-dashed">
+              <div className="text-center py-16 glass-panel rounded-[12px] border-dashed">
                 <p className="text-muted font-medium">No results found for &ldquo;{searchQuery}&rdquo;</p>
               </div>
             )}
@@ -679,7 +679,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[12px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-bold text-heading tracking-tight">Edit Event</h2>
@@ -746,7 +746,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isDeleting && setIsDeleteOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[12px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-bold text-red-500 tracking-tight">Delete event?</h2>
@@ -800,7 +800,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isRenewing && setIsRenewOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[12px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">

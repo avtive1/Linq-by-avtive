@@ -254,8 +254,8 @@ export default function DashboardPage() {
         {/* Bento Grid Statistics Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-8 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+          <div className="glass-panel p-6 rounded-[12px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-16 h-16 rounded-[10px] bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-0.5">
@@ -270,8 +270,8 @@ export default function DashboardPage() {
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-14 h-14 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
+          <div className="glass-panel p-6 rounded-[12px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-14 h-14 rounded-[10px] bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
               <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
@@ -293,7 +293,7 @@ export default function DashboardPage() {
             <input
               type="text"
               placeholder="Search events..."
-              className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur-md border border-white/60 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
+              className="w-full pl-14 pr-6 py-4 bg-white/80 backdrop-blur-md border border-white/60 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -302,7 +302,7 @@ export default function DashboardPage() {
 
         {/* Event Cards List */}
         {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-3xl gap-4 px-6">
+          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-[12px] gap-4 px-6">
             <div className="flex flex-col gap-1">
               <p className="text-heading font-medium">No events yet</p>
               <p className="text-sm text-muted">Create your first event to start inviting attendees.</p>
@@ -314,7 +314,7 @@ export default function DashboardPage() {
               filteredEvents.map((evt) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 sm:p-7 rounded-[32px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 sm:p-7 rounded-[12px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
                   <div className="flex items-start justify-between mb-5">
                     <div>
                       {evt.logo_url && (
@@ -324,10 +324,10 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2 ml-auto">
-                      <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${status.classes}`}>
+                      <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-[6px] border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-sm font-bold text-primary-strong bg-primary/10 px-3 py-1.5 rounded-full">
+                      <div className="flex items-center text-sm font-bold text-primary-strong bg-primary/10 px-3 py-1.5 rounded-[6px]">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
@@ -339,7 +339,7 @@ export default function DashboardPage() {
                     </h3>
                     
                     <div className="flex flex-col gap-3 mb-6">
-                      <div className="flex items-center gap-3 text-heading font-semibold bg-white/40 w-fit px-3 py-2 rounded-xl border border-white/60 shadow-sm">
+                      <div className="flex items-center gap-3 text-heading font-semibold bg-white/40 w-fit px-3 py-2 rounded-lg border border-white/60 shadow-sm">
                         <Calendar size={20} className="text-primary-strong" />
                         <span className="text-lg tracking-tight">{evt.date}</span>
                       </div>
@@ -358,7 +358,7 @@ export default function DashboardPage() {
                 );
               })
             ) : (
-              <div className="col-span-full text-center py-12 glass-panel rounded-3xl border-dashed">
+              <div className="col-span-full text-center py-12 glass-panel rounded-[12px] border-dashed">
                 <p className="text-muted text-sm">No events found matching your search.</p>
               </div>
             )}
@@ -375,7 +375,7 @@ export default function DashboardPage() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
             onClick={() => setIsEventModalOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[12px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">

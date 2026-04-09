@@ -179,7 +179,7 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[32px] shadow-2xl max-w-sm">
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[12px] shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Invalid registration link</p>
           <p className="text-sm text-muted">
             This page can only be opened from an event registration link provided by your organizer.
@@ -196,8 +196,8 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-[40px] shadow-2xl max-w-md border border-amber-500/20">
-          <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-600">
+        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-[12px] shadow-2xl max-w-md border border-amber-500/20">
+          <div className="w-16 h-16 rounded-[10px] bg-amber-500/10 flex items-center justify-center text-amber-600">
             <Lock size={32} />
           </div>
           <div className="flex flex-col gap-2">
@@ -243,13 +243,13 @@ function NewCardForm() {
           </div>
 
           {eventLoading && (
-            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
               <Lock size={14} />
               Loading event details...
             </div>
           )}
           {!eventLoading && (
-            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
               <Lock size={14} />
               Event details are pre-filled from the organizer.
             </div>
@@ -397,20 +397,20 @@ export default function NewCardPage() {
               <Skeleton className="w-full h-4" />
             </div>
             <div className="flex flex-col gap-6">
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
-              <Skeleton className="w-full h-14 rounded-xl" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
+              <Skeleton className="w-full h-14 rounded-lg" />
             </div>
-            <Skeleton className="w-full h-12 rounded-xl mt-4" />
+            <Skeleton className="w-full h-12 rounded-lg mt-4" />
           </div>
         </div>
 
         {/* Skeleton Preview */}
         <div className="flex-1 flex flex-col items-center py-8 px-6 lg:h-screen">
           <Skeleton className="w-24 h-4 mb-6" />
-          <Skeleton className="w-full max-w-[600px] aspect-[800/420] rounded-2xl shadow-xl" />
+          <Skeleton className="w-full max-w-[600px] aspect-[800/420] rounded-xl shadow-xl" />
           <Skeleton className="w-48 h-4 mt-6" />
         </div>
       </main>
