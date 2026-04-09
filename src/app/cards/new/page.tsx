@@ -290,12 +290,6 @@ function NewCardForm() {
               onChange={update("email")}
             />
             <TextInput
-              label="Track (Optional)"
-              placeholder="Track"
-              value={form.track}
-              onChange={update("track")}
-            />
-            <TextInput
               label="LinkedIn (Optional)"
               placeholder="linkedin.com/in/yourhandle"
               value={form.linkedin}

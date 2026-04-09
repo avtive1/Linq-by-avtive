@@ -17,7 +17,13 @@ export function CardPreview({
 
   const badgeId = data.id?.slice(-8).toUpperCase() || "PREVIEW";
   // QR code: only generate if user has a linkedin handle
-  const linkedinHandle = data.linkedin?.trim() || "";
+  const rawLinkedin = data.linkedin?.trim() || "";
+  const linkedinHandle = rawLinkedin
+    .replace(/https?:\/\//, "")
+    .replace(/www\.linkedin\.com\/in\//, "")
+    .replace(/linkedin\.com\/in\//, "")
+    .replace(/\/$/, "")
+    .split("/")[0];
 
   useEffect(() => {
     let cancelled = false;

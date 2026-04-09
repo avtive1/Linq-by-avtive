@@ -318,8 +318,8 @@ export default function DashboardPage() {
                   <div className="flex items-start justify-between mb-5">
                     <div>
                       {evt.logo_url && (
-                        <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center border border-border/40 shadow-md overflow-hidden group-hover:scale-110 transition-transform duration-500 p-1">
-                          <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-contain" />
+                        <div className="w-20 h-20 rounded-[10px] bg-white flex items-center justify-center border border-border/40 shadow-md overflow-hidden group-hover:scale-110 transition-transform duration-500 p-1.5">
+                          <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-contain rounded-[6px]" />
                         </div>
                       )}
                     </div>
