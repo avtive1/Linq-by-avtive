@@ -263,10 +263,19 @@ export function FilePicker({
           onChange={handleFileChange}
           className="absolute inset-0 opacity-0 cursor-pointer z-10"
         />
-        <div className="flex-1 px-4 py-3 text-base text-muted/60 truncate">
-          {value ? "Photo selected" : "Choose File"}
-        </div>
-        <div className="px-4 py-3 bg-surface border-l border-border text-sm font-semibold text-muted">
+        {value ? (
+          <div className="flex items-center gap-3 px-3 py-2 flex-1 overflow-hidden">
+            <div className="w-8 h-8 rounded border border-border/50 overflow-hidden flex-shrink-0 flex items-center justify-center p-0.5">
+              <img src={value} alt="Preview" className="w-full h-full object-contain rounded-sm" />
+            </div>
+            <span className="text-base text-heading font-medium truncate">Photo selected</span>
+          </div>
+        ) : (
+          <div className="flex-1 px-4 py-3 text-base text-muted/60 truncate">
+            Choose File
+          </div>
+        )}
+        <div className="px-4 py-3 bg-surface border-l border-border text-sm font-semibold text-muted h-full flex items-center">
           Browse
         </div>
       </div>

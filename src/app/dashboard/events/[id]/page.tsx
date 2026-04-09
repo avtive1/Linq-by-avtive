@@ -453,28 +453,28 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
       <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up">
-          <div className="flex flex-col gap-1 sm:gap-2">
+          <div className="flex flex-col gap-1.5 sm:gap-2.5">
             <Link
               href="/dashboard"
-              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-1 sm:-ml-2"
+              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-2 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               BACK TO DASHBOARD
             </Link>
-            <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+            <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase mt-1">
               EVENT DETAILS
             </span>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight leading-none">
+            <div className="flex flex-wrap items-center gap-3 mt-1">
+              <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-none">
                 {eventData.name}
               </h1>
-              <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full border ${status.classes}`}>
+              <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${status.classes}`}>
                 {status.label}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted mt-1 font-medium">
-              <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-lg border border-white/40 shadow-sm"><Calendar size={13} className="text-heading" /> {eventData.date}</span>
-              <span className="flex items-center gap-1.5 bg-white/50 px-2 py-1 rounded-lg border border-white/40 shadow-sm"><MapPin size={13} className="text-heading" /> {eventData.location}</span>
+            <div className="flex items-center gap-4 text-base text-muted mt-2 font-medium">
+              <span className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-xl border border-white/40 shadow-sm"><Calendar size={16} className="text-heading/80" /> {eventData.date}</span>
+              <span className="flex items-center gap-2 bg-white/50 px-3 py-1.5 rounded-xl border border-white/40 shadow-sm"><MapPin size={16} className="text-heading/80" /> {eventData.location}</span>
             </div>
           </div>
 
@@ -545,18 +545,18 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         </div>
 
         {/* Stats Section */}
-        <div className="glass-panel p-5 sm:p-6 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm mb-10 animate-slide-up delay-100">
-          <div className="flex items-center gap-5">
-            <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/20 shrink-0">
-              <Users size={28} />
+        <div className="glass-panel p-6 rounded-[24px] flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-sm mb-10 group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 animate-slide-up delay-100">
+          <div className="flex items-center gap-6">
+            <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+              <Users size={32} />
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.2em]">Live Attendees</span>
+              <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em]">Live Attendees</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-heading tracking-tight">
+                <span className="text-6xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className="text-sm font-semibold text-primary-strong">Generated Cards</span>
+                <span className="text-lg font-semibold text-primary-strong">Generated Cards</span>
               </div>
             </div>
           </div>

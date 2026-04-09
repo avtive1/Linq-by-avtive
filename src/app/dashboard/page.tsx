@@ -216,15 +216,15 @@ export default function DashboardPage() {
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               BACK TO HOME
             </Link>
-            <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+            <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
               AVTIVE
             </span>
             <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-none">
               Dashboard
             </h1>
             {userName && (
-              <p className="text-base text-muted flex items-center gap-1.5">
-                <User size={15} className="text-primary-strong/70" />
+              <p className="text-xl font-medium text-muted flex items-center gap-1.5 mt-1">
+                <User size={18} className="text-primary-strong/70" />
                 {userName}
               </p>
             )}
@@ -261,26 +261,26 @@ export default function DashboardPage() {
             <div className="flex flex-col gap-0.5">
               <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em]">Live Presence</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-heading tracking-tight">
+                <span className="text-6xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-sm font-semibold text-primary-strong">Attendees</span>
+                <span className="text-lg font-semibold text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
           
           {/* Secondary Stat - Active Events */}
           <div className="glass-panel p-6 rounded-[24px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-14 h-14 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 group-hover:rotate-3 transition-transform hover:bg-primary/25">
+            <div className="w-14 h-14 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
               <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
               <span className="text-[11px] font-bold text-muted uppercase tracking-[0.2em] mb-0.5">Activity Tracking</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-heading tracking-tight">
+                <span className="text-6xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-sm font-semibold text-primary-strong">Total Events</span>
+                <span className="text-lg font-semibold text-primary-strong">Total Events</span>
               </div>
             </div>
           </div>
@@ -314,18 +314,16 @@ export default function DashboardPage() {
               filteredEvents.map((evt) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className={`group flex flex-col justify-between min-h-[380px] glass-panel p-8 rounded-[32px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
-                  <div className="flex items-start justify-between mb-8">
-                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center border border-border/50 shadow-sm overflow-hidden group-hover:scale-110 transition-transform duration-500 p-2">
-                      {evt.logo_url ? (
-                        <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-contain" />
-                      ) : (
-                        <div className="w-full h-full bg-primary/10 flex items-center justify-center text-primary-strong">
-                          <Calendar size={32} />
+                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 sm:p-7 rounded-[32px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                  <div className="flex items-start justify-between mb-5">
+                    <div>
+                      {evt.logo_url && (
+                        <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center border border-border/40 shadow-md overflow-hidden group-hover:scale-110 transition-transform duration-500 p-1">
+                          <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-contain" />
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-col items-end gap-2">
+                    <div className="flex flex-col items-end gap-2 ml-auto">
                       <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-full border ${status.classes}`}>
                         {status.label}
                       </span>
@@ -335,26 +333,26 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-col gap-2 grow">
-                    <h3 className="font-bold text-2xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-tight">
+                  <div className="flex flex-col grow">
+                    <h3 className="font-bold text-3xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-tight mb-4">
                       {evt.name}
                     </h3>
                     
-                    <div className="flex flex-col gap-2.5 mt-auto pt-8 border-t border-border/40">
-                      <div className="flex items-center gap-2.5 text-heading font-bold bg-white/40 w-fit px-3 py-1.5 rounded-lg border border-white/60 shadow-sm">
-                        <Calendar size={18} className="text-primary-strong" />
-                        <span className="text-base tracking-tight">{evt.date}</span>
+                    <div className="flex flex-col gap-3 mb-6">
+                      <div className="flex items-center gap-3 text-heading font-semibold bg-white/40 w-fit px-3 py-2 rounded-xl border border-white/60 shadow-sm">
+                        <Calendar size={20} className="text-primary-strong" />
+                        <span className="text-lg tracking-tight">{evt.date}</span>
                       </div>
-                      <div className="flex items-center gap-2.5 text-muted font-semibold bg-white/20 w-fit px-3 py-1.5 rounded-lg border border-white/40">
-                        <MapPin size={18} className="text-muted/60" />
-                        <span className="text-sm tracking-tight truncate max-w-[150px]">{evt.location}</span>
+                      <div className="flex items-center gap-3 text-muted font-medium px-1">
+                        <MapPin size={20} className="text-muted/60" />
+                        <span className="text-lg tracking-tight truncate max-w-[200px]">{evt.location}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-8 pt-6 border-t border-border/60 flex items-center justify-between text-base font-bold text-heading hover:text-primary-strong transition-all cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-5 border-t border-border/60 flex items-center justify-between text-lg font-bold text-heading hover:text-primary-strong transition-all cursor-pointer group-hover:text-primary-strong">
                     View Event
-                    <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
+                    <ChevronRight size={24} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
                 </div>
                 );
