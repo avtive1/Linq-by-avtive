@@ -39,30 +39,19 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
     }
   };
 
-  const handleShareLinkedIn = async () => {
-    if (!cardRef.current) return;
+  const handleShareLinkedIn = () => {
     setIsDownloading(true);
     try {
-      const dataUrl = await toPng(cardRef.current, {
-        quality: 1,
-        pixelRatio: 2,
-        backgroundColor: "#ffffff",
-        skipFonts: false,
-      });
-
-      const link = document.createElement("a");
-      link.download = `avtive-card-[${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}].png`;
-      link.href = dataUrl;
-      link.click();
-      
-      toast.success("Card saved! Opening LinkedIn...");
+      toast.success("Opening LinkedIn share...");
       
       setTimeout(() => {
-        window.open("https://www.linkedin.com/feed/?shareActive=true", "_blank");
-      }, 1500);
+        // We use window.location.href to share the current card's public URL.
+        const shareUrl = encodeURIComponent(window.location.href);
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, "_blank", "width=800,height=600");
+      }, 500);
     } catch (err) {
-      console.error("Failed to prepare card:", err);
-      toast.error("Failed to prepare card for LinkedIn. Please try again.");
+      console.error("Failed to open LinkedIn:", err);
+      toast.error("Failed to open LinkedIn. Please try again.");
     } finally {
       setIsDownloading(false);
     }
