@@ -556,7 +556,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             <div className="flex flex-col gap-0.5">
               <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em]">Live Attendees</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-bold text-heading tracking-tight">
+                <span className="text-5xl font-bold text-heading tracking-tight">
                   <AnimatedCounter value={cards.length} />
                 </span>
                 <span className="text-lg font-semibold text-primary-strong">Generated Cards</span>
@@ -579,11 +579,11 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-slide-up delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#23468C] z-10 pointer-events-none" size={22} strokeWidth={2.5} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#23468C] z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search attendees in this event..."
-              className="w-full pl-14 pr-6 py-4 bg-white/70 backdrop-blur-md border border-white/50 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
+              className="w-full pl-14 pr-6 py-3 bg-white/70 backdrop-blur-md border border-white/50 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
