@@ -4,7 +4,7 @@ import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
@@ -34,6 +34,35 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
     } catch (err) {
       console.error("Failed to download card:", err);
       toast.error("Failed to generate download. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleShareLinkedIn = async () => {
+    if (!cardRef.current) return;
+    setIsDownloading(true);
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        skipFonts: false,
+      });
+
+      const link = document.createElement("a");
+      link.download = `avtive-card-[${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}].png`;
+      link.href = dataUrl;
+      link.click();
+      
+      toast.success("Card saved! Opening LinkedIn...");
+      
+      setTimeout(() => {
+        window.open("https://www.linkedin.com/feed/?shareActive=true", "_blank");
+      }, 1500);
+    } catch (err) {
+      console.error("Failed to prepare card:", err);
+      toast.error("Failed to prepare card for LinkedIn. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -73,14 +102,25 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
             </div>
           )}
 
-          <Button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            icon={<Download size={18} />}
-            className="shadow-lg shadow-primary/20 min-w-[160px]"
-          >
-            {isDownloading ? "Preparing…" : "Download Card"}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleShareLinkedIn}
+              disabled={isDownloading}
+              variant="blue"
+              icon={<Share2 size={16} />}
+              className="shadow-lg min-w-[160px]"
+            >
+              Post to LinkedIn
+            </Button>
+            <Button
+              onClick={handleDownload}
+              disabled={isDownloading}
+              icon={<Download size={18} />}
+              className="shadow-lg shadow-primary/20 min-w-[160px]"
+            >
+              {isDownloading ? "Preparing…" : "Download"}
+            </Button>
+          </div>
         </div>
 
         <div className="w-full flex justify-center">
@@ -98,8 +138,8 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
         <div className="text-center flex flex-col gap-2">
           <p className="text-sm text-slate-400 font-medium leading-relaxed">
             Your attendee card is ready. Click{" "}
-            <span className="text-muted font-bold">Download Card</span> to
-            save it as a high-quality PNG image (800 × 420 px).
+            <span className="text-heading font-bold">Post to LinkedIn</span> to 
+            download the image and launch a new post.
           </p>
           <span className="text-[10px] font-bold tracking-[0.25em] text-heading/30 uppercase">
             Badge ID: {card.id.slice(-8).toUpperCase()}
