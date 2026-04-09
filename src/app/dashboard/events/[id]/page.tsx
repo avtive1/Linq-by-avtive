@@ -3,7 +3,8 @@ import { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter } from "@/components/ui";
+import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
+
 import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
 import {
   Plus,
@@ -22,12 +23,11 @@ import {
   Copy,
   X,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
+
 import { CardData, EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
-import { FilePicker } from "@/components/ui";
 
 type AttendeeCard = CardData & { photo_path?: string };
 
@@ -218,8 +218,18 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
 
   const handleRenewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!renewForm.location || !renewForm.date) {
-      toast.error("Please provide a new location and date.");
+
+    // Validate all required fields
+    if (!renewForm.date) {
+      toast.error("Please provide a new date for the event.");
+      return;
+    }
+    if (!renewForm.location.trim()) {
+      toast.error("Please provide a new location for the event.");
+      return;
+    }
+    if (!renewForm.logo) {
+      toast.error("Please upload a logo for the event.");
       return;
     }
 
@@ -235,7 +245,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
     try {
       let logo_url = eventData?.logo_url || "";
 
-      // Handle logo upload if changed
+      // Upload new logo
       if (renewForm.logo && renewForm.logo.startsWith('data:')) {
         const res = await fetch(renewForm.logo);
         const blob = await res.blob();
@@ -246,38 +256,53 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
           .from('event-logos')
           .upload(fileName, blob);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("Logo upload error:", uploadError);
+          throw new Error(`Logo upload failed: ${uploadError.message}`);
+        }
         const { data: { publicUrl } } = supabase.storage.from('event-logos').getPublicUrl(uploadData.path);
         logo_url = publicUrl;
       }
 
-      const { error } = await supabase
-        .from("events")
-        .update({
-          location: renewForm.location,
-          date: renewForm.date,
-          logo_url: logo_url,
-        })
-        .eq("id", id);
+      // Update event in DB — no user_id filter, RLS handles ownership
+      const updatePayload = {
+        location: renewForm.location.trim(),
+        date: renewForm.date,
+        logo_url: logo_url,
+      };
+      console.log("Renewing event:", id, updatePayload);
 
-      if (error) throw error;
+      const { data: updatedRows, error } = await supabase
+        .from("events")
+        .update(updatePayload)
+        .eq("id", id)
+        .select();
+
+      if (error) {
+        console.error("Supabase update error:", error);
+        throw new Error(`Database update failed: ${error.message}`);
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        console.error("Update ran but no rows were modified. Check RLS policies on events table.");
+        throw new Error("Update failed: no rows were modified. Check Supabase RLS policies.");
+      }
+
+      console.log("Update successful:", updatedRows[0]);
 
       setEventData((prev) => prev ? {
         ...prev,
-        location: renewForm.location,
+        location: renewForm.location.trim(),
         date: renewForm.date,
         logo_url: logo_url,
       } : prev);
 
       toast.success(`Event renewed successfully until ${renewForm.date}!`);
       setIsRenewOpen(false);
-      
-      // Force a push and refresh to ensure everything (including dashboard) reflects the new data
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err) {
-      console.error("Error renewing event:", err);
-      toast.error("Failed to renew event.");
+      // Stay on the same page — don't redirect
+    } catch (err: any) {
+      console.error("Renewal error:", err);
+      toast.error(err.message || "Failed to renew event. Please try again.");
     } finally {
       setIsRenewing(false);
     }
@@ -772,78 +797,68 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
       {isRenewOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
           <div
-            className="absolute inset-0 bg-heading/60 backdrop-blur-xl transition-opacity animate-in fade-in"
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isRenewing && setIsRenewOpen(false)}
           />
-          <div className="relative w-full max-w-[500px] glass-panel bg-white/95 border border-primary/20 rounded-[40px] shadow-[0_32px_128px_-16px_rgba(121,217,128,0.3)] overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary via-amber-400 to-primary animate-gradient-x" />
-            
-            <div className="px-10 pt-10 pb-6 flex items-center justify-between">
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2 text-primary-strong font-bold text-xs uppercase tracking-widest">
-                  <Sparkles size={14} />
-                  Renewal Portal
-                </div>
-                <h2 className="text-3xl font-bold text-heading tracking-tight">Renew Event</h2>
-                <p className="text-sm text-muted leading-relaxed">
-                  The previous event date has passed. Update below to reactivate your registration portal and attendee features.
-                </p>
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold text-heading tracking-tight">Renew Event</h2>
+                <p className="text-sm text-muted">Update the details to reactivate this event.</p>
               </div>
               <button
                 onClick={() => !isRenewing && setIsRenewOpen(false)}
-                className="w-12 h-12 rounded-full border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all shrink-0 hover:rotate-90 duration-300"
+                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleRenewSubmit} className="p-10 pt-4 flex flex-col gap-8">
-              <div className="flex flex-col gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-heading/60 uppercase tracking-widest pl-1">New Event Date</label>
-                  <TextInput
-                    required
-                    type="date"
-                    value={renewForm.date}
-                    onChange={(v) => setRenewForm({ ...renewForm, date: v })}
-                    className="!bg-primary/5 border-primary/20 focus:!border-primary/50"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-heading/60 uppercase tracking-widest pl-1">New Location (Optional)</label>
-                  <TextInput
-                    placeholder="e.g. London, UK"
-                    value={renewForm.location}
-                    onChange={(v) => setRenewForm({ ...renewForm, location: v })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-heading/60 uppercase tracking-widest pl-1">New Event Logo (Optional)</label>
-                  <FilePicker
-                    value={renewForm.logo}
-                    onChange={(v) => setRenewForm({ ...renewForm, logo: v })}
-                    onError={(msg) => toast.error(msg)}
-                  />
-                </div>
+            {/* Modal Body */}
+            <form onSubmit={handleRenewSubmit} className="p-8 pt-4 flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
+                <TextInput
+                  label="New Location"
+                  required
+                  placeholder="e.g. San Francisco, CA"
+                  value={renewForm.location}
+                  onChange={(v) => setRenewForm({ ...renewForm, location: v })}
+                />
+                <TextInput
+                  label="New Event Date"
+                  required
+                  type="date"
+                  value={renewForm.date}
+                  onChange={(v) => setRenewForm({ ...renewForm, date: v })}
+                />
+                <FilePicker
+                  label="New Event Logo"
+                  required
+                  value={renewForm.logo}
+                  onChange={(v) => setRenewForm({ ...renewForm, logo: v })}
+                  onError={(msg) => toast.error(msg)}
+                />
               </div>
 
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => setIsRenewOpen(false)}
+                  disabled={isRenewing}
+                  className="order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
                 <Button
                   type="submit"
                   fullWidth
                   disabled={isRenewing}
-                  className="h-14 text-lg font-bold shadow-xl shadow-primary/30 group relative overflow-hidden"
+                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
                 >
-                  <span className="relative z-10 flex items-center gap-2">
-                    {isRenewing ? "Reactivating..." : "Renew & Reactivate"}
-                    {!isRenewing && <RefreshCw size={20} className="group-hover:rotate-180 transition-transform duration-500" />}
-                  </span>
+                  {isRenewing ? "Renewing..." : "Renew Event"}
                 </Button>
-                <p className="text-[10px] text-center text-muted uppercase tracking-widest font-bold opacity-60">
-                  Resets registration link and unlocks all actions
-                </p>
               </div>
             </form>
           </div>
