@@ -632,39 +632,39 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               filteredCards.map((card) => (
                 <div
                   key={card.id}
-                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-3.5 sm:p-4.5 rounded-[10px] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel p-2 sm:p-3 rounded-[10px] transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
                 >
-                  <div className="flex items-center gap-5 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="relative">
-                      <div className="w-14 h-14 rounded-[10px] bg-white border border-border overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-500">
+                      <div className="w-12 h-12 rounded-[10px] bg-white border border-border overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-500">
                         {card.photo ? (
                           <img src={card.photo} alt={card.name} className="w-full h-full object-cover" />
                         ) : (
-                          <User size={24} strokeWidth={1.5} className="text-primary-strong/40" />
+                          <User size={20} strokeWidth={1.5} className="text-primary-strong/40" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-white font-bold border-2 border-white">
+                      <div className="absolute -bottom-1 -right-1 w-4.5 h-4.5 rounded-full bg-primary flex items-center justify-center text-[9px] text-white font-bold border-2 border-white">
                         {card.name.charAt(0)}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-bold text-base sm:text-xl text-heading group-hover:text-primary-strong transition-colors truncate">
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <h3 className="font-bold text-sm sm:text-lg text-heading group-hover:text-primary-strong transition-colors truncate">
                           {card.name}
                         </h3>
                         {card.company && (
-                          <span className="text-[10px] bg-primary/10 px-2 py-0.5 rounded-[6px] border border-primary/20 text-primary-strong font-bold uppercase tracking-tight shrink-0">
+                          <span className="text-[9px] bg-primary/10 px-1.5 py-0.5 rounded-[4px] border border-primary/20 text-primary-strong font-bold uppercase tracking-tight shrink-0">
                             {card.company}
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted font-bold uppercase tracking-[0.1em]">
-                        <span className="flex items-center gap-1.5">
-                          <BarChart3 size={12} className="text-primary-strong/70" />
+                      <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted font-bold uppercase tracking-[0.05em]">
+                        <span className="flex items-center gap-1">
+                          <BarChart3 size={10} className="text-primary-strong/70" />
                           {card.role}
                         </span>
                         {card.email && (
-                          <span className="hidden sm:inline-flex items-center gap-1.5 lowercase font-medium tracking-normal opacity-60">
+                          <span className="hidden sm:inline-flex items-center gap-1 lowercase font-medium tracking-normal opacity-60">
                             • {card.email}
                           </span>
                         )}
@@ -672,9 +672,9 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2">
                     <Link href={`/cards/${card.id}`} className="flex-shrink-0">
-                      <Button variant="secondary" size="sm" icon={<ExternalLink size={14} />} className="rounded-lg h-10 px-4 font-bold text-xs bg-white/50 border-white/60">
+                      <Button variant="secondary" size="sm" icon={<ExternalLink size={12} />} className="rounded-lg h-8 px-3 font-bold text-[10px] bg-white/50 border-white/60">
                         View
                       </Button>
                     </Link>

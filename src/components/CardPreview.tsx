@@ -66,7 +66,7 @@ export function CardPreview({
         <div className="flex flex-col flex-1 min-w-0 p-[5%]">
 
           {/* Event header */}
-          <div className="flex items-start justify-between mb-[4%]">
+          <div className="flex items-start justify-between mb-[2%]">
             <div>
               <p className="text-[clamp(7px,1vw,10px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">
                 EVENT
@@ -78,7 +78,7 @@ export function CardPreview({
           </div>
 
           {/* Small profile row (name + role) */}
-          <div className="flex items-center gap-[4%] mb-[5%]">
+          <div className="flex items-center gap-[4%] mb-[3%]">
             <div
               className="rounded-full overflow-hidden bg-light-3/40 border-[3px] border-white shadow-md flex-shrink-0 flex items-center justify-center text-heading/20"
               style={{ width: "clamp(44px, 9%, 76px)", height: "clamp(44px, 9%, 76px)" }}
@@ -103,7 +103,7 @@ export function CardPreview({
           </div>
 
           {/* Info grid — 2 col × 2 row */}
-          <div className="grid grid-cols-2 gap-x-[6%] gap-y-[4%] flex-1">
+          <div className="grid grid-cols-2 gap-x-[4%] gap-y-[2%] flex-1">
             <div>
               <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">EMAIL</p>
               <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.email || "hello@example.com"}</p>
@@ -123,7 +123,7 @@ export function CardPreview({
           </div>
 
           {/* Footer: Confirmed Attendee + avtive.co */}
-          <div className="mt-auto pt-[4%] border-t border-border/50">
+          <div className="mt-auto pt-[2%] border-t border-border/50">
             <p className="text-[clamp(5px,0.75vw,9px)] font-bold tracking-[0.22em] text-muted uppercase">
               CONFIRMED ATTENDEE
             </p>
@@ -134,11 +134,11 @@ export function CardPreview({
         </div>
 
         {/* ── Divider ── */}
-        <div className="w-px bg-border/50 self-stretch my-[4%]" />
+        <div className="w-px bg-border/50 self-stretch my-[2%]" />
 
         {/* ── RIGHT PANEL — large photo + QR (only if linkedin exists) ── */}
         <div
-          className="flex flex-col items-center justify-between flex-shrink-0 p-[4%]"
+          className="flex flex-col items-center justify-between flex-shrink-0 p-[2%]"
           style={{ width: "clamp(100px, 28%, 240px)" }}
         >
           {/* Large profile photo */}

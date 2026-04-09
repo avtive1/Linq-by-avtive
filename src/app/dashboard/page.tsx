@@ -325,11 +325,11 @@ export default function DashboardPage() {
               filteredEvents.map((evt) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 sm:p-7 rounded-[12px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
-                  <div className="flex items-start justify-between mb-5">
+                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 rounded-[12px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                  <div className="flex items-start justify-between mb-3">
                     <div>
                       {evt.logo_url && (
-                        <div className="w-20 h-20 rounded-[10px] bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-110 transition-transform duration-500 flex-shrink-0">
+                        <div className="w-20 h-20 rounded-[10px] bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-500 flex-shrink-0">
                           <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-cover block" />
                         </div>
                       )}
@@ -338,32 +338,32 @@ export default function DashboardPage() {
                       <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-[6px] border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-sm font-bold text-primary-strong bg-primary/10 px-3 py-1.5 rounded-[6px]">
+                      <div className="flex items-center text-[11px] font-bold text-primary-strong bg-primary/10 px-2.5 py-1 rounded-[6px]">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex flex-col grow">
-                    <h3 className="font-bold text-3xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-tight mb-4">
+                    <h3 className="font-bold text-2xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-tight mb-2">
                       {evt.name}
                     </h3>
                     
-                    <div className="flex flex-col gap-3 mb-6">
-                      <div className="flex items-center gap-3 text-heading font-semibold bg-white/40 w-fit px-3 py-2 rounded-lg border border-white/60 shadow-sm">
-                        <Calendar size={20} className="text-primary-strong" />
-                        <span className="text-lg tracking-tight">{evt.date}</span>
+                    <div className="flex flex-col gap-1.5 mb-5">
+                      <div className="flex items-center gap-2.5 text-heading font-semibold bg-white/40 w-fit px-2.5 py-1.5 rounded-lg border border-white/60 shadow-sm">
+                        <Calendar size={18} className="text-primary-strong" />
+                        <span className="text-base tracking-tight">{evt.date}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-muted font-medium px-1">
-                        <MapPin size={20} className="text-muted/60" />
-                        <span className="text-lg tracking-tight truncate max-w-[200px]">{evt.location}</span>
+                      <div className="flex items-center gap-2.5 text-muted font-medium px-1">
+                        <MapPin size={18} className="text-muted/60" />
+                        <span className="text-base tracking-tight truncate max-w-[200px]">{evt.location}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-5 border-t border-border/60 flex items-center justify-between text-lg font-bold text-heading hover:text-primary-strong transition-all cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-base font-bold text-heading hover:text-primary-strong transition-all cursor-pointer group-hover:text-primary-strong">
                     View Event
-                    <ChevronRight size={24} className="group-hover:translate-x-1.5 transition-transform" />
+                    <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
                 </div>
                 );
