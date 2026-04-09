@@ -559,7 +559,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               {isDuplicating ? "..." : "Duplicate"}
             </Button>
             <div 
-              title={cards.length > 0 ? "Events with registered attendees cannot be deleted. Remove all attendees first." : ""}
+              title={cards.length > 0 ? "Events with registered attendees cannot be deleted." : ""}
               className={cards.length > 0 ? "cursor-help" : ""}
             >
               <Button
