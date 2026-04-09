@@ -225,7 +225,7 @@ function NewCardForm() {
       {/* Left Sidebar - Form */}
       <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-6 md:p-11 overflow-y-auto lg:h-screen animate-slide-up">
         <div className="flex items-center gap-3 mb-8">
-          <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+          <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
             AVTIVE ATTENDEE PORTAL
           </span>
         </div>

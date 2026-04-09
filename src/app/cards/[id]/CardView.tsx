@@ -47,7 +47,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
         <div className="flex items-center justify-between">
           {isShareMode ? (
             <div className="flex items-center gap-3">
-               <span className="text-[12px] font-bold tracking-[0.2em] text-muted/40 uppercase">
+               <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
                  AVTIVE ATTENDEE PORTAL
                </span>
             </div>
