@@ -344,38 +344,60 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   };
 
   const handleDeleteEvent = async () => {
-    if (deleteConfirm !== eventData?.name) {
+    if (cards.length > 0) {
+      toast.error("You cannot delete an event with registered attendees.");
+      return;
+    }
+    if (deleteConfirm.trim() !== (eventData?.name || "").trim()) {
       toast.error("Event name does not match.");
       return;
     }
     setIsDeleting(true);
     try {
-      // Cascade: remove all attendee photos from storage, then delete attendees, then event.
+      // 1. Remove attendee photos from storage
       const photoPaths = cards
         .map((c) => c.photo_path)
         .filter((p): p is string => !!p);
 
       if (photoPaths.length > 0) {
-        await supabase.storage.from("attendee_photos").remove(photoPaths);
+        const { error: storageErr } = await supabase.storage.from("attendee_photos").remove(photoPaths);
+        if (storageErr) console.error("Storage delete warning:", storageErr); // Non-fatal
       }
 
-      const { error: attendeeErr } = await supabase
+      // 2. Delete attendees first (to avoid foreign key violations if not CASCADE)
+      const { data: deletedAttendees, error: attendeeErr } = await supabase
         .from("attendees")
         .delete()
-        .eq("event_id", id);
-      if (attendeeErr) throw attendeeErr;
+        .eq("event_id", id)
+        .select();
+      
+      if (attendeeErr) {
+        console.error("Attendee delete error:", attendeeErr);
+        throw new Error(`Could not delete attendees: ${attendeeErr.message}`);
+      }
 
-      const { error: eventErr } = await supabase
+      // 3. Delete the event itself
+      const { data: deletedEvent, error: eventErr } = await supabase
         .from("events")
         .delete()
-        .eq("id", id);
-      if (eventErr) throw eventErr;
+        .eq("id", id)
+        .select();
+        
+      if (eventErr) {
+        console.error("Event delete error:", eventErr);
+        throw new Error(`Could not delete event: ${eventErr.message}`);
+      }
 
-      toast.success("Event deleted.");
+      // 4. Verification Check: Did RLS silently block it?
+      if (!deletedEvent || deletedEvent.length === 0) {
+        throw new Error("RLS Blocked: You do not have DELETE permission on the 'events' table in Supabase. Please add a DELETE policy.");
+      }
+
+      toast.success("Event deleted permanently.");
       router.push("/dashboard");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error deleting event:", err);
-      toast.error("Failed to delete event.");
+      toast.error(err.message || "Failed to delete event.");
     } finally {
       setIsDeleting(false);
     }
@@ -536,14 +558,20 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
             >
               {isDuplicating ? "..." : "Duplicate"}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => { setDeleteConfirm(""); setIsDeleteOpen(true); }}
-              icon={<Trash2 size={16} />}
-              className="text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50"
+            <div 
+              title={cards.length > 0 ? "Events with registered attendees cannot be deleted. Remove all attendees first." : ""}
+              className={cards.length > 0 ? "cursor-help" : ""}
             >
-              Delete
-            </Button>
+              <Button
+                variant="secondary"
+                onClick={() => { setDeleteConfirm(""); setIsDeleteOpen(true); }}
+                disabled={cards.length > 0}
+                icon={<Trash2 size={16} />}
+                className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+              >
+                Delete
+              </Button>
+            </div>
           </div>
         </div>
 
