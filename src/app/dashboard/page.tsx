@@ -52,26 +52,38 @@ export default function DashboardPage() {
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
-      const [attendeeRes, eventRes] = await Promise.all([
-        supabase.from("attendees").select("*", { count: 'exact' }).eq('user_id', userId).order('created_at', { ascending: false }),
-        supabase.from("events").select("*").eq('user_id', userId).order('created_at', { ascending: false })
-      ]);
-      
-      if (attendeeRes.error) throw attendeeRes.error;
-      if (eventRes.error) throw eventRes.error;
+      // 1. Fetch all events owned by this user
+      const { data: eventRecords, error: eventError } = await supabase
+        .from("events")
+        .select("*")
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
 
-      const attendeeRecords = attendeeRes.data || [];
-      const eventRecords = eventRes.data || [];
+      if (eventError) throw eventError;
+      const validEventRecords = eventRecords || [];
+
+      // 2. Fetch all attendees for THESE specific events (including public registrations)
+      const eventIds = validEventRecords.map(e => e.id);
+      let attendeeRecords: any[] = [];
+      
+      if (eventIds.length > 0) {
+        const { data: attendeeData, error: attendeeError } = await supabase
+          .from("attendees")
+          .select("*")
+          .in('event_id', eventIds);
+        
+        if (attendeeError) throw attendeeError;
+        attendeeRecords = attendeeData || [];
+      }
       
       const eventCounts = new Map<string, number>();
       attendeeRecords.forEach(a => {
-        // Count by event_id only — public registrations always carry event_id.
         if (a.event_id) {
           eventCounts.set(a.event_id, (eventCounts.get(a.event_id) || 0) + 1);
         }
       });
 
-      const mappedEvents: DashboardEventData[] = eventRecords.map(r => ({
+      const mappedEvents: DashboardEventData[] = validEventRecords.map(r => ({
         id: r.id,
         name: r.name,
         location: r.location,
@@ -82,7 +94,6 @@ export default function DashboardPage() {
       
       if (getIsMounted && !getIsMounted()) return;
 
-      if (getIsMounted && !getIsMounted()) return;
       setEvents(mappedEvents);
       
       setStats({
