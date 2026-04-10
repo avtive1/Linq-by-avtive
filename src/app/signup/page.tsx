@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { toast } from "sonner";
-import { Mail } from "lucide-react";
+import { Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function SignupPage() {
@@ -102,6 +102,16 @@ export default function SignupPage() {
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+        {/* Back Button */}
+        <Link 
+          href="/" 
+          className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong transition-all group"
+        >
+          <div className="w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          </div>
+          <span>Back to Home</span>
+        </Link>
         {/* Card Header Label */}
         <div className="mb-6 flex justify-center">
           <span className="text-[12px] font-bold tracking-[0.2em] text-muted/30 uppercase">
