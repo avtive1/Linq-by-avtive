@@ -140,7 +140,7 @@ function NewCardForm() {
           console.log("Generating social preview image...");
           const dataUrl = await toPng(cardRef.current, {
             quality: 1,
-            pixelRatio: 1.5,
+            pixelRatio: 2, // 2x for high resolution (1600x840)
             backgroundColor: "#ffffff",
           });
 
@@ -349,16 +349,30 @@ function NewCardForm() {
         </form>
       </div>
 
+      {/* Hidden container for high-resolution capture (Always 1:1 scale) */}
+      <div 
+        style={{ 
+          position: 'absolute', 
+          top: '-9999px', 
+          left: '-9999px', 
+          width: '800px', 
+          height: '420px',
+          overflow: 'hidden'
+        }}
+      >
+        <div ref={cardRef} style={{ width: '800px', height: '420px' }}>
+          <CardPreview data={form} />
+        </div>
+      </div>
+
       {/* Right Content - Preview with same scale as download screen */}
       <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
         <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase mb-6">
           Live Preview
         </h2>
 
-        {/* Same responsive scale wrapper as the download page */}
         <div className="preview-scale-wrapper w-full">
           <div
-            ref={cardRef}
             className="preview-card-capture"
             style={{ width: "800px", aspectRatio: "800/420" }}
           >
