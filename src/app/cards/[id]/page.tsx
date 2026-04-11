@@ -29,6 +29,12 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
       description: `Official attendee profile for ${record.name}.`,
       type: 'website',
       images: ogImage ? [{ url: ogImage, width: 800, height: 420, alt: `${record.name}'s Attendee Card` }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${record.name}'s Attendee Card`,
+      description: `Official attendee profile for ${record.name}.`,
+      images: ogImage ? [ogImage] : [],
     }
   };
 }
