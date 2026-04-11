@@ -355,12 +355,12 @@ function NewCardForm() {
           position: 'absolute', 
           top: '-9999px', 
           left: '-9999px', 
-          width: '800px', 
-          height: '420px',
+          width: '1200px', 
+          height: '627px',
           overflow: 'hidden'
         }}
       >
-        <div ref={cardRef} style={{ width: '800px', height: '420px' }}>
+        <div ref={cardRef} style={{ width: '1200px', height: '627px' }}>
           <CardPreview data={form} />
         </div>
       </div>
