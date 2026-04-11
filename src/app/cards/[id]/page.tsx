@@ -11,11 +11,15 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   const params = await props.params;
   const { data: record } = await supabase
     .from("attendees")
-    .select("name, event_name")
+    .select("name, event_name, card_preview_url")
     .eq("id", params.id)
     .single();
 
   if (!record) return { title: "Attendee Card | AVTIVE" };
+
+  const ogImage = record.card_preview_url 
+    ? getSupabaseFileUrl("card_previews", record.card_preview_url)
+    : undefined;
 
   return {
     title: `${record.name}'s Attendee Card | ${record.event_name || 'AVTIVE'}`,
@@ -24,6 +28,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
       title: `${record.name}'s Attendee Card`,
       description: `Official attendee profile for ${record.name}.`,
       type: 'website',
+      images: ogImage ? [{ url: ogImage, width: 800, height: 420, alt: `${record.name}'s Attendee Card` }] : [],
     }
   };
 }

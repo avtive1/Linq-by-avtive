@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
@@ -7,6 +7,7 @@ import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
 import { Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { supabase } from "@/lib/supabase";
+import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 
@@ -14,6 +15,7 @@ function NewCardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId") || "";
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -161,6 +163,60 @@ function NewCardForm() {
       if (insertError) {
         toast.error("Failed to save card. Please try again.");
         throw insertError;
+      }
+
+      // Generate Card Preview Image for Social Sharing
+      if (record && cardRef.current) {
+        try {
+          console.log("Generating social preview image...");
+          // 1. Generate PNG from the preview DOM element
+          const dataUrl = await toPng(cardRef.current, {
+            quality: 1,
+            pixelRatio: 1.5, // Slightly lower for faster upload but still high quality
+            backgroundColor: "#ffffff",
+          });
+
+          if (!dataUrl || dataUrl.length < 100) {
+            throw new Error("Generated image data is empty or too small.");
+          }
+
+          // 2. Convert Data URL to Blob
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+
+          // 3. Upload to 'card_previews' bucket
+          const previewFileName = `preview-${record.id}.png`;
+          console.log(`Uploading preview to storage: ${previewFileName}`);
+          const { data: previewData, error: previewUploadError } = await supabase.storage
+            .from('card_previews')
+            .upload(previewFileName, blob, { 
+              contentType: 'image/png',
+              upsert: true 
+            });
+
+          if (previewUploadError) {
+            console.error("Storage upload failed:", previewUploadError);
+            throw new Error(`Storage upload failed: ${previewUploadError.message}. Make sure the 'card_previews' bucket exists and is Public.`);
+          }
+
+          if (previewData) {
+            console.log("Image uploaded, updating database record...");
+            // 4. Update the record with the image path
+            const { error: updateError } = await supabase
+              .from('attendees')
+              .update({ card_preview_url: previewData.path })
+              .eq('id', record.id);
+            
+            if (updateError) {
+              console.error("Database update failed:", updateError);
+              throw new Error(`Database update failed: ${updateError.message}. Make sure the 'card_preview_url' column exists.`);
+            }
+            console.log("Social preview successfully generated and linked.");
+          }
+        } catch (previewErr: any) {
+          console.error("FAILED SOCIAL PREVIEW GENERATION:", previewErr);
+          toast.error("Note: Social sharing preview could not be generated. Please check console for details.");
+        }
       }
 
       toast.success("Attendee card saved successfully!");
@@ -325,6 +381,7 @@ function NewCardForm() {
         {/* Same responsive scale wrapper as the download page */}
         <div className="preview-scale-wrapper w-full">
           <div
+            ref={cardRef}
             className="preview-card-capture"
             style={{ width: "800px", aspectRatio: "800/420" }}
           >
