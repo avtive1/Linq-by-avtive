@@ -112,13 +112,16 @@ function NewCardForm() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const extractLinkedInHandle = (val: string) => {
+  const formatQrLink = (val: string) => {
     if (!val) return "";
-    return val
-      .replace(/https?:\/\//, "")
-      .replace(/www\.linkedin\.com\/in\//, "")
-      .replace(/\/$/, "")
-      .split("/")[0];
+    const clean = val.trim();
+    if (clean.startsWith("http://") || clean.startsWith("https://")) {
+      return clean;
+    }
+    if (clean.includes(".")) {
+      return `https://${clean}`; // Treat as a domain/custom URL
+    }
+    return clean; // Store just the handle if it's a simple username
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -188,7 +191,7 @@ function NewCardForm() {
         session_date: form.sessionDate,
         location: form.location,
         track: form.track || "",
-        linkedin: extractLinkedInHandle(form.linkedin),
+        linkedin: formatQrLink(form.linkedin),
         year: form.year,
         photo_url: photo_url,
         card_preview_url: card_preview_url,
@@ -380,123 +383,122 @@ function NewCardForm() {
         </div>
       </div>
 
-      {/* Right Content - Preview */}
-      <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
+        {/* Right Content - Preview */}
+        <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
 
+          <div className="w-full flex-1 flex flex-col items-center justify-start p-4 pt-12">
+             <div className="w-full flex flex-col 2xl:flex-row flex-wrap gap-16 xl:gap-24 items-center 2xl:items-start justify-center max-w-[1600px] mx-auto min-h-max pl-4 md:pl-12">
+                {/* Horizontal Card Preview */}
+                <div className="flex flex-col items-center gap-6 shrink-0 w-max">
+                   <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Social Post Layout</h3>
+                   <div className="preview-card-capture horizontal-preview">
+                      <CardPreview data={form} preview />
+                   </div>
+                   <Button 
+                      onClick={() => handleSubmit()} 
+                      disabled={loading}
+                      className="rounded-full px-12 h-12 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
+                   >
+                      {loading ? "Preparing..." : "View & Download Post"}
+                   </Button>
+                </div>
 
-        <div className="w-full flex-1 flex flex-col items-center justify-center p-4">
-           <div className={`w-full grid grid-cols-1 ${form.linkedin ? 'xl:grid-cols-2' : ''} gap-12 items-start justify-center max-w-[1400px]`}>
-              {/* Horizontal Card Preview */}
-              <div className="flex flex-col items-center gap-6">
-                 <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Social Post Layout</h3>
-                 <div className="preview-card-capture horizontal-preview">
-                    <CardPreview data={form} preview />
-                 </div>
-                 <Button 
-                    onClick={() => handleSubmit()} 
-                    disabled={loading}
-                    className="rounded-full px-12 h-12 shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                 >
-                    {loading ? "Preparing..." : "View & Share Horizontal Card"}
-                 </Button>
-              </div>
-
-              {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
-              {form.linkedin && (
-                 <div className="flex flex-col items-center gap-6 animate-fade-in">
-                    <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Event Badge Layout</h3>
-                    <div className="preview-card-capture vertical-preview">
-                       <CardPreview data={form} preview isVertical verticalSide={1} />
-                    </div>
-                    <Button 
-                       variant="secondary"
-                       onClick={() => setShowPrintPreview(true)} 
-                       className="rounded-full px-12 h-12 shadow-xl hover:bg-surface transition-all"
-                    >
-                       View & Print Vertical Badge
-                    </Button>
-                 </div>
-              )}
-           </div>
-        </div>
-
-
-
-        {/* Customization Toolbar - Moved Below Image */}
-        <div className="w-full max-w-[800px] mt-8 flex flex-col gap-6 animate-slide-up">
-           {/* Row 1: Layout Selection */}
-           <div className="glass-panel !bg-white/40 border border-white/10 p-4 rounded-2xl flex flex-col gap-3">
-              <span className="text-[10px] font-extrabold tracking-[0.2em] text-muted/60 uppercase text-center">Select Card Layout</span>
-              <div className="flex gap-4">
+                {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
+                {form.linkedin && (
+                   <div className="flex flex-col items-center gap-6 animate-fade-in shrink-0 w-max">
+                      <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Event Badge Layout</h3>
+                      <div className="preview-card-capture vertical-preview">
+                         <CardPreview data={form} preview isVertical verticalSide={1} />
+                      </div>
+                      <Button 
+                         variant="secondary"
+                         onClick={() => setShowPrintPreview(true)} 
+                         className="rounded-full px-12 h-12 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
+                      >
+                         Print Vertical Badge
+                      </Button>
+                   </div>
+                )}
+             </div>
+          </div>
+        <div className="w-full max-w-[1000px] mt-4 flex flex-col xl:flex-row gap-4 animate-slide-up bg-white/40 border border-white/10 p-3 rounded-2xl glass-panel shadow-sm">
+           {/* Item 1: Layout Selection */}
+           <div className="flex-1 flex flex-col gap-2">
+              <span className="text-[9px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Layout Selection</span>
+              <div className="flex gap-2 h-10">
                  <button
                     type="button"
                     onClick={() => update("designType")("design1")}
-                    className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition-all ${
+                    className={`flex-1 rounded-lg border text-[11px] font-bold transition-all ${
                        form.designType === "design1" 
-                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-[1.02]" 
+                          ? "bg-primary text-white border-primary shadow-md" 
                           : "bg-white/40 border-white/20 text-muted hover:bg-white/60"
                     }`}
                  >
-                    Design 1 (Standard)
+                    Design 1
                  </button>
                  <button
                     type="button"
                     onClick={() => update("designType")("design2")}
-                    className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition-all ${
+                    className={`flex-1 rounded-lg border text-[11px] font-bold transition-all ${
                        form.designType === "design2" 
-                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-[1.02]" 
+                          ? "bg-primary text-white border-primary shadow-md" 
                           : "bg-white/40 border-white/20 text-muted hover:bg-white/60"
                     }`}
                  >
-                    Design 2 (Modern)
+                    Design 2
                  </button>
               </div>
            </div>
 
-           {/* Row 2: Theme Selection */}
-           <div className="glass-panel !bg-white/40 border border-white/10 p-4 rounded-2xl flex flex-col items-center gap-3">
-              <span className="text-[10px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Pick Your Theme color</span>
-              <div className="flex gap-5">
+           <div className="w-px bg-white/20 hidden xl:block mx-1" />
+
+           {/* Item 2: Theme Selection */}
+           <div className="flex flex-col gap-2 items-center xl:items-start shrink-0">
+              <span className="text-[9px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Theme Color</span>
+              <div className="flex gap-3 h-10 items-center">
                  {colors.map((c) => (
                     <button
                        key={c.name}
                        type="button"
                        onClick={() => update("color")(c.name)}
-                       className={`w-10 h-10 rounded-full transition-all duration-300 relative overflow-hidden flex items-center justify-center p-0 ${
+                       className={`w-8 h-8 rounded-full transition-all duration-300 relative overflow-hidden flex items-center justify-center p-0 ${
                           form.color === c.name 
-                             ? "ring-4 ring-primary ring-offset-4 scale-110 shadow-xl" 
-                             : "hover:scale-110 border-2 border-white/40"
+                             ? "ring-2 ring-primary ring-offset-2 scale-110 shadow-md" 
+                             : "hover:scale-110 border border-white/40"
                        }`}
                        style={{ 
                           background: `linear-gradient(135deg, ${c.start}, ${c.end})`,
                           backgroundClip: "border-box",
                        }}
                     >
-                       <span className="absolute inset-0 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2)] pointer-events-none" />
+                       <span className="absolute inset-0 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),inset_0_-1px_2px_rgba(0,0,0,0.2)] pointer-events-none" />
                     </button>
                  ))}
               </div>
            </div>
 
-           {/* Row 3: Typography Selection */}
-           <div className="glass-panel !bg-white/40 border border-white/10 p-4 rounded-2xl flex flex-col gap-3">
-              <span className="text-[10px] font-extrabold tracking-[0.2em] text-muted/60 uppercase text-center">Customize Font Style</span>
-              <Select
-                 value={form.fontFamily}
-                 onChange={(val) => {
-                   const updateFn: any = update;
-                   updateFn("fontFamily")(val);
-                 }}
-                 options={[
-                    { label: "Inter (Default)", value: "inter" },
-                    { label: "Poppins", value: "poppins" },
-                    { label: "Google Sans (Premium)", value: "outfit" },
-                    { label: "Times New Roman", value: "times" },
-                 ]}
-              />
+           <div className="w-px bg-white/20 hidden xl:block mx-1" />
+
+           {/* Item 3: Typography Selection */}
+           <div className="flex-1 flex flex-col gap-2 max-w-[200px] xl:max-w-none">
+              <span className="text-[9px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Typography</span>
+              <div className="h-10">
+                 <Select
+                    value={form.fontFamily}
+                    onChange={(val) => {
+                      const updateFn: any = update;
+                      updateFn("fontFamily")(val);
+                    }}
+                    options={[
+                       { label: "Inter (Default)", value: "inter" },
+                       { label: "Poppins", value: "poppins" },
+                       { label: "Google Sans", value: "outfit" },
+                       { label: "Times New Roman", value: "times" },
+                    ]}
+                 />
+              </div>
            </div>
-
-
         </div>
 
 
@@ -541,17 +543,15 @@ function NewCardForm() {
       <style>{`
         .horizontal-preview {
           transform-origin: top center;
-          transform: scale(0.4);
+          transform: scale(0.65);
           width: 1200px;
           height: 628px;
-          margin-bottom: -376px;
+          margin-bottom: -220px;
         }
         .vertical-preview {
-          transform-origin: top center;
-          transform: scale(0.4);
+          position: relative;
           width: 576px;
           height: 1024px;
-          margin-bottom: -614px;
         }
         @media (max-width: 1024px) {
           .horizontal-preview { transform: scale(calc((100vw - 48px) / 1200)); margin-bottom: calc((628px * ((100vw - 48px) / 1200)) - 628px); }

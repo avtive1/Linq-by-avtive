@@ -70,7 +70,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
     <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-8 md:py-12 px-4 sm:px-6 overflow-x-hidden print:p-0">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up print:hidden">
+      <div className="no-print relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col gap-4">
              {isShareMode ? (
@@ -210,22 +210,47 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
       </div>
 
       {/* Printer optimized container */}
-      <div className="hidden print:block w-full h-full">
-         <div className="flex flex-col items-center gap-12 py-8">
-            <div style={{ width: "400px", height: "600px" }}>
-               <CardPreview data={card} isVertical verticalSide={1} />
-            </div>
-            <div style={{ width: "400px", height: "600px" }}>
-               <CardPreview data={card} isVertical verticalSide={2} />
+      <div className="print-only absolute top-0 left-0 w-full bg-white justify-center items-start pt-[1cm]">
+         <div style={{ width: "762px", height: "666px", position: "relative" }}>
+            <div style={{ transform: "scale(0.65)", transformOrigin: "top left", display: "flex", gap: "20px" }}>
+               <div style={{ width: "576px", height: "1024px" }}>
+                  <CardPreview data={card} isVertical={true} verticalSide={1} />
+               </div>
+               <div style={{ width: "576px", height: "1024px" }}>
+                  <CardPreview data={card} isVertical={true} verticalSide={2} />
+               </div>
             </div>
          </div>
       </div>
 
       <style>{`
+        @media screen {
+          .print-only { display: none !important; }
+        }
         @media print {
-           @page { margin: 0; size: auto; }
-           body { margin: 1cm; background: white !important; }
-           main { background: white !important; padding: 0 !important; }
+           @page { margin: 0; size: A4 portrait; }
+           
+           /* Force hide EVERYTHING that shouldn't be printed */
+           .no-print, .no-print * { display: none !important; }
+           
+           /* Force show ONLY the physical print layout */
+           .print-only {
+              display: flex !important;
+              flex-direction: row;
+           }
+
+           /* Bruteforce exact colors so the purple background renders on paper */
+           * {
+              -webkit-print-color-adjust: exact !important;
+              color-adjust: exact !important;
+              print-color-adjust: exact !important;
+           }
+
+           body, main { 
+              margin: 0 !important; 
+              padding: 0 !important; 
+              background: white !important; 
+           }
         }
         .card-scale-wrapper {
           display: flex;

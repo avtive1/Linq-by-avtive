@@ -43,24 +43,27 @@ export function CardPreview({
   const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;
 
   // LinkedIn / QR Logic
-  const rawLinkedin = data.linkedin?.trim() || "";
-  const linkedinHandle = rawLinkedin
-    .replace(/https?:\/\//, "")
-    .replace(/www\.linkedin\.com\/in\//, "")
-    .replace(/linkedin\.com\/in\//, "")
-    .replace(/\/$/, "")
-    .split("/")[0];
+  const rawQrInput = data.linkedin?.trim() || "";
+  let finalQrUrl = "";
+  if (rawQrInput) {
+    if (rawQrInput.startsWith("http://") || rawQrInput.startsWith("https://")) {
+      finalQrUrl = rawQrInput;
+    } else if (rawQrInput.includes(".")) {
+      finalQrUrl = `https://${rawQrInput}`;
+    } else {
+      finalQrUrl = `https://linkedin.com/in/${rawQrInput}`;
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
     const updateQr = async () => {
-      if (!linkedinHandle) {
+      if (!finalQrUrl) {
         if (!cancelled) setQrUrl(null);
         return;
       }
       try {
-        const linkedinUrl = `https://linkedin.com/in/${linkedinHandle}`;
-        const url = await QRCode.toDataURL(linkedinUrl, {
+        const url = await QRCode.toDataURL(finalQrUrl, {
           margin: 1,
           width: 400,
           color: { dark: "#000000", light: "#ffffff" },
@@ -72,7 +75,7 @@ export function CardPreview({
     };
     updateQr();
     return () => { cancelled = true; };
-  }, [linkedinHandle]);
+  }, [finalQrUrl]);
 
   if (isVertical) {
     const isDesign1 = data.designType === "design1";
