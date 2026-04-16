@@ -150,12 +150,28 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           </div>
         </div>
 
+        {/* Hidden 1:1 scale container strictly for clean, unscaled downloads */}
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px', overflow: 'hidden' }}>
+          <div 
+            ref={cardRef} 
+            style={{ 
+              width: viewMode === "horizontal" ? "1200px" : "576px", 
+              height: viewMode === "horizontal" ? "628px" : "1024px" 
+            }}
+          >
+            <CardPreview 
+               data={card} 
+               isVertical={viewMode === "vertical"} 
+               verticalSide={verticalSide} 
+            />
+          </div>
+        </div>
+
         <div className="w-full flex flex-col items-center gap-6">
           <div className="card-scale-wrapper w-full">
             <div
-              ref={cardRef}
               className="card-capture"
-              style={{ width: viewMode === "horizontal" ? "1200px" : "400px", aspectRatio: viewMode === "horizontal" ? "1200/628" : "400/600" }}
+              style={{ width: viewMode === "horizontal" ? "1200px" : "576px", height: viewMode === "horizontal" ? "628px" : "1024px" }}
             >
               <CardPreview 
                  data={card} 
