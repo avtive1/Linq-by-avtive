@@ -75,81 +75,151 @@ export function CardPreview({
   }, [linkedinHandle]);
 
   if (isVertical) {
+    const isDesign1 = data.designType === "design1";
     return (
       <div 
-        className="relative overflow-hidden bg-white shadow-2xl"
+        className="relative overflow-hidden shadow-2xl bg-[#141414] animate-fade-in"
         style={{ 
-          width: "400px", 
-          height: "600px", 
+          width: "576px", 
+          height: "1024px", 
           fontFamily: selectedFont,
-          borderRadius: "12px"
+          background: `linear-gradient(180deg, ${theme.start} 0%, ${theme.end} 100%)`,
         }}
       >
-        {/* Top Section */}
-        <div className="p-8 pb-0">
-           <div className="flex items-center gap-2 mb-6">
-              <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" alt="Icon" className="w-10 h-10 object-contain" />
-              <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" alt="Avtive" className="w-24 h-8 object-contain" />
-           </div>
-           <p className="text-[12px] font-bold tracking-[0.2em] text-slate-400 uppercase mb-1">I'M ATTENDING</p>
-           <h1 
-             className="text-3xl font-extrabold mb-4" 
-             style={{ 
-                color: theme.titleColor || theme.textColor || "#23468C",
-                lineHeight: "0.91",
-                letterSpacing: "-0.04em"
-             }}
-           >
-              {data.eventName?.split("<br />").map((t, i) => <span key={i}>{t}<br/></span>) || "Pakistan Tech\nSummit"}
-           </h1>
-           <div className="flex flex-col gap-2 text-[11px] text-slate-500 font-medium">
-              <span>📅 {data.sessionDate || "Friday, 11th April, 2026"}</span>
-              <span>📍 {data.location || "Expo Center, Islamabad, Pakistan"}</span>
-           </div>
-        </div>
+        {/* Background Overlays */}
+        <img 
+          src="https://www.figma.com/api/mcp/asset/cfa963ed-fe15-42b0-a98e-e2e901c4176a" 
+          className="absolute left-[-151px] top-[438px] w-[878px] h-[586px] object-cover opacity-[0.11] pointer-events-none max-w-none" 
+          alt="" 
+        />
+        {!isDesign1 && (
+          <img 
+            src="https://www.figma.com/api/mcp/asset/25c34327-5732-42c0-bf51-b701006d1883" 
+            className="absolute left-[-11px] top-[-1px] w-[590px] h-[543px] pointer-events-none max-w-none" 
+            alt="" 
+          />
+        )}
 
-        {/* Bottom Shape & Info */}
+
+        {/* Top Panel (White portion) */}
         <div 
-          className="absolute bottom-0 left-0 w-full h-[280px] flex flex-col items-center justify-center p-8"
+          className="absolute left-0 top-0 w-[576px] bg-white pointer-events-none"
           style={{ 
-            background: `linear-gradient(180deg, ${theme.start} 0%, ${theme.end} 100%)`,
-            clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 100%)",
-            color: theme.textColor || "white"
+            height: isDesign1 ? "447px" : "459px",
+            clipPath: isDesign1 
+              ? "none" 
+              : "polygon(0 0, 100% 0, 100% 447px, 464px 447px, 464px 542px, 369px 447px, 0 447px)"
+          }}
+        />
+
+
+
+        {/* Branding */}
+        <img 
+          src="https://www.figma.com/api/mcp/asset/7716a834-6d7b-4dbe-8553-370f4fddf5fc" 
+          className="absolute left-[86px] top-[40px] w-[154px] h-[44px] object-contain" 
+          alt="Avtive" 
+        />
+        <img 
+          src="https://www.figma.com/api/mcp/asset/be4bd848-b76e-4630-808c-cf77963ce6a7" 
+          className="absolute left-[31px] top-[42px] w-[47px] h-[44px] object-contain z-[5]" 
+          alt="" 
+        />
+
+        <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-[500] tracking-[3px] uppercase leading-none">
+          I'M ATTENDING
+        </p>
+
+        <h1 
+          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-[700] leading-[69.33px] tracking-[-2.99px]" 
+          style={{ 
+            color: theme.titleColor || "#5a2ed3",
+            fontFamily: selectedFont,
+            letterSpacing: "-2.99px"
           }}
         >
-          {verticalSide === 1 ? (
-             <div className="flex flex-col items-center text-center mt-6">
-                <div className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white/20 mb-4 bg-white/10 flex items-center justify-center">
-                   {data.photo ? (
-                     <img src={data.photo} className="w-full h-full object-cover" />
-                   ) : (
-                     <svg className="w-12 h-12 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                       <circle cx="12" cy="7" r="4" />
-                     </svg>
-                   )}
-                </div>
-                <h2 className="text-xl font-bold mb-1">{data.name || "Full Name"}</h2>
-                <p className="text-xs opacity-80">{data.role || "Role/Title"}</p>
-                <p className="text-xs opacity-60">{data.company || "Organization"}</p>
-             </div>
-          ) : (
-             <div className="flex flex-col items-center text-center mt-6">
-                <div className="bg-white p-2 rounded-xl mb-4">
-                   {qrUrl ? <img src={qrUrl} className="w-24 h-24" /> : <div className="w-24 h-24 bg-slate-100" />}
-                </div>
-                <h2 className="text-xl font-bold mb-1">{data.name || "Full Name"}</h2>
-                <p className="text-xs opacity-80">{data.role || "Role/Title"}</p>
-             </div>
-          )}
-          
-          <div className="mt-auto flex items-center gap-4 opacity-40 grayscale brightness-200">
-             <img src="https://www.figma.com/api/mcp/asset/60137d44-eb2a-4405-bd79-67be246fc1ec" alt="Logos" className="h-4 object-contain" />
+          {data.eventName?.split("<br />").map((t, i) => <span key={i} className="block">{t}</span>) || 
+            (<>
+              <span className="block">Pakistan Tech</span>
+              <span className="block">Summit</span>
+            </>)}
+        </h1>
+
+
+        {/* Meta Info - Precisely positioned per provided CSS */}
+        <p className="absolute left-[30px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
+          <img src="https://www.figma.com/api/mcp/asset/911c0336-0dbe-4d71-abd3-95e367313410" className="w-[15px] h-[15px]" alt="" />
+          {data.sessionDate || "Friday, 11th April, 2026"}
+        </p>
+        <p className="absolute left-[261px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
+          <img src="https://www.figma.com/api/mcp/asset/c70396aa-fad6-4461-a222-1ef86c1215c8" className="w-[15px] h-[15px]" alt="" />
+          05:00 PM (Pakistan Time)
+        </p>
+        <p className="absolute left-[30px] top-[390px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
+          <img src="https://www.figma.com/api/mcp/asset/09c9f77b-5728-4fe6-8b34-b3ad59fe884d" className="w-[15px] h-[15px]" alt="" />
+          {data.location || "Expo Center, Islamabad, Pakistan"}
+        </p>
+
+        {/* Central Element (Photo or QR) */}
+        {verticalSide === 1 ? (
+          /* SIDE 1: User Photo - Matching qr-wrap positioning and size */
+          <div 
+            className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-[5.33px] overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center z-[4]"
+          >
+            {data.photo ? (
+              <img src={data.photo} className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-24 h-24 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            )}
           </div>
-        </div>
+        ) : (
+          /* SIDE 2: QR Code - Exactly matching qr-wrap and internal qr-image/qr-center */
+          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-[5.33px] bg-white z-[4]">
+             {qrUrl ? (
+               <>
+                  <img 
+                    src={qrUrl} 
+                    className="absolute left-[25.28px] top-[25.28px] w-[193.3px] h-[193.3px]" 
+                    alt="QR Code" 
+                  />
+                  <img 
+                    src="https://www.figma.com/api/mcp/asset/7aa825de-d504-49de-b966-373e13e071b6" 
+                    className="absolute left-[95.53px] top-[97.7px] w-[52.24px] h-[48.88px]" 
+                    alt=""
+                  />
+               </>
+             ) : (
+               <div className="w-full h-full bg-slate-100 animate-pulse" />
+             )}
+          </div>
+
+        )}
+
+        {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
+        <p className="absolute left-0 top-[820px] w-full text-center text-white z-[4] m-0 text-[35px] font-[700] leading-[1]">
+          {data.name || "Full Name"}
+        </p>
+        <p className="absolute left-0 top-[869px] w-full text-center text-white z-[4] m-0 text-[21px] font-[500] leading-[1]">
+          {data.role || "Role/Title"}
+        </p>
+        <p className="absolute left-0 top-[900px] w-full text-center text-white z-[4] m-0 text-[21px] font-[500] leading-[1]">
+          {data.company || "Organization"}
+        </p>
+
+
+        {/* Partners */}
+        <img 
+          src="https://www.figma.com/api/mcp/asset/3afad43f-8750-426f-8511-10ff0d714f6e" 
+          className="absolute left-[77px] top-[956px] w-[423px] h-[33px] object-contain z-[4]" 
+          alt="Partners" 
+        />
       </div>
     );
   }
+
 
   // Common styles for both designs
   const posterStyle: React.CSSProperties = {

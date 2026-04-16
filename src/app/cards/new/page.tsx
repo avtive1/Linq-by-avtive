@@ -38,6 +38,8 @@ function NewCardForm() {
 
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
   const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
+
 
   // Fetch event details for the locked header / preview.
   const [eventLoading, setEventLoading] = useState(!!eventId);
@@ -119,8 +121,9 @@ function NewCardForm() {
       .split("/")[0];
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
     if (!validate()) return;
     setLoading(true);
 
@@ -340,11 +343,12 @@ function NewCardForm() {
               onChange={update("email")}
             />
             <TextInput
-              label="LinkedIn (Optional)"
-              placeholder="linkedin.com/in/yourhandle"
+              label="QR Code Link (Optional)"
+              placeholder="e.g. yourwebsite.com or social link"
               value={form.linkedin}
               onChange={update("linkedin")}
             />
+
             <FilePicker
               label="Photo (Optional)"
               value={form.photo}
@@ -355,15 +359,8 @@ function NewCardForm() {
 
           </div>
 
-          <Button
-            type="submit"
-            variant="primary"
-            fullWidth
-            className="h-12 text-base mt-4 shadow-lg shadow-primary/20"
-            disabled={loading}
-          >
-            {loading ? "Saving..." : "Save Card"}
-          </Button>
+          {/* Removed main Save Card button as per request */}
+
         </form>
       </div>
 
@@ -387,27 +384,43 @@ function NewCardForm() {
       <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
 
 
-        <div className="w-full max-w-[800px] flex items-center justify-between mb-6">
-           <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase">
-             Live Preview
-           </h2>
+        <div className="w-full flex-1 flex flex-col items-center justify-center p-4">
+           <div className={`w-full grid grid-cols-1 ${form.linkedin ? 'xl:grid-cols-2' : ''} gap-12 items-start justify-center max-w-[1400px]`}>
+              {/* Horizontal Card Preview */}
+              <div className="flex flex-col items-center gap-6">
+                 <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Social Post Layout</h3>
+                 <div className="preview-card-capture horizontal-preview">
+                    <CardPreview data={form} preview />
+                 </div>
+                 <Button 
+                    onClick={() => handleSubmit()} 
+                    disabled={loading}
+                    className="rounded-full px-12 h-12 shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                 >
+                    {loading ? "Preparing..." : "View & Share Horizontal Card"}
+                 </Button>
+              </div>
+
+              {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
+              {form.linkedin && (
+                 <div className="flex flex-col items-center gap-6 animate-fade-in">
+                    <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Event Badge Layout</h3>
+                    <div className="preview-card-capture vertical-preview">
+                       <CardPreview data={form} preview isVertical verticalSide={1} />
+                    </div>
+                    <Button 
+                       variant="secondary"
+                       onClick={() => setShowPrintPreview(true)} 
+                       className="rounded-full px-12 h-12 shadow-xl hover:bg-surface transition-all"
+                    >
+                       View & Print Vertical Badge
+                    </Button>
+                 </div>
+              )}
+           </div>
         </div>
-        <div className="preview-scale-wrapper w-full">
-          <div
-            className="preview-card-capture flex justify-center"
-            style={{ 
-               width: viewMode === "horizontal" ? "1200px" : "400px", 
-               aspectRatio: viewMode === "horizontal" ? "1200/628" : "400/600" 
-            }}
-          >
-            <CardPreview 
-              data={form} 
-              preview 
-              isVertical={viewMode === "vertical"}
-              verticalSide={verticalSide}
-            />
-          </div>
-        </div>
+
+
 
         {/* Customization Toolbar - Moved Below Image */}
         <div className="w-full max-w-[800px] mt-8 flex flex-col gap-6 animate-slide-up">
@@ -483,86 +496,75 @@ function NewCardForm() {
               />
            </div>
 
-           {/* Row 4: View Mode (Only if LinkedIn is provided) */}
-           {form.linkedin && (
-              <div className="flex justify-center gap-3 mt-2">
-                 <button 
-                    onClick={() => setViewMode("horizontal")}
-                    className={`px-8 py-2.5 rounded-full text-[11px] font-black tracking-widest uppercase transition-all ${viewMode === "horizontal" ? "bg-heading text-white shadow-xl scale-105" : "bg-white/20 text-muted hover:bg-white/40"}`}
-                 >
-                    POST VIEW
-                 </button>
-                 <button 
-                    onClick={() => setViewMode("vertical")}
-                    className={`px-8 py-2.5 rounded-full text-[11px] font-black tracking-widest uppercase transition-all ${viewMode === "vertical" ? "bg-heading text-white shadow-xl scale-105" : "bg-white/20 text-muted hover:bg-white/40"}`}
-                 >
-                    BADGE VIEW
-                 </button>
-              </div>
-           )}
+
         </div>
 
 
-        {viewMode === "vertical" && (
-           <div className="mt-6 flex gap-4">
-              <Button 
-                 variant={verticalSide === 1 ? "primary" : "secondary"}
-                 size="sm"
-                 onClick={() => setVerticalSide(1)}
-                 className="h-10 px-6 rounded-full"
-              >
-                 Front Side
-              </Button>
-              <Button 
-                 variant={verticalSide === 2 ? "primary" : "secondary"}
-                 size="sm"
-                 onClick={() => setVerticalSide(2)}
-                 className="h-10 px-6 rounded-full"
-              >
-                 QR Side
-              </Button>
-           </div>
+        {/* Print Preview Overlay */}
+        {showPrintPreview && (
+          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:block">
+             <div className="w-full max-w-4xl flex justify-between items-center mb-12 print:hidden">
+                <h2 className="text-xl font-bold text-white tracking-tight">Print Ready Badge</h2>
+                <div className="flex gap-4">
+                   <Button variant="secondary" onClick={() => setShowPrintPreview(false)}>Close Overlay</Button>
+                   <Button onClick={() => window.print()}>Print Card Now</Button>
+                </div>
+             </div>
+
+             <div className="flex flex-col lg:flex-row gap-12 print:flex-col print:gap-20 print:items-center">
+                <div className="flex flex-col items-center gap-6">
+                   <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest print:hidden">Front Side (Photo)</span>
+                   <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
+                      <CardPreview data={form} isVertical verticalSide={1} />
+                   </div>
+                </div>
+                <div className="flex flex-col items-center gap-6">
+                   <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest print:hidden">Back Side (QR)</span>
+                   <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
+                      <CardPreview data={form} isVertical verticalSide={2} />
+                   </div>
+                </div>
+             </div>
+
+             <div className="mt-24 p-8 border border-white/10 rounded-2xl bg-white/5 max-w-lg text-center print:hidden">
+                <p className="text-sm text-white/60 mb-4 leading-relaxed">
+                  For the best experience, use heavy cardstock and set your printer to <b>Portrait</b> with <b>Default</b> margins.
+                </p>
+                <p className="text-[10px] font-bold text-primary tracking-widest uppercase">Fold along the center after printing</p>
+             </div>
+          </div>
         )}
 
-        <p className="mt-6 text-xs text-muted text-center max-w-xs leading-relaxed">
-          {form.linkedin 
-            ? "Your card is ready! Toggle between Post and Badge views." 
-            : "Add your LinkedIn URL to unlock the Vertical Badge view with a QR code."}
-        </p>
       </div>
 
       {/* Responsive scale styles */}
       <style>{`
-        .preview-scale-wrapper {
-          display: flex;
-          justify-content: center;
-          overflow: visible;
-        }
-        .preview-card-capture {
+        .horizontal-preview {
           transform-origin: top center;
+          transform: scale(0.4);
+          width: 1200px;
+          height: 628px;
+          margin-bottom: -376px;
+        }
+        .vertical-preview {
+          transform-origin: top center;
+          transform: scale(0.4);
+          width: 576px;
+          height: 1024px;
+          margin-bottom: -614px;
         }
         @media (max-width: 1024px) {
-          .preview-scale-wrapper { overflow: hidden; }
-          .preview-card-capture {
-            transform: scale(calc((100vw - 48px) / ${viewMode === "horizontal" ? "1200" : "400"}));
-            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "600px"} * ((100vw - 48px) / ${viewMode === "horizontal" ? "1200" : "400"})) - ${viewMode === "horizontal" ? "628px" : "600px"});
-          }
+          .horizontal-preview { transform: scale(calc((100vw - 48px) / 1200)); margin-bottom: calc((628px * ((100vw - 48px) / 1200)) - 628px); }
+          .vertical-preview { transform: scale(calc((100vw - 48px) / 576)); margin-bottom: calc((1024px * ((100vw - 48px) / 576)) - 1024px); }
         }
-        @media (min-width: 1025px) {
-          .preview-scale-wrapper { overflow: hidden; }
-          .preview-card-capture {
-            transform: scale(calc((100vw - 480px - 48px) / ${viewMode === "horizontal" ? "1200" : "400"}));
-            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "600px"} * ((100vw - 480px - 48px) / ${viewMode === "horizontal" ? "1200" : "400"})) - ${viewMode === "horizontal" ? "628px" : "600px"});
-          }
-        }
-        @media (min-width: 1600px) {
-          .preview-scale-wrapper { overflow: visible; }
-          .preview-card-capture {
-            transform: scale(${viewMode === "horizontal" ? "0.6" : "1"});
-            margin-bottom: ${viewMode === "horizontal" ? "-251px" : "0"};
-          }
+        @media print {
+           body { background: white !important; }
+           .glass-panel, button, h3, p, .fixed > div:not(.flex) { display: none !important; }
+           .fixed { position: relative !important; background: white !important; display: block !important; p-0 !important; }
+           @page { margin: 1cm; size: auto; }
         }
       `}</style>
+
     </main>
   );
 }
