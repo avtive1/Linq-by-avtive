@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Poppins } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
@@ -9,6 +9,12 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-poppins",
+});
+
 export const metadata: Metadata = {
   title: "Avtive — Your Conference Card",
   description: "Register once. Generate a card for every event you attend.",
@@ -16,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
       <body className={inter.className}>
         <Toaster position="top-center" richColors />
         {children}

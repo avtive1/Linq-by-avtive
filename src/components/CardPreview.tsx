@@ -3,20 +3,37 @@ import { useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { CardData } from "@/types/card";
 
+const COLOR_THEMES: Record<string, { start: string; end: string; accent: string; textColor?: string; titleColor?: string }> = {
+  purple: { start: "#41295a", end: "#2f0743", accent: "#ffd400" },
+  red:    { start: "#8C3C59", end: "#2F0724", accent: "#ffffff" },
+  pink:   { start: "#d53f8c", end: "#702459", accent: "#ffffff" },
+  blue:   { 
+    start: "#DDD7E9", 
+    end: "#DDD7E9", 
+    accent: "#000000", 
+    textColor: "#000000",
+    titleColor: "#5538EE" 
+  },
+};
+
 export function CardPreview({
   data,
   preview,
   id,
+  isVertical = false,
+  verticalSide = 1,
 }: {
   data: Partial<CardData>;
   preview?: boolean;
   id?: string;
+  isVertical?: boolean;
+  verticalSide?: 1 | 2;
 }) {
-  const [isZoomed, setIsZoomed] = useState(false);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
 
-  const badgeId = data.id?.slice(-8).toUpperCase() || "PREVIEW";
-  // QR code: only generate if user has a linkedin handle
+  const theme = COLOR_THEMES[data.color || "purple"] || COLOR_THEMES.purple;
+  
+  // LinkedIn / QR Logic
   const rawLinkedin = data.linkedin?.trim() || "";
   const linkedinHandle = rawLinkedin
     .replace(/https?:\/\//, "")
@@ -36,7 +53,7 @@ export function CardPreview({
         const linkedinUrl = `https://linkedin.com/in/${linkedinHandle}`;
         const url = await QRCode.toDataURL(linkedinUrl, {
           margin: 1,
-          width: 200,
+          width: 400,
           color: { dark: "#000000", light: "#ffffff" },
         });
         if (!cancelled) setQrUrl(url);
@@ -48,129 +65,194 @@ export function CardPreview({
     return () => { cancelled = true; };
   }, [linkedinHandle]);
 
+  if (isVertical) {
+    return (
+      <div 
+        className="relative overflow-hidden bg-white shadow-2xl"
+        style={{ 
+          width: "400px", 
+          height: "600px", 
+          fontFamily: "'Inter', sans-serif",
+          borderRadius: "12px"
+        }}
+      >
+        {/* Top Section */}
+        <div className="p-8 pb-0">
+           <div className="flex items-center gap-2 mb-6">
+              <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" alt="Icon" className="w-10 h-10 object-contain" />
+              <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" alt="Avtive" className="w-24 h-8 object-contain" />
+           </div>
+           <p className="text-[12px] font-bold tracking-[0.2em] text-slate-400 uppercase mb-1">I'M ATTENDING</p>
+           <h1 className="text-3xl font-extrabold leading-tight mb-4" style={{ color: theme.titleColor || theme.textColor || "#23468C" }}>
+              {data.eventName?.split("<br />").map((t, i) => <span key={i}>{t}<br/></span>) || "Pakistan Tech\nSummit"}
+           </h1>
+           <div className="flex flex-col gap-2 text-[11px] text-slate-500 font-medium">
+              <span>📅 {data.sessionDate || "Friday, 11th April, 2026"}</span>
+              <span>📍 {data.location || "Expo Center, Islamabad, Pakistan"}</span>
+           </div>
+        </div>
+
+        {/* Bottom Shape & Info */}
+        <div 
+          className="absolute bottom-0 left-0 w-full h-[280px] flex flex-col items-center justify-center p-8"
+          style={{ 
+            background: `linear-gradient(180deg, ${theme.start} 0%, ${theme.end} 100%)`,
+            clipPath: "polygon(0 15%, 100% 0, 100% 100%, 0 100%)",
+            color: theme.textColor || "white"
+          }}
+        >
+          {verticalSide === 1 ? (
+             <div className="flex flex-col items-center text-center mt-6">
+                <div className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white/20 mb-4 bg-white/10">
+                   {data.photo ? <img src={data.photo} className="w-full h-full object-cover" /> : null}
+                </div>
+                <h2 className="text-xl font-bold mb-1">{data.name || "Your Name"}</h2>
+                <p className="text-xs opacity-80">{data.role || "Role"}</p>
+                <p className="text-xs opacity-60">{data.company || "Company"}</p>
+             </div>
+          ) : (
+             <div className="flex flex-col items-center text-center mt-6">
+                <div className="bg-white p-2 rounded-xl mb-4">
+                   {qrUrl ? <img src={qrUrl} className="w-24 h-24" /> : <div className="w-24 h-24 bg-slate-100" />}
+                </div>
+                <h2 className="text-xl font-bold mb-1">{data.name || "Your Name"}</h2>
+                <p className="text-xs opacity-80">{data.role || "Role"}</p>
+             </div>
+          )}
+          
+          <div className="mt-auto flex items-center gap-4 opacity-40 grayscale brightness-200">
+             <img src="https://www.figma.com/api/mcp/asset/60137d44-eb2a-4405-bd79-67be246fc1ec" alt="Logos" className="h-4 object-contain" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Common styles for both designs
+  const posterStyle: React.CSSProperties = {
+    width: "1200px",
+    height: "628px",
+    background: `linear-gradient(180deg, ${theme.start} 0%, ${theme.end} 100%)`,
+    fontFamily: "'Inter', sans-serif",
+  };
+
+  const titleKickerStyle: React.CSSProperties = {
+    color: theme.accent,
+    fontFamily: "'Poppins', sans-serif",
+  };
+
+  const titleStyle: React.CSSProperties = {
+    color: theme.titleColor || theme.textColor || "white",
+    fontFamily: "'Poppins', sans-serif",
+  };
+
+  const metaTextColor = { color: theme.textColor || "white" };
+
+  if (data.designType === "design2") {
+    return (
+      <div id={id} className="relative overflow-hidden shadow-2xl poster" style={posterStyle}>
+        <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/1e6c3590-a66a-4bc5-b575-adfb66dc1bb8" alt="" />
+        
+        <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
+          I'M ATTENDING
+        </p>
+        
+        <h1 className="absolute left-[50px] top-[138px] m-0 font-[700] text-[96px] leading-[88px] tracking-[-4px]" style={titleStyle}>
+          {data.eventName?.split("<br />").map((text, i) => <span key={i}>{text}<br /></span>) || "Pakistan Tech\nSummit"}
+        </h1>
+
+        <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
+          <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+            <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z"/></svg>
+            <span>{data.sessionDate || "Friday, 11th April, 2026"}</span>
+          </div>
+          <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+            <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
+            <span>05:00 PM (Pakistan Time)</span>
+          </div>
+        </div>
+
+        <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap" style={metaTextColor}>
+          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
+          <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
+        </div>
+
+        <div className="absolute right-[80px] top-[70px] flex items-center gap-2">
+          <img src="https://www.figma.com/api/mcp/asset/56b614de-2622-49f5-ac7b-a0ed09ebaeac" className="w-[63px] h-[59px] object-contain" alt="" />
+          <img src="https://www.figma.com/api/mcp/asset/22c9e87c-f736-4755-b4a7-402c9070d2b3" className="w-[191px] h-[56px] object-contain" alt="" />
+        </div>
+
+        <section className="absolute right-[26px] top-[172px] w-[340px] text-left" style={metaTextColor}>
+          <img 
+            src={data.photo || "https://www.figma.com/api/mcp/asset/8a1960ee-9b09-4d02-bb74-823ed9e1f8dd"} 
+            className="w-[175px] h-[175px] rounded-[25px] object-cover block mb-[20px]" 
+            alt={data.name} 
+          />
+          <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]">{data.name || "Syed Mesum Raza Shah"}</h2>
+          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "CEO & Founder"}</p>
+          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Avtive (Private) Limited"}</p>
+        </section>
+
+        <footer className="absolute left-0 bottom-0 w-full h-[123px]">
+          <img className="absolute left-0 bottom-0 w-full h-full" src="https://www.figma.com/api/mcp/asset/19a4081a-3d42-499b-8b23-eaca86dedae6" alt="" />
+          <img className="absolute left-[276px] top-[42px] w-[861px] h-[38px] object-contain" src="https://www.figma.com/api/mcp/asset/304933ce-cbdb-4ff8-a402-c39459b6d08d" alt="Sponsors" />
+        </footer>
+      </div>
+    );
+  }
+
+  // Horizontal Card (Design 1 - Default)
   return (
     <div
       id={id}
-      onClick={() => setIsZoomed((z) => !z)}
-      className={`
-        relative bg-gradient-to-br from-white via-white to-light-2/40 border border-border rounded-xl overflow-hidden shadow-xl
-        transition-all duration-700 ease-[cubic-bezier(0.23,1,0.32,1)] w-full cursor-pointer select-none
-        ${isZoomed ? "scale-[1.04] shadow-2xl z-50 ring-4 ring-primary/20" : "scale-100"}
-      `}
-      style={{ aspectRatio: "800/420", maxWidth: "800px", margin: "0 auto" }}
+      className="relative overflow-hidden shadow-2xl transition-all duration-500 group"
+      style={posterStyle}
     >
-      {/* ── Main layout: left (info) | divider | right (photo + qr) ── */}
-      <div className="h-full flex">
+      <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/a068f32c-5159-4502-a8f7-c3748e1a7c88" alt="" />
+      
+      <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
+        I'M ATTENDING
+      </p>
+      
+      <h1 className="absolute left-[50px] top-[138px] m-0 font-[700] text-[96px] leading-[88px] tracking-[-4px]" style={titleStyle}>
+        {data.eventName?.split("<br />").map((text, i) => <span key={i}>{text}<br /></span>) || "Pakistan Tech\nSummit"}
+      </h1>
 
-        {/* ── LEFT PANEL ── */}
-        <div className="flex flex-col flex-1 min-w-0 p-[5%]">
-
-          {/* Event header */}
-          <div className="flex items-start justify-between mb-[2%]">
-            <div>
-              <p className="text-[clamp(7px,1vw,10px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">
-                EVENT
-              </p>
-              <h3 className="text-[clamp(11px,1.5vw,18px)] font-bold text-heading leading-tight">
-                {data.eventName || "Event Name"}
-              </h3>
-            </div>
-          </div>
-
-          {/* Small profile row (name + role) */}
-          <div className="flex items-center gap-[4%] mb-[3%]">
-            <div
-              className="rounded-full overflow-hidden bg-light-3/40 border-[3px] border-white shadow-md flex-shrink-0 flex items-center justify-center text-heading/20"
-              style={{ width: "clamp(44px, 9%, 76px)", height: "clamp(44px, 9%, 76px)" }}
-            >
-              {data.photo ? (
-                <img src={data.photo} alt={data.name} className="w-full h-full object-cover" />
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-[55%] h-[55%]">
-                  <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-                </svg>
-              )}
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-[clamp(13px,2vw,26px)] font-extrabold text-heading leading-tight truncate">
-                {data.name || "Your Name"}
-              </h2>
-              <p className="text-[clamp(8px,1.1vw,13px)] text-heading/60 font-medium truncate">
-                {data.role || "Role"}
-                {data.company && <span> &bull; {data.company}</span>}
-              </p>
-            </div>
-          </div>
-
-          {/* Info grid — 2 col × 2 row */}
-          <div className="grid grid-cols-2 gap-x-[4%] gap-y-[2%] flex-1">
-            <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">EMAIL</p>
-              <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.email || "hello@example.com"}</p>
-            </div>
-            <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">LOCATION</p>
-              <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.location || "City, Country"}</p>
-            </div>
-            <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">SESSION DATE</p>
-              <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{data.sessionDate || "March 2026"}</p>
-            </div>
-            <div>
-              <p className="text-[clamp(6px,0.8vw,9px)] font-bold tracking-[0.22em] text-primary-strong uppercase mb-0.5">BADGE ID</p>
-              <p className="text-[clamp(8px,1vw,12px)] font-semibold text-heading/90 truncate">{badgeId}</p>
-            </div>
-          </div>
-
-          {/* Footer: Confirmed Attendee + avtive.co */}
-          <div className="mt-auto pt-[2%] border-t border-border/50">
-            <p className="text-[clamp(5px,0.75vw,9px)] font-bold tracking-[0.22em] text-muted uppercase">
-              CONFIRMED ATTENDEE
-            </p>
-            <p className="text-[clamp(9px,1.2vw,15px)] font-extrabold text-heading tracking-tight">
-              avtive.co
-            </p>
-          </div>
+      <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
+        <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z"/></svg>
+          <span>{data.sessionDate || "Friday, 11th April, 2026"}</span>
         </div>
-
-        {/* ── Divider ── */}
-        <div className="w-px bg-border/50 self-stretch my-[2%]" />
-
-        {/* ── RIGHT PANEL — large photo + QR (only if linkedin exists) ── */}
-        <div
-          className="flex flex-col items-center justify-between flex-shrink-0 p-[2%]"
-          style={{ width: "clamp(100px, 28%, 240px)" }}
-        >
-          {/* Large profile photo */}
-          <div
-            className="rounded-full overflow-hidden bg-light-3/40 border-4 border-white shadow-lg flex items-center justify-center text-heading/20 w-full"
-            style={{ aspectRatio: "1/1" }}
-          >
-            {data.photo ? (
-              <img src={data.photo} alt={data.name} className="w-full h-full object-cover" />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="w-1/2 h-1/2">
-                <circle cx="12" cy="8" r="4" /><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
-              </svg>
-            )}
-          </div>
-
-          {/* QR Code — ONLY shown when user has a LinkedIn handle */}
-          {qrUrl && (
-            <div
-              className="bg-white border border-border/80 rounded-lg overflow-hidden flex-shrink-0 mt-[6%] p-1 shadow-sm"
-              style={{ width: "clamp(40px, 55%, 90px)", height: "clamp(40px, 55%, 90px)" }}
-            >
-              <img
-                src={qrUrl}
-                alt="LinkedIn QR Code"
-                className="w-full h-full object-contain"
-              />
-            </div>
-          )}
+        <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
+          <span>05:00 PM (Pakistan Time)</span>
         </div>
-
       </div>
+
+      <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap" style={metaTextColor}>
+        <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
+        <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
+      </div>
+
+      <div className="absolute right-[78px] top-[70px] flex items-center gap-2">
+        <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" className="w-[59px] h-[59px] object-contain" alt="" />
+        <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" className="w-[165px] h-[48px] object-contain" alt="" />
+      </div>
+
+      <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
+        <img 
+          src={data.photo || "https://www.figma.com/api/mcp/asset/30683129-9849-43e5-826b-31991c7c5e80"} 
+          className="w-[175px] h-[175px] rounded-[25px] object-cover block mb-5" 
+          alt={data.name} 
+        />
+        <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap">{data.name || "Syed Mesum Raza Shah"}</h2>
+        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "CEO & Founder"}</p>
+        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Avtive (Private) Limited"}</p>
+      </section>
+
+      <footer className="absolute left-0 right-0 bottom-0 h-[123px] bg-white grid place-items-center px-[40px]">
+        <img src="https://www.figma.com/api/mcp/asset/60137d44-eb2a-4405-bd79-67be246fc1ec" className="w-[1045px] max-w-full h-[46px] object-contain" alt="Sponsors" />
+      </footer>
     </div>
   );
 }

@@ -12,6 +12,9 @@ export type CardData = {
   track?: string;
   photo?: string;
   eventId?: string; // Links to events collection
+  designType?: string;
+  color?: string;
+  card_preview_url?: string;
 };
 
 export type EventData = {

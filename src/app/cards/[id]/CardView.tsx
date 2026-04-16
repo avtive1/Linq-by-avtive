@@ -4,13 +4,15 @@ import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
-import { ArrowLeft, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, Printer, RefreshCw } from "lucide-react";
 import { toPng } from "html-to-image";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
 
 export default function CardView({ card, isShareMode = false }: { card: CardData; isShareMode?: boolean }) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
+  const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
@@ -25,7 +27,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
       });
 
       const link = document.createElement("a");
-      link.download = `avtive-card-${
+      link.download = `avtive-${viewMode}-${
         card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"
       }.png`;
       link.href = dataUrl;
@@ -39,13 +41,20 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
     }
   };
 
+  const handlePrint = () => {
+    // We set the view mode to vertical and side 1 for printing
+    setViewMode("vertical");
+    setTimeout(() => {
+        window.print();
+    }, 500);
+  };
+
   const handleShareLinkedIn = () => {
     setIsDownloading(true);
     try {
       toast.success("Opening LinkedIn share...");
       
       setTimeout(() => {
-        // We use window.location.href to share the current card's public URL.
         const shareUrl = encodeURIComponent(window.location.href);
         window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, "_blank", "width=800,height=600");
       }, 500);
@@ -58,38 +67,55 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   };
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-8 md:py-12 px-4 sm:px-6 overflow-x-hidden">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-8 md:py-12 px-4 sm:px-6 overflow-x-hidden print:p-0">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">
-        <div className="flex items-center justify-between">
-          {isShareMode ? (
-            <div className="flex items-center gap-3">
-               <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
-                 AVTIVE ATTENDEE PORTAL
-               </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3 -ml-4 sm:-ml-6">
-              <Link
-                href="/"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
-              >
-                <ArrowLeft
-                  size={12}
-                  className="group-hover:-translate-x-1 transition-transform"
-                />
-                HOME
-              </Link>
-              <span className="text-muted/20">/</span>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
-              >
-                DASHBOARD
-              </Link>
-            </div>
-          )}
+      <div className="relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up print:hidden">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex flex-col gap-4">
+             {isShareMode ? (
+                <div className="flex items-center gap-3">
+                   <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
+                     AVTIVE ATTENDEE PORTAL
+                   </span>
+                </div>
+             ) : (
+                <div className="flex items-center gap-3">
+                  <Link
+                    href="/"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
+                  >
+                    <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+                    HOME
+                  </Link>
+                  <span className="text-muted/20">/</span>
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
+                  >
+                    DASHBOARD
+                  </Link>
+                </div>
+             )}
+
+             {/* View Toggles */}
+             {card.linkedin && (
+                <div className="flex bg-white/5 p-1 rounded-xl w-fit border border-white/10">
+                   <button 
+                      onClick={() => setViewMode("horizontal")}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading"}`}
+                   >
+                      Post View
+                   </button>
+                   <button 
+                      onClick={() => setViewMode("vertical")}
+                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading"}`}
+                   >
+                      Badge View
+                   </button>
+                </div>
+             )}
+          </div>
 
           <div className="flex items-center gap-3">
             <Button
@@ -97,46 +123,94 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
               disabled={isDownloading}
               variant="blue"
               icon={<Share2 size={16} />}
-              className="shadow-lg min-w-[160px]"
+              className="shadow-lg flex-1 md:flex-initial min-w-[140px]"
             >
-              Post to LinkedIn
+              Share
             </Button>
-            <Button
-              onClick={handleDownload}
-              disabled={isDownloading}
-              icon={<Download size={18} />}
-              className="shadow-lg shadow-primary/20 min-w-[160px]"
-            >
-              {isDownloading ? "Preparing…" : "Download"}
-            </Button>
+            {viewMode === "vertical" ? (
+               <Button
+                  onClick={handlePrint}
+                  disabled={isDownloading}
+                  variant="secondary"
+                  icon={<Printer size={18} />}
+                  className="shadow-lg flex-1 md:flex-initial min-w-[140px]"
+               >
+                  Print Badge
+               </Button>
+            ) : (
+               <Button
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  icon={<Download size={18} />}
+                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial min-w-[140px]"
+               >
+                  {isDownloading ? "Preparing…" : "Download"}
+               </Button>
+            )}
           </div>
         </div>
 
-        <div className="w-full flex justify-center">
+        <div className="w-full flex flex-col items-center gap-6">
           <div className="card-scale-wrapper w-full">
             <div
               ref={cardRef}
               className="card-capture"
-              style={{ width: "800px", aspectRatio: "800/420" }}
+              style={{ width: viewMode === "horizontal" ? "1200px" : "400px", aspectRatio: viewMode === "horizontal" ? "1200/628" : "400/600" }}
             >
-              <CardPreview data={card} />
+              <CardPreview 
+                 data={card} 
+                 isVertical={viewMode === "vertical"} 
+                 verticalSide={verticalSide} 
+              />
             </div>
           </div>
+
+          {viewMode === "vertical" && (
+             <div className="flex gap-4">
+                <Button 
+                   variant={verticalSide === 1 ? "primary" : "secondary"}
+                   size="sm"
+                   onClick={() => setVerticalSide(1)}
+                   icon={<RefreshCw size={14} />}
+                   className="h-10 px-6 rounded-full"
+                >
+                   Flip to Side 2 (QR)
+                </Button>
+             </div>
+          )}
         </div>
 
         <div className="text-center flex flex-col gap-2">
           <p className="text-sm text-slate-400 font-medium leading-relaxed">
-            Your attendee card is ready. Click{" "}
-            <span className="text-heading font-bold">Post to LinkedIn</span> to 
-            download the image and launch a new post.
+            {viewMode === "horizontal" 
+               ? "This design is optimized for LinkedIn posts and social sharing."
+               : "This design is optimized for physical printing and event registration."
+            }
           </p>
           <span className="text-[10px] font-bold tracking-[0.25em] text-heading/30 uppercase">
-            Badge ID: {card.id.slice(-8).toUpperCase()}
+            Attendee ID: {card.id.slice(-8).toUpperCase()}
           </span>
         </div>
       </div>
 
+      {/* Printer optimized container */}
+      <div className="hidden print:block w-full h-full">
+         <div className="flex flex-col items-center gap-12 py-8">
+            <div style={{ width: "400px", height: "600px" }}>
+               <CardPreview data={card} isVertical verticalSide={1} />
+            </div>
+            <div style={{ width: "400px", height: "600px" }}>
+               <CardPreview data={card} isVertical verticalSide={2} />
+            </div>
+         </div>
+      </div>
+
       <style>{`
+        @media print {
+           @page { margin: 0; size: auto; }
+           body { margin: 1cm; background: white !important; }
+           main { background: white !important; padding: 0 !important; }
+        }
         .card-scale-wrapper {
           display: flex;
           justify-content: center;
@@ -145,17 +219,17 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
         .card-capture {
           transform-origin: top center;
         }
-        @media (max-width: 820px) {
+        @media (max-width: 1024px) {
           .card-scale-wrapper { overflow: hidden; }
           .card-capture {
-            transform: scale(calc((100vw - 32px) / 800));
-            margin-bottom: calc((420px * ((100vw - 32px) / 800)) - 420px);
+            transform: scale(calc((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "400"}));
+            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "600px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "400"})) - ${viewMode === "horizontal" ? "628px" : "600px"});
           }
         }
-        @media (min-width: 821px) {
+        @media (min-width: 1025px) {
           .card-capture {
-            transform: scale(1);
-            margin-bottom: 0;
+            transform: scale(${viewMode === "horizontal" ? "0.6" : "1"});
+            margin-bottom: ${viewMode === "horizontal" ? "-251px" : "0"};
           }
         }
       `}</style>

@@ -29,7 +29,12 @@ function NewCardForm() {
     photo: "",
     year: new Date().getFullYear().toString(),
     linkedin: "",
+    designType: "design1" as "design1" | "design2",
+    color: "purple",
   });
+
+  const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
+  const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
 
   // Fetch event details for the locked header / preview.
   const [eventLoading, setEventLoading] = useState(!!eventId);
@@ -68,7 +73,7 @@ function NewCardForm() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const update = (key: string) => (val: string) => {
+  const update = (key: string) => (val: string | number) => {
     setForm((f) => ({ ...f, [key]: val }));
     if (errors[key]) {
       setErrors((prev) => {
@@ -140,7 +145,7 @@ function NewCardForm() {
           console.log("Generating social preview image...");
           const dataUrl = await toPng(cardRef.current, {
             quality: 1,
-            pixelRatio: 2, // 2x for high resolution (1600x840)
+            pixelRatio: 2, // 2x for high resolution
             backgroundColor: "#ffffff",
           });
 
@@ -163,7 +168,6 @@ function NewCardForm() {
           }
         } catch (previewErr) {
           console.error("Failed to generate preview image:", previewErr);
-          // Don't crash the whole form if capture fails
         }
       }
 
@@ -181,8 +185,10 @@ function NewCardForm() {
         linkedin: extractLinkedInHandle(form.linkedin),
         year: form.year,
         photo_url: photo_url,
-        card_preview_url: card_preview_url, // Now included in the first and only call!
+        card_preview_url: card_preview_url,
         event_id: eventId,
+        design_type: form.designType,
+        card_color: form.color,
       };
 
       const { data: record, error: insertError } = await supabase
@@ -208,6 +214,7 @@ function NewCardForm() {
       setLoading(false);
     }
   };
+
   if (!eventId) {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
@@ -250,6 +257,13 @@ function NewCardForm() {
       </main>
     );
   }
+
+  const colors = [
+    { name: "purple", value: "#41295a" },
+    { name: "red", value: "#8C3C59" },
+    { name: "pink", value: "#d53f8c" },
+    { name: "blue", value: "#DDD7E9" },
+  ];
 
   return (
     <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-x-hidden">
@@ -335,6 +349,49 @@ function NewCardForm() {
               onError={(msg) => toast.error(msg)}
               error={errors.photo}
             />
+
+            {/* Color Selection */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-bold tracking-wider text-muted/60 uppercase">Select Color</span>
+              <div className="flex gap-4">
+                {colors.map((c) => (
+                  <button
+                    key={c.name}
+                    type="button"
+                    onClick={() => update("color")(c.name)}
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      form.color === c.name ? "border-primary scale-110 shadow-lg" : "border-transparent"
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Design Selection */}
+            <div className="flex flex-col gap-3">
+              <span className="text-xs font-bold tracking-wider text-muted/60 uppercase">Horizontal Design</span>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => update("designType")("design1")}
+                  className={`flex-1 py-3 px-4 rounded-xl border text-sm font-semibold transition-all ${
+                    form.designType === "design1" ? "bg-primary/10 border-primary text-primary-strong" : "bg-white/5 border-border text-muted"
+                  }`}
+                >
+                  Design 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => update("designType")("design2")}
+                  className={`flex-1 py-3 px-4 rounded-xl border text-sm font-semibold transition-all ${
+                    form.designType === "design2" ? "bg-primary/10 border-primary text-primary-strong" : "bg-white/5 border-border text-muted"
+                  }`}
+                >
+                  Design 2
+                </button>
+              </div>
+            </div>
           </div>
 
           <Button
@@ -356,36 +413,90 @@ function NewCardForm() {
           top: '-9999px', 
           left: '-9999px', 
           width: '1200px', 
-          height: '627px',
+          height: '628px',
           overflow: 'hidden'
         }}
       >
-        <div ref={cardRef} style={{ width: '1200px', height: '627px' }}>
+        <div ref={cardRef} style={{ width: '1200px', height: '628px' }}>
           <CardPreview data={form} />
         </div>
       </div>
 
-      {/* Right Content - Preview with same scale as download screen */}
+      {/* Right Content - Preview */}
       <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
-        <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase mb-6">
-          Live Preview
-        </h2>
+        <div className="w-full max-w-[800px] flex items-center justify-between mb-6">
+           <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase">
+             Live Preview
+           </h2>
+
+           {form.linkedin && (
+              <div className="flex gap-2">
+                 <Button 
+                    variant={viewMode === "horizontal" ? "primary" : "secondary"}
+                    size="sm"
+                    onClick={() => setViewMode("horizontal")}
+                    className="h-8 text-[11px] px-4"
+                 >
+                    Post View
+                 </Button>
+                 <Button 
+                    variant={viewMode === "vertical" ? "primary" : "secondary"}
+                    size="sm"
+                    onClick={() => setViewMode("vertical")}
+                    className="h-8 text-[11px] px-4"
+                 >
+                    Badge View
+                 </Button>
+              </div>
+           )}
+        </div>
 
         <div className="preview-scale-wrapper w-full">
           <div
-            className="preview-card-capture"
-            style={{ width: "800px", aspectRatio: "800/420" }}
+            className="preview-card-capture flex justify-center"
+            style={{ 
+               width: viewMode === "horizontal" ? "1200px" : "400px", 
+               aspectRatio: viewMode === "horizontal" ? "1200/628" : "400/600" 
+            }}
           >
-            <CardPreview data={form} preview />
+            <CardPreview 
+              data={form} 
+              preview 
+              isVertical={viewMode === "vertical"}
+              verticalSide={verticalSide}
+            />
           </div>
         </div>
 
+        {viewMode === "vertical" && (
+           <div className="mt-6 flex gap-4">
+              <Button 
+                 variant={verticalSide === 1 ? "primary" : "secondary"}
+                 size="sm"
+                 onClick={() => setVerticalSide(1)}
+                 className="h-10 px-6 rounded-full"
+              >
+                 Front Side
+              </Button>
+              <Button 
+                 variant={verticalSide === 2 ? "primary" : "secondary"}
+                 size="sm"
+                 onClick={() => setVerticalSide(2)}
+                 className="h-10 px-6 rounded-full"
+              >
+                 QR Side
+              </Button>
+           </div>
+        )}
+
         <p className="mt-6 text-xs text-muted text-center max-w-xs leading-relaxed">
-          Click the card to zoom in. Add a LinkedIn URL to show a scannable QR code.
+          {form.linkedin 
+            ? "Your card is ready! Toggle between Post and Badge views." 
+            : "Add your LinkedIn URL to unlock the Vertical Badge view with a QR code."}
         </p>
       </div>
 
-      {/* Responsive scale styles — same logic as download page */}
+      {/* Responsive scale styles */}
       <style>{`
         .preview-scale-wrapper {
           display: flex;
@@ -396,27 +507,24 @@ function NewCardForm() {
           transform-origin: top center;
         }
         @media (max-width: 1024px) {
-          /* On < lg screens, the preview panel is full width */
           .preview-scale-wrapper { overflow: hidden; }
           .preview-card-capture {
-            transform: scale(calc((100vw - 48px) / 800));
-            margin-bottom: calc((420px * ((100vw - 48px) / 800)) - 420px);
+            transform: scale(calc((100vw - 48px) / ${viewMode === "horizontal" ? "1200" : "400"}));
+            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "600px"} * ((100vw - 48px) / ${viewMode === "horizontal" ? "1200" : "400"})) - ${viewMode === "horizontal" ? "628px" : "600px"});
           }
         }
         @media (min-width: 1025px) {
-          /* On lg+ screens, preview panel is flex-1. We scale to fit that panel. */
           .preview-scale-wrapper { overflow: hidden; }
           .preview-card-capture {
-            transform: scale(calc((100vw - 480px - 48px) / 800));
-            margin-bottom: calc((420px * ((100vw - 480px - 48px) / 800)) - 420px);
+            transform: scale(calc((100vw - 480px - 48px) / ${viewMode === "horizontal" ? "1200" : "400"}));
+            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "600px"} * ((100vw - 480px - 48px) / ${viewMode === "horizontal" ? "1200" : "400"})) - ${viewMode === "horizontal" ? "628px" : "600px"});
           }
         }
         @media (min-width: 1600px) {
-          /* On very large screens render at natural size */
           .preview-scale-wrapper { overflow: visible; }
           .preview-card-capture {
-            transform: scale(1);
-            margin-bottom: 0;
+            transform: scale(${viewMode === "horizontal" ? "0.6" : "1"});
+            margin-bottom: ${viewMode === "horizontal" ? "-251px" : "0"};
           }
         }
       `}</style>

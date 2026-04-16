@@ -75,6 +75,8 @@ export default async function CardViewPage(props: {
         year: record.year,
         linkedin: record.linkedin,
         photo: record.photo_url ? getSupabaseFileUrl("attendee_photos", record.photo_url) : undefined,
+        designType: record.design_type,
+        color: record.card_color,
       };
     }
   } catch (err) {
