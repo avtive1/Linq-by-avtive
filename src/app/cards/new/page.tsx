@@ -3,7 +3,8 @@ import { useState, useEffect, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
+import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui";
+
 import { Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { supabase } from "@/lib/supabase";
@@ -31,7 +32,9 @@ function NewCardForm() {
     linkedin: "",
     designType: "design1" as "design1" | "design2",
     color: "purple",
+    fontFamily: "inter",
   });
+
 
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
   const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
@@ -259,10 +262,10 @@ function NewCardForm() {
   }
 
   const colors = [
-    { name: "purple", value: "#41295a" },
-    { name: "red", value: "#8C3C59" },
-    { name: "pink", value: "#d53f8c" },
-    { name: "blue", value: "#DDD7E9" },
+    { name: "purple", start: "#41295a", end: "#2f0743" },
+    { name: "red",    start: "#c94b4b", end: "#4b134f" },
+    { name: "pink",   start: "#EE0979", end: "#FF6A00" },
+    { name: "blue",   start: "#D3CCE3", end: "#E9E4F0" },
   ];
 
   return (
@@ -350,48 +353,6 @@ function NewCardForm() {
               error={errors.photo}
             />
 
-            {/* Color Selection */}
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-bold tracking-wider text-muted/60 uppercase">Select Color</span>
-              <div className="flex gap-4">
-                {colors.map((c) => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    onClick={() => update("color")(c.name)}
-                    className={`w-8 h-8 rounded-full border-2 transition-all ${
-                      form.color === c.name ? "border-primary scale-110 shadow-lg" : "border-transparent"
-                    }`}
-                    style={{ backgroundColor: c.value }}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Design Selection */}
-            <div className="flex flex-col gap-3">
-              <span className="text-xs font-bold tracking-wider text-muted/60 uppercase">Horizontal Design</span>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => update("designType")("design1")}
-                  className={`flex-1 py-3 px-4 rounded-xl border text-sm font-semibold transition-all ${
-                    form.designType === "design1" ? "bg-primary/10 border-primary text-primary-strong" : "bg-white/5 border-border text-muted"
-                  }`}
-                >
-                  Design 1
-                </button>
-                <button
-                  type="button"
-                  onClick={() => update("designType")("design2")}
-                  className={`flex-1 py-3 px-4 rounded-xl border text-sm font-semibold transition-all ${
-                    form.designType === "design2" ? "bg-primary/10 border-primary text-primary-strong" : "bg-white/5 border-border text-muted"
-                  }`}
-                >
-                  Design 2
-                </button>
-              </div>
-            </div>
           </div>
 
           <Button
@@ -424,33 +385,13 @@ function NewCardForm() {
 
       {/* Right Content - Preview */}
       <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
+
+
         <div className="w-full max-w-[800px] flex items-center justify-between mb-6">
            <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase">
              Live Preview
            </h2>
-
-           {form.linkedin && (
-              <div className="flex gap-2">
-                 <Button 
-                    variant={viewMode === "horizontal" ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={() => setViewMode("horizontal")}
-                    className="h-8 text-[11px] px-4"
-                 >
-                    Post View
-                 </Button>
-                 <Button 
-                    variant={viewMode === "vertical" ? "primary" : "secondary"}
-                    size="sm"
-                    onClick={() => setViewMode("vertical")}
-                    className="h-8 text-[11px] px-4"
-                 >
-                    Badge View
-                 </Button>
-              </div>
-           )}
         </div>
-
         <div className="preview-scale-wrapper w-full">
           <div
             className="preview-card-capture flex justify-center"
@@ -467,6 +408,100 @@ function NewCardForm() {
             />
           </div>
         </div>
+
+        {/* Customization Toolbar - Moved Below Image */}
+        <div className="w-full max-w-[800px] mt-8 flex flex-col gap-6 animate-slide-up">
+           {/* Row 1: Layout Selection */}
+           <div className="glass-panel !bg-white/40 border border-white/10 p-4 rounded-2xl flex flex-col gap-3">
+              <span className="text-[10px] font-extrabold tracking-[0.2em] text-muted/60 uppercase text-center">Select Card Layout</span>
+              <div className="flex gap-4">
+                 <button
+                    type="button"
+                    onClick={() => update("designType")("design1")}
+                    className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition-all ${
+                       form.designType === "design1" 
+                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-[1.02]" 
+                          : "bg-white/40 border-white/20 text-muted hover:bg-white/60"
+                    }`}
+                 >
+                    Design 1 (Standard)
+                 </button>
+                 <button
+                    type="button"
+                    onClick={() => update("designType")("design2")}
+                    className={`flex-1 py-3 px-4 rounded-xl border text-xs font-bold transition-all ${
+                       form.designType === "design2" 
+                          ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-[1.02]" 
+                          : "bg-white/40 border-white/20 text-muted hover:bg-white/60"
+                    }`}
+                 >
+                    Design 2 (Modern)
+                 </button>
+              </div>
+           </div>
+
+           {/* Row 2: Theme Selection */}
+           <div className="glass-panel !bg-white/40 border border-white/10 p-4 rounded-2xl flex flex-col items-center gap-3">
+              <span className="text-[10px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Pick Your Theme color</span>
+              <div className="flex gap-5">
+                 {colors.map((c) => (
+                    <button
+                       key={c.name}
+                       type="button"
+                       onClick={() => update("color")(c.name)}
+                       className={`w-10 h-10 rounded-full transition-all duration-300 relative overflow-hidden flex items-center justify-center p-0 ${
+                          form.color === c.name 
+                             ? "ring-4 ring-primary ring-offset-4 scale-110 shadow-xl" 
+                             : "hover:scale-110 border-2 border-white/40"
+                       }`}
+                       style={{ 
+                          background: `linear-gradient(135deg, ${c.start}, ${c.end})`,
+                          backgroundClip: "border-box",
+                       }}
+                    >
+                       <span className="absolute inset-0 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.2)] pointer-events-none" />
+                    </button>
+                 ))}
+              </div>
+           </div>
+
+           {/* Row 3: Typography Selection */}
+           <div className="glass-panel !bg-white/40 border border-white/10 p-4 rounded-2xl flex flex-col gap-3">
+              <span className="text-[10px] font-extrabold tracking-[0.2em] text-muted/60 uppercase text-center">Customize Font Style</span>
+              <Select
+                 value={form.fontFamily}
+                 onChange={(val) => {
+                   const updateFn: any = update;
+                   updateFn("fontFamily")(val);
+                 }}
+                 options={[
+                    { label: "Inter (Default)", value: "inter" },
+                    { label: "Poppins", value: "poppins" },
+                    { label: "Google Sans (Premium)", value: "outfit" },
+                    { label: "Times New Roman", value: "times" },
+                 ]}
+              />
+           </div>
+
+           {/* Row 4: View Mode (Only if LinkedIn is provided) */}
+           {form.linkedin && (
+              <div className="flex justify-center gap-3 mt-2">
+                 <button 
+                    onClick={() => setViewMode("horizontal")}
+                    className={`px-8 py-2.5 rounded-full text-[11px] font-black tracking-widest uppercase transition-all ${viewMode === "horizontal" ? "bg-heading text-white shadow-xl scale-105" : "bg-white/20 text-muted hover:bg-white/40"}`}
+                 >
+                    POST VIEW
+                 </button>
+                 <button 
+                    onClick={() => setViewMode("vertical")}
+                    className={`px-8 py-2.5 rounded-full text-[11px] font-black tracking-widest uppercase transition-all ${viewMode === "vertical" ? "bg-heading text-white shadow-xl scale-105" : "bg-white/20 text-muted hover:bg-white/40"}`}
+                 >
+                    BADGE VIEW
+                 </button>
+              </div>
+           )}
+        </div>
+
 
         {viewMode === "vertical" && (
            <div className="mt-6 flex gap-4">

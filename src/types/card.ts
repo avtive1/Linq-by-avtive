@@ -14,7 +14,9 @@ export type CardData = {
   eventId?: string; // Links to events collection
   designType?: string;
   color?: string;
+  fontFamily?: string;
   card_preview_url?: string;
+
 };
 
 export type EventData = {

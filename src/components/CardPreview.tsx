@@ -4,15 +4,15 @@ import QRCode from "qrcode";
 import { CardData } from "@/types/card";
 
 const COLOR_THEMES: Record<string, { start: string; end: string; accent: string; textColor?: string; titleColor?: string }> = {
-  purple: { start: "#41295a", end: "#2f0743", accent: "#ffd400" },
-  red:    { start: "#8C3C59", end: "#2F0724", accent: "#ffffff" },
-  pink:   { start: "#d53f8c", end: "#702459", accent: "#ffffff" },
-  blue:   { 
-    start: "#DDD7E9", 
-    end: "#DDD7E9", 
+  purple: { start: "#41295a", end: "#2f0743", accent: "#FFD400", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
+  red:    { start: "#c94b4b", end: "#4b134f", accent: "#FFFFFF", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
+  pink:   { start: "#EE0979", end: "#FF6A00", accent: "#FFFFFF", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
+  blue: { 
+    start: "#D3CCE3", 
+    end: "#E9E4F0", 
     accent: "#000000", 
     textColor: "#000000",
-    titleColor: "#5538EE" 
+    titleColor: "#5A2ED3" 
   },
 };
 
@@ -33,6 +33,15 @@ export function CardPreview({
 
   const theme = COLOR_THEMES[data.color || "purple"] || COLOR_THEMES.purple;
   
+  // Font Mapping
+  const fontMap: Record<string, string> = {
+    inter: "var(--font-inter), sans-serif",
+    poppins: "var(--font-poppins), sans-serif",
+    outfit: "var(--font-outfit), sans-serif",
+    times: "'Times New Roman', Times, serif",
+  };
+  const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;
+
   // LinkedIn / QR Logic
   const rawLinkedin = data.linkedin?.trim() || "";
   const linkedinHandle = rawLinkedin
@@ -72,7 +81,7 @@ export function CardPreview({
         style={{ 
           width: "400px", 
           height: "600px", 
-          fontFamily: "'Inter', sans-serif",
+          fontFamily: selectedFont,
           borderRadius: "12px"
         }}
       >
@@ -83,7 +92,14 @@ export function CardPreview({
               <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" alt="Avtive" className="w-24 h-8 object-contain" />
            </div>
            <p className="text-[12px] font-bold tracking-[0.2em] text-slate-400 uppercase mb-1">I'M ATTENDING</p>
-           <h1 className="text-3xl font-extrabold leading-tight mb-4" style={{ color: theme.titleColor || theme.textColor || "#23468C" }}>
+           <h1 
+             className="text-3xl font-extrabold mb-4" 
+             style={{ 
+                color: theme.titleColor || theme.textColor || "#23468C",
+                lineHeight: "0.91",
+                letterSpacing: "-0.04em"
+             }}
+           >
               {data.eventName?.split("<br />").map((t, i) => <span key={i}>{t}<br/></span>) || "Pakistan Tech\nSummit"}
            </h1>
            <div className="flex flex-col gap-2 text-[11px] text-slate-500 font-medium">
@@ -103,20 +119,27 @@ export function CardPreview({
         >
           {verticalSide === 1 ? (
              <div className="flex flex-col items-center text-center mt-6">
-                <div className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white/20 mb-4 bg-white/10">
-                   {data.photo ? <img src={data.photo} className="w-full h-full object-cover" /> : null}
+                <div className="w-24 h-24 rounded-[20px] overflow-hidden border-2 border-white/20 mb-4 bg-white/10 flex items-center justify-center">
+                   {data.photo ? (
+                     <img src={data.photo} className="w-full h-full object-cover" />
+                   ) : (
+                     <svg className="w-12 h-12 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                       <circle cx="12" cy="7" r="4" />
+                     </svg>
+                   )}
                 </div>
-                <h2 className="text-xl font-bold mb-1">{data.name || "Your Name"}</h2>
-                <p className="text-xs opacity-80">{data.role || "Role"}</p>
-                <p className="text-xs opacity-60">{data.company || "Company"}</p>
+                <h2 className="text-xl font-bold mb-1">{data.name || "Full Name"}</h2>
+                <p className="text-xs opacity-80">{data.role || "Role/Title"}</p>
+                <p className="text-xs opacity-60">{data.company || "Organization"}</p>
              </div>
           ) : (
              <div className="flex flex-col items-center text-center mt-6">
                 <div className="bg-white p-2 rounded-xl mb-4">
                    {qrUrl ? <img src={qrUrl} className="w-24 h-24" /> : <div className="w-24 h-24 bg-slate-100" />}
                 </div>
-                <h2 className="text-xl font-bold mb-1">{data.name || "Your Name"}</h2>
-                <p className="text-xs opacity-80">{data.role || "Role"}</p>
+                <h2 className="text-xl font-bold mb-1">{data.name || "Full Name"}</h2>
+                <p className="text-xs opacity-80">{data.role || "Role/Title"}</p>
              </div>
           )}
           
@@ -133,31 +156,37 @@ export function CardPreview({
     width: "1200px",
     height: "628px",
     background: `linear-gradient(180deg, ${theme.start} 0%, ${theme.end} 100%)`,
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: selectedFont,
   };
 
   const titleKickerStyle: React.CSSProperties = {
     color: theme.accent,
-    fontFamily: "'Poppins', sans-serif",
   };
 
   const titleStyle: React.CSSProperties = {
     color: theme.titleColor || theme.textColor || "white",
-    fontFamily: "'Poppins', sans-serif",
+    lineHeight: "0.91",
+    letterSpacing: "-0.04em",
+    fontWeight: "800",
   };
 
   const metaTextColor = { color: theme.textColor || "white" };
 
   if (data.designType === "design2") {
     return (
-      <div id={id} className="relative overflow-hidden shadow-2xl poster" style={posterStyle}>
+      <div 
+        id={id} 
+        key={data.designType}
+        className="relative overflow-hidden shadow-2xl poster animate-fade-in will-change-transform" 
+        style={posterStyle}
+      >
         <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/1e6c3590-a66a-4bc5-b575-adfb66dc1bb8" alt="" />
         
         <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
           I'M ATTENDING
         </p>
         
-        <h1 className="absolute left-[50px] top-[138px] m-0 font-[700] text-[96px] leading-[88px] tracking-[-4px]" style={titleStyle}>
+        <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px]" style={titleStyle}>
           {data.eventName?.split("<br />").map((text, i) => <span key={i}>{text}<br /></span>) || "Pakistan Tech\nSummit"}
         </h1>
 
@@ -183,14 +212,19 @@ export function CardPreview({
         </div>
 
         <section className="absolute right-[26px] top-[172px] w-[340px] text-left" style={metaTextColor}>
-          <img 
-            src={data.photo || "https://www.figma.com/api/mcp/asset/8a1960ee-9b09-4d02-bb74-823ed9e1f8dd"} 
-            className="w-[175px] h-[175px] rounded-[25px] object-cover block mb-[20px]" 
-            alt={data.name} 
-          />
-          <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]">{data.name || "Syed Mesum Raza Shah"}</h2>
-          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "CEO & Founder"}</p>
-          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Avtive (Private) Limited"}</p>
+          <div className="w-[175px] h-[175px] rounded-[25px] overflow-hidden block mb-[20px] bg-white/10 border border-white/10 flex items-center justify-center">
+            {data.photo ? (
+              <img src={data.photo} className="w-full h-full object-cover" />
+            ) : (
+              <svg className="w-20 h-20 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            )}
+          </div>
+          <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]">{data.name || "Full Name"}</h2>
+          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
+          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
         </section>
 
         <footer className="absolute left-0 bottom-0 w-full h-[123px]">
@@ -205,7 +239,8 @@ export function CardPreview({
   return (
     <div
       id={id}
-      className="relative overflow-hidden shadow-2xl transition-all duration-500 group"
+      key={data.designType}
+      className="relative overflow-hidden shadow-2xl poster animate-fade-in will-change-transform transition-all duration-500 group"
       style={posterStyle}
     >
       <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/a068f32c-5159-4502-a8f7-c3748e1a7c88" alt="" />
@@ -214,7 +249,7 @@ export function CardPreview({
         I'M ATTENDING
       </p>
       
-      <h1 className="absolute left-[50px] top-[138px] m-0 font-[700] text-[96px] leading-[88px] tracking-[-4px]" style={titleStyle}>
+      <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px]" style={titleStyle}>
         {data.eventName?.split("<br />").map((text, i) => <span key={i}>{text}<br /></span>) || "Pakistan Tech\nSummit"}
       </h1>
 
@@ -240,14 +275,19 @@ export function CardPreview({
       </div>
 
       <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
-        <img 
-          src={data.photo || "https://www.figma.com/api/mcp/asset/30683129-9849-43e5-826b-31991c7c5e80"} 
-          className="w-[175px] h-[175px] rounded-[25px] object-cover block mb-5" 
-          alt={data.name} 
-        />
-        <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap">{data.name || "Syed Mesum Raza Shah"}</h2>
-        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "CEO & Founder"}</p>
-        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Avtive (Private) Limited"}</p>
+        <div className="w-[175px] h-[175px] rounded-[25px] overflow-hidden block mb-5 bg-white/10 border border-white/10 flex items-center justify-center">
+          {data.photo ? (
+            <img src={data.photo} className="w-full h-full object-cover" />
+          ) : (
+            <svg className="w-20 h-20 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          )}
+        </div>
+        <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap">{data.name || "Full Name"}</h2>
+        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
+        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
       </section>
 
       <footer className="absolute left-0 right-0 bottom-0 h-[123px] bg-white grid place-items-center px-[40px]">
@@ -256,3 +296,4 @@ export function CardPreview({
     </div>
   );
 }
+

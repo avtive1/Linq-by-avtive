@@ -1,6 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { ImageCropperModal } from "./ImageCropperModal";
+
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB
 const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -221,6 +223,9 @@ export function FilePicker({
   required?: boolean;
   error?: string;
 }) {
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [tempImage, setTempImage] = useState<string | null>(null);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -238,10 +243,20 @@ export function FilePicker({
 
     const reader = new FileReader();
     reader.onloadend = () => {
-      onChange(reader.result as string);
+      setTempImage(reader.result as string);
+      setCropperOpen(true);
+      // Clear input so selecting same file triggers change again
+      e.target.value = "";
     };
     reader.readAsDataURL(file);
   };
+
+  const handleCropComplete = (croppedBase64: string) => {
+    onChange(croppedBase64);
+    setCropperOpen(false);
+    setTempImage(null);
+  };
+
 
   return (
     <div className="flex flex-col gap-1.5 w-full">
@@ -280,6 +295,17 @@ export function FilePicker({
         </div>
       </div>
       {error && <p className="text-[11px] font-medium text-red-500">{error}</p>}
+
+      {cropperOpen && tempImage && (
+        <ImageCropperModal
+          image={tempImage}
+          onCropComplete={handleCropComplete}
+          onClose={() => {
+            setCropperOpen(false);
+            setTempImage(null);
+          }}
+        />
+      )}
     </div>
   );
 }
