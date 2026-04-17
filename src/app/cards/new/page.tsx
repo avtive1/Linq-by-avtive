@@ -25,6 +25,7 @@ function NewCardForm() {
     email: "",
     eventName: "",
     sessionDate: "",
+    sessionTime: "",
     location: "",
     track: "",
     photo: "",
@@ -67,6 +68,7 @@ function NewCardForm() {
           eventName: data.name || "",
           location: data.location || "",
           sessionDate: data.date || "",
+          sessionTime: data.time || "",
         }));
       }
       setEventLoading(false);
@@ -189,6 +191,7 @@ function NewCardForm() {
         card_email: form.email,
         event_name: form.eventName,
         session_date: form.sessionDate,
+        session_time: form.sessionTime,
         location: form.location,
         track: form.track || "",
         linkedin: formatQrLink(form.linkedin),

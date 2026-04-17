@@ -21,9 +21,9 @@ import {
   Link as LinkIcon,
   Pencil,
   Copy,
-  X,
   RefreshCw,
   Sparkles,
+  Globe,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -48,7 +48,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", location: "", date: "" });
+  const [editForm, setEditForm] = useState({ name: "", location: "", location_type: "onsite", date: "", time: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Delete event modal
@@ -94,7 +94,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           id: eventRecord.id,
           name: eventRecord.name,
           location: eventRecord.location,
+          location_type: eventRecord.location_type || "onsite",
           date: eventRecord.date,
+          time: eventRecord.time || "",
         });
 
         const { data: attendeeRecords, error: attendeeError } = await supabase
@@ -179,15 +181,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     if (!eventData) return;
     setEditForm({
       name: eventData.name || "",
-      location: eventData.location || "",
+      location: eventData.location_type === "webinar" ? "" : (eventData.location || ""),
+      location_type: eventData.location_type || "onsite",
       date: eventData.date || "",
+      time: eventData.time || "",
     });
     setIsEditOpen(true);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editForm.name || !editForm.location || !editForm.date) {
+    if (!editForm.name || (!editForm.location && editForm.location_type === "onsite") || !editForm.date || !editForm.time) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -198,8 +202,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         .from("events")
         .update({
           name: editForm.name,
-          location: editForm.location,
+          location: editForm.location_type === "webinar" ? "Webinar" : editForm.location,
+          location_type: editForm.location_type,
           date: editForm.date,
+          time: editForm.time,
         })
         .eq("id", id);
 
@@ -208,8 +214,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setEventData((prev) => prev ? {
         ...prev,
         name: editForm.name,
-        location: editForm.location,
+        location: editForm.location_type === "webinar" ? "Webinar" : editForm.location,
+        location_type: editForm.location_type,
         date: editForm.date,
+        time: editForm.time,
       } : prev);
       toast.success("Event updated.");
       setIsEditOpen(false);
@@ -752,19 +760,56 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   value={editForm.name}
                   onChange={(v) => setEditForm({ ...editForm, name: v })}
                 />
-                <TextInput
-                  label="Location"
-                  required
-                  value={editForm.location}
-                  onChange={(v) => setEditForm({ ...editForm, location: v })}
-                />
-                <TextInput
-                  label="Event Date"
-                  required
-                  type="date"
-                  value={editForm.date}
-                  onChange={(v) => setEditForm({ ...editForm, date: v })}
-                />
+                
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center gap-1">
+                     <label className="text-sm font-semibold text-heading leading-tight">Location Type</label>
+                  </div>
+                  <div className="flex gap-4 mb-1">
+                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <input type="radio" name="locationType" value="onsite" checked={editForm.location_type === "onsite"} onChange={() => setEditForm({ ...editForm, location_type: "onsite" })} className="accent-primary" />
+                        Onsite
+                     </label>
+                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <input type="radio" name="locationType" value="webinar" checked={editForm.location_type === "webinar"} onChange={() => setEditForm({ ...editForm, location_type: "webinar", location: "" })} className="accent-primary" />
+                        Webinar
+                     </label>
+                  </div>
+                </div>
+
+                {editForm.location_type === "webinar" ? (
+                   <div className="flex flex-col gap-2 w-full group opacity-75">
+                     <label className="text-sm font-semibold text-heading leading-tight">Location <span className="text-primary-strong">*</span></label>
+                     <div className="flex items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
+                        <Globe size={18} className="text-muted mr-2" />
+                        <input type="text" value="Webinar" disabled className="flex-1 py-3 text-sm leading-6 text-muted bg-transparent outline-none cursor-not-allowed" />
+                     </div>
+                   </div>
+                ) : (
+                  <TextInput
+                    label="Location"
+                    required
+                    value={editForm.location}
+                    onChange={(v) => setEditForm({ ...editForm, location: v })}
+                  />
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <TextInput
+                    label="Event Date"
+                    required
+                    type="date"
+                    value={editForm.date}
+                    onChange={(v) => setEditForm({ ...editForm, date: v })}
+                  />
+                  <TextInput
+                    label="Event Time"
+                    required
+                    type="time"
+                    value={editForm.time}
+                    onChange={(v) => setEditForm({ ...editForm, time: v })}
+                  />
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">

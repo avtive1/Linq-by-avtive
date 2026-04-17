@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -26,11 +26,14 @@ function DashboardContent() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
+    location_type: "onsite" as "onsite" | "webinar",
     date: "",
+    time: "",
     logo: "",
   });
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
@@ -148,13 +151,20 @@ function DashboardContent() {
   }, [searchQuery, events]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      // Hard redirect to clear next.js client cache immediately and feel responsive
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("Logout error", err);
+      setIsLoggingOut(false);
+    }
   };
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!eventForm.name || !eventForm.location || !eventForm.date) {
+    if (!eventForm.name || (!eventForm.location && eventForm.location_type === "onsite") || !eventForm.date || !eventForm.time) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -191,8 +201,10 @@ function DashboardContent() {
       
       const data = {
         name: eventForm.name,
-        location: eventForm.location,
+        location: eventForm.location_type === "webinar" ? "Webinar" : eventForm.location,
+        location_type: eventForm.location_type,
         date: eventForm.date,
+        time: eventForm.time,
         user_id: user.id,
         logo_url: logoUrl
       };
@@ -203,7 +215,7 @@ function DashboardContent() {
       toast.success(`Event "${eventForm.name}" created successfully!`);
       
       setIsEventModalOpen(false);
-      setEventForm({ name: "", location: "", date: "", logo: "" });
+      setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
       fetchData(user.id);
     } catch (err: any) {
       console.error(err);
@@ -302,10 +314,11 @@ function DashboardContent() {
             <Button
               variant="secondary"
               onClick={handleLogout}
+              disabled={isLoggingOut}
               className="px-3"
-              icon={<LogOut size={18} />}
+              icon={isLoggingOut ? undefined : <LogOut size={18} />}
             >
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{isLoggingOut ? "..." : "Logout"}</span>
             </Button>
           </div>
         </div>
@@ -459,20 +472,57 @@ function DashboardContent() {
                   value={eventForm.name}
                   onChange={(v) => setEventForm({ ...eventForm, name: v })}
                 />
-                <TextInput
-                  label="Location"
-                  required
-                  placeholder="e.g. San Francisco, CA"
-                  value={eventForm.location}
-                  onChange={(v) => setEventForm({ ...eventForm, location: v })}
-                />
-                <TextInput
-                  label="Event Date"
-                  required
-                  type="date"
-                  value={eventForm.date}
-                  onChange={(v) => setEventForm({ ...eventForm, date: v })}
-                />
+                
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center gap-1">
+                     <label className="text-sm font-semibold text-heading leading-tight">Location Type</label>
+                  </div>
+                  <div className="flex gap-4 mb-1">
+                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <input type="radio" name="locationType" value="onsite" checked={eventForm.location_type === "onsite"} onChange={() => setEventForm({ ...eventForm, location_type: "onsite" })} className="accent-primary" />
+                        Onsite
+                     </label>
+                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <input type="radio" name="locationType" value="webinar" checked={eventForm.location_type === "webinar"} onChange={() => setEventForm({ ...eventForm, location_type: "webinar", location: "" })} className="accent-primary" />
+                        Webinar
+                     </label>
+                  </div>
+                </div>
+
+                {eventForm.location_type === "webinar" ? (
+                   <div className="flex flex-col gap-2 w-full group opacity-75">
+                     <label className="text-sm font-semibold text-heading leading-tight">Location <span className="text-primary-strong">*</span></label>
+                     <div className="flex items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
+                        <Globe size={18} className="text-muted mr-2" />
+                        <input type="text" value="Webinar" disabled className="flex-1 py-3 text-sm leading-6 text-muted bg-transparent outline-none cursor-not-allowed" />
+                     </div>
+                   </div>
+                ) : (
+                  <TextInput
+                    label="Location"
+                    required
+                    placeholder="e.g. San Francisco, CA"
+                    value={eventForm.location}
+                    onChange={(v) => setEventForm({ ...eventForm, location: v })}
+                  />
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <TextInput
+                    label="Event Date"
+                    required
+                    type="date"
+                    value={eventForm.date}
+                    onChange={(v) => setEventForm({ ...eventForm, date: v })}
+                  />
+                  <TextInput
+                    label="Event Time"
+                    required
+                    type="time"
+                    value={eventForm.time}
+                    onChange={(v) => setEventForm({ ...eventForm, time: v })}
+                  />
+                </div>
                 <FilePicker
                   label="Event Logo"
                   value={eventForm.logo}

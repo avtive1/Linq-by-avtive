@@ -7,6 +7,7 @@ export type CardData = {
   location: string;
   eventName: string;
   sessionDate: string;
+  sessionTime?: string;
   year: string;
   linkedin?: string;
   track?: string;
@@ -23,7 +24,9 @@ export type EventData = {
   id: string;
   name: string;
   location: string;
+  location_type?: string;
   date: string;
+  time?: string;
   user?: string;
   created?: string;
   logo_url?: string;

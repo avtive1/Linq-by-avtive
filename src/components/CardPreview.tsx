@@ -156,7 +156,7 @@ export function CardPreview({
         </p>
         <p className="absolute left-[261px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
           <img src="https://www.figma.com/api/mcp/asset/c70396aa-fad6-4461-a222-1ef86c1215c8" className="w-[15px] h-[15px]" alt="" />
-          05:00 PM (Pakistan Time)
+          {data.sessionTime || "05:00 PM"}
         </p>
         <p className="absolute left-[30px] top-[390px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
           <img src="https://www.figma.com/api/mcp/asset/09c9f77b-5728-4fe6-8b34-b3ad59fe884d" className="w-[15px] h-[15px]" alt="" />
@@ -277,7 +277,7 @@ export function CardPreview({
           </div>
           <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
             <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
-            <span>05:00 PM (Pakistan Time)</span>
+            <span>{data.sessionTime || "05:00 PM"}</span>
           </div>
         </div>
 
@@ -347,7 +347,7 @@ export function CardPreview({
         </div>
         <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
           <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
-          <span>05:00 PM (Pakistan Time)</span>
+          <span>{data.sessionTime || "05:00 PM"}</span>
         </div>
       </div>
 
