@@ -37,18 +37,18 @@ export function TextInput({
   const inputType = isPassword ? (showPass ? "text" : "password") : type;
 
   return (
-    <div className={`flex flex-col gap-1.5 w-full group ${className}`}>
+    <div className={`flex flex-col gap-2 w-full group ${className}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-base font-medium text-heading leading-none">
+          <label className="text-sm font-semibold text-heading leading-tight">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-base font-bold">*</span>}
+          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
         </div>
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-lg shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 focus-within:ring-2 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
             : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
@@ -59,7 +59,7 @@ export function TextInput({
             <span className="px-3 text-sm text-muted bg-surface/50 whitespace-nowrap">
               {prefix}
             </span>
-            <div className="w-[1px] h-10 bg-border" />
+            <div className="w-[1px] h-11 bg-border" />
           </div>
         )}
         <div className="pl-4 flex-shrink-0 text-muted">
@@ -71,19 +71,19 @@ export function TextInput({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 px-3 py-3 text-base text-heading bg-transparent outline-none placeholder:text-muted/60"
+          className="flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent outline-none placeholder:text-muted/70"
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="p-2.5 text-muted hover:text-heading transition-colors"
+            className="p-2 text-muted hover:text-heading transition-colors duration-150 rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97]"
           >
             {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         )}
       </div>
-      {error && <p className="text-[11px] font-medium text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-xs font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -115,9 +115,9 @@ export function Button({
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "px-3 py-2 text-[12px]",
-    md: "px-5 py-2.5 text-sm",
-    lg: "px-7 py-3 text-base",
+    sm: "h-9 px-3 text-xs rounded-[4px]",
+    md: "h-10 px-4 text-sm rounded-sm",
+    lg: "h-12 px-5 text-base rounded-md",
   };
 
   return (
@@ -126,13 +126,13 @@ export function Button({
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
       className={`
-        flex items-center justify-center gap-2 rounded-lg font-bold transition-all duration-300 active:scale-95
+        inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
         ${sizeClasses[size]}
         ${isPrimary 
-          ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
+          ? "bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-55 disabled:saturate-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
           : isBlue
-          ? "bg-heading text-white shadow-lg shadow-heading/30 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-heading/40 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
-          : "bg-white border border-border text-heading hover:border-primary/40 hover:text-primary-strong disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"}
+          ? "bg-heading text-white border border-heading shadow-lg shadow-heading/25 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-heading/30 disabled:opacity-55 disabled:saturate-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
+          : "bg-white border border-border text-heading hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 disabled:opacity-55 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
       `}
@@ -163,18 +163,18 @@ export function Select({
   disabled?: boolean;
 }) {
   return (
-    <div className={`flex flex-col gap-1.5 w-full group ${disabled ? "opacity-60" : ""}`}>
+    <div className={`flex flex-col gap-2 w-full group ${disabled ? "opacity-60" : ""}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-base font-medium text-heading leading-none">
+          <label className="text-sm font-semibold text-heading leading-tight">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-base font-bold">*</span>}
+          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
         </div>
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-lg shadow-sm transition-all duration-300 focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 focus-within:ring-2 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
             : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
@@ -186,7 +186,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-2 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
+            flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent outline-none placeholder:text-muted/70 appearance-none
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -203,7 +203,7 @@ export function Select({
           </svg>
         </div>
       </div>
-      {error && <p className="text-[11px] font-medium text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-xs font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -259,17 +259,17 @@ export function FilePicker({
 
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div className="flex flex-col gap-2 w-full">
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-base font-medium text-heading">
+          <label className="text-sm font-semibold text-heading leading-tight">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-base font-bold">*</span>}
+          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
         </div>
       )}
       <div className={`
-        relative flex items-center bg-white border rounded-lg shadow-sm overflow-hidden transition-all duration-300
+        relative flex items-center bg-white border rounded-md shadow-sm overflow-hidden transition-all duration-200
         ${error ? "border-red-500" : "border-border/60 hover:border-primary/40 hover:bg-white"}
       `}>
         <input
@@ -283,10 +283,10 @@ export function FilePicker({
             <div className="w-8 h-8 rounded border border-border/50 overflow-hidden flex-shrink-0 flex items-center justify-center p-0.5">
               <img src={value} alt="Preview" className="w-full h-full object-contain rounded-sm" />
             </div>
-            <span className="text-base text-heading font-medium truncate">Photo selected</span>
+            <span className="text-sm text-heading font-medium truncate">Photo selected</span>
           </div>
         ) : (
-          <div className="flex-1 px-4 py-3 text-base text-muted/60 truncate">
+          <div className="flex-1 px-4 py-3 text-sm text-muted/70 truncate">
             Choose File
           </div>
         )}
@@ -294,7 +294,7 @@ export function FilePicker({
           Browse
         </div>
       </div>
-      {error && <p className="text-[11px] font-medium text-red-500">{error}</p>}
+      {error && <p className="text-xs font-medium leading-snug text-red-500">{error}</p>}
 
       {cropperOpen && tempImage && (
         <ImageCropperModal
@@ -312,7 +312,7 @@ export function FilePicker({
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
-    <div className={`relative overflow-hidden bg-muted/20 rounded-lg ${className}`}>
+    <div className={`relative overflow-hidden bg-muted/20 rounded-md ${className}`}>
       <div className="absolute inset-0 animate-shimmer" />
     </div>
   );
@@ -356,4 +356,4 @@ export function AnimatedCounter({ value, duration = 1500 }: { value: number; dur
   return <span>{displayValue}</span>;
 }
 
-
+

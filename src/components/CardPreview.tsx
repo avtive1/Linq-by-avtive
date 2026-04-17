@@ -167,7 +167,7 @@ export function CardPreview({
         {verticalSide === 1 ? (
           /* SIDE 1: User Photo - Matching qr-wrap positioning and size */
           <div 
-            className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-[5.33px] overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center z-[4]"
+            className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center z-[4]"
           >
             {data.photo ? (
               <img src={data.photo} className="w-full h-full object-cover" />
@@ -180,7 +180,7 @@ export function CardPreview({
           </div>
         ) : (
           /* SIDE 2: QR Code - Exactly matching qr-wrap and internal qr-image/qr-center */
-          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-[5.33px] bg-white z-[4]">
+          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-[4]">
              {qrUrl ? (
                <>
                   <img 
@@ -292,7 +292,7 @@ export function CardPreview({
         </div>
 
         <section className="absolute right-[26px] top-[172px] w-[340px] text-left" style={metaTextColor}>
-          <div className="w-[175px] h-[175px] rounded-[25px] overflow-hidden block mb-[20px] bg-white/10 border border-white/10 flex items-center justify-center">
+          <div className="w-[175px] h-[175px] rounded-lg overflow-hidden block mb-[20px] bg-white/10 border border-white/10 flex items-center justify-center">
             {data.photo ? (
               <img src={data.photo} className="w-full h-full object-cover" />
             ) : (
@@ -362,7 +362,7 @@ export function CardPreview({
       </div>
 
       <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
-        <div className="w-[175px] h-[175px] rounded-[25px] overflow-hidden block mb-5 bg-white/10 border border-white/10 flex items-center justify-center">
+        <div className="w-[175px] h-[175px] rounded-lg overflow-hidden block mb-5 bg-white/10 border border-white/10 flex items-center justify-center">
           {data.photo ? (
             <img src={data.photo} className="w-full h-full object-cover" />
           ) : (

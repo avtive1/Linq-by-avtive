@@ -228,7 +228,7 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[12px] shadow-2xl max-w-sm">
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Invalid registration link</p>
           <p className="text-sm text-muted">
             This page can only be opened from an event registration link provided by your organizer.
@@ -245,8 +245,8 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-[12px] shadow-2xl max-w-md border border-amber-500/20">
-          <div className="w-16 h-16 rounded-[10px] bg-amber-500/10 flex items-center justify-center text-amber-600">
+        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-amber-500/20">
+          <div className="w-16 h-16 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-600">
             <Lock size={32} />
           </div>
           <div className="flex flex-col gap-2">
@@ -281,17 +281,17 @@ function NewCardForm() {
       {/* Left Sidebar - Form */}
       <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-6 md:p-11 overflow-y-auto lg:h-screen animate-slide-up">
         <div className="flex items-center gap-3 mb-8">
-          <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
-            AVTIVE ATTENDEE PORTAL
+          <span className="text-sm font-semibold tracking-[0.04em] text-muted/65">
+            Avtive attendee portal
           </span>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          <div className="flex flex-col gap-1.5">
-            <h1 className="text-3xl font-bold text-heading tracking-tight">
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-bold text-heading tracking-tight leading-tight">
               Event Registration
             </h1>
-            <p className="text-sm text-muted">
+            <p className="text-base text-muted leading-[1.55]">
               {form.eventName
                 ? `Register for ${form.eventName} and get your attendee card.`
                 : "Register for the event to generate your attendee card."}
@@ -384,20 +384,22 @@ function NewCardForm() {
       </div>
 
         {/* Right Content - Preview */}
-        <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
+        <div className="flex-1 flex flex-col items-center py-8 px-2 sm:px-3 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
 
-          <div className="w-full flex-1 flex flex-col items-center justify-start p-4 pt-12">
-             <div className="w-full flex flex-col 2xl:flex-row flex-wrap gap-16 xl:gap-24 items-center 2xl:items-start justify-center max-w-[1600px] mx-auto min-h-max pl-4 md:pl-12">
+          <div className="w-full flex-1 flex flex-col items-center justify-start px-1 sm:px-2 xl:px-2 pt-10">
+             <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-14 items-center xl:items-start justify-center max-w-[1360px] mx-auto min-h-max">
                 {/* Horizontal Card Preview */}
-                <div className="flex flex-col items-center gap-6 shrink-0 w-max">
-                   <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Social Post Layout</h3>
-                   <div className="preview-card-capture horizontal-preview">
-                      <CardPreview data={form} preview />
+                <div className="flex flex-col items-center gap-5 shrink-0 w-full xl:w-auto">
+                   <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Social post layout</h3>
+                   <div className="horizontal-preview-frame">
+                      <div className="preview-card-capture horizontal-preview">
+                        <CardPreview data={form} preview />
+                      </div>
                    </div>
                    <Button 
                       onClick={() => handleSubmit()} 
                       disabled={loading}
-                      className="rounded-full px-12 h-12 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
+                      className="rounded-md px-12 h-12 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
                    >
                       {loading ? "Preparing..." : "View & Download Post"}
                    </Button>
@@ -405,15 +407,17 @@ function NewCardForm() {
 
                 {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
                 {form.linkedin && (
-                   <div className="flex flex-col items-center gap-6 animate-fade-in shrink-0 w-max">
-                      <h3 className="text-[10px] font-black tracking-[0.3em] text-muted/30 uppercase">Event Badge Layout</h3>
-                      <div className="preview-card-capture vertical-preview">
-                         <CardPreview data={form} preview isVertical verticalSide={1} />
+                   <div className="flex flex-col items-center gap-2 animate-fade-in shrink-0 w-full xl:w-auto">
+                      <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Event badge layout</h3>
+                      <div className="vertical-preview-frame mt-2">
+                        <div className="preview-card-capture vertical-preview">
+                          <CardPreview data={form} preview isVertical verticalSide={1} />
+                        </div>
                       </div>
                       <Button 
                          variant="secondary"
                          onClick={() => setShowPrintPreview(true)} 
-                         className="rounded-full px-12 h-12 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
+                         className="rounded-md px-12 h-12 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
                       >
                          Print Vertical Badge
                       </Button>
@@ -421,18 +425,18 @@ function NewCardForm() {
                 )}
              </div>
           </div>
-        <div className="w-full max-w-[1000px] mt-4 flex flex-col xl:flex-row gap-4 animate-slide-up bg-white/40 border border-white/10 p-3 rounded-2xl glass-panel shadow-sm">
+        <div className="w-full max-w-[1120px] mt-8 flex flex-col lg:flex-row gap-4 animate-slide-up bg-white/45 border border-white/15 p-4 rounded-xl glass-panel shadow-md backdrop-blur-xl">
            {/* Item 1: Layout Selection */}
-           <div className="flex-1 flex flex-col gap-2">
-              <span className="text-[9px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Layout Selection</span>
+           <div className="flex-1 flex flex-col gap-3">
+              <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Layout style</span>
               <div className="flex gap-2 h-10">
                  <button
                     type="button"
                     onClick={() => update("designType")("design1")}
-                    className={`flex-1 rounded-lg border text-[11px] font-bold transition-all ${
+                    className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
                        form.designType === "design1" 
                           ? "bg-primary text-white border-primary shadow-md" 
-                          : "bg-white/40 border-white/20 text-muted hover:bg-white/60"
+                          : "bg-white/50 border-white/30 text-muted hover:bg-white/70"
                     }`}
                  >
                     Design 1
@@ -440,10 +444,10 @@ function NewCardForm() {
                  <button
                     type="button"
                     onClick={() => update("designType")("design2")}
-                    className={`flex-1 rounded-lg border text-[11px] font-bold transition-all ${
+                    className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
                        form.designType === "design2" 
                           ? "bg-primary text-white border-primary shadow-md" 
-                          : "bg-white/40 border-white/20 text-muted hover:bg-white/60"
+                          : "bg-white/50 border-white/30 text-muted hover:bg-white/70"
                     }`}
                  >
                     Design 2
@@ -451,18 +455,18 @@ function NewCardForm() {
               </div>
            </div>
 
-           <div className="w-px bg-white/20 hidden xl:block mx-1" />
+           <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
            {/* Item 2: Theme Selection */}
-           <div className="flex flex-col gap-2 items-center xl:items-start shrink-0">
-              <span className="text-[9px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Theme Color</span>
+           <div className="flex flex-col gap-3 items-center lg:items-start shrink-0">
+              <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Theme color</span>
               <div className="flex gap-3 h-10 items-center">
                  {colors.map((c) => (
                     <button
                        key={c.name}
                        type="button"
                        onClick={() => update("color")(c.name)}
-                       className={`w-8 h-8 rounded-full transition-all duration-300 relative overflow-hidden flex items-center justify-center p-0 ${
+                       className={`w-8 h-8 rounded-full transition-all duration-150 relative overflow-hidden flex items-center justify-center p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-95 ${
                           form.color === c.name 
                              ? "ring-2 ring-primary ring-offset-2 scale-110 shadow-md" 
                              : "hover:scale-110 border border-white/40"
@@ -478,11 +482,11 @@ function NewCardForm() {
               </div>
            </div>
 
-           <div className="w-px bg-white/20 hidden xl:block mx-1" />
+           <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
            {/* Item 3: Typography Selection */}
-           <div className="flex-1 flex flex-col gap-2 max-w-[200px] xl:max-w-none">
-              <span className="text-[9px] font-extrabold tracking-[0.2em] text-muted/60 uppercase">Typography</span>
+           <div className="flex-1 flex flex-col gap-3 max-w-[240px] lg:max-w-none">
+              <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Typography</span>
               <div className="h-10">
                  <Select
                     value={form.fontFamily}
@@ -515,24 +519,24 @@ function NewCardForm() {
 
              <div className="flex flex-col lg:flex-row gap-12 print:flex-col print:gap-20 print:items-center">
                 <div className="flex flex-col items-center gap-6">
-                   <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest print:hidden">Front Side (Photo)</span>
+                   <span className="text-xs font-semibold text-white/50 tracking-[0.04em] print:hidden">Front side (Photo)</span>
                    <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
                       <CardPreview data={form} isVertical verticalSide={1} />
                    </div>
                 </div>
                 <div className="flex flex-col items-center gap-6">
-                   <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest print:hidden">Back Side (QR)</span>
+                   <span className="text-xs font-semibold text-white/50 tracking-[0.04em] print:hidden">Back side (QR)</span>
                    <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
                       <CardPreview data={form} isVertical verticalSide={2} />
                    </div>
                 </div>
              </div>
 
-             <div className="mt-24 p-8 border border-white/10 rounded-2xl bg-white/5 max-w-lg text-center print:hidden">
+             <div className="mt-24 p-8 border border-white/10 rounded-xl bg-white/5 max-w-lg text-center print:hidden">
                 <p className="text-sm text-white/60 mb-4 leading-relaxed">
                   For the best experience, use heavy cardstock and set your printer to <b>Portrait</b> with <b>Default</b> margins.
                 </p>
-                <p className="text-[10px] font-bold text-primary tracking-widest uppercase">Fold along the center after printing</p>
+                <p className="text-xs font-semibold text-primary tracking-[0.04em]">Fold along the center after printing</p>
              </div>
           </div>
         )}
@@ -541,21 +545,48 @@ function NewCardForm() {
 
       {/* Responsive scale styles */}
       <style>{`
+        .horizontal-preview-frame {
+          width: 780px;
+          height: 408px;
+          display: flex;
+          justify-content: center;
+          overflow: hidden;
+        }
         .horizontal-preview {
           transform-origin: top center;
           transform: scale(0.65);
           width: 1200px;
           height: 628px;
-          margin-bottom: -220px;
+        }
+        .vertical-preview-frame {
+          width: 304px;
+          height: 540px;
+          display: flex;
+          justify-content: center;
+          overflow: hidden;
         }
         .vertical-preview {
           position: relative;
           width: 576px;
           height: 1024px;
+          transform-origin: top center;
+          transform: scale(0.484);
         }
-        @media (max-width: 1024px) {
-          .horizontal-preview { transform: scale(calc((100vw - 48px) / 1200)); margin-bottom: calc((628px * ((100vw - 48px) / 1200)) - 628px); }
-          .vertical-preview { transform: scale(calc((100vw - 48px) / 576)); margin-bottom: calc((1024px * ((100vw - 48px) / 576)) - 1024px); }
+        @media (max-width: 1279px) {
+          .horizontal-preview-frame {
+            width: min(100%, 780px);
+            height: calc(min(100%, 780px) * 0.5233);
+          }
+          .horizontal-preview {
+            transform: scale(calc(min(0.65, (100vw - 56px) / 1200)));
+          }
+          .vertical-preview-frame {
+            width: 272px;
+            height: 483px;
+          }
+          .vertical-preview {
+            transform: scale(0.468);
+          }
         }
         @media print {
            body { background: white !important; }

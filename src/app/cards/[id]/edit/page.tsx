@@ -238,7 +238,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[12px] shadow-2xl max-w-sm">
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Card not found</p>
           <Link href="/dashboard" className="mt-2">
             <Button variant="secondary">Back to Dashboard</Button>
@@ -252,7 +252,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-[12px] shadow-2xl max-w-sm">
+        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">You don&apos;t have permission to edit this card</p>
           <p className="text-sm text-muted">Only the event organizer can edit attendee cards.</p>
           <Link href="/dashboard" className="mt-2">
@@ -272,15 +272,15 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         <div className="flex items-center gap-3 mb-8 -ml-1 sm:-ml-2">
           <Link
             href={eventId ? `/dashboard/events/${eventId}` : "/dashboard"}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all group"
+            className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
           >
             <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
-            BACK TO EVENT
+            Back to Event
           </Link>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-bold text-heading tracking-tight">Edit Card</h1>
             <p className="text-sm text-muted">Update the attendee details below.</p>
           </div>
@@ -315,7 +315,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
       {/* Preview */}
       <div className="flex-1 flex flex-col items-center py-8 px-4 sm:px-6 lg:h-screen min-h-[500px] lg:min-h-0 overflow-y-auto animate-slide-up delay-100">
-        <h2 className="text-xs font-bold tracking-[0.2em] text-muted/40 uppercase mb-6">Live Preview</h2>
+        <h2 className="text-sm font-semibold tracking-[0.04em] text-muted/60 mb-6">Live preview</h2>
         <div className="preview-scale-wrapper w-full">
           <div className="preview-card-capture" style={{ width: "800px", aspectRatio: "800/420" }}>
             <CardPreview data={form} preview />

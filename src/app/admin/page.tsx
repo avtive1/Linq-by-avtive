@@ -1,7 +1,6 @@
 import { getAdminClient } from "@/lib/admin";
 import { Users, BarChart3, Building2, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import { AnimatedCounter } from "@/components/ui";
 
 export const revalidate = 0; // Ensures this page is always fresh when loaded by admin
 
@@ -71,33 +70,33 @@ export default async function AdminDashboardPage() {
 
       {/* Global Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="glass-panel p-6 rounded-[12px] flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-[10px] bg-primary/20 flex items-center justify-center text-primary-strong shrink-0">
+        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-sm bg-primary/20 flex items-center justify-center text-primary-strong shrink-0">
             <Building2 size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Total Orgs</span>
-            <span className="text-5xl font-bold text-heading tracking-tight">{totalOrgs}</span>
+            <span className="ui-eyebrow mb-1">Total Orgs</span>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalOrgs}</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-[12px] flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-[10px] bg-teal-500/20 flex items-center justify-center text-teal-600 shrink-0">
+        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-sm bg-info/15 flex items-center justify-center text-info shrink-0">
             <BarChart3 size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Total Events</span>
-            <span className="text-5xl font-bold text-heading tracking-tight">{totalEvents}</span>
+            <span className="ui-eyebrow mb-1">Total Events</span>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalEvents}</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-[12px] flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-[10px] bg-indigo-500/20 flex items-center justify-center text-indigo-600 shrink-0">
+        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-sm bg-heading/15 flex items-center justify-center text-heading shrink-0">
             <Users size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Total Attendees</span>
-            <span className="text-5xl font-bold text-heading tracking-tight">{totalAttendees}</span>
+            <span className="ui-eyebrow mb-1">Total Attendees</span>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalAttendees}</span>
           </div>
         </div>
       </div>
@@ -106,10 +105,11 @@ export default async function AdminDashboardPage() {
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-bold text-heading tracking-tight pl-2">Registered Organizations</h2>
         
-        <div className="bg-white/50 backdrop-blur-md rounded-2xl border border-border/50 overflow-hidden shadow-sm">
-          <table className="w-full text-left border-collapse">
+        <div className="bg-white/50 backdrop-blur-md rounded-xl border border-border/50 overflow-hidden shadow-sm">
+          <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[820px] text-left border-collapse">
             <thead>
-              <tr className="bg-surface border-b border-border text-[11px] font-black uppercase tracking-[0.1em] text-muted">
+              <tr className="bg-surface border-b border-border text-xs font-semibold tracking-[0.02em] text-muted">
                 <th className="py-4 px-6 font-semibold">Email / Organization</th>
                 <th className="py-4 px-6 font-semibold">Joined At</th>
                 <th className="py-4 px-6 font-semibold text-center">Events Hosted</th>
@@ -120,21 +120,21 @@ export default async function AdminDashboardPage() {
             <tbody className="divide-y divide-border/30">
               {organizations.map((org) => (
                 <tr key={org.id} className="hover:bg-white transition-colors group cursor-default">
-                  <td className="py-4 px-6 font-bold text-heading text-[15px]">{org.email}</td>
+                  <td className="py-4 px-6 font-semibold text-heading text-sm">{org.email}</td>
                   <td className="py-4 px-6 text-muted text-sm">{new Date(org.created_at).toLocaleDateString()}</td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center bg-teal-500/10 text-teal-700 font-bold px-3 py-1 rounded-full text-sm">
+                    <span className="inline-flex items-center justify-center bg-info/10 text-info font-semibold px-3 py-1 rounded-sm text-sm">
                       {org.eventCount}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center bg-indigo-500/10 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm">
+                    <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-semibold px-3 py-1 rounded-sm text-sm">
                       {org.attendeeCount}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
                     <Link href={`/admin/organizations/${org.id}`}>
-                      <button className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-strong bg-primary/5 hover:bg-primary/10 px-4 py-2 rounded-lg transition-colors ml-auto">
+                      <button className="flex items-center gap-1 text-xs font-semibold text-primary-strong hover:text-primary-strong bg-primary/10 hover:bg-primary/15 border border-primary/30 px-4 py-2 rounded-sm transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 ml-auto">
                         Deep Dive <ChevronRight size={14} />
                       </button>
                     </Link>
@@ -148,6 +148,7 @@ export default async function AdminDashboardPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

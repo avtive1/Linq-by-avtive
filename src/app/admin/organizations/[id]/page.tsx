@@ -18,7 +18,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-bold text-heading">Organization Not Found</h2>
         <Link href="/admin">
-          <button className="mt-4 px-6 py-2 bg-primary text-white rounded-lg">Back to Dashboard</button>
+          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md font-semibold transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
         </Link>
       </div>
     );
@@ -55,7 +55,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
   return (
     <div className="px-4 sm:px-6 py-8 sm:py-12">
-      <Link href="/admin" className="flex items-center gap-1.5 text-sm font-bold text-muted hover:text-primary transition-colors w-fit mb-6">
+      <Link href="/admin" className="flex items-center gap-2 text-sm font-bold text-muted hover:text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] w-fit mb-6">
         <ArrowLeft size={16} />
         Back to Dashboard
       </Link>
@@ -71,23 +71,23 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
       {/* Organization Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
-        <div className="glass-panel p-6 rounded-[12px] flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-[10px] bg-teal-500/20 flex items-center justify-center text-teal-600 shrink-0">
+        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-sm bg-info/15 flex items-center justify-center text-info shrink-0">
             <Calendar size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Events Hosted</span>
-            <span className="text-5xl font-bold text-heading tracking-tight">{totalEvents}</span>
+            <span className="ui-eyebrow mb-1">Events Hosted</span>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalEvents}</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-[12px] flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-[10px] bg-indigo-500/20 flex items-center justify-center text-indigo-600 shrink-0">
+        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-sm bg-heading/15 flex items-center justify-center text-heading shrink-0">
             <Users size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em] mb-1">Total Attendees</span>
-            <span className="text-5xl font-bold text-heading tracking-tight">{totalAttendees}</span>
+            <span className="ui-eyebrow mb-1">Total Attendees</span>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalAttendees}</span>
           </div>
         </div>
       </div>
@@ -96,10 +96,11 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-bold text-heading tracking-tight pl-2">Hosted Events</h2>
         
-        <div className="bg-white/50 backdrop-blur-md rounded-2xl border border-border/50 overflow-hidden shadow-sm">
-          <table className="w-full text-left border-collapse">
+        <div className="bg-white/50 backdrop-blur-md rounded-xl border border-border/50 overflow-hidden shadow-sm">
+          <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
-              <tr className="bg-surface border-b border-border text-[11px] font-black uppercase tracking-[0.1em] text-muted">
+              <tr className="bg-surface border-b border-border text-xs font-semibold tracking-[0.02em] text-muted">
                 <th className="py-4 px-6 font-semibold">Event Name</th>
                 <th className="py-4 px-6 font-semibold">Date</th>
                 <th className="py-4 px-6 font-semibold">Location</th>
@@ -114,16 +115,16 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                 
                 return (
                   <tr key={evt.id} className={`hover:bg-white transition-colors cursor-default ${status.label === 'Past' ? 'opacity-70' : ''}`}>
-                    <td className="py-4 px-6 font-bold text-heading text-[15px]">{evt.name}</td>
+                    <td className="py-4 px-6 font-semibold text-heading text-sm">{evt.name}</td>
                     <td className="py-4 px-6 text-muted text-sm">{evt.date}</td>
                     <td className="py-4 px-6 text-muted text-sm truncate max-w-[200px]">{evt.location}</td>
                     <td className="py-4 px-6">
-                      <span className={`text-[10px] font-bold uppercase tracking-[0.15em] px-2 py-1 rounded-[6px] border ${status.classes}`}>
+                      <span className={`text-xs font-semibold tracking-[0.03em] px-2 py-1 rounded-sm border ${status.classes}`}>
                         {status.label}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className="inline-flex items-center justify-center bg-indigo-500/10 text-indigo-700 font-bold px-3 py-1 rounded-full text-sm">
+                      <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-semibold px-3 py-1 rounded-sm text-sm">
                         {aCount}
                       </span>
                     </td>
@@ -137,6 +138,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

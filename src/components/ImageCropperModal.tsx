@@ -89,7 +89,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="relative w-full max-w-[500px] glass-panel !bg-white/95 overflow-hidden animate-in zoom-in-95 duration-500 rounded-3xl shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-[500px] glass-panel !bg-white/95 overflow-hidden animate-in zoom-in-95 duration-500 rounded-lg shadow-2xl flex flex-col">
         {/* Header */}
         <div className="px-6 py-5 border-b border-border/50 flex items-center justify-between bg-white/50">
           <div className="flex flex-col">
@@ -98,7 +98,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           </div>
           <button 
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-black/5 text-muted transition-colors"
+            className="p-2 rounded-[4px] hover:bg-black/5 text-muted transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
             <X size={20} />
           </button>
@@ -130,7 +130,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               step={0.1}
               aria-labelledby="Zoom"
               onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 h-1.5 bg-slate-200 rounded-full appearance-none cursor-pointer accent-primary"
+              className="flex-1 h-1.5 bg-slate-200 rounded-[4px] appearance-none cursor-pointer accent-primary"
             />
             <ZoomIn size={16} className="text-muted" />
           </div>
@@ -141,7 +141,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               fullWidth 
               onClick={onClose}
               disabled={loading}
-              className="h-12 text-base rounded-2xl"
+              className="h-12 text-base rounded-md"
             >
               Cancel
             </Button>
@@ -150,7 +150,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               fullWidth 
               onClick={handleApply}
               disabled={loading}
-              className="h-12 text-base rounded-2xl shadow-primary/20 shadow-xl"
+              className="h-12 text-base rounded-md shadow-primary/20 shadow-xl"
               icon={loading ? null : <Check size={18} />}
             >
               {loading ? "Processing..." : "Apply Photo"}
