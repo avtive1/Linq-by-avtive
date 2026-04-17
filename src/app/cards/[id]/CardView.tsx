@@ -102,13 +102,13 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                 <div className="flex bg-white/5 p-1 rounded-sm w-fit border border-white/10">
                    <button 
                       onClick={() => setViewMode("horizontal")}
-                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/10"}`}
+                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                    >
                       Post View
                    </button>
                    <button 
                       onClick={() => setViewMode("vertical")}
-                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/10"}`}
+                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                    >
                       Badge View
                    </button>
