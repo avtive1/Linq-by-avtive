@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use, useMemo } from "react";
+import { useState, useEffect, use, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
@@ -32,7 +32,7 @@ import { getEventStatus } from "@/lib/utils";
 
 type AttendeeCard = CardData & { photo_path?: string };
 
-export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
+function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
 
@@ -916,5 +916,36 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
         </div>
       )}
     </main>
+  );
+}
+
+export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={
+      <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
+        <GradientBackground />
+        <div className="relative z-10 w-full max-w-[1240px] px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+          <div className="flex flex-col gap-6 mb-12">
+            <Skeleton className="w-24 h-4" />
+            <Skeleton className="w-64 h-12" />
+            <div className="flex gap-4">
+              <Skeleton className="w-32 h-6" />
+              <Skeleton className="w-32 h-6" />
+            </div>
+          </div>
+
+          <Skeleton className="w-full h-32 rounded-md mb-10" />
+          <Skeleton className="w-full h-14 rounded-sm mb-8" />
+
+          <div className="flex flex-col gap-4">
+            <Skeleton className="w-full h-24 rounded-sm" />
+            <Skeleton className="w-full h-24 rounded-sm" />
+            <Skeleton className="w-full h-24 rounded-sm" />
+          </div>
+        </div>
+      </main>
+    }>
+      <EventContent params={params} />
+    </Suspense>
   );
 }
