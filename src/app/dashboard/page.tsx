@@ -16,9 +16,9 @@ export default function DashboardPage() {
   const router = useRouter();
   const [events, setEvents] = useState<DashboardEventData[]>([]);
   const [userName, setUserName] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -43,6 +43,12 @@ export default function DashboardPage() {
         return;
       }
       setUserName(session.user.email?.split("@")[0] || "");
+      
+      // Check for admin - for client side UI toggle
+      if (session.user.email === "afiaaziz044@gmail.com") {
+        setIsAdmin(true);
+      }
+
       fetchData(session.user.id, () => isMounted);
       setIsCheckingAuth(false);
     };
@@ -242,6 +248,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex gap-2.5 sm:gap-3 items-center">
+            {isAdmin && (
+               <Link href="/admin">
+                <Button
+                  variant="secondary"
+                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/15 px-4 font-bold"
+                  icon={<Sparkles size={18} />}
+                >
+                  Admin Panel
+                </Button>
+               </Link>
+            )}
              <Button
               variant="secondary"
               onClick={() => setIsEventModalOpen(true)}
