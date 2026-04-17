@@ -1,5 +1,5 @@
 import { getAdminClient } from "@/lib/admin";
-import { Users, Calendar, ArrowLeft, Mail } from "lucide-react";
+import { Users, Calendar, ArrowLeft, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { getEventStatus } from "@/lib/utils";
 
@@ -61,12 +61,23 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       </Link>
 
       <div className="flex flex-col gap-2 mb-10">
-        <h1 className="text-4xl font-bold text-heading tracking-tight flex items-center gap-3">
-          Organization Details
-        </h1>
-        <p className="text-muted flex items-center gap-2">
-          <Mail size={16} /> {user.email}
-        </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-4xl font-bold text-heading tracking-tight flex items-center gap-3">
+              Organization Details
+            </h1>
+            <p className="text-muted flex items-center gap-2">
+              <Mail size={16} /> {user.email}
+            </p>
+          </div>
+          <Link 
+            href={`/dashboard?impersonate=${user.id}`}
+            className="flex items-center justify-center gap-2 bg-primary-strong/10 text-primary-strong border border-primary/30 px-5 py-2.5 rounded-sm font-bold text-sm hover:bg-primary/20 transition-all active:scale-[0.97]"
+          >
+            <Sparkles size={18} />
+            View as Organization
+          </Link>
+        </div>
       </div>
 
       {/* Organization Metrics Row */}
