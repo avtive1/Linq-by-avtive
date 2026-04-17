@@ -27,7 +27,13 @@ export default function LoginPage() {
       if (signInError) throw signInError;
 
       toast.success("Welcome back!");
-      router.push("/dashboard");
+      
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+      if (email.toLowerCase() === adminEmail?.toLowerCase()) {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message || "Incorrect email or password.");
     }

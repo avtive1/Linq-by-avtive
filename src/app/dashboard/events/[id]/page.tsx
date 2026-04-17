@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, use, useMemo } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 
@@ -23,6 +23,7 @@ import {
   Copy,
   X,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -35,6 +36,10 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
   const router = useRouter();
   const { id } = use(params);
 
+  const searchParams = useSearchParams();
+  const impersonateId = searchParams.get("impersonate");
+  const isPreviewMode = !!impersonateId;
+  
   const [eventData, setEventData] = useState<EventData | null>(null);
   const [cards, setCards] = useState<AttendeeCard[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -473,6 +478,17 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
 
   return (
     <main className="relative min-h-screen w-full bg-transparent">
+      {isPreviewMode && (
+        <div className="relative z-[100] bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} />
+            <span>Admin Preview Mode &mdash; Read Only</span>
+          </div>
+          <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-sm hover:brightness-110 transition-all text-xs">
+            Exit Preview
+          </Link>
+        </div>
+      )}
       <GradientBackground />
 
       <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
@@ -504,74 +520,78 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
           </div>
 
           <div className="flex flex-wrap gap-3 items-center">
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true`;
-                navigator.clipboard.writeText(url);
-                setCopied(true);
-                toast.success("Registration link copied!");
-                setTimeout(() => setCopied(false), 2000);
-              }}
-              disabled={status.label === "Past"}
-              icon={copied ? <Plus size={18} className="rotate-45 text-primary-strong" /> : <LinkIcon size={18} />}
-              className={`hidden sm:flex transition-all duration-150 ${copied ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
-            >
-              {copied ? "Copied!" : "Share Link"}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true`;
-                navigator.clipboard.writeText(url);
-                toast.success("Link copied!");
-              }}
-              disabled={status.label === "Past"}
-              icon={<LinkIcon size={18} />}
-              className={`flex sm:hidden px-3 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
-            >
-              <span className="sr-only">Share Form Link</span>
-            </Button>
-            {status.label === "Past" ? (
-              <Button 
-                variant="primary" 
-                onClick={() => {
-                  setRenewForm({ location: eventData.location || "", date: "", logo: "" });
-                  setIsRenewOpen(true);
-                }} 
-                icon={<RefreshCw size={16} />}
-                className="shadow-lg shadow-primary/20 animate-pulse-subtle"
-              >
-                Renew Event
-              </Button>
-            ) : (
-              <Button variant="secondary" onClick={openEdit} icon={<Pencil size={16} />}>
-                Edit
-              </Button>
+            {!isPreviewMode && (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true`;
+                    navigator.clipboard.writeText(url);
+                    setCopied(true);
+                    toast.success("Registration link copied!");
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  disabled={status.label === "Past"}
+                  icon={copied ? <Plus size={18} className="rotate-45 text-primary-strong" /> : <LinkIcon size={18} />}
+                  className={`hidden sm:flex transition-all duration-150 ${copied ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                >
+                  {copied ? "Copied!" : "Share Link"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true`;
+                    navigator.clipboard.writeText(url);
+                    toast.success("Link copied!");
+                  }}
+                  disabled={status.label === "Past"}
+                  icon={<LinkIcon size={18} />}
+                  className={`flex sm:hidden px-3 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                >
+                  <span className="sr-only">Share Form Link</span>
+                </Button>
+                {status.label === "Past" ? (
+                  <Button 
+                    variant="primary" 
+                    onClick={() => {
+                      setRenewForm({ location: eventData.location || "", date: "", logo: "" });
+                      setIsRenewOpen(true);
+                    }} 
+                    icon={<RefreshCw size={16} />}
+                    className="shadow-lg shadow-primary/20 animate-pulse-subtle"
+                  >
+                    Renew Event
+                  </Button>
+                ) : (
+                  <Button variant="secondary" onClick={openEdit} icon={<Pencil size={16} />}>
+                    Edit
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  onClick={handleDuplicate}
+                  disabled={isDuplicating || status.label === "Past"}
+                  icon={<Copy size={16} />}
+                  className={status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                >
+                  {isDuplicating ? "..." : "Duplicate"}
+                </Button>
+                <div 
+                  title={cards.length > 0 ? "Events with registered attendees cannot be deleted." : ""}
+                  className={cards.length > 0 ? "cursor-help" : ""}
+                >
+                  <Button
+                    variant="secondary"
+                    onClick={() => { setDeleteConfirm(""); setIsDeleteOpen(true); }}
+                    disabled={cards.length > 0}
+                    icon={<Trash2 size={16} />}
+                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </>
             )}
-            <Button
-              variant="secondary"
-              onClick={handleDuplicate}
-              disabled={isDuplicating || status.label === "Past"}
-              icon={<Copy size={16} />}
-              className={status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}
-            >
-              {isDuplicating ? "..." : "Duplicate"}
-            </Button>
-            <div 
-              title={cards.length > 0 ? "Events with registered attendees cannot be deleted." : ""}
-              className={cards.length > 0 ? "cursor-help" : ""}
-            >
-              <Button
-                variant="secondary"
-                onClick={() => { setDeleteConfirm(""); setIsDeleteOpen(true); }}
-                disabled={cards.length > 0}
-                icon={<Trash2 size={16} />}
-                className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
-              >
-                Delete
-              </Button>
-            </div>
           </div>
         </div>
 

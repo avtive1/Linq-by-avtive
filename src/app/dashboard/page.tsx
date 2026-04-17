@@ -10,16 +10,22 @@ import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 
+import { useSearchParams } from "next/navigation";
+
 type DashboardEventData = EventData & { attendeeCount: number };
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const impersonateId = searchParams.get("impersonate");
+  
   const [events, setEvents] = useState<DashboardEventData[]>([]);
   const [userName, setUserName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -43,19 +49,34 @@ export default function DashboardPage() {
         router.replace("/login");
         return;
       }
-      setUserName(session.user.email?.split("@")[0] || "");
       
       // Check for admin - for client side UI toggle
-      if (session.user.email === "afiaaziz044@gmail.com") {
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+      const isActuallyAdmin = session.user.email && adminEmail && session.user.email.toLowerCase() === adminEmail.toLowerCase();
+      
+      if (isActuallyAdmin) {
         setIsAdmin(true);
       }
 
-      fetchData(session.user.id, () => isMounted);
+      // Logic for Effective User ID
+      let effectiveId = session.user.id;
+      let effectiveName = session.user.email?.split("@")[0] || "";
+
+      if (impersonateId && isActuallyAdmin) {
+        effectiveId = impersonateId;
+        setIsPreviewMode(true);
+        // Fetch target user email for the banner/name
+        const { data: { user: targetUser } } = await supabase.auth.getUser(); // This only gets current user, we can't easily get other user names from client without an API
+        effectiveName = "Organization View"; 
+      }
+      
+      setUserName(effectiveName);
+      fetchData(effectiveId, () => isMounted);
       setIsCheckingAuth(false);
     };
     checkUser();
     return () => { isMounted = false; };
-  }, [router]);
+  }, [router, impersonateId]);
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
@@ -196,6 +217,17 @@ export default function DashboardPage() {
 
   return (
     <main className="relative min-h-screen w-full bg-transparent">
+      {isPreviewMode && (
+        <div className="relative z-[100] bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
+          <div className="flex items-center gap-2">
+            <Sparkles size={18} />
+            <span>Admin Preview Mode &mdash; Read Only</span>
+          </div>
+          <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-sm hover:brightness-110 transition-all text-xs">
+            Exit Preview
+          </Link>
+        </div>
+      )}
       <GradientBackground />
 
       <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
@@ -260,15 +292,17 @@ export default function DashboardPage() {
                 </Button>
                </Link>
             )}
-             <Button
-              variant="secondary"
-              onClick={() => setIsEventModalOpen(true)}
-              className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 px-4"
-              icon={<Calendar size={18} />}
-            >
-              <span className="hidden sm:inline">New Event</span>
-              <span className="inline sm:hidden">Event</span>
-            </Button>
+             {!isPreviewMode && (
+               <Button
+                variant="secondary"
+                onClick={() => setIsEventModalOpen(true)}
+                className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 px-4"
+                icon={<Calendar size={18} />}
+              >
+                <span className="hidden sm:inline">New Event</span>
+                <span className="inline sm:hidden">Event</span>
+              </Button>
+             )}
             <Button
               variant="secondary"
               onClick={handleLogout}
