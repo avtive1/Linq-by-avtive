@@ -384,12 +384,12 @@ function NewCardForm() {
       </div>
 
         {/* Right Content - Preview */}
-        <div className="flex-1 flex flex-col items-center py-8 px-2 sm:px-3 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
+        <div className="flex-1 flex flex-col items-center py-8 px-3 sm:px-5 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
 
-          <div className="w-full flex-1 flex flex-col items-center justify-start px-1 sm:px-2 xl:px-2 pt-10">
-             <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-14 items-center xl:items-start justify-center max-w-[1360px] mx-auto min-h-max">
+          <div className="w-full flex-1 flex flex-col items-center justify-start px-1 sm:px-2 xl:px-3 pt-7">
+             <div className="w-full flex flex-col xl:flex-row gap-7 xl:gap-12 items-center xl:items-start justify-center max-w-[1320px] mx-auto min-h-max">
                 {/* Horizontal Card Preview */}
-                <div className="flex flex-col items-center gap-5 shrink-0 w-full xl:w-auto">
+                <div className="flex flex-col items-center gap-4 shrink-0 w-full xl:w-auto">
                    <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Social post layout</h3>
                    <div className="horizontal-preview-frame">
                       <div className="preview-card-capture horizontal-preview">
@@ -399,7 +399,7 @@ function NewCardForm() {
                    <Button 
                       onClick={() => handleSubmit()} 
                       disabled={loading}
-                      className="rounded-md px-12 h-12 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
+                      className="rounded-md min-w-[240px] px-8 h-11 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
                    >
                       {loading ? "Preparing..." : "View & Download Post"}
                    </Button>
@@ -407,9 +407,9 @@ function NewCardForm() {
 
                 {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
                 {form.linkedin && (
-                   <div className="flex flex-col items-center gap-2 animate-fade-in shrink-0 w-full xl:w-auto">
+                   <div className="flex flex-col items-center gap-4 animate-fade-in shrink-0 w-full xl:w-auto">
                       <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Event badge layout</h3>
-                      <div className="vertical-preview-frame mt-2">
+                      <div className="vertical-preview-frame mt-1">
                         <div className="preview-card-capture vertical-preview">
                           <CardPreview data={form} preview isVertical verticalSide={1} />
                         </div>
@@ -417,7 +417,7 @@ function NewCardForm() {
                       <Button 
                          variant="secondary"
                          onClick={() => setShowPrintPreview(true)} 
-                         className="rounded-md px-12 h-12 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
+                         className="rounded-md min-w-[240px] px-8 h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
                       >
                          Print Vertical Badge
                       </Button>
@@ -425,9 +425,9 @@ function NewCardForm() {
                 )}
              </div>
           </div>
-        <div className="w-full max-w-[1120px] mt-8 flex flex-col lg:flex-row gap-4 animate-slide-up bg-white/45 border border-white/15 p-4 rounded-xl glass-panel shadow-md backdrop-blur-xl">
+        <div className="w-full max-w-[1040px] mt-6 flex flex-col lg:flex-row gap-4 animate-slide-up bg-white/45 border border-white/20 px-4 py-4 sm:px-5 sm:py-5 rounded-xl glass-panel shadow-md backdrop-blur-xl">
            {/* Item 1: Layout Selection */}
-           <div className="flex-1 flex flex-col gap-3">
+           <div className="flex-1 flex flex-col gap-2.5">
               <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Layout style</span>
               <div className="flex gap-2 h-10">
                  <button
@@ -436,7 +436,7 @@ function NewCardForm() {
                     className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
                        form.designType === "design1" 
                           ? "bg-primary text-white border-primary shadow-md" 
-                          : "bg-white/50 border-white/30 text-muted hover:bg-white/70"
+                          : "bg-white/70 border-border/80 text-heading hover:bg-white hover:border-primary/50"
                     }`}
                  >
                     Design 1
@@ -447,7 +447,7 @@ function NewCardForm() {
                     className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
                        form.designType === "design2" 
                           ? "bg-primary text-white border-primary shadow-md" 
-                          : "bg-white/50 border-white/30 text-muted hover:bg-white/70"
+                          : "bg-white/70 border-border/80 text-heading hover:bg-white hover:border-primary/50"
                     }`}
                  >
                     Design 2
@@ -458,9 +458,9 @@ function NewCardForm() {
            <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
            {/* Item 2: Theme Selection */}
-           <div className="flex flex-col gap-3 items-center lg:items-start shrink-0">
+           <div className="flex flex-col gap-2.5 items-center lg:items-start shrink-0">
               <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Theme color</span>
-              <div className="flex gap-3 h-10 items-center">
+              <div className="flex gap-2 h-10 items-center">
                  {colors.map((c) => (
                     <button
                        key={c.name}
@@ -485,9 +485,9 @@ function NewCardForm() {
            <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
            {/* Item 3: Typography Selection */}
-           <div className="flex-1 flex flex-col gap-3 max-w-[240px] lg:max-w-none">
+           <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
               <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Typography</span>
-              <div className="h-10">
+              <div className="h-11">
                  <Select
                     value={form.fontFamily}
                     onChange={(val) => {
