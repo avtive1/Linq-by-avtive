@@ -4,7 +4,7 @@ import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
-import { ArrowLeft, Download, Share2, Printer, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, Share2, Printer } from "lucide-react";
 import { toPng } from "html-to-image";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
@@ -12,7 +12,6 @@ import { toast } from "sonner";
 export default function CardView({ card, isShareMode = false }: { card: CardData; isShareMode?: boolean }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
-  const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
   const cardRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
@@ -75,41 +74,41 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           <div className="flex flex-col gap-4">
              {isShareMode ? (
                 <div className="flex items-center gap-3">
-                   <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
-                     AVTIVE ATTENDEE PORTAL
+                   <span className="text-sm font-semibold tracking-[0.04em] text-muted/65">
+                     Avtive attendee portal
                    </span>
                 </div>
              ) : (
                 <div className="flex items-center gap-3">
                   <Link
                     href="/"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
+                    className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
                   >
                     <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
-                    HOME
+                    Home
                   </Link>
                   <span className="text-muted/20">/</span>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-heading hover:text-primary-strong transition-all group"
+                    className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
                   >
-                    DASHBOARD
+                    Dashboard
                   </Link>
                 </div>
              )}
 
              {/* View Toggles */}
              {card.linkedin && (
-                <div className="flex bg-white/5 p-1 rounded-xl w-fit border border-white/10">
+                <div className="flex bg-white/5 p-1 rounded-sm w-fit border border-white/10">
                    <button 
                       onClick={() => setViewMode("horizontal")}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading"}`}
+                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/10"}`}
                    >
                       Post View
                    </button>
                    <button 
                       onClick={() => setViewMode("vertical")}
-                      className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading"}`}
+                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/10"}`}
                    >
                       Badge View
                    </button>
@@ -162,37 +161,31 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
             <CardPreview 
                data={card} 
                isVertical={viewMode === "vertical"} 
-               verticalSide={verticalSide} 
+               verticalSide={1} 
             />
           </div>
         </div>
 
         <div className="w-full flex flex-col items-center gap-6">
-          <div className="card-scale-wrapper w-full">
-            <div
-              className="card-capture"
-              style={{ width: viewMode === "horizontal" ? "1200px" : "576px", height: viewMode === "horizontal" ? "628px" : "1024px" }}
-            >
-              <CardPreview 
-                 data={card} 
-                 isVertical={viewMode === "vertical"} 
-                 verticalSide={verticalSide} 
-              />
+          {viewMode === "horizontal" ? (
+            <div className="card-scale-wrapper w-full">
+              <div className="card-capture" style={{ width: "1200px", height: "628px" }}>
+                <CardPreview data={card} isVertical={false} />
+              </div>
             </div>
-          </div>
-
-          {viewMode === "vertical" && (
-             <div className="flex gap-4">
-                <Button 
-                   variant={verticalSide === 1 ? "primary" : "secondary"}
-                   size="sm"
-                   onClick={() => setVerticalSide(1)}
-                   icon={<RefreshCw size={14} />}
-                   className="h-10 px-6 rounded-full"
-                >
-                   Flip to Side 2 (QR)
-                </Button>
-             </div>
+          ) : (
+            <div className="vertical-pair-wrapper">
+              <div className="vertical-card-frame">
+                <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
+                  <CardPreview data={card} isVertical verticalSide={1} />
+                </div>
+              </div>
+              <div className="vertical-card-frame">
+                <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
+                  <CardPreview data={card} isVertical verticalSide={2} />
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
@@ -203,7 +196,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                : "This design is optimized for physical printing and event registration."
             }
           </p>
-          <span className="text-[10px] font-bold tracking-[0.25em] text-heading/30 uppercase">
+          <span className="text-xs font-semibold tracking-[0.04em] text-heading/45">
             Attendee ID: {card.id.slice(-8).toUpperCase()}
           </span>
         </div>
@@ -257,20 +250,56 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           justify-content: center;
           overflow: visible;
         }
+        .vertical-pair-wrapper {
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          gap: 180px;
+        }
+        .vertical-card-frame {
+          width: 288px;
+          height: 512px;
+          overflow: hidden;
+          display: flex;
+          justify-content: center;
+        }
         .card-capture {
+          transform-origin: top center;
+        }
+        .card-capture-vertical {
           transform-origin: top center;
         }
         @media (max-width: 1024px) {
           .card-scale-wrapper { overflow: hidden; }
+          .vertical-pair-wrapper {
+            gap: 20px;
+            overflow-x: auto;
+            justify-content: flex-start;
+            padding-bottom: 6px;
+          }
+          .vertical-card-frame {
+            width: 260px;
+            height: 462px;
+            flex: 0 0 auto;
+          }
           .card-capture {
-            transform: scale(calc((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "400"}));
-            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "600px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "400"})) - ${viewMode === "horizontal" ? "628px" : "600px"});
+            transform: scale(calc((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"}));
+            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "1024px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"})) - ${viewMode === "horizontal" ? "628px" : "1024px"});
+          }
+          .card-capture-vertical {
+            transform: scale(calc((100vw - 56px) / 1300));
+            margin-bottom: calc((1024px * ((100vw - 56px) / 1300)) - 1024px);
           }
         }
         @media (min-width: 1025px) {
           .card-capture {
-            transform: scale(${viewMode === "horizontal" ? "0.6" : "1"});
-            margin-bottom: ${viewMode === "horizontal" ? "-251px" : "0"};
+            transform: scale(${viewMode === "horizontal" ? "0.6" : "0.72"});
+            margin-bottom: ${viewMode === "horizontal" ? "-251px" : "-287px"};
+          }
+          .card-capture-vertical {
+            transform: scale(0.5);
+            margin-bottom: -512px;
           }
         }
       `}</style>

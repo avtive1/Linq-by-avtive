@@ -229,31 +229,31 @@ export default function DashboardPage() {
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/" 
-              className="flex items-center gap-1.5 text-xs font-bold text-heading hover:opacity-80 transition-all mb-1 group -ml-1 sm:-ml-2"
+              className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] mb-1 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
-              BACK TO HOME
+              Back to Home
             </Link>
-            <span className="text-[16px] font-bold tracking-[0.2em] text-muted/50 uppercase">
+            <span className="text-sm font-semibold tracking-[0.08em] text-muted/70">
               AVTIVE
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-none">
+            <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
               Dashboard
             </h1>
             {userName && (
-              <p className="text-xl font-medium text-muted flex items-center gap-1.5 mt-1">
+              <p className="text-lg font-medium text-muted flex items-center gap-2 mt-1 leading-snug">
                 <User size={18} className="text-primary-strong/70" />
                 {userName}
               </p>
             )}
           </div>
 
-          <div className="flex gap-2.5 sm:gap-3 items-center">
+          <div className="flex gap-3 items-center">
             {isAdmin && (
                <Link href="/admin">
                 <Button
                   variant="secondary"
-                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/15 px-4 font-bold"
+                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 px-4 font-bold"
                   icon={<Sparkles size={18} />}
                 >
                   Admin Panel
@@ -263,7 +263,7 @@ export default function DashboardPage() {
              <Button
               variant="secondary"
               onClick={() => setIsEventModalOpen(true)}
-              className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/15 px-4"
+              className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 px-4"
               icon={<Calendar size={18} />}
             >
               <span className="hidden sm:inline">New Event</span>
@@ -283,14 +283,14 @@ export default function DashboardPage() {
         {/* Bento Grid Statistics Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-8 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-6 rounded-[12px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-16 h-16 rounded-[10px] bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+          <div className="glass-panel p-6 rounded-lg md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-16 h-16 rounded-sm bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[12px] font-bold text-muted uppercase tracking-[0.2em]">Live Presence</span>
+              <span className="ui-eyebrow">Live Presence</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-heading tracking-tight">
+                <span className="text-5xl font-bold text-heading tracking-tight leading-none">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
                 <span className="text-lg font-semibold text-primary-strong">Attendees</span>
@@ -299,14 +299,14 @@ export default function DashboardPage() {
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-6 rounded-[12px] md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-14 h-14 rounded-[10px] bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
+          <div className="glass-panel p-6 rounded-lg md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-14 h-14 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
               <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[11px] font-bold text-muted uppercase tracking-[0.2em] mb-0.5">Activity Tracking</span>
+              <span className="ui-eyebrow mb-0.5">Activity Tracking</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-heading tracking-tight">
+                <span className="text-5xl font-bold text-heading tracking-tight leading-none">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
                 <span className="text-lg font-semibold text-primary-strong">Total Events</span>
@@ -318,11 +318,11 @@ export default function DashboardPage() {
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-[#23468C] z-10 pointer-events-none" size={20} strokeWidth={2.5} />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search events..."
-              className="w-full pl-14 pr-6 py-3 bg-white/80 backdrop-blur-md border border-white/60 rounded-[10px] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base text-heading shadow-sm placeholder:text-muted/50"
+              className="w-full pl-14 pr-6 py-3 bg-white/80 backdrop-blur-md border border-white/60 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -331,7 +331,7 @@ export default function DashboardPage() {
 
         {/* Event Cards List */}
         {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-[12px] gap-4 px-6">
+          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6">
             <div className="flex flex-col gap-1">
               <p className="text-heading font-medium">No events yet</p>
               <p className="text-sm text-muted">Create your first event to start inviting attendees.</p>
@@ -343,43 +343,43 @@ export default function DashboardPage() {
               filteredEvents.map((evt) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 rounded-[12px] transition-all hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 rounded-lg transition-all duration-200 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       {evt.logo_url && (
-                        <div className="w-20 h-20 rounded-[10px] bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-500 flex-shrink-0">
+                        <div className="w-20 h-20 rounded-sm bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
                           <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-cover block" />
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2 ml-auto">
-                      <span className={`text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1 rounded-[6px] border ${status.classes}`}>
+                      <span className={`text-xs font-semibold tracking-[0.02em] px-3 py-1 rounded-sm border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-[11px] font-bold text-primary-strong bg-primary/10 px-2.5 py-1 rounded-[6px]">
+                      <div className="flex items-center text-xs font-bold leading-snug text-primary-strong bg-primary/10 px-3 py-1 rounded-[6px]">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex flex-col grow">
-                    <h3 className="font-bold text-2xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-tight mb-2">
+                    <h3 className="font-bold text-2xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-[1.2] mb-2">
                       {evt.name}
                     </h3>
                     
-                    <div className="flex flex-col gap-1.5 mb-5">
-                      <div className="flex items-center gap-2.5 text-heading font-semibold bg-white/40 w-fit px-2.5 py-1.5 rounded-lg border border-white/60 shadow-sm">
+                    <div className="flex flex-col gap-2 mb-6">
+                      <div className="flex items-center gap-3 text-heading font-semibold bg-white/40 w-fit px-3 py-2 rounded-sm border border-white/60 shadow-sm">
                         <Calendar size={18} className="text-primary-strong" />
-                        <span className="text-base tracking-tight">{evt.date}</span>
+                        <span className="text-sm leading-snug tracking-tight">{evt.date}</span>
                       </div>
-                      <div className="flex items-center gap-2.5 text-muted font-medium px-1">
+                      <div className="flex items-center gap-3 text-muted font-medium px-1">
                         <MapPin size={18} className="text-muted/60" />
-                        <span className="text-base tracking-tight truncate max-w-[200px]">{evt.location}</span>
+                        <span className="text-sm leading-snug tracking-tight truncate max-w-[200px]">{evt.location}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-base font-bold text-heading hover:text-primary-strong transition-all cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-semibold text-heading hover:text-primary-strong hover:bg-white/20 rounded-[4px] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
                     View Event
                     <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
@@ -387,7 +387,7 @@ export default function DashboardPage() {
                 );
               })
             ) : (
-              <div className="col-span-full text-center py-12 glass-panel rounded-[12px] border-dashed">
+              <div className="col-span-full text-center py-12 glass-panel rounded-xl border-dashed">
                 <p className="text-muted text-sm">No events found matching your search.</p>
               </div>
             )}
@@ -404,7 +404,7 @@ export default function DashboardPage() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
             onClick={() => setIsEventModalOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-[12px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
@@ -413,7 +413,7 @@ export default function DashboardPage() {
               </div>
               <button 
                 onClick={() => setIsEventModalOpen(false)}
-                className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <X size={20} />
               </button>

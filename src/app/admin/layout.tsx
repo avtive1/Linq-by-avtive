@@ -39,18 +39,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <GradientBackground />
       
       {/* Admin Secure Topbar */}
-      <div className="relative z-50 bg-[#161122]/80 backdrop-blur-md border-b border-white/10 px-6 py-4 flex items-center justify-between shadow-2xl">
-        <Link href="/admin" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-lg bg-red-500/20 text-red-500 flex items-center justify-center border border-red-500/30 group-hover:scale-105 transition-transform">
+      <div className="relative z-50 bg-heading/90 backdrop-blur-md border-b border-white/15 px-6 py-4 flex items-center justify-between shadow-2xl">
+        <Link href="/admin" className="flex items-center gap-3 group rounded-[4px] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">
+          <div className="w-10 h-10 rounded-md bg-danger/20 text-danger flex items-center justify-center border border-danger/40 group-hover:scale-105 transition-transform">
             <Shield size={20} />
           </div>
           <div>
-            <h1 className="text-white font-bold text-lg leading-tight tracking-[0.1em]">SUPERVISOR</h1>
-            <p className="text-red-400 text-[10px] uppercase font-bold tracking-[0.2em]">Global Admin Access</p>
+            <h1 className="text-white font-bold text-xl leading-tight tracking-[0.02em]">Supervisor</h1>
+            <p className="text-white/80 text-sm font-medium leading-snug tracking-[0.03em]">Global Admin Access</p>
           </div>
         </Link>
         
-        <Link href="/dashboard" className="flex items-center gap-2 text-sm font-bold text-muted hover:text-white transition-colors bg-white/5 py-2.5 px-4 rounded-lg border border-white/10 hover:bg-white/10 group">
+        <Link href="/dashboard" className="flex items-center gap-2 text-sm font-semibold text-white/75 hover:text-white transition-all duration-150 bg-white/10 py-2 px-4 rounded-md border border-white/15 hover:bg-white/20 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 group">
           <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           Exit Admin
         </Link>

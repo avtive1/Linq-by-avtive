@@ -50,29 +50,29 @@ export default function ForgotPasswordPage() {
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         <Link
           href="/login"
-          className="absolute -top-12 left-0 flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong transition-all group"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
         >
-          <div className="w-8 h-8 rounded-full bg-white/50 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
+          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           </div>
           <span>Back to sign in</span>
         </Link>
 
         <div className="mb-6 flex justify-center">
-          <span className="text-[12px] font-bold tracking-[0.2em] text-muted/30 uppercase">
+          <span className="ui-eyebrow text-muted/70">
             AVTIVE
           </span>
         </div>
 
-        <div className="glass-panel rounded-[12px] p-6 sm:p-8 shadow-2xl shadow-primary/5">
+        <div className="glass-panel rounded-xl p-6 sm:p-8 shadow-2xl shadow-primary/5">
           {sent ? (
             <div className="flex flex-col items-center text-center gap-4 py-4">
-              <div className="w-14 h-14 rounded-[10px] bg-primary/15 flex items-center justify-center text-primary-strong">
+              <div className="w-14 h-14 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong">
                 <Mail size={26} />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <h1 className="text-xl font-bold text-heading tracking-tight">Check your inbox</h1>
-                <p className="text-sm text-muted leading-relaxed max-w-[320px]">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Check your inbox</h1>
+                <p className="text-base text-muted leading-[1.55] max-w-[320px]">
                   If an account exists for <span className="font-semibold text-heading">{email}</span>, we sent a reset link. Click it to set a new password.
                 </p>
               </div>
@@ -83,10 +83,10 @@ export default function ForgotPasswordPage() {
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              <div className="flex flex-col gap-1.5">
-                <h1 className="text-xl font-bold text-heading tracking-tight">Reset your password</h1>
-                <p className="text-sm text-muted leading-relaxed">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <div className="flex flex-col gap-2">
+                <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Reset your password</h1>
+                <p className="text-base text-muted leading-[1.55]">
                   Enter your email and we&apos;ll send you a link to reset it.
                 </p>
               </div>

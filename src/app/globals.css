@@ -6,25 +6,48 @@
   --color-primary: #79D980;          /* brand fill — buttons, tinted bgs, borders */
   --color-primary-strong: #1E7A24;   /* darker variant for text/icons on light bgs (AA on white) */
   --color-primary-foreground: #23468C;
+  --color-info: #2563EB;
+  --color-success: #1E7A24;
+  --color-warning: #B45309;
+  --color-danger: #DC2626;
   --color-surface: #F9FAFB;
   --color-border: #E5E7EB;
   --color-muted: #6B7280;
   --color-heading: #23468C;
+  --color-light-1: #DCE7D5;
+  --color-light-2: #EDF2E9;
+  --color-light-3: #DCE4F0;
   
+  --radius-inline: 4px;
   --radius-xs: 6px;
   --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --radius-xl: 10px;
-  --radius-2xl: 12px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
 }
 
 body {
   background-color: white;
   color: #23468C; /* Standard text uses heading color for cohesion, or slightly lighter. Let's stick to the dark blue for the high-end look */
   font-family: var(--font-inter);
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-primary) 75%, black 25%);
+  outline-offset: 2px;
+}
+
+.ui-eyebrow {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: color-mix(in oklab, var(--color-muted) 85%, black 15%);
+}
+
+.ui-card {
+  border-radius: var(--radius-md);
 }
 
 @utility bg-radial-glow {
@@ -78,7 +101,6 @@ body {
 .delay-100 { animation-delay: 100ms; }
 .delay-200 { animation-delay: 200ms; }
 .delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
 .delay-400 { animation-delay: 400ms; }
 .delay-500 { animation-delay: 500ms; }
 

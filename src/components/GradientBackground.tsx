@@ -2,12 +2,12 @@
 
 export default function GradientBackground() {
   return (
-    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-[#EDF2E9]">
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10 bg-light-2">
       {/* Glow 1 - Light Blue/Grey */}
       <div 
         className="absolute -left-[20%] -top-[20%] w-[80%] h-[80%] rounded-full mix-blend-multiply filter blur-[120px] opacity-70 animate-pulse"
         style={{
-          background: "radial-gradient(circle at center, #DCE4F0 0%, transparent 70%)",
+          background: "radial-gradient(circle at center, var(--color-light-3) 0%, transparent 70%)",
           animationDuration: "8s"
         }}
       />
@@ -15,7 +15,7 @@ export default function GradientBackground() {
       <div 
         className="absolute -right-[20%] -bottom-[20%] w-[80%] h-[80%] rounded-full mix-blend-multiply filter blur-[120px] opacity-70 animate-pulse"
         style={{
-          background: "radial-gradient(circle at center, #DCE7D5 0%, transparent 70%)",
+          background: "radial-gradient(circle at center, var(--color-light-1) 0%, transparent 70%)",
           animationDuration: "12s",
           animationDelay: "2s"
         }}
@@ -24,7 +24,7 @@ export default function GradientBackground() {
       <div 
         className="absolute left-[10%] top-[40%] w-[60%] h-[60%] rounded-full mix-blend-multiply filter blur-[100px] opacity-50 animate-pulse"
         style={{
-          background: "radial-gradient(circle at center, #DCE4F0 0%, transparent 60%)",
+          background: "radial-gradient(circle at center, var(--color-light-3) 0%, transparent 60%)",
           animationDuration: "10s",
           animationDelay: "1s"
         }}
@@ -33,4 +33,4 @@ export default function GradientBackground() {
       <div className="absolute inset-0 opacity-[0.025] pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]" />
     </div>
   );
-}
+}

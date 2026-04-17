@@ -10,19 +10,19 @@ export default function HomePage() {
 
       <div className="relative z-10 flex flex-col items-center gap-8 max-w-[480px] text-center">
         {/* Badge */}
-        <div className="animate-slide-up inline-flex items-center gap-2 px-3.5 py-1.5 glass-panel rounded-full transition-transform hover:scale-105">
+        <div className="animate-slide-up inline-flex items-center gap-2 px-4 py-2 glass-panel rounded-sm transition-transform hover:scale-105">
           <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(121,217,128,0.8)]" />
-          <span className="text-[11px] font-bold text-heading/80 tracking-[0.05em] uppercase">
+          <span className="text-xs font-semibold text-heading/85 tracking-[0.02em] leading-snug">
             For Event Organizers
           </span>
         </div>
 
         {/* Hero Section */}
         <div className="flex flex-col gap-4 animate-slide-up delay-100">
-          <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-heading leading-[1.1] text-balance">
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-tight text-heading leading-[1.12] text-balance">
             Run events. Share a link. <span className="bg-gradient-to-r from-heading to-primary bg-clip-text text-transparent drop-shadow-sm">Done.</span>
           </h1>
-          <p className="text-base sm:text-[17px] text-heading/70 leading-relaxed max-w-[440px] mx-auto text-balance font-medium">
+          <p className="text-base sm:text-lg text-heading/75 leading-[1.55] max-w-[440px] mx-auto text-balance font-medium">
             Create your event, share a single registration link, and let attendees
             generate their own beautiful, downloadable conference cards.
           </p>
@@ -44,7 +44,7 @@ export default function HomePage() {
 
         {/* Branding Footer */}
         <div className="mt-14 animate-slide-up delay-300">
-          <span className="text-[12px] font-bold tracking-[0.25em] text-heading/60 uppercase">
+          <span className="text-xs font-semibold tracking-[0.06em] text-heading/65">
             Powered by AVTIVE
           </span>
         </div>
