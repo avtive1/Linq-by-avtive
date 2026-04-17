@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [events, setEvents] = useState<DashboardEventData[]>([]);
   const [userName, setUserName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
