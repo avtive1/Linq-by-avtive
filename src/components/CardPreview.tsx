@@ -259,8 +259,15 @@ export function CardPreview({
           I'M ATTENDING
         </p>
         
-        <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px]" style={titleStyle}>
-          {data.eventName?.split("<br />").map((text, i) => <span key={i}>{text}<br /></span>) || "Pakistan Tech\nSummit"}
+        <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
+          {data.eventName ? (
+            data.eventName.split("<br />").map((text, i) => <span key={i} className="block">{text}</span>)
+          ) : (
+            <>
+              <span className="block">Pakistan Tech</span>
+              <span className="block">Summit</span>
+            </>
+          )}
         </h1>
 
         <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
@@ -322,8 +329,15 @@ export function CardPreview({
         I'M ATTENDING
       </p>
       
-      <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px]" style={titleStyle}>
-        {data.eventName?.split("<br />").map((text, i) => <span key={i}>{text}<br /></span>) || "Pakistan Tech\nSummit"}
+      <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
+        {data.eventName ? (
+          data.eventName.split("<br />").map((text, i) => <span key={i} className="block">{text}</span>)
+        ) : (
+          <>
+            <span className="block">Pakistan Tech</span>
+            <span className="block">Summit</span>
+          </>
+        )}
       </h1>
 
       <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>

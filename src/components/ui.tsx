@@ -186,7 +186,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-3 text-base text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
+            flex-1 px-3 py-2 text-sm text-heading bg-transparent outline-none placeholder:text-muted/60 appearance-none
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
