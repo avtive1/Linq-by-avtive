@@ -21,6 +21,7 @@ import {
   Link as LinkIcon,
   Pencil,
   Copy,
+  X,
   RefreshCw,
   Sparkles,
   Globe,
