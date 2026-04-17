@@ -486,7 +486,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
             </Link>
-            <span className="text-sm font-semibold tracking-[0.08em] text-muted/70 mt-1">
+            <span className="text-sm font-semibold tracking-[0.04em] text-muted/70 mt-1">
               Event details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">

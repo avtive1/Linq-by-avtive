@@ -234,7 +234,7 @@ export default function DashboardPage() {
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Home
             </Link>
-            <span className="text-sm font-semibold tracking-[0.08em] text-muted/70">
+            <span className="text-sm font-semibold tracking-[0.04em] text-muted/70">
               AVTIVE
             </span>
             <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
