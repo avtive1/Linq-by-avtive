@@ -14,6 +14,7 @@ export default function SignupPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    organization: "",
     linkedin: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -45,6 +46,9 @@ export default function SignupPage() {
     if (!form.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
     else if (form.confirmPassword !== form.password) newErrors.confirmPassword = "Passwords do not match";
     
+    // Organization
+    if (!form.organization) newErrors.organization = "Organization Name is required";
+    
     // LinkedIn (Optional)
     // Removed strict "/" check to allow full URLs
 
@@ -67,6 +71,7 @@ export default function SignupPage() {
         options: {
           data: {
             linkedin: cleanHandle,
+            organization_name: form.organization,
           }
         }
       });
@@ -177,6 +182,14 @@ export default function SignupPage() {
                 value={form.confirmPassword}
                 error={errors.confirmPassword}
                 onChange={update("confirmPassword")}
+              />
+              <TextInput
+                label="Organization Name"
+                required
+                placeholder="Enter your organization"
+                value={form.organization}
+                error={errors.organization}
+                onChange={update("organization")}
               />
               <TextInput
                 label="LinkedIn URL"

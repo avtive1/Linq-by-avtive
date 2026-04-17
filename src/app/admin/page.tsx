@@ -47,6 +47,7 @@ export default async function AdminDashboardPage() {
     orgMap.set(user.id, {
       id: user.id,
       email: user.email,
+      organizationName: user.user_metadata?.organization_name,
       created_at: user.created_at,
       eventCount: 0,
       attendeeCount: 0,
@@ -76,10 +77,17 @@ export default async function AdminDashboardPage() {
   const organizations = Array.from(orgMap.values());
 
   // Recent Activity Feed
-  const recentEvents = rawEvents.slice(0, 5).map(evt => ({
-    ...evt,
-    orgEmail: userLookup.get(evt.user_id) || "Unknown Organization"
-  }));
+  const recentEvents = rawEvents.slice(0, 5).map(evt => {
+    const user = rawUsers.find(u => u.id === evt.user_id);
+    const orgEmail = user?.email || "Unknown Organization";
+    const orgName = user?.user_metadata?.organization_name;
+
+    return {
+      ...evt,
+      orgEmail,
+      orgName
+    };
+  });
 
   return (
     <div className="px-4 sm:px-6 py-8 sm:py-12 flex flex-col gap-12">
@@ -172,7 +180,8 @@ export default async function AdminDashboardPage() {
                   {evt.name}
                 </h3>
                 <p className="text-xs text-muted font-medium flex items-center gap-1.5 truncate">
-                  <Building2 size={12} className="shrink-0" /> {evt.orgEmail}
+                  <Building2 size={12} className="shrink-0" /> 
+                  {evt.orgName ? `${evt.orgName} (${evt.orgEmail})` : evt.orgEmail}
                 </p>
                 <div className="mt-2 pt-2 border-t border-border/30 flex justify-between items-center text-[11px] font-bold">
                   <span className="text-muted/60">{evt.location}</span>
