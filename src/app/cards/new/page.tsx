@@ -366,12 +366,9 @@ function NewCardForm() {
 
           </div>
 
-          {/* Removed main Save Card button as per request */}
-
         </form>
       </div>
 
-      {/* Hidden container for high-resolution capture (Always 1:1 scale) */}
       <div 
         style={{ 
           position: 'absolute', 
@@ -393,7 +390,7 @@ function NewCardForm() {
           <div className="w-full flex-1 flex flex-col items-center justify-start px-1 sm:px-2 xl:px-3 pt-7">
              <div className="w-full flex flex-col xl:flex-row gap-7 xl:gap-12 items-center xl:items-start justify-center max-w-[1320px] mx-auto min-h-max">
                 {/* Horizontal Card Preview */}
-                <div className="flex flex-col items-center gap-4 shrink-0 w-full xl:w-auto">
+                <div className="flex flex-col items-center gap-8 shrink-0 w-full xl:w-auto">
                    <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Social post layout</h3>
                    <div className="horizontal-preview-frame">
                       <div className="preview-card-capture horizontal-preview">
@@ -405,13 +402,13 @@ function NewCardForm() {
                       disabled={loading}
                       className="rounded-md min-w-[240px] px-8 h-11 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
                    >
-                      {loading ? "Preparing..." : "View & Download Post"}
+                      {loading ? "Saving..." : "Save & View"}
                    </Button>
                 </div>
 
                 {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
                 {form.linkedin && (
-                   <div className="flex flex-col items-center gap-4 animate-fade-in shrink-0 w-full xl:w-auto">
+                   <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
                       <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Event badge layout</h3>
                       <div className="vertical-preview-frame mt-1">
                         <div className="preview-card-capture vertical-preview">
@@ -423,7 +420,7 @@ function NewCardForm() {
                          onClick={() => setShowPrintPreview(true)} 
                          className="rounded-md min-w-[240px] px-8 h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
                       >
-                         Print Vertical Badge
+                         Save & View
                       </Button>
                    </div>
                 )}
@@ -564,7 +561,7 @@ function NewCardForm() {
         }
         .vertical-preview-frame {
           width: 304px;
-          height: 540px;
+          height: 496px;
           display: flex;
           justify-content: center;
           overflow: hidden;
@@ -586,7 +583,7 @@ function NewCardForm() {
           }
           .vertical-preview-frame {
             width: 272px;
-            height: 483px;
+            height: 480px;
           }
           .vertical-preview {
             transform: scale(0.468);
