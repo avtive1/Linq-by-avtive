@@ -34,6 +34,7 @@ function NewCardForm() {
     designType: "design1" as "design1" | "design2",
     color: "purple",
     fontFamily: "inter",
+    cardRole: (searchParams.get("role") as "guest" | "visitor") || "visitor",
   });
 
 
@@ -193,7 +194,6 @@ function NewCardForm() {
         session_date: form.sessionDate,
         session_time: form.sessionTime,
         location: form.location,
-        track: form.track || "",
         linkedin: formatQrLink(form.linkedin),
         year: form.year,
         photo_url: photo_url,
@@ -201,6 +201,7 @@ function NewCardForm() {
         event_id: eventId,
         design_type: form.designType,
         card_color: form.color,
+        track: form.cardRole,
       };
 
       const { data: record, error: insertError } = await supabase

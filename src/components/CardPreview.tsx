@@ -130,7 +130,7 @@ export function CardPreview({
         />
 
         <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-[500] tracking-[3px] uppercase leading-none">
-          I'M ATTENDING
+          {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
         </p>
 
         <h1 
@@ -256,7 +256,7 @@ export function CardPreview({
         <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/1e6c3590-a66a-4bc5-b575-adfb66dc1bb8" alt="" />
         
         <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
-          I'M ATTENDING
+          {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
         </p>
         
         <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
@@ -326,7 +326,7 @@ export function CardPreview({
       <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/a068f32c-5159-4502-a8f7-c3748e1a7c88" alt="" />
       
       <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
-        I'M ATTENDING
+        {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
       </p>
       
       <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>

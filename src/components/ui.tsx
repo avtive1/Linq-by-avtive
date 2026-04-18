@@ -56,18 +56,17 @@ export function TextInput({
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 overflow-hidden
           ${error 
-            ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
-            : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
+            ? "border-red-500 focus-within:border-red-500" 
+            : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]"}
         `}
       >
         {prefix && (
-          <div className="flex items-center">
-            <span className="px-3 text-sm text-muted bg-surface/50 whitespace-nowrap">
+          <div className="flex items-center h-full">
+            <span className="px-3 text-sm text-muted bg-surface/50 whitespace-nowrap h-full flex items-center">
               {prefix}
             </span>
-            <div className="w-[1px] h-11 bg-border" />
           </div>
         )}
         <div className="pl-4 flex-shrink-0 text-muted">
@@ -187,10 +186,10 @@ export function Select({
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 focus-within:ring-2 overflow-hidden
+          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 overflow-hidden
           ${error 
-            ? "border-red-500 focus-within:ring-red-500/20 focus-within:border-red-500" 
-            : "border-border/60 focus-within:ring-primary/30 focus-within:border-primary"}
+            ? "border-red-500 focus-within:border-red-500" 
+            : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]"}
           ${disabled ? "bg-surface/50 cursor-not-allowed" : ""}
         `}
       >
@@ -199,7 +198,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent outline-none placeholder:text-muted/70 appearance-none
+            flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 appearance-none
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >

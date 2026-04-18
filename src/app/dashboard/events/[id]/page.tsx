@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use, useMemo, Suspense } from "react";
+import { useState, useEffect, use, useMemo, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
@@ -46,6 +46,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+
+  // Close share menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (shareRef.current && !shareRef.current.contains(e.target as Node)) {
+        setIsShareOpen(false);
+      }
+    };
+    if (isShareOpen) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [isShareOpen]);
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -509,7 +524,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up relative z-30">
           <div className="flex flex-col gap-2 sm:gap-3">
             <button
               onClick={() => {
@@ -538,31 +553,68 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 items-center">
+          <div className="flex flex-wrap gap-3 items-center relative z-20">
             {!isPreviewMode && (
               <>
+                <div className="relative" ref={shareRef}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => setIsShareOpen(!isShareOpen)}
+                    disabled={status.label === "Past"}
+                    icon={<LinkIcon size={18} />}
+                    className={`hidden sm:flex transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                  >
+                    Share Link
+                  </Button>
+
+                  {isShareOpen && (
+                    <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-xl py-2 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                      <div className="px-4 py-2 mb-1 border-b border-border/40">
+                        <span className="text-[10px] font-bold text-muted/50 uppercase tracking-[0.1em]">Share Options</span>
+                      </div>
+                      
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=guest`;
+                          navigator.clipboard.writeText(url);
+                          toast.success("Guest registration link copied!");
+                          setIsShareOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface transition-all group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary-strong group-hover:scale-110 transition-transform">
+                          <User size={16} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-heading leading-tight">Our Guest</span>
+                          <span className="text-[10px] text-muted leading-tight mt-0.5">"OUR GUEST AT" preview</span>
+                        </div>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=visitor`;
+                          navigator.clipboard.writeText(url);
+                          toast.success("Visitor registration link copied!");
+                          setIsShareOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-surface transition-all group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-surface-strong/10 bg-slate-100 flex items-center justify-center text-slate-500 group-hover:scale-110 transition-transform">
+                          <LinkIcon size={16} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-sm text-heading leading-tight">Visitor</span>
+                          <span className="text-[10px] text-muted leading-tight mt-0.5">"I'M ATTENDING" preview</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <Button
                   variant="secondary"
-                  onClick={() => {
-                    const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true`;
-                    navigator.clipboard.writeText(url);
-                    setCopied(true);
-                    toast.success("Registration link copied!");
-                    setTimeout(() => setCopied(false), 2000);
-                  }}
-                  disabled={status.label === "Past"}
-                  icon={copied ? <Plus size={18} className="rotate-45 text-primary-strong" /> : <LinkIcon size={18} />}
-                  className={`hidden sm:flex transition-all duration-150 ${copied ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
-                >
-                  {copied ? "Copied!" : "Share Link"}
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true`;
-                    navigator.clipboard.writeText(url);
-                    toast.success("Link copied!");
-                  }}
+                  onClick={() => setIsShareOpen(!isShareOpen)}
                   disabled={status.label === "Past"}
                   icon={<LinkIcon size={18} />}
                   className={`flex sm:hidden px-3 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}

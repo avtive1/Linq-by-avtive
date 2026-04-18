@@ -16,8 +16,7 @@ export type CardData = {
   designType?: string;
   color?: string;
   fontFamily?: string;
-  card_preview_url?: string;
-
+  cardRole?: "guest" | "visitor";
 };
 
 export type EventData = {
