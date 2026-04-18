@@ -172,6 +172,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       setCards(prev => prev.filter(c => c.id !== cardId));
       toast.success("Card deleted successfully.");
+      router.refresh();
     } catch (err) {
       console.error("Error deleting card:", err);
       toast.error("Failed to delete card.");
@@ -221,6 +222,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         time: editForm.time,
       } : prev);
       toast.success("Event updated.");
+      router.refresh();
       setIsEditOpen(false);
     } catch (err) {
       console.error("Error updating event:", err);
@@ -315,6 +317,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       
       // Redirect to the newly created event
       if (createdEvent?.id) {
+        router.refresh();
         router.push(`/dashboard/events/${createdEvent.id}`);
       }
     } catch (err: any) {
@@ -348,7 +351,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       if (error) throw error;
 
       toast.success("Event duplicated.");
-      if (created?.id) router.push(`/dashboard/events/${created.id}`);
+      if (created?.id) {
+        router.refresh();
+        router.push(`/dashboard/events/${created?.id}`);
+      }
     } catch (err) {
       console.error("Error duplicating event:", err);
       toast.error("Failed to duplicate event.");
@@ -408,6 +414,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       }
 
       toast.success("Event deleted permanently.");
+      router.refresh();
       router.push("/dashboard");
     } catch (err: any) {
       console.error("Error deleting event:", err);
@@ -504,13 +511,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up">
           <div className="flex flex-col gap-2 sm:gap-3">
-            <Link
-              href="/dashboard"
-            className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] mb-2 group -ml-1 sm:-ml-2"
+            <button
+              onClick={() => {
+                router.refresh();
+                router.push("/dashboard");
+              }}
+            className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
-            </Link>
+            </button>
             <span className="text-sm font-semibold tracking-[0.04em] text-muted/70 mt-1">
               Event details
             </span>

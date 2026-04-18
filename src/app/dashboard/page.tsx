@@ -213,7 +213,7 @@ function DashboardContent() {
       if (error) throw error;
       
       toast.success(`Event "${eventForm.name}" created successfully!`);
-      
+      router.refresh();
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
       fetchData(user.id);

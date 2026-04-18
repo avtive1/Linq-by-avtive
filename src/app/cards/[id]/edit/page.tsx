@@ -337,13 +337,17 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-6 md:p-11 overflow-y-auto lg:h-screen animate-slide-up">
         
         <div className="flex items-center gap-3 mb-8 -ml-1 sm:-ml-2">
-          <Link
-            href={eventId ? `/dashboard/events/${eventId}` : "/dashboard"}
-            className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+          <button
+            onClick={() => {
+              const target = eventId ? `/dashboard/events/${eventId}` : "/dashboard";
+              router.refresh();
+              router.push(target);
+            }}
+            className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group bg-transparent border-none cursor-pointer"
           >
             <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
             Back to Event
-          </Link>
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-8">
