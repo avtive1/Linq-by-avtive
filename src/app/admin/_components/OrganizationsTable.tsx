@@ -7,6 +7,7 @@ import { ChevronRight, Search, ArrowUpDown } from "lucide-react";
 interface Organization {
   id: string;
   email: string | undefined;
+  username: string | undefined;
   organizationName: string | undefined;
   created_at: string;
   eventCount: number;
@@ -17,12 +18,12 @@ interface OrganizationsTableProps {
   initialOrganizations: Organization[];
 }
 
-type SortField = "email" | "organizationName" | "created_at" | "eventCount" | "attendeeCount";
+type SortField = "username" | "organizationName" | "created_at" | "eventCount" | "attendeeCount";
 type SortOrder = "asc" | "desc";
 
 export default function OrganizationsTable({ initialOrganizations }: OrganizationsTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortField, setSortField] = useState<SortField>("created_at");
+  const [sortField, setSortField] = useState<SortField>("username");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
   const filteredAndSortedOrgs = useMemo(() => {
@@ -32,6 +33,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter((org) => 
+        org.username?.toLowerCase().includes(q) || 
         org.email?.toLowerCase().includes(q) || 
         org.organizationName?.toLowerCase().includes(q)
       );
@@ -76,7 +78,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/60" size={18} />
         <input
           type="text"
-          placeholder="Search by email or organization..."
+          placeholder="Search by username, email or organization..."
           className="w-full pl-11 pr-4 py-2.5 bg-white/60 backdrop-blur-md border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -90,10 +92,10 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
               <tr className="bg-surface border-b border-border text-xs font-semibold tracking-[0.02em] text-muted">
                 <th 
                   className="py-4 px-6 font-semibold cursor-pointer hover:text-heading transition-colors"
-                  onClick={() => toggleSort("email")}
+                  onClick={() => toggleSort("username")}
                 >
                   <div className="flex items-center">
-                    Email Address <SortIcon field="email" />
+                    Username <SortIcon field="username" />
                   </div>
                 </th>
                 <th 
@@ -134,7 +136,12 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
             <tbody className="divide-y divide-border/30">
               {filteredAndSortedOrgs.map((org) => (
                 <tr key={org.id} className="hover:bg-white transition-colors group cursor-default">
-                  <td className="py-4 px-6 font-semibold text-heading text-sm">{org.email}</td>
+                  <td className="py-4 px-6">
+                    <div className="flex flex-col">
+                      <span className="font-bold text-heading text-sm">@{org.username || 'unknown'}</span>
+                      <span className="text-[10px] text-muted truncate max-w-[150px]">{org.email}</span>
+                    </div>
+                  </td>
                   <td className="py-4 px-6 font-semibold text-heading text-sm">{org.organizationName || <span className="text-muted/60 font-medium">—</span>}</td>
                   <td className="py-4 px-6 text-muted text-sm">{new Date(org.created_at).toLocaleDateString()}</td>
                   <td className="py-4 px-6 text-center">

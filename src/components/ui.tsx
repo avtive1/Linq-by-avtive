@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { ImageCropperModal } from "./ImageCropperModal";
 
 
@@ -15,9 +15,13 @@ type InputProps = {
   value?: string;
   onChange?: (v: string) => void;
   prefix?: string;
-  icon?: "email" | "lock";
-  error?: string;
+  icon?: "email" | "lock" | "user";
   className?: string;
+  autoComplete?: string;
+  name?: string;
+  error?: string;
+  readOnly?: boolean;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
 };
 
 export function TextInput({
@@ -31,6 +35,10 @@ export function TextInput({
   icon,
   error,
   className = "",
+  autoComplete,
+  name,
+  readOnly,
+  onFocus,
 }: InputProps) {
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
@@ -65,13 +73,18 @@ export function TextInput({
         <div className="pl-4 flex-shrink-0 text-muted">
           {icon === "email" && <Mail size={18} />}
           {icon === "lock" && <Lock size={18} />}
+          {icon === "user" && <User size={18} />}
         </div>
         <input
           type={inputType}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
-          className="flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent outline-none placeholder:text-muted/70"
+          autoComplete={autoComplete}
+          name={name}
+          readOnly={readOnly}
+          onFocus={onFocus}
+          className="flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70"
         />
         {isPassword && (
           <button

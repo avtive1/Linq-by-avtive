@@ -24,6 +24,11 @@ export default async function AdminDashboardPage() {
   const { data: attendees, error: attendeeError } = await adminClient.from("attendees").select("id, event_id, created_at");
   const rawAttendees = attendees || [];
 
+  // 4. Fetch All Profiles (for usernames)
+  const { data: profiles, error: profileError } = await adminClient.from("profiles").select("*");
+  const profileLookup = new Map();
+  (profiles || []).forEach(p => profileLookup.set(p.id, p));
+
   // Growth Stats (Last 7 Days)
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -44,10 +49,12 @@ export default async function AdminDashboardPage() {
   // Build the Organization Grid Data
   const orgMap = new Map();
   rawUsers.forEach(user => {
+    const profile = profileLookup.get(user.id);
     orgMap.set(user.id, {
       id: user.id,
       email: user.email,
-      organizationName: user.user_metadata?.organization_name,
+      username: profile?.username || user.email?.split("@")[0],
+      organizationName: profile?.organization_name || user.user_metadata?.organization_name,
       created_at: user.created_at,
       eventCount: 0,
       attendeeCount: 0,
@@ -74,18 +81,22 @@ export default async function AdminDashboardPage() {
     }
   });
 
-  const organizations = Array.from(orgMap.values());
+  const organizations = Array.from(orgMap.values()) as any[];
 
   // Recent Activity Feed
   const recentEvents = rawEvents.slice(0, 5).map(evt => {
     const user = rawUsers.find(u => u.id === evt.user_id);
+    const profile = profileLookup.get(evt.user_id);
+    
     const orgEmail = user?.email || "Unknown Organization";
-    const orgName = user?.user_metadata?.organization_name;
+    const orgName = profile?.organization_name || user?.user_metadata?.organization_name;
+    const username = profile?.username;
 
     return {
       ...evt,
       orgEmail,
-      orgName
+      orgName,
+      username
     };
   });
 
@@ -181,7 +192,7 @@ export default async function AdminDashboardPage() {
                 </h3>
                 <p className="text-xs text-muted font-medium flex items-center gap-1.5 truncate">
                   <Building2 size={12} className="shrink-0" /> 
-                  {evt.orgName ? `${evt.orgName} (${evt.orgEmail})` : evt.orgEmail}
+                  {evt.orgName ? `${evt.orgName} (@${evt.username || 'unknown'})` : evt.orgEmail}
                 </p>
                 <div className="mt-2 pt-2 border-t border-border/30 flex justify-between items-center text-[11px] font-bold">
                   <span className="text-muted/60">{evt.location}</span>

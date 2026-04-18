@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
@@ -15,8 +15,11 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
     organization: "",
+    username: "",
     linkedin: "",
   });
+  const [usernameStatus, setUsernameStatus] = useState<"loading" | "available" | "taken" | "invalid" | null>(null);
+  const [usernameLocked, setUsernameLocked] = useState(true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -37,6 +40,12 @@ export default function SignupPage() {
     // Email
     if (!form.email) newErrors.email = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Invalid email format";
+    
+    // Username
+    if (!form.username) newErrors.username = "Username is required";
+    else if (form.username.length < 3) newErrors.username = "Min 3 characters required";
+    else if (!/^[a-zA-Z0-9_.]+$/.test(form.username)) newErrors.username = "Alphanumeric, underscore, or dot only";
+    else if (usernameStatus === "taken") newErrors.username = "Username is already taken";
     
     // Password
     if (!form.password) newErrors.password = "Password is required";
@@ -70,6 +79,7 @@ export default function SignupPage() {
         password: form.password,
         options: {
           data: {
+            username: form.username.toLowerCase(),
             linkedin: cleanHandle,
             organization_name: form.organization,
           }
@@ -87,6 +97,7 @@ export default function SignupPage() {
       }
 
       toast.success("Account created successfully!");
+      router.refresh();
       router.push("/dashboard");
     } catch (err: any) {
       setErrors({ email: err?.message || "Failed to create account. Email may already exist." });
@@ -95,10 +106,57 @@ export default function SignupPage() {
     }
   };
 
+  const checkUsername = async (username: string) => {
+    if (username.length < 3) {
+      setUsernameStatus(null);
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
+      setUsernameStatus("invalid");
+      return;
+    }
+
+    setUsernameStatus("loading");
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        setUsernameStatus("taken");
+      } else {
+        setUsernameStatus("available");
+      }
+    } catch (err) {
+      console.error("Username check error:", err);
+      setUsernameStatus(null);
+    }
+  };
+
+  // Debounced effect for username check
+  useEffect(() => {
+    // Clear status immediately while typing starts
+    if (!form.username) {
+      setUsernameStatus(null);
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      checkUsername(form.username);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [form.username]);
+
   const update = (key: keyof typeof form) => (val: string) => {
-    setForm({ ...form, [key]: val });
+    setForm(prev => ({ ...prev, [key]: val }));
     if (errors[key]) {
-      setErrors({ ...errors, [key]: "" });
+      setErrors(prev => ({ ...prev, [key]: "" }));
     }
   };
 
@@ -153,10 +211,52 @@ export default function SignupPage() {
             </div>
 
             <div className="flex flex-col gap-3">
+              {/* Autofill Trap: These hidden fields capture the browser's forced autofill so our real fields stay clean */}
+              <input 
+                type="text" 
+                name="fake_user_name" 
+                autoComplete="username" 
+                style={{ display: "none" }} 
+                tabIndex={-1} 
+              />
+              <input 
+                type="password" 
+                name="fake_password" 
+                autoComplete="current-password" 
+                style={{ display: "none" }} 
+                tabIndex={-1} 
+              />
+
+              <div className="relative">
+                <TextInput
+                  label="Username"
+                  required
+                  name="avtive_user_handle_v1"
+                  autoComplete="off"
+                  placeholder="choose_a_username"
+                  icon="user"
+                  value={form.username}
+                  error={errors.username}
+                  onChange={update("username")}
+                  readOnly={usernameLocked}
+                  onFocus={() => setUsernameLocked(false)}
+                />
+                {form.username.length >= 2 && (
+                  <div className="absolute right-0 top-0 pt-[28px]">
+                    {usernameStatus === "loading" && <div className="text-[10px] font-bold text-muted animate-pulse">Checking...</div>}
+                    {usernameStatus === "available" && <div className="text-[10px] font-bold text-green-500">Available</div>}
+                    {usernameStatus === "taken" && <div className="text-[10px] font-bold text-danger">Taken</div>}
+                    {usernameStatus === "invalid" && <div className="text-[10px] font-bold text-danger">Invalid chars</div>}
+                  </div>
+                )}
+              </div>
+
               <TextInput
                 label="Email Address"
                 required
                 type="email"
+                name="email"
+                autoComplete="email"
                 placeholder="Enter your email"
                 icon="email"
                 value={form.email}
