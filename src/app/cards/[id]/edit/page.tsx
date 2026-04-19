@@ -9,6 +9,8 @@ import { CardPreview } from "@/components/CardPreview";
 import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
+import { parseEventSponsors } from "@/lib/sponsors";
+import type { SponsorEntry } from "@/types/card";
 
 type FormState = {
   name: string;
@@ -26,6 +28,7 @@ type FormState = {
   designType: "design1" | "design2";
   color: string;
   fontFamily: string;
+  sponsors: SponsorEntry[];
 };
 
 const colors = [
@@ -56,6 +59,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     designType: "design1",
     color: "purple",
     fontFamily: "inter",
+    sponsors: [],
   });
   
   const [originalPhotoPath, setOriginalPhotoPath] = useState<string | null>(null);
@@ -113,6 +117,17 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         if (!isMounted) return;
         setEventId(record.event_id || null);
         setOriginalPhotoPath(record.photo_url || null);
+
+        let sponsors: SponsorEntry[] = [];
+        if (record.event_id) {
+          const { data: ev } = await supabase
+            .from("events")
+            .select("sponsors")
+            .eq("id", record.event_id)
+            .single();
+          if (ev) sponsors = parseEventSponsors(ev.sponsors);
+        }
+
         setForm({
           name: record.name || "",
           role: record.role || "",
@@ -129,6 +144,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           designType: (record.design_type as "design1" | "design2") || "design1",
           color: record.card_color || "purple",
           fontFamily: "inter",
+          sponsors,
         });
       } catch (err) {
         console.error("Edit load error:", err);
@@ -293,7 +309,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         </div>
         <div className="flex-1 flex flex-col items-center py-8 px-6 lg:h-screen">
           <Skeleton className="w-24 h-4 mb-6" />
-          <Skeleton className="w-full max-w-[600px] aspect-[800/420] rounded-xl shadow-xl" />
+          <Skeleton className="w-full max-w-[600px] aspect-800/420 rounded-xl shadow-xl" />
           <Skeleton className="w-48 h-4 mt-6" />
         </div>
       </main>
@@ -343,7 +359,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               router.refresh();
               router.push(target);
             }}
-            className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group bg-transparent border-none cursor-pointer"
+            className="inline-flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group bg-transparent border-none cursor-pointer"
           >
             <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
             Back to Event
@@ -553,7 +569,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
         {/* Print Preview Overlay */}
         {showPrintPreview && (
-          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:block">
+          <div
+            className="fixed inset-0 bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:block"
+            style={{ zIndex: 100 }}
+          >
             <div className="w-full max-w-4xl flex justify-between items-center mb-12 print:hidden">
                 <h2 className="text-xl font-bold text-white tracking-tight">Print Ready Badge</h2>
                 <div className="flex gap-4">

@@ -1,7 +1,151 @@
 "use client";
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
-import { CardData } from "@/types/card";
+import { CardData, SponsorEntry } from "@/types/card";
+
+const FALLBACK_H1_SPONSORS =
+  "https://www.figma.com/api/mcp/asset/60137d44-eb2a-4405-bd79-67be246fc1ec";
+const FALLBACK_H2_SPONSORS =
+  "https://www.figma.com/api/mcp/asset/304933ce-cbdb-4ff8-a402-c39459b6d08d";
+const FALLBACK_VERTICAL_PARTNERS =
+  "https://www.figma.com/api/mcp/asset/3afad43f-8750-426f-8511-10ff0d714f6e";
+
+/** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
+const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
+const SPONSOR_STRIP_MAX_W_H1_PX = 1120;
+const SPONSOR_LOGO_HEIGHT_H2_PX = 72;
+const SPONSOR_STRIP_MAX_W_H2_PX = 861;
+const SPONSOR_LOGO_HEIGHT_V_PX = 56;
+const SPONSOR_STRIP_MAX_W_V_PX = 528;
+
+/**
+ * Sponsor logos only (no labels). Tall row + wide strip so logos read large on the 1200-wide card.
+ */
+function SponsorStripRow({
+  sponsors,
+  logoHeightPx,
+  maxStripWidthPx = SPONSOR_STRIP_MAX_W_H1_PX,
+}: {
+  sponsors: SponsorEntry[];
+  logoHeightPx: number;
+  maxStripWidthPx?: number;
+}) {
+  const n = Math.min(sponsors.length, 5);
+  const slotMaxWidthPct = n > 0 ? 100 / n : 100;
+
+  return (
+    <div
+      className="flex h-full w-full max-w-full items-center justify-evenly gap-2 px-1 sm:gap-3"
+      style={{ maxWidth: maxStripWidthPx }}
+    >
+      {sponsors.map((s, i) => (
+        <div
+          key={`${s.logo_url}-${i}`}
+          className="flex min-h-0 min-w-0 flex-1 items-center justify-center px-0.5"
+          style={{ maxWidth: `${slotMaxWidthPct}%` }}
+        >
+          <img
+            src={s.logo_url}
+            alt={s.name?.trim() || "Sponsor"}
+            title={s.name?.trim() || undefined}
+            className="object-contain"
+            style={{
+              height: logoHeightPx,
+              width: "auto",
+              maxWidth: "100%",
+              maxHeight: logoHeightPx,
+            }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
+  if (!s?.length) return [];
+  return s.filter((x) => x.logo_url?.trim()).slice(0, 5);
+}
+
+function HorizontalSponsorsDesign1({ sponsors }: { sponsors?: SponsorEntry[] }) {
+  const list = filterSponsors(sponsors);
+  if (!list.length) {
+    return (
+      <img
+        src={FALLBACK_H1_SPONSORS}
+        className="h-[46px] w-[1045px] max-w-full object-contain"
+        alt="Sponsors"
+      />
+    );
+  }
+  return (
+    <div className="flex h-full w-full max-w-[1120px] items-center justify-center">
+      <SponsorStripRow
+        sponsors={list}
+        logoHeightPx={SPONSOR_LOGO_HEIGHT_H1_PX}
+        maxStripWidthPx={SPONSOR_STRIP_MAX_W_H1_PX}
+      />
+    </div>
+  );
+}
+
+function HorizontalSponsorsDesign2({ sponsors }: { sponsors?: SponsorEntry[] }) {
+  const list = filterSponsors(sponsors);
+  if (!list.length) {
+    return (
+      <img
+        className="absolute left-[276px] top-[42px] h-[38px] w-[861px] object-contain"
+        src={FALLBACK_H2_SPONSORS}
+        alt="Sponsors"
+      />
+    );
+  }
+  return (
+    <div className="absolute left-[276px] top-[28px] flex h-[78px] w-[861px] items-center justify-center">
+      <SponsorStripRow
+        sponsors={list}
+        logoHeightPx={SPONSOR_LOGO_HEIGHT_H2_PX}
+        maxStripWidthPx={SPONSOR_STRIP_MAX_W_H2_PX}
+      />
+    </div>
+  );
+}
+
+function VerticalSponsorsStrip({ sponsors }: { sponsors?: SponsorEntry[] }) {
+  const list = filterSponsors(sponsors);
+  /** Pin to card bottom — avoids `top:auto` static-position bug when all siblings are `absolute` */
+  const stripStyle: React.CSSProperties = {
+    position: "absolute",
+    left: 24,
+    bottom: 24,
+    width: SPONSOR_STRIP_MAX_W_V_PX,
+    height: SPONSOR_LOGO_HEIGHT_V_PX + 10,
+    zIndex: 20,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  if (!list.length) {
+    return (
+      <img
+        src={FALLBACK_VERTICAL_PARTNERS}
+        className="absolute z-4 object-contain"
+        style={{ left: 77, bottom: 35, width: 423, height: 33 }}
+        alt="Partners"
+      />
+    );
+  }
+  return (
+    <div style={stripStyle}>
+      <SponsorStripRow
+        sponsors={list}
+        logoHeightPx={SPONSOR_LOGO_HEIGHT_V_PX}
+        maxStripWidthPx={SPONSOR_STRIP_MAX_W_V_PX}
+      />
+    </div>
+  );
+}
 
 const COLOR_THEMES: Record<string, { start: string; end: string; accent: string; textColor?: string; titleColor?: string }> = {
   purple: { start: "#41295a", end: "#2f0743", accent: "#FFD400", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
@@ -98,7 +242,7 @@ export function CardPreview({
         {!isDesign1 && (
           <img 
             src="https://www.figma.com/api/mcp/asset/25c34327-5732-42c0-bf51-b701006d1883" 
-            className="absolute left-[-11px] top-[-1px] w-[590px] h-[543px] pointer-events-none max-w-none" 
+            className="absolute left-[-11px] -top-px w-[590px] h-[543px] pointer-events-none max-w-none" 
             alt="" 
           />
         )}
@@ -125,16 +269,16 @@ export function CardPreview({
         />
         <img 
           src="https://www.figma.com/api/mcp/asset/be4bd848-b76e-4630-808c-cf77963ce6a7" 
-          className="absolute left-[31px] top-[42px] w-[47px] h-[44px] object-contain z-[5]" 
+          className="absolute left-[31px] top-[42px] w-[47px] h-[44px] object-contain z-5" 
           alt="" 
         />
 
-        <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-[500] tracking-[3px] uppercase leading-none">
+        <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-medium tracking-[3px] uppercase leading-none">
           {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
         </p>
 
         <h1 
-          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-[700] leading-[69.33px] tracking-[-2.99px]" 
+          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]" 
           style={{ 
             color: theme.titleColor || "#5a2ed3",
             fontFamily: selectedFont,
@@ -150,15 +294,15 @@ export function CardPreview({
 
 
         {/* Meta Info - Precisely positioned per provided CSS */}
-        <p className="absolute left-[30px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
+        <p className="absolute left-[30px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-medium leading-[24px]">
           <img src="https://www.figma.com/api/mcp/asset/911c0336-0dbe-4d71-abd3-95e367313410" className="w-[15px] h-[15px]" alt="" />
           {data.sessionDate || "Friday, 11th April, 2026"}
         </p>
-        <p className="absolute left-[261px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
+        <p className="absolute left-[261px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-medium leading-[24px]">
           <img src="https://www.figma.com/api/mcp/asset/c70396aa-fad6-4461-a222-1ef86c1215c8" className="w-[15px] h-[15px]" alt="" />
           {data.sessionTime || "05:00 PM"}
         </p>
-        <p className="absolute left-[30px] top-[390px] m-0 flex items-center gap-[7px] text-black text-[16px] font-[500] leading-[24px]">
+        <p className="absolute left-[30px] top-[390px] m-0 flex items-center gap-[7px] text-black text-[16px] font-medium leading-[24px]">
           <img src="https://www.figma.com/api/mcp/asset/09c9f77b-5728-4fe6-8b34-b3ad59fe884d" className="w-[15px] h-[15px]" alt="" />
           {data.location || "Expo Center, Islamabad, Pakistan"}
         </p>
@@ -167,7 +311,7 @@ export function CardPreview({
         {verticalSide === 1 ? (
           /* SIDE 1: User Photo - Matching qr-wrap positioning and size */
           <div 
-            className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center z-[4]"
+            className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center z-4"
           >
             {data.photo ? (
               <img src={data.photo} className="w-full h-full object-cover" />
@@ -180,7 +324,7 @@ export function CardPreview({
           </div>
         ) : (
           /* SIDE 2: QR Code - Exactly matching qr-wrap and internal qr-image/qr-center */
-          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-[4]">
+          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4">
              {qrUrl ? (
                <>
                   <img 
@@ -202,23 +346,19 @@ export function CardPreview({
         )}
 
         {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
-        <p className="absolute left-0 top-[820px] w-full text-center text-white z-[4] m-0 text-[35px] font-[700] leading-[1]">
+        <p className="absolute left-0 top-[820px] w-full text-center text-white z-4 m-0 text-[35px] font-bold leading-none">
           {data.name || "Full Name"}
         </p>
-        <p className="absolute left-0 top-[869px] w-full text-center text-white z-[4] m-0 text-[21px] font-[500] leading-[1]">
+        <p className="absolute left-0 top-[869px] w-full text-center text-white z-4 m-0 text-[21px] font-medium leading-none">
           {data.role || "Role/Title"}
         </p>
-        <p className="absolute left-0 top-[900px] w-full text-center text-white z-[4] m-0 text-[21px] font-[500] leading-[1]">
+        <p className="absolute left-0 top-[900px] w-full text-center text-white z-4 m-0 text-[21px] font-medium leading-none">
           {data.company || "Organization"}
         </p>
 
 
-        {/* Partners */}
-        <img 
-          src="https://www.figma.com/api/mcp/asset/3afad43f-8750-426f-8511-10ff0d714f6e" 
-          className="absolute left-[77px] top-[956px] w-[423px] h-[33px] object-contain z-[4]" 
-          alt="Partners" 
-        />
+        {/* Partners / sponsors */}
+        <VerticalSponsorsStrip sponsors={data.sponsors} />
       </div>
     );
   }
@@ -255,7 +395,7 @@ export function CardPreview({
       >
         <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/1e6c3590-a66a-4bc5-b575-adfb66dc1bb8" alt="" />
         
-        <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
+        <p className="absolute left-[58px] top-[81px] m-0 font-medium text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
           {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
         </p>
         
@@ -271,17 +411,17 @@ export function CardPreview({
         </h1>
 
         <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
-          <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+          <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
             <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z"/></svg>
             <span>{data.sessionDate || "Friday, 11th April, 2026"}</span>
           </div>
-          <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+          <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
             <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
             <span>{data.sessionTime || "05:00 PM"}</span>
           </div>
         </div>
 
-        <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap" style={metaTextColor}>
+        <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-medium whitespace-nowrap" style={metaTextColor}>
           <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
           <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
         </div>
@@ -292,7 +432,7 @@ export function CardPreview({
         </div>
 
         <section className="absolute right-[26px] top-[172px] w-[340px] text-left" style={metaTextColor}>
-          <div className="w-[175px] h-[175px] rounded-lg overflow-hidden block mb-[20px] bg-white/10 border border-white/10 flex items-center justify-center">
+          <div className="mb-[20px] flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/10">
             {data.photo ? (
               <img src={data.photo} className="w-full h-full object-cover" />
             ) : (
@@ -302,14 +442,14 @@ export function CardPreview({
               </svg>
             )}
           </div>
-          <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]">{data.name || "Full Name"}</h2>
-          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
-          <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
+          <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]">{data.name || "Full Name"}</h2>
+          <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
+          <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
         </section>
 
-        <footer className="absolute left-0 bottom-0 w-full h-[123px]">
-          <img className="absolute left-0 bottom-0 w-full h-full" src="https://www.figma.com/api/mcp/asset/19a4081a-3d42-499b-8b23-eaca86dedae6" alt="" />
-          <img className="absolute left-[276px] top-[42px] w-[861px] h-[38px] object-contain" src="https://www.figma.com/api/mcp/asset/304933ce-cbdb-4ff8-a402-c39459b6d08d" alt="Sponsors" />
+        <footer className="absolute left-0 bottom-0 h-[123px] w-full">
+          <img className="absolute bottom-0 left-0 h-full w-full" src="https://www.figma.com/api/mcp/asset/19a4081a-3d42-499b-8b23-eaca86dedae6" alt="" />
+          <HorizontalSponsorsDesign2 sponsors={data.sponsors} />
         </footer>
       </div>
     );
@@ -325,7 +465,7 @@ export function CardPreview({
     >
       <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/a068f32c-5159-4502-a8f7-c3748e1a7c88" alt="" />
       
-      <p className="absolute left-[58px] top-[81px] m-0 font-[500] text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
+      <p className="absolute left-[58px] top-[81px] m-0 font-medium text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
         {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
       </p>
       
@@ -341,17 +481,17 @@ export function CardPreview({
       </h1>
 
       <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
-        <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+        <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
           <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z"/></svg>
           <span>{data.sessionDate || "Friday, 11th April, 2026"}</span>
         </div>
-        <div className="flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap">
+        <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
           <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
           <span>{data.sessionTime || "05:00 PM"}</span>
         </div>
       </div>
 
-      <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-[500] whitespace-nowrap" style={metaTextColor}>
+      <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-medium whitespace-nowrap" style={metaTextColor}>
         <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
         <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
       </div>
@@ -362,7 +502,7 @@ export function CardPreview({
       </div>
 
       <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
-        <div className="w-[175px] h-[175px] rounded-lg overflow-hidden block mb-5 bg-white/10 border border-white/10 flex items-center justify-center">
+        <div className="mb-5 flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/10">
           {data.photo ? (
             <img src={data.photo} className="w-full h-full object-cover" />
           ) : (
@@ -372,13 +512,13 @@ export function CardPreview({
             </svg>
           )}
         </div>
-        <h2 className="m-0 font-[700] text-[22px] leading-[1.2] whitespace-nowrap">{data.name || "Full Name"}</h2>
-        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
-        <p className="m-0 font-[400] text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
+        <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap">{data.name || "Full Name"}</h2>
+        <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
+        <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
       </section>
 
-      <footer className="absolute left-0 right-0 bottom-0 h-[123px] bg-white grid place-items-center px-[40px]">
-        <img src="https://www.figma.com/api/mcp/asset/60137d44-eb2a-4405-bd79-67be246fc1ec" className="w-[1045px] max-w-full h-[46px] object-contain" alt="Sponsors" />
+      <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
+        <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
       </footer>
     </div>
   );

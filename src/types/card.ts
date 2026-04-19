@@ -1,3 +1,9 @@
+/** Sponsor shown on attendee cards (from the parent event). Max 5 per event. */
+export type SponsorEntry = {
+  name: string;
+  logo_url: string;
+};
+
 export type CardData = {
   id: string;
   name: string;
@@ -17,6 +23,8 @@ export type CardData = {
   color?: string;
   fontFamily?: string;
   cardRole?: "guest" | "visitor";
+  /** Resolved from the linked event for card rendering */
+  sponsors?: SponsorEntry[];
 };
 
 export type EventData = {
@@ -29,4 +37,5 @@ export type EventData = {
   user?: string;
   created?: string;
   logo_url?: string;
+  sponsors?: SponsorEntry[];
 };

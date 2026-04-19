@@ -5,6 +5,7 @@ import { Info } from "lucide-react";
 import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
 import CardView from "./CardView";
 import { CardData } from "@/types/card";
+import { parseEventSponsors } from "@/lib/sponsors";
 import { Metadata } from "next";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -61,6 +62,16 @@ export default async function CardViewPage(props: {
     if (error) throw error;
     
     if (record) {
+      let sponsors = undefined as CardData["sponsors"];
+      if (record.event_id) {
+        const { data: ev } = await supabase
+          .from("events")
+          .select("sponsors")
+          .eq("id", record.event_id)
+          .single();
+        if (ev) sponsors = parseEventSponsors(ev.sponsors);
+      }
+
       card = {
         id: record.id,
         name: record.name,
@@ -70,6 +81,7 @@ export default async function CardViewPage(props: {
         email: record.card_email,
         eventName: record.event_name,
         sessionDate: record.session_date,
+        sessionTime: record.session_time || undefined,
         location: record.location,
         track: record.track,
         year: record.year,
@@ -77,7 +89,9 @@ export default async function CardViewPage(props: {
         photo: record.photo_url ? getSupabaseFileUrl("attendee_photos", record.photo_url) : undefined,
         designType: record.design_type,
         color: record.card_color,
+        fontFamily: record.card_font || undefined,
         cardRole: record.track as "guest" | "visitor",
+        sponsors,
       };
     }
   } catch (err) {

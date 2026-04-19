@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, ChevronDown, Sparkles, Globe } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
+import { EventSponsorsForm } from "@/components/EventSponsorsForm";
+import { resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 
 import { useSearchParams } from "next/navigation";
 
@@ -37,6 +39,8 @@ function DashboardContent() {
     logo: "",
   });
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
+  const [createSponsorRows, setCreateSponsorRows] = useState<SponsorFormRow[]>([]);
+  const [createSponsorsOpen, setCreateSponsorsOpen] = useState(false);
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalAttendees: 0,
@@ -209,13 +213,26 @@ function DashboardContent() {
         logo_url: logoUrl
       };
       
-      const { error } = await supabase.from("events").insert(data);
+      const { data: inserted, error } = await supabase.from("events").insert(data).select("id").single();
       if (error) throw error;
-      
+
+      if (inserted?.id && createSponsorRows.some((r) => r.name.trim() && r.logo)) {
+        try {
+          const resolved = await resolveSponsorRowsToEntries(supabase, user.id, inserted.id, createSponsorRows);
+          const { error: spErr } = await supabase.from("events").update({ sponsors: resolved }).eq("id", inserted.id);
+          if (spErr) throw spErr;
+        } catch (spErr) {
+          console.error("Sponsor upload failed:", spErr);
+          toast.error('Event created, but sponsors could not be saved. Add them from the event page under "Sponsors".');
+        }
+      }
+
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
+      setCreateSponsorRows([]);
+      setCreateSponsorsOpen(false);
       fetchData(user.id);
     } catch (err: any) {
       console.error(err);
@@ -228,7 +245,7 @@ function DashboardContent() {
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
-        <div className="relative z-[100] bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
+        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles size={18} />
             <span>Admin Preview Mode &mdash; Read Only</span>
@@ -271,7 +288,7 @@ function DashboardContent() {
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href="/" 
-              className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] mb-1 group -ml-1 sm:-ml-2"
+              className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Home
@@ -390,7 +407,7 @@ function DashboardContent() {
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       {evt.logo_url && (
-                        <div className="w-20 h-20 rounded-sm bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
+                        <div className="w-20 h-20 rounded-sm bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 shrink-0">
                           <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-cover block" />
                         </div>
                       )}
@@ -399,7 +416,7 @@ function DashboardContent() {
                       <span className={`text-xs font-semibold tracking-[0.02em] px-3 py-1 rounded-sm border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-xs font-bold leading-snug text-primary-strong bg-primary/10 px-3 py-1 rounded-[6px]">
+                      <div className="flex items-center text-xs font-bold leading-snug text-primary-strong bg-primary/10 px-3 py-1 rounded-xs">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
@@ -422,7 +439,7 @@ function DashboardContent() {
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-semibold text-heading hover:text-primary-strong hover:bg-white/20 rounded-[4px] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-semibold text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
                     View Event
                     <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
@@ -442,10 +459,14 @@ function DashboardContent() {
 
       {/* Event Creation Modal */}
       {isEventModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
-            onClick={() => setIsEventModalOpen(false)}
+            onClick={() => {
+              setCreateSponsorRows([]);
+              setCreateSponsorsOpen(false);
+              setIsEventModalOpen(false);
+            }}
           />
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
@@ -455,7 +476,11 @@ function DashboardContent() {
                 <p className="text-sm text-muted">Add details for the upcoming conference.</p>
               </div>
               <button 
-                onClick={() => setIsEventModalOpen(false)}
+                onClick={() => {
+                  setCreateSponsorRows([]);
+                  setCreateSponsorsOpen(false);
+                  setIsEventModalOpen(false);
+                }}
                 className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <X size={20} />
@@ -529,13 +554,38 @@ function DashboardContent() {
                   onChange={(v) => setEventForm({ ...eventForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
                 />
+
+                <div className="rounded-lg border border-border/60 bg-surface/40 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setCreateSponsorsOpen((o) => !o)}
+                    className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-semibold text-heading hover:bg-white/60 transition-colors"
+                  >
+                    <span>Optional: sponsor logos (max 5)</span>
+                    <ChevronDown size={18} className={`shrink-0 text-muted transition-transform ${createSponsorsOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {createSponsorsOpen && (
+                    <div className="border-t border-border/50 px-4 pb-4 pt-2">
+                      <EventSponsorsForm
+                        rows={createSponsorRows}
+                        onChange={setCreateSponsorRows}
+                        onFileError={(msg) => toast.error(msg)}
+                        disabled={isSubmittingEvent}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button 
                   variant="secondary" 
                   fullWidth 
-                  onClick={() => setIsEventModalOpen(false)}
+                  onClick={() => {
+                    setCreateSponsorRows([]);
+                    setCreateSponsorsOpen(false);
+                    setIsEventModalOpen(false);
+                  }}
                   className="order-2 sm:order-1"
                 >
                   Cancel

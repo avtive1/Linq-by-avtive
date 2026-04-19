@@ -25,11 +25,14 @@ import {
   RefreshCw,
   Sparkles,
   Globe,
+  Handshake,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
+import { EventSponsorsForm } from "@/components/EventSponsorsForm";
+import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 
 type AttendeeCard = CardData & { photo_path?: string };
 
@@ -80,6 +83,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [renewForm, setRenewForm] = useState({ location: "", date: "", logo: "" });
   const [isRenewing, setIsRenewing] = useState(false);
 
+  const [isSponsorsOpen, setIsSponsorsOpen] = useState(false);
+  const [sponsorRows, setSponsorRows] = useState<SponsorFormRow[]>([]);
+  const [isSavingSponsors, setIsSavingSponsors] = useState(false);
+
   useEffect(() => {
     let isMounted = true;
     const checkUser = async () => {
@@ -113,6 +120,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           location_type: eventRecord.location_type || "onsite",
           date: eventRecord.date,
           time: eventRecord.time || "",
+          logo_url: eventRecord.logo_url || "",
+          sponsors: parseEventSponsors(eventRecord.sponsors),
         });
 
         const { data: attendeeRecords, error: attendeeError } = await supabase
@@ -304,9 +313,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       const insertPayload = {
         name: eventData?.name || "Renewed Event",
         location: renewForm.location.trim(),
+        location_type: eventData?.location_type || "onsite",
         date: renewForm.date,
+        time: eventData?.time || "",
         logo_url: logo_url,
-        user_id: authData.user.id
+        user_id: authData.user.id,
+        sponsors: eventData?.sponsors?.length ? eventData.sponsors : [],
       };
       console.log("Creating renewed event copy:", insertPayload);
 
@@ -357,7 +369,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         .insert({
           name: `${eventData.name} (Copy)`,
           location: eventData.location,
+          location_type: eventData.location_type || "onsite",
           date: eventData.date,
+          time: eventData.time || "",
+          logo_url: eventData.logo_url || "",
+          sponsors: eventData.sponsors?.length ? eventData.sponsors : [],
           user_id: user.id,
         })
         .select()
@@ -439,6 +455,34 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
   };
 
+  const openSponsorsModal = () => {
+    const rows = eventData?.sponsors?.map((s) => ({ name: s.name, logo: s.logo_url })) ?? [];
+    setSponsorRows(rows);
+    setIsSponsorsOpen(true);
+  };
+
+  const handleSaveSponsors = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!eventData || isPreviewMode) return;
+    setIsSavingSponsors(true);
+    try {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) throw new Error("Not signed in");
+      const resolved = await resolveSponsorRowsToEntries(supabase, auth.user.id, id, sponsorRows);
+      const { error } = await supabase.from("events").update({ sponsors: resolved }).eq("id", id);
+      if (error) throw error;
+      setEventData((prev) => (prev ? { ...prev, sponsors: resolved } : prev));
+      toast.success("Sponsors saved.");
+      setIsSponsorsOpen(false);
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not save sponsors. Check your connection and try again.");
+    } finally {
+      setIsSavingSponsors(false);
+    }
+  };
+
   const handleExport = () => {
     if (filteredCards.length === 0) return;
 
@@ -510,7 +554,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
-        <div className="relative z-[100] bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
+        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles size={18} />
             <span>Admin Preview Mode &mdash; Read Only</span>
@@ -531,7 +575,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 router.refresh();
                 router.push("/dashboard");
               }}
-            className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
+            className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
@@ -568,9 +612,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </Button>
 
                   {isShareOpen && (
-                    <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-xl py-1 z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-xl py-1 z-9999 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="px-4 py-1.5 mb-1 border-b border-border/40">
-                        <span className="text-[10px] font-bold text-muted/50 uppercase tracking-[0.1em]">Share Options</span>
+                        <span className="text-[10px] font-bold text-muted/50 uppercase tracking-widest">Share Options</span>
                       </div>
                       
                       <button
@@ -636,6 +680,23 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     Edit
                   </Button>
                 )}
+                <Button
+                  variant="secondary"
+                  onClick={openSponsorsModal}
+                  icon={<Handshake size={16} />}
+                  className="hidden md:flex"
+                >
+                  Sponsors
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={openSponsorsModal}
+                  icon={<Handshake size={16} />}
+                  className="flex md:hidden px-3"
+                  aria-label="Sponsors"
+                >
+                  <span className="sr-only">Sponsors</span>
+                </Button>
                 <Button
                   variant="secondary"
                   onClick={handleDuplicate}
@@ -725,7 +786,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative">
-                      <div className="w-12 h-12 rounded-[4px] bg-white border border-border overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-200">
+                      <div className="w-12 h-12 rounded-inline bg-white border border-border overflow-hidden shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-200">
                         {card.photo ? (
                           <img src={card.photo} alt={card.name} className="w-full h-full object-cover" />
                         ) : (
@@ -742,7 +803,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           {card.name}
                         </h3>
                         {card.company && (
-                          <span className="text-xs bg-primary/10 px-2 py-1 rounded-[4px] border border-primary/20 text-primary-strong font-semibold tracking-tight shrink-0">
+                          <span className="text-xs bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-tight shrink-0">
                             {card.company}
                           </span>
                         )}
@@ -762,12 +823,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Link href={`/cards/${card.id}`} className="flex-shrink-0">
+                    <Link href={`/cards/${card.id}`} className="shrink-0">
                       <Button variant="secondary" size="sm" icon={<ExternalLink size={12} />} className="rounded-sm bg-white/50 border-white/60">
                         View
                       </Button>
                     </Link>
-                    <Link href={`/cards/${card.id}/edit`} className="flex-shrink-0">
+                    <Link href={`/cards/${card.id}/edit`} className="shrink-0">
                       <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-sm bg-white/50 border-white/60">
                         Edit
                       </Button>
@@ -776,7 +837,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       variant="secondary"
                       size="sm"
                       onClick={() => handleDelete(card.id)}
-                      className="w-10 h-10 p-0 rounded-[4px] text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200 transition-all shrink-0"
+                      className="w-10 h-10 p-0 rounded-inline text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200 transition-all shrink-0"
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -792,9 +853,66 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
       </div>
 
+      {/* Sponsors modal */}
+      {isSponsorsOpen && eventData && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
+          />
+          <div className="relative max-h-[90vh] w-full max-w-[520px] overflow-hidden rounded-xl border border-white/60 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel">
+            <div className="flex items-center justify-between border-b border-border/50 px-6 py-5">
+              <div className="flex flex-col gap-1 pr-4">
+                <h2 className="text-xl font-bold tracking-tight text-heading">Event sponsors</h2>
+                <p className="text-sm text-muted">
+                  Up to five logos with names. They appear on every attendee card for this event.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
+                className="shrink-0 rounded-sm border border-border p-2 text-muted transition-colors hover:bg-surface hover:text-heading"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveSponsors} className="flex max-h-[calc(90vh-88px)] flex-col">
+              <div className="flex-1 overflow-y-auto px-6 py-5">
+                <EventSponsorsForm
+                  rows={sponsorRows}
+                  onChange={setSponsorRows}
+                  onFileError={(msg) => toast.error(msg)}
+                  disabled={isSavingSponsors || isPreviewMode}
+                />
+              </div>
+              <div className="flex flex-col gap-3 border-t border-border/50 bg-white/80 px-6 py-4 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  className="order-2 sm:order-1"
+                  disabled={isSavingSponsors}
+                  onClick={() => setIsSponsorsOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  fullWidth
+                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                  disabled={isSavingSponsors || isPreviewMode}
+                >
+                  {isSavingSponsors ? "Saving..." : "Save sponsors"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Edit Event Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
@@ -898,7 +1016,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Delete Event Modal */}
       {isDeleteOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isDeleting && setIsDeleteOpen(false)}
@@ -941,7 +1059,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   fullWidth
                   onClick={handleDeleteEvent}
                   disabled={isDeleting || deleteConfirm !== eventData.name}
-                  className="order-1 sm:order-2 !bg-red-500 !text-white !border-red-500 shadow-lg shadow-red-500/20 hover:!bg-red-600 hover:!text-white disabled:opacity-50"
+                  className="order-1 sm:order-2 bg-red-500! text-white! border-red-500! shadow-lg shadow-red-500/20 hover:bg-red-600! hover:text-white! disabled:opacity-50"
                 >
                   {isDeleting ? "Deleting..." : "Delete Forever"}
                 </Button>
@@ -952,7 +1070,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
       {/* Renew Event Modal */}
       {isRenewOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isRenewing && setIsRenewOpen(false)}

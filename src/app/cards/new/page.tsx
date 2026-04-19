@@ -11,6 +11,8 @@ import { supabase } from "@/lib/supabase";
 import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
+import { parseEventSponsors } from "@/lib/sponsors";
+import type { SponsorEntry } from "@/types/card";
 
 function NewCardForm() {
   const router = useRouter();
@@ -35,6 +37,7 @@ function NewCardForm() {
     color: "purple",
     fontFamily: "inter",
     cardRole: (searchParams.get("role") as "guest" | "visitor") || "visitor",
+    sponsors: [] as SponsorEntry[],
   });
 
 
@@ -70,6 +73,7 @@ function NewCardForm() {
           location: data.location || "",
           sessionDate: data.date || "",
           sessionTime: data.time || "",
+          sponsors: parseEventSponsors((data as { sponsors?: unknown }).sponsors),
         }));
       }
       setEventLoading(false);
@@ -509,7 +513,7 @@ function NewCardForm() {
 
         {/* Print Preview Overlay */}
         {showPrintPreview && (
-          <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:block">
+          <div className="fixed inset-0 z-100 bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:block">
              <div className="w-full max-w-4xl flex justify-between items-center mb-12 print:hidden">
                 <h2 className="text-xl font-bold text-white tracking-tight">Print Ready Badge</h2>
                 <div className="flex gap-4">
@@ -629,7 +633,7 @@ export default function NewCardPage() {
         {/* Skeleton Preview */}
         <div className="flex-1 flex flex-col items-center py-8 px-6 lg:h-screen">
           <Skeleton className="w-24 h-4 mb-6" />
-          <Skeleton className="w-full max-w-[600px] aspect-[800/420] rounded-xl shadow-xl" />
+          <Skeleton className="w-full max-w-[600px] aspect-800/420 rounded-xl shadow-xl" />
           <Skeleton className="w-48 h-4 mt-6" />
         </div>
       </main>
