@@ -15,6 +15,7 @@ import { useSearchParams } from "next/navigation";
 type DashboardEventData = EventData & { attendeeCount: number };
 
 function DashboardContent() {
+  const EVENT_NAME_MAX_CHARS = 18;
   const router = useRouter();
   const searchParams = useSearchParams();
   const impersonateId = searchParams.get("impersonate");
@@ -186,6 +187,10 @@ function DashboardContent() {
     }
     if (!eventForm.name || (!eventForm.location && eventForm.location_type === "onsite") || !eventForm.date || !eventForm.time) {
       toast.error("Please fill all required fields.");
+      return;
+    }
+    if (eventForm.name.trim().length > EVENT_NAME_MAX_CHARS) {
+      toast.error(`Campaign name can be up to ${EVENT_NAME_MAX_CHARS} characters.`);
       return;
     }
 
@@ -503,8 +508,17 @@ function DashboardContent() {
                   required
                   placeholder="e.g. TechConf 2026"
                   value={eventForm.name}
+                  maxLength={EVENT_NAME_MAX_CHARS}
                   onChange={(v) => setEventForm({ ...eventForm, name: v })}
                 />
+                <p
+                  className={`-mt-2 text-xs font-medium ${
+                    eventForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"
+                  }`}
+                >
+                  {eventForm.name.length}/{EVENT_NAME_MAX_CHARS} characters
+                  {eventForm.name.length >= EVENT_NAME_MAX_CHARS ? " (maximum reached)" : " max"}
+                </p>
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">

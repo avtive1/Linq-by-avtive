@@ -37,6 +37,7 @@ import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } 
 type AttendeeCard = CardData & { photo_path?: string };
 
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
+  const EVENT_NAME_MAX_CHARS = 18;
   const router = useRouter();
   const { id } = use(params);
 
@@ -224,6 +225,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     e.preventDefault();
     if (!editForm.name || (!editForm.location && editForm.location_type === "onsite") || !editForm.date || !editForm.time) {
       toast.error("Please fill all required fields.");
+      return;
+    }
+    if (editForm.name.trim().length > EVENT_NAME_MAX_CHARS) {
+      toast.error(`Campaign name can be up to ${EVENT_NAME_MAX_CHARS} characters.`);
       return;
     }
 
@@ -949,8 +954,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   label="Name of the Event"
                   required
                   value={editForm.name}
+                  maxLength={EVENT_NAME_MAX_CHARS}
                   onChange={(v) => setEditForm({ ...editForm, name: v })}
                 />
+                <p
+                  className={`-mt-2 text-xs font-medium ${
+                    editForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"
+                  }`}
+                >
+                  {editForm.name.length}/{EVENT_NAME_MAX_CHARS} characters
+                  {editForm.name.length >= EVENT_NAME_MAX_CHARS ? " (maximum reached)" : " max"}
+                </p>
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">

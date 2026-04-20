@@ -23,6 +23,7 @@ type InputProps = {
   error?: string;
   readOnly?: boolean;
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  maxLength?: number;
 };
 
 export function TextInput({
@@ -40,6 +41,7 @@ export function TextInput({
   name,
   readOnly,
   onFocus,
+  maxLength,
 }: InputProps) {
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
@@ -86,6 +88,7 @@ export function TextInput({
           name={name}
           readOnly={readOnly}
           onFocus={onFocus}
+          maxLength={maxLength}
           className={`flex-1 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 ${
             icon || prefix ? "px-3" : "pl-4 pr-3"
           }`}

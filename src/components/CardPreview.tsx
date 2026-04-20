@@ -352,7 +352,7 @@ export function CardPreview({
         </p>
 
         <h1 
-          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]" 
+          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]"
           style={{ 
             color: theme.verticalEventTitleColor ?? theme.titleColor ?? "#5a2ed3",
             fontFamily: selectedFont,
