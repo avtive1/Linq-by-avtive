@@ -34,7 +34,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
   const sessionEmail = session.user.email?.trim().toLowerCase();
-  if (!sessionEmail || !adminEmails.includes(sessionEmail)) {
+  const role = session.user.user_metadata?.role;
+  const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
+  const isAdminByEmail = Boolean(sessionEmail && adminEmails.includes(sessionEmail));
+  if (!isAdminByRole && !isAdminByEmail) {
     redirect("/dashboard");
   }
 

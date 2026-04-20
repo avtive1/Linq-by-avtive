@@ -32,8 +32,12 @@ export default function LoginPage() {
       if (signInError) throw signInError;
 
       toast.success("Welcome back!");
-      
-      if (configuredAdminEmails.includes(email.toLowerCase())) {
+
+      const isAdminByEmail = configuredAdminEmails.includes(email.toLowerCase());
+      const role = data.user?.user_metadata?.role;
+      const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
+
+      if (isAdminByEmail || isAdminByRole) {
         router.push("/admin");
       } else {
         router.push("/dashboard");

@@ -62,8 +62,10 @@ function DashboardContent() {
         .split(",")
         .map((e) => e.trim().toLowerCase())
         .filter(Boolean);
+      const role = session.user.user_metadata?.role;
+      const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
       const isActuallyAdmin = Boolean(
-        session.user.email && adminEmails.includes(session.user.email.toLowerCase()),
+        isAdminByRole || (session.user.email && adminEmails.includes(session.user.email.toLowerCase())),
       );
       
       if (isActuallyAdmin) {
@@ -73,6 +75,15 @@ function DashboardContent() {
       // Logic for Effective User ID
       let effectiveId = session.user.id;
       let effectiveName = session.user.email?.split("@")[0] || "";
+
+      const { data: profileRow } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", session.user.id)
+        .single();
+      if (profileRow?.username?.trim()) {
+        effectiveName = profileRow.username.trim();
+      }
 
       if (impersonateId && isActuallyAdmin) {
         effectiveId = impersonateId;
