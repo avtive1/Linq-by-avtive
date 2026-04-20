@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
 import { ImageCropperModal } from "./ImageCropperModal";
+import { FreeformImageCropModal } from "./FreeformImageCropModal";
 
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -69,11 +70,13 @@ export function TextInput({
             </span>
           </div>
         )}
-        <div className="pl-4 flex-shrink-0 text-muted">
-          {icon === "email" && <Mail size={18} />}
-          {icon === "lock" && <Lock size={18} />}
-          {icon === "user" && <User size={18} />}
-        </div>
+        {icon && (
+          <div className="pl-4 flex-shrink-0 text-muted">
+            {icon === "email" && <Mail size={18} />}
+            {icon === "lock" && <Lock size={18} />}
+            {icon === "user" && <User size={18} />}
+          </div>
+        )}
         <input
           type={inputType}
           placeholder={placeholder}
@@ -83,7 +86,9 @@ export function TextInput({
           name={name}
           readOnly={readOnly}
           onFocus={onFocus}
-          className="flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70"
+          className={`flex-1 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 ${
+            icon || prefix ? "px-3" : "pl-4 pr-3"
+          }`}
         />
         {isPassword && (
           <button
@@ -227,6 +232,13 @@ export function FilePicker({
   onError,
   required,
   error,
+  cropAspect,
+  cropMinZoom,
+  cropMaxZoom,
+  cropTitle,
+  cropSubtitle,
+  cropApplyLabel,
+  freeFormCrop,
 }: {
   label?: string;
   value?: string;
@@ -234,6 +246,15 @@ export function FilePicker({
   onError?: (message: string) => void;
   required?: boolean;
   error?: string;
+  /** Free resize (any aspect). Uses react-image-crop; when set, cropAspect / zoom options are ignored. */
+  freeFormCrop?: boolean;
+  /** Passed to the fixed-aspect cropper (width ÷ height). Default 1 (square). */
+  cropAspect?: number;
+  cropMinZoom?: number;
+  cropMaxZoom?: number;
+  cropTitle?: string;
+  cropSubtitle?: string;
+  cropApplyLabel?: string;
 }) {
   const [cropperOpen, setCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
@@ -309,14 +330,34 @@ export function FilePicker({
       {error && <p className="text-xs font-medium leading-snug text-red-500">{error}</p>}
 
       {cropperOpen && tempImage && (
-        <ImageCropperModal
-          image={tempImage}
-          onCropComplete={handleCropComplete}
-          onClose={() => {
-            setCropperOpen(false);
-            setTempImage(null);
-          }}
-        />
+        freeFormCrop ? (
+          <FreeformImageCropModal
+            image={tempImage}
+            onCropComplete={handleCropComplete}
+            onClose={() => {
+              setCropperOpen(false);
+              setTempImage(null);
+            }}
+            title={cropTitle}
+            subtitle={cropSubtitle}
+            applyLabel={cropApplyLabel}
+          />
+        ) : (
+          <ImageCropperModal
+            image={tempImage}
+            onCropComplete={handleCropComplete}
+            onClose={() => {
+              setCropperOpen(false);
+              setTempImage(null);
+            }}
+            aspect={cropAspect ?? 1}
+            minZoom={cropMinZoom ?? 1}
+            maxZoom={cropMaxZoom ?? 3}
+            title={cropTitle}
+            subtitle={cropSubtitle}
+            applyLabel={cropApplyLabel}
+          />
+        )
       )}
     </div>
   );

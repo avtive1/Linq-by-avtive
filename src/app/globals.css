@@ -34,7 +34,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-:focus-visible {
+/* Skip native form controls: they often sit inside overflow-hidden shells; a clipped
+   outline reads as a stray vertical bar. Use field-level focus styles (e.g. focus-within borders) instead. */
+:focus-visible:not(input, textarea, select) {
   outline: 2px solid color-mix(in oklab, var(--color-primary) 75%, black 25%);
   outline-offset: 2px;
 }

@@ -41,11 +41,11 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   };
 
   const handlePrint = () => {
-    // We set the view mode to vertical and side 1 for printing
     setViewMode("vertical");
-    setTimeout(() => {
-        window.print();
-    }, 500);
+    // Print uses `.print-only` (not on-screen preview); wait for layout flush before dialog
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.print());
+    });
   };
 
   const handleShareLinkedIn = () => {
@@ -97,23 +97,23 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                 </div>
              )}
 
-             {/* View Toggles */}
-             {card.linkedin && (
-                <div className="flex bg-white/5 p-1 rounded-sm w-fit border border-white/10">
-                   <button 
-                      onClick={() => setViewMode("horizontal")}
-                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
-                   >
-                      Post View
-                   </button>
-                   <button 
-                      onClick={() => setViewMode("vertical")}
-                      className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
-                   >
-                      Badge View
-                   </button>
-                </div>
-             )}
+             {/* View toggles: badge/print must work even without LinkedIn (QR back may be empty). */}
+             <div className="flex bg-white/5 p-1 rounded-sm w-fit border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setViewMode("horizontal")}
+                  className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                >
+                  Post View
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode("vertical")}
+                  className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                >
+                  Badge View
+                </button>
+             </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -230,6 +230,8 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
            .print-only {
               display: flex !important;
               flex-direction: row;
+              justify-content: center;
+              align-items: flex-start;
            }
 
            /* Bruteforce exact colors so the purple background renders on paper */

@@ -595,8 +595,15 @@ function NewCardForm() {
         }
         @media print {
            body { background: white !important; }
-           .glass-panel, button, h3, p, .fixed > div:not(.flex) { display: none !important; }
-           .fixed { position: relative !important; background: white !important; display: block !important; p-0 !important; }
+           /* Sidebar only — do not use blanket \`p\`/\`h3\` hides or CardPreview text disappears */
+           .glass-panel { display: none !important; }
+           .fixed {
+             position: relative !important;
+             background: white !important;
+             display: block !important;
+             padding: 0 !important;
+             inset: auto !important;
+           }
            @page { margin: 1cm; size: auto; }
         }
       `}</style>

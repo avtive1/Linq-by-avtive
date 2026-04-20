@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import QRCode from "qrcode";
 import { CardData, SponsorEntry } from "@/types/card";
 
@@ -19,7 +19,9 @@ const SPONSOR_LOGO_HEIGHT_V_PX = 56;
 const SPONSOR_STRIP_MAX_W_V_PX = 528;
 
 /**
- * Sponsor logos only (no labels). Tall row + wide strip so logos read large on the 1200-wide card.
+ * Sponsor row: intrinsic logo widths + uniform flex gap (not equal-width columns).
+ * After each image loads, adds optical horizontal padding when a mark renders narrower than its fair
+ * share so dense / “heavy” logos don’t feel cramped against airy wordmarks.
  */
 function SponsorStripRow({
   sponsors,
@@ -30,34 +32,67 @@ function SponsorStripRow({
   logoHeightPx: number;
   maxStripWidthPx?: number;
 }) {
-  const n = Math.min(sponsors.length, 5);
-  const slotMaxWidthPct = n > 0 ? 100 / n : 100;
+  const items = sponsors.slice(0, 5);
+  const count = items.length;
+  const [opticalPadByKey, setOpticalPadByKey] = useState<Record<string, number>>({});
+
+  if (count === 0) return null;
+
+  const innerBudget = maxStripWidthPx * 0.94;
+  const fairShareW = innerBudget / count;
+  /** Cap near fair share so N logos + optical padding rarely overflow the strip */
+  const imgCapPx = Math.max(40, Math.floor(fairShareW * 0.92));
+
+  const onLogoLoad = useCallback(
+    (key: string, el: HTMLImageElement) => {
+      const nw = el.naturalWidth;
+      const nh = el.naturalHeight;
+      if (!nw || !nh) return;
+      const renderedW = Math.min(imgCapPx, (nw / nh) * logoHeightPx);
+      const deficit = Math.max(0, fairShareW - renderedW);
+      const pad = Math.min(22, Math.round(deficit * 0.34));
+      setOpticalPadByKey((prev) => (prev[key] === pad ? prev : { ...prev, [key]: pad }));
+    },
+    [fairShareW, imgCapPx, logoHeightPx],
+  );
 
   return (
     <div
-      className="flex h-full w-full max-w-full items-center justify-evenly gap-2 px-1 sm:gap-3"
-      style={{ maxWidth: maxStripWidthPx }}
+      className={`flex h-full w-full max-w-full flex-nowrap items-center px-1 sm:px-2 ${
+        count === 1 ? "justify-center" : "justify-between"
+      }`}
+      style={{
+        maxWidth: maxStripWidthPx,
+        ...(count > 1
+          ? {}
+          : { gap: "clamp(10px, 1.9vmin, 26px)" }),
+      }}
     >
-      {sponsors.map((s, i) => (
-        <div
-          key={`${s.logo_url}-${i}`}
-          className="flex min-h-0 min-w-0 flex-1 items-center justify-center px-0.5"
-          style={{ maxWidth: `${slotMaxWidthPct}%` }}
-        >
-          <img
-            src={s.logo_url}
-            alt={s.name?.trim() || "Sponsor"}
-            title={s.name?.trim() || undefined}
-            className="object-contain"
-            style={{
-              height: logoHeightPx,
-              width: "auto",
-              maxWidth: "100%",
-              maxHeight: logoHeightPx,
-            }}
-          />
-        </div>
-      ))}
+      {items.map((s, i) => {
+        const key = `${s.logo_url}-${i}`;
+        const pad = opticalPadByKey[key] ?? 0;
+        return (
+          <div
+            key={key}
+            className="flex min-h-0 shrink-0 items-center justify-center"
+            style={{ paddingInline: pad }}
+          >
+            <img
+              src={s.logo_url}
+              alt={s.name?.trim() || "Sponsor"}
+              title={s.name?.trim() || undefined}
+              className="object-contain"
+              style={{
+                height: logoHeightPx,
+                width: "auto",
+                maxWidth: imgCapPx,
+                maxHeight: logoHeightPx,
+              }}
+              onLoad={(e) => onLogoLoad(key, e.currentTarget)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }

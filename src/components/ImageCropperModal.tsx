@@ -8,6 +8,13 @@ interface ImageCropperModalProps {
   image: string;
   onCropComplete: (croppedImage: string) => void;
   onClose: () => void;
+  /** Width ÷ height of the crop frame (default 1 = square, e.g. portrait photos). */
+  aspect?: number;
+  minZoom?: number;
+  maxZoom?: number;
+  title?: string;
+  subtitle?: string;
+  applyLabel?: string;
 }
 
 const getCroppedImg = async (
@@ -47,14 +54,20 @@ const getCroppedImg = async (
     pixelCrop.height
   );
 
-  // return the canvas as a data url
-  return canvas.toDataURL("image/jpeg", 0.9);
+  // PNG preserves transparency for logos and PNG uploads; JPEG would show black where alpha was.
+  return canvas.toDataURL("image/png");
 };
 
 export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   image,
   onCropComplete,
   onClose,
+  aspect = 1,
+  minZoom = 1,
+  maxZoom = 3,
+  title = "Crop Your Photo",
+  subtitle = "Adjust to fit the card perfectly",
+  applyLabel = "Apply Photo",
 }) => {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -93,8 +106,8 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
         {/* Header */}
         <div className="px-6 py-5 border-b border-border/50 flex items-center justify-between bg-white/50">
           <div className="flex flex-col">
-            <h3 className="text-xl font-bold text-heading leading-tight">Crop Your Photo</h3>
-            <p className="text-xs text-muted font-medium mt-0.5">Adjust to fit the card perfectly</p>
+            <h3 className="text-xl font-bold text-heading leading-tight">{title}</h3>
+            <p className="text-xs text-muted font-medium mt-0.5">{subtitle}</p>
           </div>
           <button 
             onClick={onClose}
@@ -110,7 +123,9 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             image={image}
             crop={crop}
             zoom={zoom}
-            aspect={1}
+            aspect={aspect}
+            minZoom={minZoom}
+            maxZoom={maxZoom}
             onCropChange={onCropChange}
             onCropComplete={onCropCompleteCallback}
             onZoomChange={onZoomChange}
@@ -125,9 +140,9 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             <input
               type="range"
               value={zoom}
-              min={1}
-              max={3}
-              step={0.1}
+              min={minZoom}
+              max={maxZoom}
+              step={0.05}
               aria-labelledby="Zoom"
               onChange={(e) => setZoom(Number(e.target.value))}
               className="flex-1 h-1.5 bg-slate-200 rounded-[4px] appearance-none cursor-pointer accent-primary"
@@ -153,7 +168,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               className="h-12 text-base rounded-md shadow-primary/20 shadow-xl"
               icon={loading ? null : <Check size={18} />}
             >
-              {loading ? "Processing..." : "Apply Photo"}
+              {loading ? "Processing..." : applyLabel}
             </Button>
           </div>
         </div>
