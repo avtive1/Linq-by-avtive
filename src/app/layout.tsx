@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Poppins, Outfit } from "next/font/google";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <Toaster position="top-center" richColors />
         {children}
+        <Analytics />
       </body>
     </html>
   );
