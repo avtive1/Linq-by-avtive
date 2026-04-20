@@ -182,16 +182,48 @@ function VerticalSponsorsStrip({ sponsors }: { sponsors?: SponsorEntry[] }) {
   );
 }
 
-const COLOR_THEMES: Record<string, { start: string; end: string; accent: string; textColor?: string; titleColor?: string }> = {
-  purple: { start: "#41295a", end: "#2f0743", accent: "#FFD400", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
-  red:    { start: "#c94b4b", end: "#4b134f", accent: "#FFFFFF", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
-  pink:   { start: "#EE0979", end: "#FF6A00", accent: "#FFFFFF", textColor: "#FFFFFF", titleColor: "#FFFFFF" },
-  blue: { 
-    start: "#D3CCE3", 
-    end: "#E9E4F0", 
-    accent: "#000000", 
+const COLOR_THEMES: Record<
+  string,
+  {
+    start: string;
+    end: string;
+    accent: string;
+    textColor?: string;
+    titleColor?: string;
+    /** Event title on vertical card white panel (horizontal posters still use `titleColor` on the gradient). */
+    verticalEventTitleColor?: string;
+  }
+> = {
+  purple: {
+    start: "#41295a",
+    end: "#2f0743",
+    accent: "#FFD400",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#05060A",
+  },
+  red: {
+    start: "#c94b4b",
+    end: "#4b134f",
+    accent: "#FFFFFF",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#05060A",
+  },
+  pink: {
+    start: "#EE0979",
+    end: "#FF6A00",
+    accent: "#FFFFFF",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#05060A",
+  },
+  blue: {
+    start: "#D3CCE3",
+    end: "#E9E4F0",
+    accent: "#000000",
     textColor: "#000000",
-    titleColor: "#5A2ED3" 
+    titleColor: "#5A2ED3",
   },
 };
 
@@ -315,7 +347,7 @@ export function CardPreview({
         <h1 
           className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]" 
           style={{ 
-            color: theme.titleColor || "#5a2ed3",
+            color: theme.verticalEventTitleColor ?? theme.titleColor ?? "#5a2ed3",
             fontFamily: selectedFont,
             letterSpacing: "-2.99px"
           }}
