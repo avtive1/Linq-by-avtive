@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
   { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     const cookieStore = await cookies();
@@ -34,8 +34,27 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const role = session.user.user_metadata?.role;
+    const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
+    const isAdminByEmail = Boolean(
+      session.user.email && adminEmails.includes(session.user.email.toLowerCase()),
+    );
+    const isAdmin = isAdminByRole || isAdminByEmail;
+
+    const requestUrl = new URL(req.url);
+    const impersonateId = requestUrl.searchParams.get("impersonate");
+
     const { data: event } = await supabaseAdmin.from("events").select("user_id").eq("id", id).single();
-    if (!event || event.user_id !== session.user.id) {
+    const ownsEvent = Boolean(event && event.user_id === session.user.id);
+    const canPreviewAsOrg = Boolean(
+      event && isAdmin && impersonateId && event.user_id === impersonateId,
+    );
+
+    if (!event || (!ownsEvent && !canPreviewAsOrg)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -184,6 +184,10 @@ function DashboardContent() {
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isPreviewMode) {
+      toast.error("Admin org preview is read-only.");
+      return;
+    }
     if (!eventForm.name || (!eventForm.location && eventForm.location_type === "onsite") || !eventForm.date || !eventForm.time) {
       toast.error("Please fill all required fields.");
       return;
@@ -264,7 +268,7 @@ function DashboardContent() {
         <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles size={18} />
-            <span>Admin Preview Mode &mdash; Read Only</span>
+            <span>Admin Organization Preview &mdash; Read Only</span>
           </div>
           <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-sm hover:brightness-110 transition-all text-xs">
             Exit Preview
@@ -303,23 +307,26 @@ function DashboardContent() {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12">
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
-              href="/" 
+              href={isPreviewMode ? "/admin" : "/"} 
               className="flex items-center gap-2 text-sm font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
-              Back to Home
+              {isPreviewMode ? "Back to Admin" : "Back to Home"}
             </Link>
             <span className="text-sm font-semibold tracking-[0.04em] text-muted/70">
               AVTIVE
             </span>
             <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
-              Dashboard
+              {isPreviewMode ? "Organization Preview" : "Dashboard"}
             </h1>
             {userName && (
               <p className="text-lg font-medium text-muted flex items-center gap-2 mt-1 leading-snug">
                 <User size={18} className="text-primary-strong/70" />
                 {userName}
               </p>
+            )}
+            {isPreviewMode && (
+              <p className="text-sm font-semibold text-danger/85 mt-1">Read-only admin perspective. Editing and creation are disabled.</p>
             )}
           </div>
 
@@ -335,15 +342,17 @@ function DashboardContent() {
                 </Button>
                </Link>
             )}
-             <Button
-              variant="secondary"
-              onClick={() => setIsEventModalOpen(true)}
-              className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 px-4"
-              icon={<Calendar size={18} />}
-            >
-              <span className="hidden sm:inline">New Event</span>
-              <span className="inline sm:hidden">Event</span>
-            </Button>
+            {!isPreviewMode && (
+              <Button
+                variant="secondary"
+                onClick={() => setIsEventModalOpen(true)}
+                className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 px-4"
+                icon={<Calendar size={18} />}
+              >
+                <span className="hidden sm:inline">New Campaign</span>
+                <span className="inline sm:hidden">Campaign</span>
+              </Button>
+            )}
             <Button
               variant="secondary"
               onClick={handleLogout}
@@ -385,7 +394,7 @@ function DashboardContent() {
                 <span className="text-5xl font-bold text-heading tracking-tight leading-none">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-lg font-semibold text-primary-strong">Total Events</span>
+                <span className="text-lg font-semibold text-primary-strong">Total Campaigns</span>
               </div>
             </div>
           </div>
@@ -397,7 +406,7 @@ function DashboardContent() {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
-              placeholder="Search events..."
+              placeholder="Search campaigns..."
               className="w-full pl-14 pr-6 py-3 bg-white/80 backdrop-blur-md border border-white/60 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -409,8 +418,8 @@ function DashboardContent() {
         {events.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6">
             <div className="flex flex-col gap-1">
-              <p className="text-heading font-medium">No events yet</p>
-              <p className="text-sm text-muted">Create your first event to start inviting attendees.</p>
+              <p className="text-heading font-medium">No campaigns yet</p>
+              <p className="text-sm text-muted">Create your first campaign to start inviting attendees.</p>
             </div>
           </div>
         ) : (
@@ -455,8 +464,8 @@ function DashboardContent() {
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-semibold text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
-                    View Event
+                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-semibold text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
+                    View Campaign
                     <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
                 </div>
@@ -474,7 +483,7 @@ function DashboardContent() {
       </div>
 
       {/* Event Creation Modal */}
-      {isEventModalOpen && (
+      {isEventModalOpen && !isPreviewMode && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
@@ -488,7 +497,7 @@ function DashboardContent() {
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Create New Event</h2>
+                <h2 className="text-2xl font-bold text-heading tracking-tight">Create New Campaign</h2>
                 <p className="text-sm text-muted">Add details for the upcoming conference.</p>
               </div>
               <button 
@@ -507,7 +516,7 @@ function DashboardContent() {
             <form onSubmit={handleEventSubmit} className="p-8 pt-4 flex flex-col gap-6">
               <div className="flex flex-col gap-4">
                 <TextInput
-                  label="Name of the Event"
+                  label="Name of the Campaign"
                   required
                   placeholder="e.g. TechConf 2026"
                   value={eventForm.name}
@@ -550,14 +559,14 @@ function DashboardContent() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <TextInput
-                    label="Event Date"
+                  label="Campaign Date"
                     required
                     type="date"
                     value={eventForm.date}
                     onChange={(v) => setEventForm({ ...eventForm, date: v })}
                   />
                   <TextInput
-                    label="Event Time"
+                  label="Campaign Time"
                     required
                     type="time"
                     value={eventForm.time}
@@ -565,7 +574,7 @@ function DashboardContent() {
                   />
                 </div>
                 <FilePicker
-                  label="Event Logo"
+                  label="Campaign Logo"
                   value={eventForm.logo}
                   onChange={(v) => setEventForm({ ...eventForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
@@ -612,7 +621,7 @@ function DashboardContent() {
                   disabled={isSubmittingEvent}
                   className="order-1 sm:order-2 shadow-lg shadow-primary/20"
                 >
-                  {isSubmittingEvent ? "Creating..." : "Create Event"}
+                  {isSubmittingEvent ? "Creating..." : "Create Campaign"}
                 </Button>
               </div>
             </form>

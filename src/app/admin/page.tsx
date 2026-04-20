@@ -1,5 +1,5 @@
 import { getAdminClient } from "@/lib/admin";
-import { Users, BarChart3, Building2, ChevronRight, Activity, TrendingUp } from "lucide-react";
+import { Users, BarChart3, Building2, ChevronRight, Activity } from "lucide-react";
 import Link from "next/link";
 import OrganizationsTable from "./_components/OrganizationsTable";
 
@@ -34,14 +34,6 @@ export default async function AdminDashboardPage() {
   const { data: profiles, error: profileError } = await adminClient.from("profiles").select("*");
   const profileLookup = new Map();
   (profiles || []).forEach(p => profileLookup.set(p.id, p));
-
-  // Growth Stats (Last 7 Days)
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  
-  const newOrgsLastWeek = rawUsers.filter(u => new Date(u.created_at) > sevenDaysAgo).length;
-  const newEventsLastWeek = rawEvents.filter(e => new Date(e.created_at) > sevenDaysAgo).length;
-  const newAttendeesLastWeek = rawAttendees.filter(a => new Date(a.created_at) > sevenDaysAgo).length;
 
   // Aggregate Data
   const totalOrgs = rawUsers.length;
@@ -113,7 +105,7 @@ export default async function AdminDashboardPage() {
         <p className="text-muted">Real-time global insights and management hub.</p>
       </div>
 
-      {/* Global Metrics Row with Growth Badges */}
+      {/* Global Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm relative overflow-hidden">
           <div className="w-16 h-16 rounded-sm bg-primary/20 flex items-center justify-center text-primary-strong shrink-0">
@@ -121,14 +113,7 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="flex flex-col">
             <span className="ui-eyebrow mb-1">Total Orgs</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalOrgs}</span>
-              {newOrgsLastWeek > 0 && (
-                <span className="flex items-center gap-0.5 text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded-sm">
-                  <TrendingUp size={12} /> +{newOrgsLastWeek}
-                </span>
-              )}
-            </div>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalOrgs}</span>
           </div>
         </div>
 
@@ -138,14 +123,7 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="flex flex-col">
             <span className="ui-eyebrow mb-1">Total Events</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalEvents}</span>
-              {newEventsLastWeek > 0 && (
-                <span className="flex items-center gap-0.5 text-xs font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded-sm">
-                  <TrendingUp size={12} /> +{newEventsLastWeek}
-                </span>
-              )}
-            </div>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalEvents}</span>
           </div>
         </div>
 
@@ -155,14 +133,7 @@ export default async function AdminDashboardPage() {
           </div>
           <div className="flex flex-col">
             <span className="ui-eyebrow mb-1">Total Attendees</span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalAttendees}</span>
-              {newAttendeesLastWeek > 0 && (
-                <span className="flex items-center gap-0.5 text-xs font-bold text-primary-strong bg-primary/10 px-1.5 py-0.5 rounded-sm">
-                  <TrendingUp size={12} /> +{newAttendeesLastWeek}
-                </span>
-              )}
-            </div>
+            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalAttendees}</span>
           </div>
         </div>
       </div>

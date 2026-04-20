@@ -124,7 +124,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           sponsors: parseEventSponsors(eventRecord.sponsors),
         });
 
-        const attendeeRes = await fetch(`/api/events/${id}/attendees`);
+        const attendeeRes = await fetch(
+          `/api/events/${id}/attendees${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
+        );
         if (!attendeeRes.ok) {
           throw new Error("Failed to fetch decrypted attendees");
         }
@@ -546,7 +548,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     return (
       <main className="relative min-h-screen w-full bg-white flex flex-col items-center justify-center gap-4">
         <GradientBackground />
-        <div className="relative z-10 text-xl font-bold text-heading">Event not found</div>
+        <div className="relative z-10 text-xl font-bold text-heading">Campaign not found</div>
         <Link href="/dashboard" className="relative z-10">
           <Button variant="secondary" icon={<ArrowLeft size={16} />}>Back to Dashboard</Button>
         </Link>
@@ -584,7 +586,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               Back to Dashboard
             </button>
             <span className="text-sm font-semibold tracking-[0.04em] text-muted/70 mt-1">
-              Event details
+              Campaign details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
               <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
@@ -740,7 +742,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <span className="text-[3.25rem] font-bold text-heading tracking-tight leading-none">
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className="text-base font-semibold text-primary-strong leading-tight">Generated Cards</span>
+                <span className="text-base font-semibold text-primary-strong leading-tight">Attendees</span>
               </div>
             </div>
           </div>
@@ -763,7 +765,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
-              placeholder="Search attendees in this event..."
+              placeholder="Search attendees in this campaign..."
               className="w-full pl-14 pr-6 py-3 bg-white/70 backdrop-blur-md border border-white/50 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -776,7 +778,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6 animate-slide-up delay-300">
             <div className="flex flex-col gap-1">
               <p className="text-heading font-bold text-lg">No attendees yet</p>
-              <p className="text-sm text-muted">Share the registration link to invite attendees to register for this event.</p>
+              <p className="text-sm text-muted">Share the registration link to invite attendees to register for this campaign.</p>
             </div>
           </div>
         ) : (
@@ -868,7 +870,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="flex flex-col gap-1 pr-4">
                 <h2 className="text-xl font-bold tracking-tight text-heading">Event sponsors</h2>
                 <p className="text-sm text-muted">
-                  Up to five logos with names. They appear on every attendee card for this event.
+                  Up to five logos with names. They appear on every attendee card for this campaign.
                 </p>
               </div>
               <button
@@ -1083,7 +1085,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-bold text-heading tracking-tight">Renew Event</h2>
-                <p className="text-sm text-muted">Update the details to reactivate this event.</p>
+                <p className="text-sm text-muted">Update the details to reactivate this campaign.</p>
               </div>
               <button
                 onClick={() => !isRenewing && setIsRenewOpen(false)}
