@@ -7,6 +7,7 @@ import { TextInput, Button } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { validatePasswordPolicy } from "@/lib/security/password-policy";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -37,7 +38,10 @@ export default function ResetPasswordPage() {
     const newErrors: Record<string, string> = {};
 
     if (!password) newErrors.password = "Password is required";
-    else if (password.length < 8) newErrors.password = "Min 8 characters required";
+    else {
+      const issues = validatePasswordPolicy(password);
+      if (issues.length > 0) newErrors.password = issues[0];
+    }
 
     if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password";
     else if (confirmPassword !== password) newErrors.confirmPassword = "Passwords do not match";

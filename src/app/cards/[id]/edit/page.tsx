@@ -11,6 +11,7 @@ import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { parseEventSponsors } from "@/lib/sponsors";
 import type { SponsorEntry } from "@/types/card";
+import { logSecurityEvent } from "@/lib/security/telemetry";
 
 type FormState = {
   name: string;
@@ -85,34 +86,20 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       }
 
       try {
-        const { data: record, error } = await supabase
-          .from("attendees")
-          .select("*")
-          .eq("id", id)
-          .single();
-        if (error || !record) {
+        const resp = await fetch(`/api/cards/${id}`, { method: "GET" });
+        if (resp.status === 404) {
           if (isMounted) setNotFound(true);
           return;
         }
-
-        // Authorization: only the owner of the parent event can edit.
-        if (record.event_id) {
-          const { data: ev, error: evErr } = await supabase
-            .from("events")
-            .select("user_id")
-            .eq("id", record.event_id)
-            .single();
-          if (evErr || !ev || ev.user_id !== session.user.id) {
-            if (isMounted) setUnauthorized(true);
-            return;
-          }
-        } else {
-          // No parent event — only the original creator (if any) may edit.
-          if (record.user_id && record.user_id !== session.user.id) {
-            if (isMounted) setUnauthorized(true);
-            return;
-          }
+        if (resp.status === 403) {
+          if (isMounted) setUnauthorized(true);
+          return;
         }
+        if (!resp.ok) {
+          throw new Error("Failed to load secure card data.");
+        }
+        const payload = await resp.json();
+        const record = payload.data;
 
         if (!isMounted) return;
         setEventId(record.event_id || null);
@@ -273,6 +260,12 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
       if (!res.ok) {
         const errorData = await res.json();
+        logSecurityEvent({
+          event: "security.attendees.update_failed",
+          level: "error",
+          resourceId: id,
+          details: { reason: errorData.error },
+        });
         toast.error(errorData.error || "Failed to save changes.");
         throw new Error(errorData.error || "Failed to save changes.");
       }

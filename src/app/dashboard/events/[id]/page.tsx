@@ -124,31 +124,34 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           sponsors: parseEventSponsors(eventRecord.sponsors),
         });
 
-        const { data: attendeeRecords, error: attendeeError } = await supabase
-          .from("attendees")
-          .select("*")
-          .eq("event_id", id)
-          .order('created_at', { ascending: false });
-
-        if (attendeeError) throw attendeeError;
+        const attendeeRes = await fetch(`/api/events/${id}/attendees`);
+        if (!attendeeRes.ok) {
+          throw new Error("Failed to fetch decrypted attendees");
+        }
+        const attendeePayload = await attendeeRes.json();
+        const attendeeRecords = attendeePayload.data || [];
         if (!isMounted) return;
 
-        const mappedCards = (attendeeRecords || []).map(r => ({
-          id: r.id,
-          name: r.name,
-          role: r.role || "Attendee",
-          company: r.company,
-          email: r.card_email,
-          eventName: r.event_name,
-          sessionDate: r.session_date,
-          location: r.location,
-          track: r.track,
-          year: r.year,
-          linkedin: r.linkedin,
-          event_id: r.event_id,
-          photo: r.photo_url ? getSupabaseFileUrl("attendee_photos", r.photo_url) : undefined,
-          photo_path: r.photo_url || undefined,
-        }));
+        const mappedCards = (attendeeRecords || []).map((secure: Record<string, unknown>) => {
+          return {
+            id: String(secure.id || ""),
+            name: String(secure.name || ""),
+            role: String(secure.role || "Attendee"),
+            company: String(secure.company || ""),
+            email: String(secure.card_email || ""),
+            eventName: String(secure.event_name || ""),
+            sessionDate: String(secure.session_date || ""),
+            location: String(secure.location || ""),
+            track: String(secure.track || ""),
+            year: String(secure.year || ""),
+            linkedin: String(secure.linkedin || ""),
+            event_id: String(secure.event_id || ""),
+            photo: typeof secure.photo_url === "string" && secure.photo_url
+              ? getSupabaseFileUrl("attendee_photos", secure.photo_url)
+              : undefined,
+            photo_path: typeof secure.photo_url === "string" ? secure.photo_url : undefined,
+          };
+        });
 
         setCards(mappedCards);
 

@@ -7,6 +7,7 @@ import CardView from "./CardView";
 import { CardData } from "@/types/card";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { Metadata } from "next";
+import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -62,35 +63,36 @@ export default async function CardViewPage(props: {
     if (error) throw error;
     
     if (record) {
+      const { row: secureRecord } = decryptAttendeeSensitiveFields(record);
       let sponsors = undefined as CardData["sponsors"];
-      if (record.event_id) {
+      if (secureRecord.event_id) {
         const { data: ev } = await supabase
           .from("events")
           .select("sponsors")
-          .eq("id", record.event_id)
+          .eq("id", secureRecord.event_id)
           .single();
         if (ev) sponsors = parseEventSponsors(ev.sponsors);
       }
 
       card = {
-        id: record.id,
-        name: record.name,
+        id: secureRecord.id,
+        name: secureRecord.name,
       
-        role: record.role || "Attendee", 
-        company: record.company,
-        email: record.card_email,
-        eventName: record.event_name,
-        sessionDate: record.session_date,
-        sessionTime: record.session_time || undefined,
-        location: record.location,
-        track: record.track,
-        year: record.year,
-        linkedin: record.linkedin,
-        photo: record.photo_url ? getSupabaseFileUrl("attendee_photos", record.photo_url) : undefined,
-        designType: record.design_type,
-        color: record.card_color,
-        fontFamily: record.card_font || undefined,
-        cardRole: record.track as "guest" | "visitor",
+        role: secureRecord.role || "Attendee", 
+        company: secureRecord.company,
+        email: secureRecord.card_email,
+        eventName: secureRecord.event_name,
+        sessionDate: secureRecord.session_date,
+        sessionTime: secureRecord.session_time || undefined,
+        location: secureRecord.location,
+        track: secureRecord.track,
+        year: secureRecord.year,
+        linkedin: secureRecord.linkedin,
+        photo: secureRecord.photo_url ? getSupabaseFileUrl("attendee_photos", secureRecord.photo_url) : undefined,
+        designType: secureRecord.design_type,
+        color: secureRecord.card_color,
+        fontFamily: secureRecord.card_font || undefined,
+        cardRole: secureRecord.track as "guest" | "visitor",
         sponsors,
       };
     }

@@ -7,6 +7,7 @@ import { TextInput, Button } from "@/components/ui";
 import { toast } from "sonner";
 import { Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { validatePasswordPolicy } from "@/lib/security/password-policy";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -49,7 +50,10 @@ export default function SignupPage() {
     
     // Password
     if (!form.password) newErrors.password = "Password is required";
-    else if (form.password.length < 8) newErrors.password = "Min 8 characters required";
+    else {
+      const passwordIssues = validatePasswordPolicy(form.password);
+      if (passwordIssues.length > 0) newErrors.password = passwordIssues[0];
+    }
     
     // Confirm Password
     if (!form.confirmPassword) newErrors.confirmPassword = "Please confirm your password";

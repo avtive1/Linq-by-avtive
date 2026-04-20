@@ -208,21 +208,21 @@ function NewCardForm() {
         track: form.cardRole,
       };
 
-      const { data: record, error: insertError } = await supabase
-        .from('attendees')
-        .insert(attendeeData)
-        .select()
-        .single();
-
-      if (insertError) {
-        toast.error("Failed to save card. Please try again.");
-        throw insertError;
+      const res = await fetch("/api/cards", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(attendeeData),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        toast.error(body.error || "Failed to save card. Please try again.");
+        throw new Error(body.error || "Failed to save card");
       }
 
       toast.success("Attendee card saved successfully!");
 
-      if (record) {
-        router.push(`/cards/${record.id}?share=true`);
+      if (body.data?.id) {
+        router.push(`/cards/${body.data.id}?share=true`);
       }
     } catch (err: any) {
        console.error("Error creating card:", err);
