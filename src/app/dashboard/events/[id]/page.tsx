@@ -36,6 +36,14 @@ import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } 
 
 type AttendeeCard = CardData & { photo_path?: string };
 
+function LinkedInIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+      <path d="M6.94 8.5A1.56 1.56 0 1 1 6.94 5.38 1.56 1.56 0 0 1 6.94 8.5ZM5.5 9.75h2.88V18H5.5V9.75Zm4.63 0H12.9v1.13h.04c.39-.74 1.34-1.52 2.75-1.52 2.94 0 3.48 1.94 3.48 4.46V18h-2.88v-3.74c0-.89-.02-2.03-1.24-2.03-1.24 0-1.43.97-1.43 1.97V18h-2.88V9.75Z" />
+    </svg>
+  );
+}
+
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const EVENT_NAME_MAX_CHARS = 18;
   const router = useRouter();
@@ -54,6 +62,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isGuestCategoryOpen, setIsGuestCategoryOpen] = useState(false);
   const [guestCategoryInput, setGuestCategoryInput] = useState("");
   const [guestCategoryError, setGuestCategoryError] = useState("");
+  const [isShareActionsOpen, setIsShareActionsOpen] = useState(false);
+  const [shareDraftUrl, setShareDraftUrl] = useState("");
+  const [shareDraftMessage, setShareDraftMessage] = useState("");
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Close share menu on outside click
@@ -528,6 +539,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     URL.revokeObjectURL(url);
   };
 
+  const openShareActions = (url: string) => {
+    const message = `We are hosting ${eventData?.name || "our event"}. Register here: ${url}`;
+    setShareDraftUrl(url);
+    setShareDraftMessage(message);
+    setIsShareActionsOpen(true);
+  };
+
   if (isLoading) {
     return (
       <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
@@ -660,9 +678,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       <button
                         onClick={() => {
                           const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=visitor`;
-                          navigator.clipboard.writeText(url);
-                          toast.success("Visitor registration link copied!");
                           setIsShareOpen(false);
+                          openShareActions(url);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-surface transition-all group"
                       >
@@ -912,9 +929,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   return;
                 }
                 const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=guest&guestCategory=${encodeURIComponent(value)}`;
-                navigator.clipboard.writeText(url);
-                toast.success("Guest registration link copied!");
                 setIsGuestCategoryOpen(false);
+                openShareActions(url);
               }}
             >
               <TextInput
@@ -938,6 +954,67 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isShareActionsOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => setIsShareActionsOpen(false)}
+          />
+          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-heading tracking-tight">Share Registration</h3>
+                <p className="text-sm text-muted">Use the link directly or share on LinkedIn.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsShareActionsOpen(false)}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 pb-6 flex flex-col gap-3">
+              <div className="rounded-md border border-border/60 bg-surface/40 px-3 py-2">
+                <p className="text-xs font-semibold text-muted mb-1">Default LinkedIn caption</p>
+                <p className="text-xs text-heading wrap-break-word">{shareDraftMessage}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="secondary"
+                  icon={<LinkIcon size={16} />}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareDraftUrl);
+                      toast.success("Registration link copied.");
+                    } catch {
+                      toast.error("Could not copy link.");
+                    }
+                  }}
+                >
+                  Copy Link
+                </Button>
+                <Button
+                  icon={<LinkedInIcon size={16} />}
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(shareDraftMessage);
+                      toast.success("Caption copied. Paste it on LinkedIn post.");
+                    } catch {
+                      toast.error("Could not copy caption, but opening LinkedIn.");
+                    }
+                    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareDraftUrl)}`;
+                    window.open(linkedInUrl, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  LinkedIn
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}
