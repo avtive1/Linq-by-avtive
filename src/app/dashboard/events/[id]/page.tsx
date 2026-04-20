@@ -578,7 +578,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 router.refresh();
                 router.push("/dashboard");
               }}
-            className="flex items-center gap-2 text-xs font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
+            className="flex items-center gap-2 text-sm font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
