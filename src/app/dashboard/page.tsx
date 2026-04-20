@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -28,6 +28,10 @@ function DashboardContent() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [isSavingUsername, setIsSavingUsername] = useState(false);
   
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -250,6 +254,46 @@ function DashboardContent() {
     }
   };
 
+  const handleSaveUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleaned = usernameDraft.trim().toLowerCase();
+    if (!cleaned) {
+      setUsernameError("Username is required.");
+      return;
+    }
+    if (cleaned.length < 3) {
+      setUsernameError("Username must be at least 3 characters.");
+      return;
+    }
+    if (!/^[a-zA-Z0-9_.]+$/.test(cleaned)) {
+      setUsernameError("Use letters, numbers, underscore, or dot only.");
+      return;
+    }
+
+    setIsSavingUsername(true);
+    setUsernameError("");
+    try {
+      const res = await fetch("/api/profile/username", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: cleaned }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setUsernameError(payload?.error || "Could not update username.");
+        return;
+      }
+      setUserName(payload.data.username);
+      setIsUsernameModalOpen(false);
+      toast.success("Username updated.");
+    } catch (err) {
+      console.error("Username update failed:", err);
+      setUsernameError("Could not update username.");
+    } finally {
+      setIsSavingUsername(false);
+    }
+  };
+
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
@@ -308,10 +352,25 @@ function DashboardContent() {
               {isPreviewMode ? "Organization Preview" : "Dashboard"}
             </h1>
             {userName && (
-              <p className="text-lg font-medium text-muted flex items-center gap-2 mt-1 leading-snug">
+              <div className="text-lg font-medium text-muted flex items-center gap-2 mt-1 leading-snug">
                 <User size={18} className="text-primary-strong/70" />
-                {userName}
-              </p>
+                <span>{userName}</span>
+                {!isPreviewMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsernameDraft(userName);
+                      setUsernameError("");
+                      setIsUsernameModalOpen(true);
+                    }}
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-border/60 text-muted hover:text-heading hover:bg-white/60 transition-all"
+                    aria-label="Edit username"
+                    title="Edit username"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                )}
+              </div>
             )}
             {isPreviewMode && (
               <p className="text-sm font-semibold text-danger/85 mt-1">Read-only admin perspective. Editing and creation are disabled.</p>
@@ -596,6 +655,62 @@ function DashboardContent() {
                   className="order-1 sm:order-2 shadow-lg shadow-primary/20"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isUsernameModalOpen && !isPreviewMode && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
+          />
+          <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold text-heading tracking-tight">Edit Username</h2>
+                <p className="text-sm text-muted">This updates your profile everywhere in the app.</p>
+              </div>
+              <button
+                onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
+                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveUsername} className="p-8 pt-4 flex flex-col gap-4">
+              <TextInput
+                label="Username"
+                required
+                placeholder="choose_a_username"
+                value={usernameDraft}
+                onChange={(v) => {
+                  setUsernameDraft(v);
+                  if (usernameError) setUsernameError("");
+                }}
+              />
+              <p className="text-xs text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
+              {usernameError && <p className="text-sm font-medium text-red-500">{usernameError}</p>}
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => setIsUsernameModalOpen(false)}
+                  disabled={isSavingUsername}
+                  className="order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  fullWidth
+                  disabled={isSavingUsername}
+                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                >
+                  {isSavingUsername ? "Saving..." : "Save Username"}
                 </Button>
               </div>
             </form>

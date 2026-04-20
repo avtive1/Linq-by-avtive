@@ -12,12 +12,31 @@ const supabaseAdmin = createClient(
 export async function POST(req: Request) {
   try {
     const payload = (await req.json()) as Record<string, unknown>;
-    const securePayload = encryptAttendeeSensitiveFields(payload);
-    const { data, error } = await supabaseAdmin
+    const securePayload = encryptAttendeeSensitiveFields(payload) as Record<string, unknown>;
+
+    let { data, error } = await supabaseAdmin
       .from("attendees")
       .insert(securePayload)
       .select()
       .single();
+
+    // Backward-compatible fallback for environments where the lookup tag column
+    // has not been migrated yet.
+    if (
+      error?.message?.includes("card_email_lookup_tag") &&
+      error?.message?.toLowerCase().includes("schema cache")
+    ) {
+      const fallbackPayload = { ...securePayload };
+      delete fallbackPayload.card_email_lookup_tag;
+      const retry = await supabaseAdmin
+        .from("attendees")
+        .insert(fallbackPayload)
+        .select()
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
+
     if (error) {
       logSecurityEvent({
         event: "security.attendees.create_failed",
