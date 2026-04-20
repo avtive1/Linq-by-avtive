@@ -30,6 +30,8 @@ type FormState = {
   color: string;
   fontFamily: string;
   sponsors: SponsorEntry[];
+  organizationName: string;
+  organizationLogoUrl: string;
 };
 
 const colors = [
@@ -61,6 +63,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     color: "purple",
     fontFamily: "inter",
     sponsors: [],
+    organizationName: "",
+    organizationLogoUrl: "",
   });
   
   const [originalPhotoPath, setOriginalPhotoPath] = useState<string | null>(null);
@@ -106,6 +110,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         setOriginalPhotoPath(record.photo_url || null);
 
         let sponsors: SponsorEntry[] = [];
+        let organizationName = "";
+        let organizationLogoUrl = "";
         if (record.event_id) {
           const { data: ev } = await supabase
             .from("events")
@@ -113,6 +119,18 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             .eq("id", record.event_id)
             .single();
           if (ev) sponsors = parseEventSponsors(ev.sponsors);
+
+          try {
+            const brandingRes = await fetch(`/api/events/${record.event_id}/branding`);
+            const isJson = brandingRes.headers.get("content-type")?.includes("application/json");
+            const brandingPayload = isJson ? await brandingRes.json() : null;
+            if (brandingRes.ok && brandingPayload?.data) {
+              organizationName = String(brandingPayload.data.organizationName || "");
+              organizationLogoUrl = String(brandingPayload.data.organizationLogoUrl || "");
+            }
+          } catch (brandingErr) {
+            console.error("Branding fetch failed:", brandingErr);
+          }
         }
 
         setForm({
@@ -132,6 +150,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           color: record.card_color || "purple",
           fontFamily: "inter",
           sponsors,
+          organizationName,
+          organizationLogoUrl,
         });
       } catch (err) {
         console.error("Edit load error:", err);

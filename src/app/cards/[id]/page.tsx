@@ -8,6 +8,7 @@ import { CardData } from "@/types/card";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { Metadata } from "next";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
+import { getAdminClient } from "@/lib/admin";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -65,13 +66,37 @@ export default async function CardViewPage(props: {
     if (record) {
       const { row: secureRecord } = decryptAttendeeSensitiveFields(record);
       let sponsors = undefined as CardData["sponsors"];
+      let organizationName = "";
+      let organizationLogoUrl = "";
       if (secureRecord.event_id) {
         const { data: ev } = await supabase
           .from("events")
-          .select("sponsors")
+          .select("sponsors, user_id")
           .eq("id", secureRecord.event_id)
           .single();
-        if (ev) sponsors = parseEventSponsors(ev.sponsors);
+        if (ev) {
+          sponsors = parseEventSponsors(ev.sponsors);
+          if (ev.user_id) {
+            try {
+              const admin = getAdminClient();
+              const [{ data: userData }, { data: profileData }] = await Promise.all([
+                admin.auth.admin.getUserById(ev.user_id),
+                admin.from("profiles").select("organization_name").eq("id", ev.user_id).maybeSingle(),
+              ]);
+              organizationName =
+                profileData?.organization_name ||
+                (typeof userData?.user?.user_metadata?.organization_name === "string"
+                  ? userData.user.user_metadata.organization_name
+                  : "");
+              organizationLogoUrl =
+                typeof userData?.user?.user_metadata?.organization_logo_url === "string"
+                  ? userData.user.user_metadata.organization_logo_url
+                  : "";
+            } catch (brandingErr) {
+              console.error("Branding fetch failed:", brandingErr);
+            }
+          }
+        }
       }
 
       card = {
@@ -94,6 +119,8 @@ export default async function CardViewPage(props: {
         fontFamily: secureRecord.card_font || undefined,
         cardRole: secureRecord.track as "guest" | "visitor",
         sponsors,
+        organizationName,
+        organizationLogoUrl,
       };
     }
   } catch (err) {

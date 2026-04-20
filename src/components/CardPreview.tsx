@@ -188,6 +188,39 @@ function DefaultAvatarPlaceholder({ className = "w-20 h-20" }: { className?: str
   );
 }
 
+function OrganizationBrand({
+  name,
+  logoUrl,
+  iconClassName,
+  nameBoxClassName,
+  nameTextClassName,
+  textColorClassName = "text-white",
+}: {
+  name: string;
+  logoUrl?: string;
+  iconClassName: string;
+  nameBoxClassName: string;
+  nameTextClassName: string;
+  textColorClassName?: string;
+}) {
+  return (
+    <>
+      <div className={`overflow-hidden rounded-md bg-white/95 ${iconClassName}`}>
+        {logoUrl ? (
+          <img src={logoUrl} alt={name || "Organization logo"} className="h-full w-full object-contain p-1.5" />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-xs font-bold text-heading/70">
+            {name?.trim()?.slice(0, 2).toUpperCase() || "OR"}
+          </div>
+        )}
+      </div>
+      <div className={`flex items-center overflow-hidden ${nameBoxClassName}`}>
+        <p className={`m-0 w-full truncate font-extrabold ${textColorClassName} ${nameTextClassName}`}>{name || "Organization"}</p>
+      </div>
+    </>
+  );
+}
+
 const COLOR_THEMES: Record<
   string,
   {
@@ -248,6 +281,7 @@ export function CardPreview({
 }) {
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const isWebinarLocation = (data.location || "").trim().toLowerCase() === "webinar";
+  const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
 
   const theme = COLOR_THEMES[data.color || "purple"] || COLOR_THEMES.purple;
   
@@ -336,16 +370,31 @@ export function CardPreview({
 
 
         {/* Branding */}
-        <img 
-          src="https://www.figma.com/api/mcp/asset/7716a834-6d7b-4dbe-8553-370f4fddf5fc" 
-          className="absolute left-[86px] top-[40px] w-[154px] h-[44px] object-contain" 
-          alt="Avtive" 
-        />
-        <img 
-          src="https://www.figma.com/api/mcp/asset/be4bd848-b76e-4630-808c-cf77963ce6a7" 
-          className="absolute left-[31px] top-[42px] w-[47px] h-[44px] object-contain z-5" 
-          alt="" 
-        />
+        {hasOrganizationBranding ? (
+          <div className="absolute left-[31px] top-[40px] z-5 flex items-center gap-2.5">
+            <OrganizationBrand
+              name={data.organizationName || "Organization"}
+              logoUrl={data.organizationLogoUrl}
+              iconClassName="h-[63px] w-[63px]"
+              nameBoxClassName="h-[66.81px] w-[236.56px]"
+              nameTextClassName="text-[44px] leading-none"
+              textColorClassName="text-black"
+            />
+          </div>
+        ) : (
+          <>
+            <img
+              src="https://www.figma.com/api/mcp/asset/7716a834-6d7b-4dbe-8553-370f4fddf5fc"
+              className="absolute left-[86px] top-[40px] h-[44px] w-[154px] object-contain"
+              alt="Avtive"
+            />
+            <img
+              src="https://www.figma.com/api/mcp/asset/be4bd848-b76e-4630-808c-cf77963ce6a7"
+              className="absolute left-[31px] top-[42px] z-5 h-[44px] w-[47px] object-contain"
+              alt=""
+            />
+          </>
+        )}
 
         <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-medium tracking-[3px] uppercase leading-none">
           {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
@@ -354,7 +403,7 @@ export function CardPreview({
         <h1 
           className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]"
           style={{ 
-            color: theme.verticalEventTitleColor ?? theme.titleColor ?? "#5a2ed3",
+            color: "#000000",
             fontFamily: selectedFont,
             letterSpacing: "-2.99px"
           }}
@@ -508,8 +557,20 @@ export function CardPreview({
         </div>
 
         <div className="absolute right-[80px] top-[70px] flex items-center gap-2">
-          <img src="https://www.figma.com/api/mcp/asset/56b614de-2622-49f5-ac7b-a0ed09ebaeac" className="w-[63px] h-[59px] object-contain" alt="" />
-          <img src="https://www.figma.com/api/mcp/asset/22c9e87c-f736-4755-b4a7-402c9070d2b3" className="w-[191px] h-[56px] object-contain" alt="" />
+          {hasOrganizationBranding ? (
+            <OrganizationBrand
+              name={data.organizationName || "Organization"}
+              logoUrl={data.organizationLogoUrl}
+              iconClassName="h-[63px] w-[67px]"
+              nameBoxClassName="h-[56px] w-[191px]"
+              nameTextClassName="text-[34px] leading-none"
+            />
+          ) : (
+            <>
+              <img src="https://www.figma.com/api/mcp/asset/56b614de-2622-49f5-ac7b-a0ed09ebaeac" className="h-[59px] w-[63px] object-contain" alt="" />
+              <img src="https://www.figma.com/api/mcp/asset/22c9e87c-f736-4755-b4a7-402c9070d2b3" className="h-[56px] w-[191px] object-contain" alt="" />
+            </>
+          )}
         </div>
 
         <section className="absolute right-[26px] top-[172px] w-[340px] text-left" style={metaTextColor}>
@@ -579,8 +640,20 @@ export function CardPreview({
       </div>
 
       <div className="absolute right-[78px] top-[70px] flex items-center gap-2">
-        <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" className="w-[59px] h-[59px] object-contain" alt="" />
-        <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" className="w-[165px] h-[48px] object-contain" alt="" />
+        {hasOrganizationBranding ? (
+          <OrganizationBrand
+            name={data.organizationName || "Organization"}
+            logoUrl={data.organizationLogoUrl}
+            iconClassName="h-[63px] w-[63px]"
+            nameBoxClassName="h-[48px] w-[165px]"
+            nameTextClassName="text-[31px] leading-none"
+          />
+        ) : (
+          <>
+            <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" className="h-[59px] w-[59px] object-contain" alt="" />
+            <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" className="h-[48px] w-[165px] object-contain" alt="" />
+          </>
+        )}
       </div>
 
       <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>

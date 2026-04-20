@@ -25,6 +25,9 @@ export type CardData = {
   cardRole?: "guest" | "visitor";
   /** Resolved from the linked event for card rendering */
   sponsors?: SponsorEntry[];
+  /** Organization branding resolved from event owner */
+  organizationName?: string;
+  organizationLogoUrl?: string;
 };
 
 export type EventData = {

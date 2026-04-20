@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button } from "@/components/ui";
+import { TextInput, Button, FilePicker } from "@/components/ui";
 import { toast } from "sonner";
 import { Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -16,6 +16,7 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
     organization: "",
+    organizationLogo: "",
     username: "",
     linkedin: "",
   });
@@ -61,6 +62,7 @@ export default function SignupPage() {
     
     // Organization
     if (!form.organization) newErrors.organization = "Organization Name is required";
+    if (!form.organizationLogo) newErrors.organizationLogo = "Organization logo is required";
     
     // LinkedIn (Optional)
     // Removed strict "/" check to allow full URLs
@@ -78,6 +80,21 @@ export default function SignupPage() {
     const cleanHandle = extractLinkedInHandle(form.linkedin);
     
     try {
+      let organizationLogoUrl = form.organizationLogo;
+      // Never store large base64 payloads in auth metadata/JWT.
+      // Upload logo and store only a public URL.
+      if (organizationLogoUrl.startsWith("data:")) {
+        const logoBlob = await fetch(organizationLogoUrl).then((r) => r.blob());
+        const ext = logoBlob.type.split("/")[1] || "png";
+        const fileName = `org-logos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from("organization-logos")
+          .upload(fileName, logoBlob, { contentType: logoBlob.type || "image/png" });
+        if (uploadError) throw uploadError;
+        const { data: pub } = supabase.storage.from("organization-logos").getPublicUrl(uploadData.path);
+        organizationLogoUrl = pub.publicUrl;
+      }
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
@@ -86,6 +103,7 @@ export default function SignupPage() {
             username: form.username.toLowerCase(),
             linkedin: cleanHandle,
             organization_name: form.organization,
+            organization_logo_url: organizationLogoUrl,
           }
         }
       });
@@ -171,7 +189,7 @@ export default function SignupPage() {
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         <Link 
           href="/" 
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group"
         >
           <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -293,6 +311,18 @@ export default function SignupPage() {
                 value={form.organization}
                 error={errors.organization}
                 onChange={update("organization")}
+              />
+              <FilePicker
+                label="Organization Logo"
+                required
+                value={form.organizationLogo}
+                onChange={update("organizationLogo")}
+                onError={(msg) => toast.error(msg)}
+                error={errors.organizationLogo}
+                cropAspect={1}
+                cropTitle="Crop organization logo"
+                cropSubtitle="Use a square crop for best card branding."
+                cropApplyLabel="Apply logo"
               />
               <TextInput
                 label="LinkedIn URL"

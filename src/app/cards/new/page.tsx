@@ -38,6 +38,8 @@ function NewCardForm() {
     fontFamily: "inter",
     cardRole: (searchParams.get("role") as "guest" | "visitor") || "visitor",
     sponsors: [] as SponsorEntry[],
+    organizationName: "",
+    organizationLogoUrl: "",
   });
 
 
@@ -75,6 +77,21 @@ function NewCardForm() {
           sessionTime: data.time || "",
           sponsors: parseEventSponsors((data as { sponsors?: unknown }).sponsors),
         }));
+
+        try {
+          const brandingRes = await fetch(`/api/events/${eventId}/branding`);
+          const isJson = brandingRes.headers.get("content-type")?.includes("application/json");
+          const brandingPayload = isJson ? await brandingRes.json() : null;
+          if (brandingRes.ok && brandingPayload?.data) {
+            setForm((f) => ({
+              ...f,
+              organizationName: String(brandingPayload.data.organizationName || ""),
+              organizationLogoUrl: String(brandingPayload.data.organizationLogoUrl || ""),
+            }));
+          }
+        } catch (brandingErr) {
+          console.error("Branding fetch failed:", brandingErr);
+        }
       }
       setEventLoading(false);
     };
