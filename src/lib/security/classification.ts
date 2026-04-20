@@ -16,6 +16,7 @@ export const ATTENDEE_DATA_CLASS_RULES: DataClassRule[] = [
   { field: "session_time", class: "C", owner: "product", rationale: "Displayed publicly on attendee cards." },
   { field: "location", class: "C", owner: "product", rationale: "Displayed publicly on attendee cards." },
   { field: "track", class: "C", owner: "product", rationale: "Displayed publicly on attendee cards." },
+  { field: "guest_category", class: "C", owner: "product", rationale: "Guest segment label such as Judge/Speaker." },
   { field: "year", class: "C", owner: "product", rationale: "Displayed publicly on attendee cards." },
   { field: "design_type", class: "C", owner: "product", rationale: "Presentation-only card setting." },
   { field: "card_color", class: "C", owner: "product", rationale: "Presentation-only card setting." },

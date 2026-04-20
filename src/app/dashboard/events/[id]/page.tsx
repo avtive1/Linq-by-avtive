@@ -51,6 +51,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isGuestCategoryOpen, setIsGuestCategoryOpen] = useState(false);
+  const [guestCategoryInput, setGuestCategoryInput] = useState("");
+  const [guestCategoryError, setGuestCategoryError] = useState("");
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Close share menu on outside click
@@ -146,6 +149,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             sessionDate: String(secure.session_date || ""),
             location: String(secure.location || ""),
             track: String(secure.track || ""),
+            guestCategory: String(secure.guest_category || ""),
             year: String(secure.year || ""),
             linkedin: String(secure.linkedin || ""),
             event_id: String(secure.event_id || ""),
@@ -496,7 +500,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const handleExport = () => {
     if (filteredCards.length === 0) return;
 
-    const headers = ["Name", "Role", "Company", "Email", "Event", "Date", "Location", "LinkedIn"];
+    const headers = ["Name", "Role", "Company", "Email", "Event", "Date", "Location", "Track", "Guest Category", "LinkedIn"];
     const rows = filteredCards.map(c => [
       c.name,
       c.role,
@@ -505,6 +509,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       c.eventName,
       c.sessionDate || c.year,
       c.location,
+      c.track || "",
+      c.guestCategory || "",
       c.linkedin ? `https://linkedin.com/in/${c.linkedin}` : ""
     ]);
 
@@ -636,10 +642,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       
                       <button
                         onClick={() => {
-                          const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=guest`;
-                          navigator.clipboard.writeText(url);
-                          toast.success("Guest registration link copied!");
                           setIsShareOpen(false);
+                          setGuestCategoryInput("");
+                          setGuestCategoryError("");
+                          setIsGuestCategoryOpen(true);
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-surface transition-all group"
                       >
@@ -819,6 +825,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <h3 className="font-semibold text-sm sm:text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-snug">
                           {card.name}
                         </h3>
+                        {(card.track === "guest" && card.guestCategory) && (
+                          <span className="text-xs bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-tight shrink-0">
+                            {card.guestCategory}
+                          </span>
+                        )}
                         {card.company && (
                           <span className="text-xs bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-tight shrink-0">
                             {card.company}
@@ -869,6 +880,67 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         )}
       </div>
+
+      {/* Sponsors modal */}
+      {isGuestCategoryOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => setIsGuestCategoryOpen(false)}
+          />
+          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-heading tracking-tight">Guest Category</h3>
+                <p className="text-sm text-muted">Type category like Judge, Speaker, Chief Guest, Evaluator.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGuestCategoryOpen(false)}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form
+              className="px-6 pb-6 flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const value = guestCategoryInput.trim();
+                if (!value) {
+                  setGuestCategoryError("Please enter a guest category.");
+                  return;
+                }
+                const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=guest&guestCategory=${encodeURIComponent(value)}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Guest registration link copied!");
+                setIsGuestCategoryOpen(false);
+              }}
+            >
+              <TextInput
+                label="Guest Category"
+                required
+                placeholder="e.g. Judge"
+                value={guestCategoryInput}
+                maxLength={40}
+                onChange={(v) => {
+                  setGuestCategoryInput(v);
+                  if (guestCategoryError) setGuestCategoryError("");
+                }}
+              />
+              {guestCategoryError && <p className="text-xs font-semibold text-red-500">{guestCategoryError}</p>}
+              <div className="flex gap-3 pt-1">
+                <Button type="button" variant="secondary" fullWidth onClick={() => setIsGuestCategoryOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" fullWidth>
+                  Copy Guest Link
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Sponsors modal */}
       {isSponsorsOpen && eventData && (

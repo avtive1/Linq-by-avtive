@@ -18,6 +18,8 @@ function NewCardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const eventId = searchParams.get("eventId") || "";
+  const initialRole = (searchParams.get("role") as "guest" | "visitor") || "visitor";
+  const initialGuestCategory = searchParams.get("guestCategory") || "";
   const cardRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
@@ -36,7 +38,8 @@ function NewCardForm() {
     designType: "design1" as "design1" | "design2",
     color: "purple",
     fontFamily: "inter",
-    cardRole: (searchParams.get("role") as "guest" | "visitor") || "visitor",
+    cardRole: initialRole,
+    guestCategory: initialRole === "guest" ? initialGuestCategory : "",
     sponsors: [] as SponsorEntry[],
     organizationName: "",
     organizationLogoUrl: "",
@@ -223,6 +226,7 @@ function NewCardForm() {
         design_type: form.designType,
         card_color: form.color,
         track: form.cardRole,
+        guest_category: form.cardRole === "guest" ? (form.guestCategory || null) : null,
       };
 
       const res = await fetch("/api/cards", {
