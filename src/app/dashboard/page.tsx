@@ -5,12 +5,10 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, ChevronDown, Sparkles, Globe } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
-import { EventSponsorsForm } from "@/components/EventSponsorsForm";
-import { resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 
 import { useSearchParams } from "next/navigation";
 
@@ -39,8 +37,6 @@ function DashboardContent() {
     logo: "",
   });
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
-  const [createSponsorRows, setCreateSponsorRows] = useState<SponsorFormRow[]>([]);
-  const [createSponsorsOpen, setCreateSponsorsOpen] = useState(false);
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalAttendees: 0,
@@ -236,23 +232,10 @@ function DashboardContent() {
       const { data: inserted, error } = await supabase.from("events").insert(data).select("id").single();
       if (error) throw error;
 
-      if (inserted?.id && createSponsorRows.some((r) => r.name.trim() && r.logo)) {
-        try {
-          const resolved = await resolveSponsorRowsToEntries(supabase, user.id, inserted.id, createSponsorRows);
-          const { error: spErr } = await supabase.from("events").update({ sponsors: resolved }).eq("id", inserted.id);
-          if (spErr) throw spErr;
-        } catch (spErr) {
-          console.error("Sponsor upload failed:", spErr);
-          toast.error('Event created, but sponsors could not be saved. Add them from the event page under "Sponsors".');
-        }
-      }
-
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
-      setCreateSponsorRows([]);
-      setCreateSponsorsOpen(false);
       fetchData(user.id);
     } catch (err: any) {
       console.error(err);
@@ -458,7 +441,11 @@ function DashboardContent() {
                         <span className="text-sm leading-snug tracking-tight">{evt.date}</span>
                       </div>
                       <div className="flex items-center gap-3 text-muted font-medium px-1">
-                        <MapPin size={18} className="text-muted/60" />
+                        {(evt.location || "").trim().toLowerCase() === "webinar" ? (
+                          <Globe size={18} className="text-muted/60" />
+                        ) : (
+                          <MapPin size={18} className="text-muted/60" />
+                        )}
                         <span className="text-sm leading-snug tracking-tight truncate max-w-[200px]">{evt.location}</span>
                       </div>
                     </div>
@@ -488,8 +475,6 @@ function DashboardContent() {
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
             onClick={() => {
-              setCreateSponsorRows([]);
-              setCreateSponsorsOpen(false);
               setIsEventModalOpen(false);
             }}
           />
@@ -502,8 +487,6 @@ function DashboardContent() {
               </div>
               <button 
                 onClick={() => {
-                  setCreateSponsorRows([]);
-                  setCreateSponsorsOpen(false);
                   setIsEventModalOpen(false);
                 }}
                 className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
@@ -579,27 +562,6 @@ function DashboardContent() {
                   onChange={(v) => setEventForm({ ...eventForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
                 />
-
-                <div className="rounded-lg border border-border/60 bg-surface/40 overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setCreateSponsorsOpen((o) => !o)}
-                    className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-semibold text-heading hover:bg-white/60 transition-colors"
-                  >
-                    <span>Optional: sponsor logos (max 5)</span>
-                    <ChevronDown size={18} className={`shrink-0 text-muted transition-transform ${createSponsorsOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {createSponsorsOpen && (
-                    <div className="border-t border-border/50 px-4 pb-4 pt-2">
-                      <EventSponsorsForm
-                        rows={createSponsorRows}
-                        onChange={setCreateSponsorRows}
-                        onFileError={(msg) => toast.error(msg)}
-                        disabled={isSubmittingEvent}
-                      />
-                    </div>
-                  )}
-                </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
@@ -607,8 +569,6 @@ function DashboardContent() {
                   variant="secondary" 
                   fullWidth 
                   onClick={() => {
-                    setCreateSponsorRows([]);
-                    setCreateSponsorsOpen(false);
                     setIsEventModalOpen(false);
                   }}
                   className="order-2 sm:order-1"

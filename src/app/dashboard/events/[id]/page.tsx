@@ -598,7 +598,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
             <div className="flex items-center gap-4 text-sm text-muted mt-2 font-medium">
               <span className="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-sm border border-white/40 shadow-sm"><Calendar size={16} className="text-heading/80" /> {eventData.date}</span>
-              <span className="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-sm border border-white/40 shadow-sm"><MapPin size={16} className="text-heading/80" /> {eventData.location}</span>
+              <span className="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-sm border border-white/40 shadow-sm">
+                {(eventData.location_type === "webinar" || (eventData.location || "").trim().toLowerCase() === "webinar") ? (
+                  <Globe size={16} className="text-heading/80" />
+                ) : (
+                  <MapPin size={16} className="text-heading/80" />
+                )}{" "}
+                {eventData.location}
+              </span>
             </div>
           </div>
 
