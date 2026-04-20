@@ -198,8 +198,10 @@ function DashboardContent() {
       if (eventForm.logo) {
         try {
           // Convert base64 to Blob
-          const base64Data = eventForm.logo.split(",")[1];
-          const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob());
+          const comma = eventForm.logo.indexOf(",");
+          const base64Data = comma >= 0 ? eventForm.logo.slice(comma + 1) : "";
+          if (!base64Data.trim()) throw new Error("Invalid image data");
+          const blob = await fetch(`data:image/png;base64,${base64Data}`).then((res) => res.blob());
           const fileName = `${user.id}/${Date.now()}.png`;
           
           const { data: uploadData, error: uploadError } = await supabase.storage

@@ -213,7 +213,14 @@ function NewCardForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(attendeeData),
       });
-      const body = await res.json();
+      let body: { error?: string; data?: { id?: string } } = {};
+      try {
+        const text = await res.text();
+        if (text) body = JSON.parse(text) as typeof body;
+      } catch {
+        toast.error("Unexpected response from server. Please try again.");
+        throw new Error("Invalid JSON response");
+      }
       if (!res.ok) {
         toast.error(body.error || "Failed to save card. Please try again.");
         throw new Error(body.error || "Failed to save card");
