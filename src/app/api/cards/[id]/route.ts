@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { isPlainObject } from "@/lib/api-guards";
 import {
   decryptAttendeeSensitiveFields,
   encryptAttendeeSensitiveFields,
@@ -99,9 +98,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     const updatePayload = await req.json();
-    if (!isPlainObject(updatePayload)) {
-      return NextResponse.json({ error: "Expected a JSON object body" }, { status: 400 });
-    }
     const auth = await getAuthedSessionAndPermission(id);
     if (auth.error) return auth.error;
     const session = auth.session!;

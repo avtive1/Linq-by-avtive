@@ -49,30 +49,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const decrypted = (data || []).map((row) => {
       const { row: secure, migrationPatch } = decryptAttendeeSensitiveFields(row);
       if (Object.keys(migrationPatch).length > 0) {
-        void (async () => {
-          try {
-            const { error } = await supabaseAdmin
-              .from("attendees")
-              .update(migrationPatch)
-              .eq("id", row.id);
-            if (error) {
-              logSecurityEvent({
-                event: "security.event_attendees.lazy_reencrypt_failed",
-                level: "warn",
-                details: { id: row.id, reason: error.message },
-              });
-            }
-          } catch (reason: unknown) {
-            logSecurityEvent({
-              event: "security.event_attendees.lazy_reencrypt_failed",
-              level: "warn",
-              details: {
-                id: row.id,
-                reason: reason instanceof Error ? reason.message : "unknown",
-              },
-            });
-          }
-        })();
+        supabaseAdmin.from("attendees").update(migrationPatch).eq("id", row.id).then(() => {});
       }
       return secure;
     });

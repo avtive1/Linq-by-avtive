@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { isPlainObject } from "@/lib/api-guards";
 import { encryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
 
@@ -12,11 +11,8 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const raw = await req.json();
-    if (!isPlainObject(raw)) {
-      return NextResponse.json({ error: "Expected a JSON object body" }, { status: 400 });
-    }
-    const securePayload = encryptAttendeeSensitiveFields(raw);
+    const payload = (await req.json()) as Record<string, unknown>;
+    const securePayload = encryptAttendeeSensitiveFields(payload);
     const { data, error } = await supabaseAdmin
       .from("attendees")
       .insert(securePayload)
