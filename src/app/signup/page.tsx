@@ -231,30 +231,6 @@ export default function SignupPage() {
                 tabIndex={-1} 
               />
 
-              <div className="relative">
-                <TextInput
-                  label="Username"
-                  required
-                  name="avtive_user_handle_v1"
-                  autoComplete="off"
-                  placeholder="choose_a_username"
-                  icon="user"
-                  value={form.username}
-                  error={errors.username}
-                  onChange={update("username")}
-                  readOnly={usernameLocked}
-                  onFocus={() => setUsernameLocked(false)}
-                />
-                {form.username.length >= 2 && (
-                  <div className="absolute right-0 top-0 pt-[28px]">
-                    {usernameStatus === "loading" && <div className="text-[10px] font-bold text-muted animate-pulse">Checking...</div>}
-                    {usernameStatus === "available" && <div className="text-[10px] font-bold text-green-500">Available</div>}
-                    {usernameStatus === "taken" && <div className="text-[10px] font-bold text-danger">Taken</div>}
-                    {usernameStatus === "invalid" && <div className="text-[10px] font-bold text-danger">Invalid chars</div>}
-                  </div>
-                )}
-              </div>
-
               <TextInput
                 label="Email Address"
                 required
@@ -287,6 +263,29 @@ export default function SignupPage() {
                 error={errors.confirmPassword}
                 onChange={update("confirmPassword")}
               />
+              <div className="relative">
+                <TextInput
+                  label="Username"
+                  required
+                  name="avtive_user_handle_v1"
+                  autoComplete="off"
+                  placeholder="choose_a_username"
+                  icon="user"
+                  value={form.username}
+                  error={errors.username}
+                  onChange={update("username")}
+                  readOnly={usernameLocked}
+                  onFocus={() => setUsernameLocked(false)}
+                />
+                {form.username.length >= 2 && (
+                  <div className="absolute right-0 top-0 pt-[28px]">
+                    {usernameStatus === "loading" && <div className="text-[10px] font-bold text-muted animate-pulse">Checking...</div>}
+                    {usernameStatus === "available" && <div className="text-[10px] font-bold text-green-500">Available</div>}
+                    {usernameStatus === "taken" && <div className="text-[10px] font-bold text-danger">Taken</div>}
+                    {usernameStatus === "invalid" && <div className="text-[10px] font-bold text-danger">Invalid chars</div>}
+                  </div>
+                )}
+              </div>
               <TextInput
                 label="Organization Name"
                 required

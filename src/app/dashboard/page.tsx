@@ -58,8 +58,13 @@ function DashboardContent() {
       }
       
       // Check for admin - for client side UI toggle
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      const isActuallyAdmin = session.user.email && adminEmail && session.user.email.toLowerCase() === adminEmail.toLowerCase();
+      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || "")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      const isActuallyAdmin = Boolean(
+        session.user.email && adminEmails.includes(session.user.email.toLowerCase()),
+      );
       
       if (isActuallyAdmin) {
         setIsAdmin(true);

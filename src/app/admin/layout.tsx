@@ -29,8 +29,12 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/login");
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL?.trim();
-  if (!adminEmail || session.user.email?.trim() !== adminEmail) {
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const sessionEmail = session.user.email?.trim().toLowerCase();
+  if (!sessionEmail || !adminEmails.includes(sessionEmail)) {
     redirect("/dashboard");
   }
 

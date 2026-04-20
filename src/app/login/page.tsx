@@ -14,6 +14,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const configuredAdminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -28,8 +33,7 @@ export default function LoginPage() {
 
       toast.success("Welcome back!");
       
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      if (email.toLowerCase() === adminEmail?.toLowerCase()) {
+      if (configuredAdminEmails.includes(email.toLowerCase())) {
         router.push("/admin");
       } else {
         router.push("/dashboard");

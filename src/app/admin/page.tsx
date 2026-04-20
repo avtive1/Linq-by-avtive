@@ -10,8 +10,14 @@ export default async function AdminDashboardPage() {
 
   // 1. Fetch All Organizations (Users)
   const { data: userData, error: userError } = await adminClient.auth.admin.listUsers();
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim();
-  const rawUsers = (userData?.users || []).filter(u => u.email?.toLowerCase().trim() !== adminEmail);
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.toLowerCase().trim())
+    .filter(Boolean);
+  const rawUsers = (userData?.users || []).filter((u) => {
+    const email = u.email?.toLowerCase().trim();
+    return !email || !adminEmails.includes(email);
+  });
 
   // 2. Fetch All Events
   const { data: events, error: eventError } = await adminClient
