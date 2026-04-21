@@ -22,6 +22,7 @@ function DashboardContent() {
   
   const [events, setEvents] = useState<DashboardEventData[]>([]);
   const [userName, setUserName] = useState("");
+  const [organizationName, setOrganizationName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -30,6 +31,7 @@ function DashboardContent() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState("");
+  const [organizationDraft, setOrganizationDraft] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [isSavingUsername, setIsSavingUsername] = useState(false);
   
@@ -79,11 +81,14 @@ function DashboardContent() {
 
       const { data: profileRow } = await supabase
         .from("profiles")
-        .select("username")
+        .select("username, organization_name")
         .eq("id", session.user.id)
         .single();
       if (profileRow?.username?.trim()) {
         effectiveName = profileRow.username.trim();
+      }
+      if (profileRow?.organization_name?.trim()) {
+        setOrganizationName(profileRow.organization_name.trim());
       }
 
       if (impersonateId && isActuallyAdmin) {
@@ -261,6 +266,11 @@ function DashboardContent() {
       setUsernameError("Username is required.");
       return;
     }
+      const orgCleaned = organizationDraft.trim();
+      if (!orgCleaned) {
+        setUsernameError("Organization name is required.");
+        return;
+      }
     if (cleaned.length < 3) {
       setUsernameError("Username must be at least 3 characters.");
       return;
@@ -276,7 +286,7 @@ function DashboardContent() {
       const res = await fetch("/api/profile/username", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: cleaned }),
+        body: JSON.stringify({ username: cleaned, organizationName: orgCleaned }),
       });
       const payload = await res.json();
       if (!res.ok) {
@@ -284,8 +294,9 @@ function DashboardContent() {
         return;
       }
       setUserName(payload.data.username);
+      setOrganizationName(payload.data.organizationName);
       setIsUsernameModalOpen(false);
-      toast.success("Username updated.");
+      toast.success("Profile updated.");
     } catch (err) {
       console.error("Username update failed:", err);
       setUsernameError("Could not update username.");
@@ -360,6 +371,7 @@ function DashboardContent() {
                     type="button"
                     onClick={() => {
                       setUsernameDraft(userName);
+                      setOrganizationDraft(organizationName);
                       setUsernameError("");
                       setIsUsernameModalOpen(true);
                     }}
@@ -692,7 +704,20 @@ function DashboardContent() {
                   if (usernameError) setUsernameError("");
                 }}
               />
+              <TextInput
+                label="Organization Name"
+                required
+                placeholder="Your organization"
+                value={organizationDraft}
+                maxLength={120}
+                onChange={(v) => {
+                  setOrganizationDraft(v);
+                  if (usernameError) setUsernameError("");
+                }}
+              />
               <p className="text-xs text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
+              <p className="text-xs text-muted -mt-1">Username can be changed once every 24 days.</p>
+              <p className="text-xs text-muted -mt-1">Organization name can be changed once every 90 days.</p>
               {usernameError && <p className="text-sm font-medium text-red-500">{usernameError}</p>}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
