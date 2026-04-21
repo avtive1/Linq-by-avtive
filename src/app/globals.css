@@ -1,7 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter), "ui-sans-serif", "system-ui";
+  --font-sans: var(--font-inter-tight), "ui-sans-serif", "system-ui";
+  --text-xs: 0.9375rem;
+  --text-xs--line-height: calc(1.45 / 0.9375);
+  --text-sm: 1.0625rem;
+  --text-sm--line-height: calc(1.55 / 1.0625);
+  --text-base: 1.1875rem;
+  --text-base--line-height: calc(1.7 / 1.1875);
+  --text-lg: 1.3125rem;
+  --text-lg--line-height: calc(1.65 / 1.3125);
+  --text-xl: 1.4375rem;
+  --text-xl--line-height: calc(1.55 / 1.4375);
+  --text-2xl: 1.6875rem;
+  --text-2xl--line-height: calc(1.38 / 1.6875);
+  --text-3xl: 2.125rem;
+  --text-3xl--line-height: calc(1.2 / 2.125);
   
   --color-primary: #79D980;          /* brand fill — buttons, tinted bgs, borders */
   --color-primary-strong: #1E7A24;   /* darker variant for text/icons on light bgs (AA on white) */
@@ -27,11 +41,38 @@
 
 body {
   background-color: white;
-  color: #23468C; /* Standard text uses heading color for cohesion, or slightly lighter. Let's stick to the dark blue for the high-end look */
-  font-family: var(--font-inter);
-  line-height: 1.5;
+  color: color-mix(in oklab, var(--color-heading) 84%, black 16%);
+  font-family: var(--font-inter-tight);
+  font-size: var(--text-base);
+  line-height: 1.7;
+  font-weight: 450;
+  letter-spacing: -0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-heading);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+h1 { font-weight: 800; }
+h2 { font-weight: 750; }
+h3 { font-weight: 700; }
+h4 { font-weight: 650; }
+h5,
+h6 { font-weight: 600; }
+
+small,
+.text-muted {
+  font-weight: 500;
+  color: color-mix(in oklab, var(--color-muted) 90%, black 10%);
 }
 
 /* Skip native form controls: they often sit inside overflow-hidden shells; a clipped
@@ -42,10 +83,11 @@ body {
 }
 
 .ui-eyebrow {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: color-mix(in oklab, var(--color-muted) 85%, black 15%);
+  text-transform: uppercase;
 }
 
 .ui-card {

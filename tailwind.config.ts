@@ -21,7 +21,7 @@ export default {
         "light-3": "#DCE4F0",
       },
       fontFamily: {
-        sans: ["var(--font-inter)", "ui-sans-serif", "system-ui"],
+        sans: ["var(--font-inter-tight)", "ui-sans-serif", "system-ui"],
       },
       borderRadius: {
         sm: "6px",

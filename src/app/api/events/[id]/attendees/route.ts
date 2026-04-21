@@ -54,7 +54,19 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       event && isAdmin && impersonateId && event.user_id === impersonateId,
     );
 
-    if (!event || (!ownsEvent && !canPreviewAsOrg)) {
+    let isOrgTeamViewer = false;
+    if (event?.user_id) {
+      const { data: membership } = await supabaseAdmin
+        .from("organization_members")
+        .select("id")
+        .eq("member_user_id", session.user.id)
+        .eq("org_owner_user_id", event.user_id)
+        .eq("status", "active")
+        .maybeSingle();
+      isOrgTeamViewer = Boolean(membership?.id);
+    }
+
+    if (!event || (!ownsEvent && !canPreviewAsOrg && !isOrgTeamViewer)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

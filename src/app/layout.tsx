@@ -1,26 +1,14 @@
 import type { Metadata } from "next";
-import { Inter, Poppins, Outfit } from "next/font/google";
+import { Inter_Tight } from "next/font/google";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
-const inter = Inter({
+const interTight = Inter_Tight({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-inter",
-});
-
-const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-poppins",
-});
-
-const outfit = Outfit({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-outfit",
+  variable: "--font-inter-tight",
 });
 
 
@@ -31,8 +19,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable} ${outfit.variable}`}>
-      <body className={inter.className}>
+    <html lang="en" className={interTight.variable}>
+      <body className={interTight.className}>
         <Toaster position="top-center" richColors />
         {children}
         <Analytics />

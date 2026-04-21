@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -13,6 +13,60 @@ import { getEventStatus } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
 
 type DashboardEventData = EventData & { attendeeCount: number };
+type OrgMemberRow = {
+  id: string;
+  member_email: string;
+  role_label: string;
+  status: string;
+  permissions?: string[];
+};
+type PendingInboxRequest = {
+  id: string;
+  event_name: string;
+  requester_email: string;
+  requested_action: string;
+};
+type MyAccessRequest = {
+  id: string;
+  event_name: string;
+  requested_action: string;
+  status: string;
+  created_at: string;
+};
+type FailedNotification = {
+  id: string;
+  event_name: string;
+  requester_email: string;
+  requested_action: string;
+  status: string;
+  notification_error: string;
+};
+type OrgJoinInboxRequest = {
+  id: string;
+  requester_email: string;
+  requested_org_name: string;
+  status: string;
+};
+type MyOrgJoinRequest = {
+  id: string;
+  requested_org_name: string;
+  owner_user_id?: string;
+  owner_email: string;
+  status: string;
+  reapply_after?: string | null;
+  rejection_reason?: string | null;
+};
+
+const formatJoinStatus = (status: string) => {
+  const normalized = String(status || "").toLowerCase();
+  if (normalized === "approved") {
+    return { label: "Approved", className: "text-green-600 bg-green-50 border-green-200" };
+  }
+  if (normalized === "rejected") {
+    return { label: "Rejected", className: "text-red-600 bg-red-50 border-red-200" };
+  }
+  return { label: "Pending", className: "text-amber-700 bg-amber-50 border-amber-200" };
+};
 
 function DashboardContent() {
   const EVENT_NAME_MAX_CHARS = 18;
@@ -34,6 +88,22 @@ function DashboardContent() {
   const [organizationDraft, setOrganizationDraft] = useState("");
   const [usernameError, setUsernameError] = useState("");
   const [isSavingUsername, setIsSavingUsername] = useState(false);
+  const [isOrgTeamMember, setIsOrgTeamMember] = useState(false);
+  const [isOrgOwner, setIsOrgOwner] = useState(false);
+  const [orgRoleLabel, setOrgRoleLabel] = useState("");
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [teamInviteEmail, setTeamInviteEmail] = useState("");
+  const [teamInviteRoleLabel, setTeamInviteRoleLabel] = useState("");
+  const [teamMembers, setTeamMembers] = useState<OrgMemberRow[]>([]);
+  const [isSubmittingTeamInvite, setIsSubmittingTeamInvite] = useState(false);
+  const [teamError, setTeamError] = useState("");
+  const [teamPermissionDraft, setTeamPermissionDraft] = useState<string[]>([]);
+  const [inboxRequests, setInboxRequests] = useState<PendingInboxRequest[]>([]);
+  const [myAccessRequests, setMyAccessRequests] = useState<MyAccessRequest[]>([]);
+  const [failedNotifications, setFailedNotifications] = useState<FailedNotification[]>([]);
+  const [retryingNotificationId, setRetryingNotificationId] = useState("");
+  const [orgJoinInbox, setOrgJoinInbox] = useState<OrgJoinInboxRequest[]>([]);
+  const [myOrgJoinRequests, setMyOrgJoinRequests] = useState<MyOrgJoinRequest[]>([]);
   
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -89,6 +159,79 @@ function DashboardContent() {
       }
       if (profileRow?.organization_name?.trim()) {
         setOrganizationName(profileRow.organization_name.trim());
+      }
+
+      const memberRes = await fetch("/api/organization-members/me");
+      if (memberRes.ok) {
+        const memberPayload = await memberRes.json();
+        if (memberPayload?.data?.org_owner_user_id) {
+          effectiveId = memberPayload.data.org_owner_user_id;
+          setIsOrgTeamMember(true);
+          setIsOrgOwner(false);
+          setOrgRoleLabel(String(memberPayload.data.role_label || ""));
+          try {
+            const mineRes = await fetch("/api/access-requests/mine");
+            const minePayload = await mineRes.json();
+            if (mineRes.ok && Array.isArray(minePayload?.data)) {
+              setMyAccessRequests(minePayload.data);
+            }
+          } catch {}
+        } else {
+          setIsOrgTeamMember(false);
+          setOrgRoleLabel("");
+          const [{ data: ownedEvents }, { data: ownedMembers }, ownerStateRes] = await Promise.all([
+            supabase.from("events").select("id").eq("user_id", session.user.id).limit(1),
+            supabase.from("organization_members").select("id").eq("org_owner_user_id", session.user.id).limit(1),
+            fetch("/api/organization-owner/me"),
+          ]);
+          let ownerByRegistry = false;
+          if (ownerStateRes.ok) {
+            const ownerStatePayload = await ownerStateRes.json();
+            ownerByRegistry = Boolean(ownerStatePayload?.data?.isOwner);
+          }
+          const userIsOrgOwner =
+            (ownedEvents || []).length > 0 ||
+            (ownedMembers || []).length > 0 ||
+            ownerByRegistry;
+          setIsOrgOwner(userIsOrgOwner);
+          if (profileRow?.organization_name?.trim() && !userIsOrgOwner) {
+            try {
+              await fetch("/api/organization-join-requests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ organizationName: profileRow.organization_name.trim() }),
+              });
+            } catch {}
+          }
+          try {
+            const myJoinRes = await fetch("/api/organization-join-requests/mine");
+            const myJoinPayload = await myJoinRes.json();
+            if (myJoinRes.ok && Array.isArray(myJoinPayload?.data)) {
+              setMyOrgJoinRequests(myJoinPayload.data);
+            }
+          } catch {}
+          try {
+            const inboxRes = await fetch("/api/access-requests/inbox");
+            const inboxPayload = await inboxRes.json();
+            if (inboxRes.ok && Array.isArray(inboxPayload?.data)) {
+              setInboxRequests(inboxPayload.data);
+            }
+          } catch {}
+          try {
+            const orgJoinInboxRes = await fetch("/api/organization-join-requests/inbox");
+            const orgJoinInboxPayload = await orgJoinInboxRes.json();
+            if (orgJoinInboxRes.ok && Array.isArray(orgJoinInboxPayload?.data)) {
+              setOrgJoinInbox(orgJoinInboxPayload.data);
+            }
+          } catch {}
+          try {
+            const failedRes = await fetch("/api/access-requests/failed-notifications");
+            const failedPayload = await failedRes.json();
+            if (failedRes.ok && Array.isArray(failedPayload?.data)) {
+              setFailedNotifications(failedPayload.data);
+            }
+          } catch {}
+        }
       }
 
       if (impersonateId && isActuallyAdmin) {
@@ -176,6 +319,11 @@ function DashboardContent() {
     });
   }, [searchQuery, events]);
 
+  const hasPendingOrgJoin = useMemo(
+    () => !isOrgOwner && myOrgJoinRequests.some((req) => String(req.status || "").toLowerCase() === "pending"),
+    [isOrgOwner, myOrgJoinRequests],
+  );
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -192,6 +340,10 @@ function DashboardContent() {
     e.preventDefault();
     if (isPreviewMode) {
       toast.error("Admin org preview is read-only.");
+      return;
+    }
+    if (hasPendingOrgJoin) {
+      toast.error("Your organization join request is pending approval. Campaign creation is locked.");
       return;
     }
     if (!eventForm.name || (!eventForm.location && eventForm.location_type === "onsite") || !eventForm.date || !eventForm.time) {
@@ -267,10 +419,14 @@ function DashboardContent() {
       return;
     }
       const orgCleaned = organizationDraft.trim();
-      if (!orgCleaned) {
+    if (!orgCleaned) {
         setUsernameError("Organization name is required.");
         return;
       }
+    if (isOrgTeamMember && orgCleaned !== organizationName.trim()) {
+      setUsernameError("Only organization admin can change organization name.");
+      return;
+    }
     if (cleaned.length < 3) {
       setUsernameError("Username must be at least 3 characters.");
       return;
@@ -302,6 +458,121 @@ function DashboardContent() {
       setUsernameError("Could not update username.");
     } finally {
       setIsSavingUsername(false);
+    }
+  };
+
+  const loadTeamMembers = async () => {
+    try {
+      const res = await fetch("/api/organization-members");
+      const payload = await res.json();
+      if (!res.ok) {
+        setTeamError(payload?.error || "Could not load team.");
+        return;
+      }
+      setTeamMembers(payload.data || []);
+    } catch {
+      setTeamError("Could not load team.");
+    }
+  };
+
+  const handleAddTeamMember = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTeamError("");
+    if (!teamInviteEmail.trim() || !teamInviteRoleLabel.trim()) {
+      setTeamError("Email and role label are required.");
+      return;
+    }
+    setIsSubmittingTeamInvite(true);
+    try {
+      const res = await fetch("/api/organization-members", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: teamInviteEmail.trim().toLowerCase(),
+          roleLabel: teamInviteRoleLabel.trim(),
+          permissions: teamPermissionDraft,
+        }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setTeamError(payload?.error || "Could not add team member.");
+        return;
+      }
+      setTeamInviteEmail("");
+      setTeamInviteRoleLabel("");
+      setTeamPermissionDraft([]);
+      toast.success("Team member access updated.");
+      await loadTeamMembers();
+    } catch {
+      setTeamError("Could not add team member.");
+    } finally {
+      setIsSubmittingTeamInvite(false);
+    }
+  };
+
+  const reviewInboxRequest = async (id: string, decision: "approve" | "reject") => {
+    try {
+      const res = await fetch(`/api/access-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not review request.");
+        return;
+      }
+      setInboxRequests((prev) => prev.filter((r) => r.id !== id));
+      toast.success(decision === "approve" ? "Access granted." : "Access rejected.");
+    } catch {
+      toast.error("Could not review request.");
+    }
+  };
+
+  const retryNotification = async (requestId: string, status: string) => {
+    const target = status === "pending" ? "owner" : "requester";
+    setRetryingNotificationId(requestId);
+    try {
+      const res = await fetch("/api/access-requests/retry-notification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, target }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Retry failed.");
+        return;
+      }
+      setFailedNotifications((prev) => prev.filter((row) => row.id !== requestId));
+      toast.success("Notification retried successfully.");
+    } catch {
+      toast.error("Retry failed.");
+    } finally {
+      setRetryingNotificationId("");
+    }
+  };
+
+  const reviewOrgJoinRequest = async (id: string, decision: "approve" | "reject") => {
+    try {
+      const requestRow = orgJoinInbox.find((r) => r.id === id);
+      const res = await fetch(`/api/organization-join-requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not review organization join request.");
+        return;
+      }
+      setOrgJoinInbox((prev) => prev.filter((r) => r.id !== id));
+      toast.success(
+        decision === "approve"
+          ? `${requestRow?.requester_email || "Member"} approved. They can now access your organization workspace.`
+          : `${requestRow?.requester_email || "Member"} rejected. They can reapply after cooldown.`,
+      );
+    } catch {
+      toast.error("Could not review organization join request.");
     }
   };
 
@@ -360,7 +631,7 @@ function DashboardContent() {
               AVTIVE
             </span>
             <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
-              {isPreviewMode ? "Organization Preview" : "Dashboard"}
+              {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
               <div className="text-lg font-medium text-muted flex items-center gap-2 mt-1 leading-snug">
@@ -387,6 +658,21 @@ function DashboardContent() {
             {isPreviewMode && (
               <p className="text-sm font-semibold text-danger/85 mt-1">Read-only admin perspective. Editing and creation are disabled.</p>
             )}
+            {!isPreviewMode && isOrgTeamMember && (
+              <p className="text-sm font-semibold text-heading/70 mt-1">
+                Team role: {orgRoleLabel || "Member"} (organization-level access)
+              </p>
+            )}
+            {!isPreviewMode && !isOrgTeamMember && isOrgOwner && (
+              <p className="text-sm font-semibold text-primary-strong/85 mt-1">
+                Organization owner mode: you can review team join requests and manage access.
+              </p>
+            )}
+            {!isPreviewMode && !isOrgTeamMember && hasPendingOrgJoin && (
+              <p className="text-sm font-semibold text-amber-700 mt-1">
+                Organization join is pending approval. Owner-level actions are disabled until approved.
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3 items-center">
@@ -401,7 +687,7 @@ function DashboardContent() {
                 </Button>
                </Link>
             )}
-            {!isPreviewMode && (
+            {!isPreviewMode && !isOrgTeamMember && !hasPendingOrgJoin && (
               <Button
                 variant="secondary"
                 onClick={() => setIsEventModalOpen(true)}
@@ -410,6 +696,18 @@ function DashboardContent() {
               >
                 <span className="hidden sm:inline">New Campaign</span>
                 <span className="inline sm:hidden">Campaign</span>
+              </Button>
+            )}
+            {!isPreviewMode && !isOrgTeamMember && !hasPendingOrgJoin && (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  setIsTeamModalOpen(true);
+                  setTeamError("");
+                  await loadTeamMembers();
+                }}
+              >
+                Team Access
               </Button>
             )}
             <Button
@@ -472,6 +770,128 @@ function DashboardContent() {
             />
           </div>
         </div>
+
+        {isOrgTeamMember && myAccessRequests.length > 0 && (
+          <div className="glass-panel p-4 rounded-lg mb-6">
+            <p className="text-sm font-bold text-heading mb-2">My Access Requests</p>
+            <div className="flex flex-col gap-2">
+              {myAccessRequests.slice(0, 4).map((req) => (
+                <div key={req.id} className="flex items-center justify-between text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                  <span className="text-heading">{req.event_name} • {req.requested_action}</span>
+                  <span className={`font-semibold ${
+                    req.status === "approved" ? "text-green-600" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
+                  }`}>
+                    {req.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isOrgTeamMember && !isOrgOwner && myOrgJoinRequests.length > 0 && (
+          <div className="glass-panel p-4 rounded-lg mb-6">
+            <p className="text-sm font-bold text-heading mb-2">My Organization Join Requests</p>
+            <div className="flex flex-col gap-2">
+              {myOrgJoinRequests.slice(0, 4).map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-heading truncate">
+                      Organization: {req.requested_org_name} • Reviewer: {req.owner_email}
+                    </span>
+                    {String(req.status || "").toLowerCase() === "rejected" && req.reapply_after && (
+                      <span className="text-muted text-[0.8125rem] mt-0.5">
+                        Reapply after: {new Date(req.reapply_after).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`font-semibold shrink-0 border px-2 py-0.5 rounded-full ${formatJoinStatus(req.status).className}`}>
+                    {formatJoinStatus(req.status).label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isOrgTeamMember && isOrgOwner && orgJoinInbox.length > 0 && (
+          <div className="glass-panel p-4 rounded-lg mb-6">
+            <p className="text-sm font-bold text-heading mb-2">Organization Join Inbox</p>
+            <div className="flex flex-col gap-2">
+              {orgJoinInbox.slice(0, 4).map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                  <span className="text-heading truncate">
+                    Requester: {req.requester_email} • Wants to join: {req.requested_org_name}
+                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      className="px-2 py-1 rounded-sm bg-primary text-white font-semibold"
+                      onClick={() => reviewOrgJoinRequest(req.id, "approve")}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="px-2 py-1 rounded-sm border border-border font-semibold"
+                      onClick={() => reviewOrgJoinRequest(req.id, "reject")}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isOrgTeamMember && inboxRequests.length > 0 && (
+          <div className="glass-panel p-4 rounded-lg mb-6">
+            <p className="text-sm font-bold text-heading mb-2">Pending Access Inbox</p>
+            <div className="flex flex-col gap-2">
+              {inboxRequests.slice(0, 4).map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                  <span className="text-heading truncate">{req.requester_email} • {req.event_name} • {req.requested_action}</span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      className="px-2 py-1 rounded-sm bg-primary text-white font-semibold"
+                      onClick={() => reviewInboxRequest(req.id, "approve")}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="px-2 py-1 rounded-sm border border-border font-semibold"
+                      onClick={() => reviewInboxRequest(req.id, "reject")}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {!isOrgTeamMember && failedNotifications.length > 0 && (
+          <div className="glass-panel p-4 rounded-lg mb-6">
+            <p className="text-sm font-bold text-heading mb-2">Failed Notifications</p>
+            <div className="flex flex-col gap-2">
+              {failedNotifications.slice(0, 6).map((row) => (
+                <div key={row.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                  <span className="text-heading truncate">
+                    {row.event_name} • {row.requester_email} • {row.requested_action}
+                  </span>
+                  <button
+                    className="px-2 py-1 rounded-sm border border-border font-semibold inline-flex items-center gap-1 shrink-0"
+                    onClick={() => retryNotification(row.id, row.status)}
+                    disabled={retryingNotificationId === row.id}
+                  >
+                    <RefreshCw size={12} className={retryingNotificationId === row.id ? "animate-spin" : ""} />
+                    {retryingNotificationId === row.id ? "Retrying" : "Retry"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Event Cards List */}
         {events.length === 0 ? (
@@ -683,7 +1103,7 @@ function DashboardContent() {
           <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Edit Username</h2>
+                <h2 className="text-2xl font-bold text-heading tracking-tight">Edit Profile</h2>
                 <p className="text-sm text-muted">This updates your profile everywhere in the app.</p>
               </div>
               <button
@@ -704,6 +1124,8 @@ function DashboardContent() {
                   if (usernameError) setUsernameError("");
                 }}
               />
+              <p className="text-xs text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
+              <p className="text-xs text-muted -mt-1">Username can be changed once every 24 days.</p>
               <TextInput
                 label="Organization Name"
                 required
@@ -714,10 +1136,14 @@ function DashboardContent() {
                   setOrganizationDraft(v);
                   if (usernameError) setUsernameError("");
                 }}
+                disabled={isOrgTeamMember}
+                readOnly={isOrgTeamMember}
               />
-              <p className="text-xs text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
-              <p className="text-xs text-muted -mt-1">Username can be changed once every 24 days.</p>
-              <p className="text-xs text-muted -mt-1">Organization name can be changed once every 90 days.</p>
+              <p className="text-xs text-muted -mt-1">
+                {isOrgTeamMember
+                  ? "Only organization admin can change organization name."
+                  : "Organization name can be changed once every 90 days."}
+              </p>
               {usernameError && <p className="text-sm font-medium text-red-500">{usernameError}</p>}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
@@ -735,10 +1161,122 @@ function DashboardContent() {
                   disabled={isSavingUsername}
                   className="order-1 sm:order-2 shadow-lg shadow-primary/20"
                 >
-                  {isSavingUsername ? "Saving..." : "Save Username"}
+                  {isSavingUsername ? "Saving..." : "Save Profile"}
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isTeamModalOpen && !isPreviewMode && !isOrgTeamMember && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
+          />
+          <div className="relative w-full max-w-[520px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-2xl font-bold text-heading tracking-tight">Organization Team Access</h2>
+                <p className="text-sm text-muted">Add members by email and assign any role label.</p>
+              </div>
+              <button
+                onClick={() => setIsTeamModalOpen(false)}
+                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="px-8 pb-8 flex flex-col gap-4">
+              <form onSubmit={handleAddTeamMember} className="flex flex-col gap-3">
+                <TextInput
+                  label="Member Email"
+                  required
+                  placeholder="member@company.com"
+                  value={teamInviteEmail}
+                  onChange={setTeamInviteEmail}
+                />
+                <TextInput
+                  label="Role Label"
+                  required
+                  placeholder="e.g. Director, Media Manager, Ops Lead"
+                  value={teamInviteRoleLabel}
+                  onChange={setTeamInviteRoleLabel}
+                />
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-heading leading-tight">Default permissions for this role</label>
+                  <label className="flex items-center gap-2 text-sm text-heading">
+                    <input
+                      type="checkbox"
+                      checked={teamPermissionDraft.includes("manage_event")}
+                      onChange={(e) =>
+                        setTeamPermissionDraft((prev) =>
+                          e.target.checked ? Array.from(new Set([...prev, "manage_event"])) : prev.filter((p) => p !== "manage_event"),
+                        )
+                      }
+                    />
+                    Manage event
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-heading">
+                    <input
+                      type="checkbox"
+                      checked={teamPermissionDraft.includes("edit_cards")}
+                      onChange={(e) =>
+                        setTeamPermissionDraft((prev) =>
+                          e.target.checked ? Array.from(new Set([...prev, "edit_cards"])) : prev.filter((p) => p !== "edit_cards"),
+                        )
+                      }
+                    />
+                    Edit cards
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-heading">
+                    <input
+                      type="checkbox"
+                      checked={teamPermissionDraft.includes("delete_cards")}
+                      onChange={(e) =>
+                        setTeamPermissionDraft((prev) =>
+                          e.target.checked ? Array.from(new Set([...prev, "delete_cards"])) : prev.filter((p) => p !== "delete_cards"),
+                        )
+                      }
+                    />
+                    Delete cards
+                  </label>
+                </div>
+                {teamError && <p className="text-sm font-medium text-red-500">{teamError}</p>}
+                <Button type="submit" disabled={isSubmittingTeamInvite}>
+                  {isSubmittingTeamInvite ? "Saving..." : "Add / Update Member"}
+                </Button>
+              </form>
+              <div className="rounded-md border border-border/50 bg-white/60 p-3 max-h-56 overflow-y-auto">
+                <p className="text-xs font-semibold text-muted mb-2">Current members</p>
+                {teamMembers.length === 0 ? (
+                  <p className="text-sm text-muted">No members added yet.</p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {teamMembers.map((m) => (
+                      <div key={m.id} className="text-sm text-heading flex flex-col gap-1 border border-border/40 rounded-sm px-2 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="truncate">{m.member_email}</span>
+                          <span className="text-xs bg-primary/10 text-primary-strong border border-primary/20 px-2 py-0.5 rounded-inline">{m.role_label}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {(m.permissions || []).length > 0 ? (
+                            (m.permissions || []).map((perm) => (
+                              <span key={`${m.id}-${perm}`} className="text-[10px] bg-surface px-1.5 py-0.5 rounded-inline border border-border/50">
+                                {perm}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-[10px] text-muted">No default permissions</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

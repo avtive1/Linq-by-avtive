@@ -35,6 +35,20 @@ import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 
 type AttendeeCard = CardData & { photo_path?: string };
+type PendingAccessRequest = {
+  id: string;
+  requester_user_id: string;
+  requested_action: string;
+  note?: string | null;
+  requester_email: string;
+  created_at: string;
+};
+type ActiveGrant = {
+  id: string;
+  grantee_email: string;
+  permission: string;
+  created_at: string;
+};
 
 function LinkedInIcon({ size = 16 }: { size?: number }) {
   return (
@@ -54,6 +68,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const isPreviewMode = !!impersonateId;
   
   const [eventData, setEventData] = useState<EventData | null>(null);
+  const [currentUserId, setCurrentUserId] = useState("");
   const [cards, setCards] = useState<AttendeeCard[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -101,6 +116,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isSponsorsOpen, setIsSponsorsOpen] = useState(false);
   const [sponsorRows, setSponsorRows] = useState<SponsorFormRow[]>([]);
   const [isSavingSponsors, setIsSavingSponsors] = useState(false);
+  const [isAccessRequestOpen, setIsAccessRequestOpen] = useState(false);
+  const [accessRequestAction, setAccessRequestAction] = useState("manage_event");
+  const [accessRequestNote, setAccessRequestNote] = useState("");
+  const [isSubmittingAccessRequest, setIsSubmittingAccessRequest] = useState(false);
+  const [pendingAccessRequests, setPendingAccessRequests] = useState<PendingAccessRequest[]>([]);
+  const [isAccessInboxOpen, setIsAccessInboxOpen] = useState(false);
+  const [isAccessControlOpen, setIsAccessControlOpen] = useState(false);
+  const [activeGrants, setActiveGrants] = useState<ActiveGrant[]>([]);
+  const [isLoadingGrants, setIsLoadingGrants] = useState(false);
+  const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
+  const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -111,10 +137,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         router.replace("/login");
         return;
       }
-      fetchEventData();
+      const viewerId = session.user.id;
+      setCurrentUserId(viewerId);
+      fetchEventData(viewerId);
     };
 
-    const fetchEventData = async () => {
+    const fetchEventData = async (viewerId: string) => {
       if (!id || id === "id") return;
 
       setIsLoading(true);
@@ -135,15 +163,29 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           location_type: eventRecord.location_type || "onsite",
           date: eventRecord.date,
           time: eventRecord.time || "",
+          user: eventRecord.user_id,
           logo_url: eventRecord.logo_url || "",
           sponsors: parseEventSponsors(eventRecord.sponsors),
         });
+
+        let orgAdminReviewer = false;
+        try {
+          const memberRes = await fetch("/api/organization-members/me");
+          const memberPayload = await memberRes.json();
+          const orgOwnerId = memberRes.ok ? String(memberPayload?.data?.org_owner_user_id || "") : "";
+          orgAdminReviewer = Boolean(orgOwnerId && orgOwnerId === String(eventRecord.user_id || ""));
+        } catch {
+          orgAdminReviewer = false;
+        }
+        setIsOrgAdminReviewer(orgAdminReviewer);
 
         const attendeeRes = await fetch(
           `/api/events/${id}/attendees${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
         );
         if (!attendeeRes.ok) {
-          throw new Error("Failed to fetch decrypted attendees");
+          const errPayload = await attendeeRes.json().catch(() => null);
+          const errMsg = typeof errPayload?.error === "string" ? errPayload.error : attendeeRes.statusText;
+          throw new Error(errMsg || "Failed to fetch decrypted attendees");
         }
         const attendeePayload = await attendeeRes.json();
         const attendeeRecords = attendeePayload.data || [];
@@ -173,6 +215,30 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
         setCards(mappedCards);
 
+        if (viewerId) {
+          const { data: grants } = await supabase
+            .from("access_grants")
+            .select("permission")
+            .eq("event_id", id)
+            .eq("grantee_user_id", viewerId)
+            .eq("status", "active");
+          setGrantedPermissions((grants || []).map((g: { permission: string }) => g.permission));
+        }
+
+        if (eventRecord.user_id === viewerId || orgAdminReviewer) {
+          try {
+            const reqRes = await fetch(`/api/access-requests?eventId=${id}`);
+            const reqPayload = await reqRes.json();
+            if (reqRes.ok && reqPayload?.data?.requests) {
+              setPendingAccessRequests(reqPayload.data.requests);
+            }
+          } catch (err) {
+            console.error("Could not load access requests:", err);
+          }
+        } else {
+          setPendingAccessRequests([]);
+        }
+
       } catch (err: any) {
         console.error("Supabase Fetch Error:", err.message || err);
         toast.error("Failed to load event data.");
@@ -183,9 +249,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router]);
+  }, [id, router, impersonateId, isPreviewMode]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
+  const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
+  const canReviewAccessRequests = isEventOwner || isOrgAdminReviewer;
+  const canManageEvent = isEventOwner || grantedPermissions.includes("manage_event");
+  const canEditCards = canManageEvent || grantedPermissions.includes("edit_cards");
+  const canDeleteCards = canManageEvent || grantedPermissions.includes("delete_cards");
+  const canExport = canManageEvent;
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -539,6 +611,96 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     URL.revokeObjectURL(url);
   };
 
+  const submitAccessRequest = async (requestedAction: string, note?: string) => {
+    if (!eventData?.id) return;
+    const trimmedNote = String(note || "").trim();
+    if (!trimmedNote) {
+      toast.error("Please provide a short reason for this access request.");
+      return;
+    }
+    setIsSubmittingAccessRequest(true);
+    try {
+      const res = await fetch("/api/access-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: eventData.id,
+          requestedAction,
+          note: trimmedNote,
+        }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not create access request.");
+        return;
+      }
+      toast.success("Access request sent to organization admin.");
+      setIsAccessRequestOpen(false);
+      setAccessRequestNote("");
+      setAccessRequestAction("manage_event");
+    } catch (err) {
+      console.error("Access request error:", err);
+      toast.error("Could not create access request.");
+    } finally {
+      setIsSubmittingAccessRequest(false);
+    }
+  };
+
+  const reviewAccessRequest = async (requestId: string, decision: "approve" | "reject") => {
+    try {
+      const res = await fetch(`/api/access-requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decision }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not review request.");
+        return;
+      }
+      setPendingAccessRequests((prev) => prev.filter((r) => r.id !== requestId));
+      toast.success(decision === "approve" ? "Access granted." : "Access request rejected.");
+    } catch (err) {
+      console.error("Review access request error:", err);
+      toast.error("Could not review request.");
+    }
+  };
+
+  const loadActiveGrants = async () => {
+    if (!eventData?.id) return;
+    setIsLoadingGrants(true);
+    try {
+      const res = await fetch(`/api/access-grants?eventId=${eventData.id}`);
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not load active grants.");
+        return;
+      }
+      setActiveGrants(payload?.data || []);
+    } catch (err) {
+      console.error("Load grants error:", err);
+      toast.error("Could not load active grants.");
+    } finally {
+      setIsLoadingGrants(false);
+    }
+  };
+
+  const revokeGrant = async (grantId: string) => {
+    try {
+      const res = await fetch(`/api/access-grants/${grantId}`, { method: "DELETE" });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not revoke grant.");
+        return;
+      }
+      setActiveGrants((prev) => prev.filter((g) => g.id !== grantId));
+      toast.success("Access revoked.");
+    } catch (err) {
+      console.error("Revoke grant error:", err);
+      toast.error("Could not revoke grant.");
+    }
+  };
+
   const openShareActions = (url: string) => {
     const message = `We are hosting ${eventData?.name || "our event"}. Register here: ${url}`;
     setShareDraftUrl(url);
@@ -707,42 +869,56 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <Button 
                     variant="primary" 
                     onClick={() => {
+                      if (!canManageEvent) {
+                        setAccessRequestAction("manage_event");
+                        setIsAccessRequestOpen(true);
+                        return;
+                      }
                       setRenewForm({ location: eventData.location || "", date: "", logo: "" });
                       setIsRenewOpen(true);
                     }} 
+                    disabled={!canManageEvent}
                     icon={<RefreshCw size={16} />}
-                    className="shadow-lg shadow-primary/20 animate-pulse-subtle"
+                    className={`shadow-lg shadow-primary/20 animate-pulse-subtle ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
                     Renew Event
                   </Button>
                 ) : (
-                  <Button variant="secondary" onClick={openEdit} icon={<Pencil size={16} />}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => (canManageEvent ? openEdit() : undefined)}
+                    disabled={!canManageEvent}
+                    icon={<Pencil size={16} />}
+                    className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                  >
                     Edit
                   </Button>
                 )}
                 <Button
                   variant="secondary"
-                  onClick={openSponsorsModal}
+                  onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
+                  disabled={!canManageEvent}
                   icon={<Handshake size={16} />}
-                  className="hidden md:flex"
+                  className={`hidden md:flex ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                 >
                   Sponsors
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={openSponsorsModal}
+                  onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
+                  disabled={!canManageEvent}
                   icon={<Handshake size={16} />}
-                  className="flex md:hidden px-3"
+                  className={`flex md:hidden px-3 ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   aria-label="Sponsors"
                 >
                   <span className="sr-only">Sponsors</span>
                 </Button>
                 <Button
                   variant="secondary"
-                  onClick={handleDuplicate}
-                  disabled={isDuplicating || status.label === "Past"}
+                  onClick={() => (canManageEvent ? handleDuplicate() : undefined)}
+                  disabled={isDuplicating || status.label === "Past" || !canManageEvent}
                   icon={<Copy size={16} />}
-                  className={status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                  className={status.label === "Past" || !canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
                 >
                   {isDuplicating ? "..." : "Duplicate"}
                 </Button>
@@ -752,14 +928,39 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   <Button
                     variant="secondary"
-                    onClick={() => { setDeleteConfirm(""); setIsDeleteOpen(true); }}
-                    disabled={cards.length > 0}
+                    onClick={() => {
+                      if (!canManageEvent) return;
+                      setDeleteConfirm("");
+                      setIsDeleteOpen(true);
+                    }}
+                    disabled={cards.length > 0 || !canManageEvent}
                     icon={<Trash2 size={16} />}
-                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 || !canManageEvent ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
                   >
                     Delete
                   </Button>
                 </div>
+                {!canManageEvent && (
+                  <Button variant="secondary" onClick={() => setIsAccessRequestOpen(true)}>
+                    Take Access
+                  </Button>
+                )}
+                {canReviewAccessRequests && pendingAccessRequests.length > 0 && (
+                  <Button variant="secondary" onClick={() => setIsAccessInboxOpen(true)}>
+                    Requests ({pendingAccessRequests.length})
+                  </Button>
+                )}
+                {isEventOwner && (
+                  <Button
+                    variant="secondary"
+                    onClick={async () => {
+                      setIsAccessControlOpen(true);
+                      await loadActiveGrants();
+                    }}
+                  >
+                    Access Control
+                  </Button>
+                )}
               </>
             )}
           </div>
@@ -785,9 +986,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <Button
               variant="secondary"
               onClick={handleExport}
-              disabled={status.label === "Past"}
+              disabled={status.label === "Past" || !canExport}
               icon={<Download size={18} />}
-              className={`bg-white/80 hover:bg-white hover:border-primary/35 shadow-sm border-white/60 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+              className={`bg-white/80 hover:bg-white hover:border-primary/35 shadow-sm border-white/60 ${
+                status.label === "Past" || !canExport ? "opacity-50 cursor-not-allowed grayscale" : ""
+              }`}
             >
               Export CSV
             </Button>
@@ -873,16 +1076,38 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         View
                       </Button>
                     </Link>
-                    <Link href={`/cards/${card.id}/edit`} className="shrink-0">
-                      <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-sm bg-white/50 border-white/60">
+                    {canEditCards ? (
+                      <Link href={`/cards/${card.id}/edit`} className="shrink-0">
+                        <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-sm bg-white/50 border-white/60">
+                          Edit
+                        </Button>
+                      </Link>
+                    ) : (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Pencil size={14} />}
+                        className="rounded-sm bg-white/50 border-white/60 opacity-50 cursor-not-allowed grayscale"
+                        disabled
+                        title="Request access to edit attendee cards."
+                      >
                         Edit
                       </Button>
-                    </Link>
+                    )}
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => handleDelete(card.id)}
-                      className="w-10 h-10 p-0 rounded-inline text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200 transition-all shrink-0"
+                      onClick={() => {
+                        if (!canDeleteCards) return;
+                        handleDelete(card.id);
+                      }}
+                      disabled={!canDeleteCards}
+                      title={!canDeleteCards ? "Request access to delete attendee cards." : "Delete attendee card"}
+                      className={`w-10 h-10 p-0 rounded-inline transition-all shrink-0 ${
+                        canDeleteCards
+                          ? "text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200"
+                          : "text-muted/50 opacity-50 cursor-not-allowed grayscale"
+                      }`}
                     >
                       <Trash2 size={16} />
                     </Button>
@@ -897,6 +1122,160 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         )}
       </div>
+
+      {isAccessRequestOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
+          />
+          <div className="relative w-full max-w-[440px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-heading tracking-tight">Take Access</h3>
+                <p className="text-sm text-muted">Request approval from organization admin to perform restricted actions.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form
+              className="px-6 pb-6 flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitAccessRequest(accessRequestAction, accessRequestNote);
+              }}
+            >
+              <label className="text-sm font-semibold text-heading">Requested action</label>
+              <select
+                value={accessRequestAction}
+                onChange={(e) => setAccessRequestAction(e.target.value)}
+                className="w-full rounded-md border border-border/60 bg-white px-3 py-2 text-sm text-heading outline-none focus:border-primary/70"
+              >
+                <option value="manage_event">Manage event settings</option>
+                <option value="edit_cards">Edit attendee cards</option>
+                <option value="delete_cards">Delete attendee cards</option>
+              </select>
+              <TextInput
+                label="Reason"
+                required
+                placeholder="Explain what you need and why (1–2 sentences)."
+                value={accessRequestNote}
+                onChange={setAccessRequestNote}
+              />
+              <p className="text-xs text-muted -mt-1">
+                Your organization admin will review this request and can approve or reject it.
+              </p>
+              <div className="flex gap-3 pt-1">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => setIsAccessRequestOpen(false)}
+                  disabled={isSubmittingAccessRequest}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" fullWidth disabled={isSubmittingAccessRequest}>
+                  {isSubmittingAccessRequest ? "Sending..." : "Request Access"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isAccessInboxOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => setIsAccessInboxOpen(false)}
+          />
+          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-heading tracking-tight">Pending Access Requests</h3>
+                <p className="text-sm text-muted">Approve or reject member access for this campaign.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAccessInboxOpen(false)}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
+              {pendingAccessRequests.length === 0 ? (
+                <p className="text-sm text-muted py-6 text-center">No pending requests.</p>
+              ) : (
+                pendingAccessRequests.map((req) => (
+                  <div key={req.id} className="rounded-md border border-border/50 bg-white/80 p-3">
+                    <p className="text-sm font-semibold text-heading">{req.requester_email}</p>
+                    <p className="text-xs text-muted mt-0.5">Action: {req.requested_action}</p>
+                    {req.note ? <p className="text-xs text-muted mt-1">Reason: {req.note}</p> : null}
+                    <div className="flex gap-2 mt-3">
+                      <Button size="sm" onClick={() => reviewAccessRequest(req.id, "approve")}>
+                        Approve
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => reviewAccessRequest(req.id, "reject")}>
+                        Reject
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isAccessControlOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => setIsAccessControlOpen(false)}
+          />
+          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-heading tracking-tight">Active Access Grants</h3>
+                <p className="text-sm text-muted">Revoke member permissions for this campaign.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAccessControlOpen(false)}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
+              {isLoadingGrants ? (
+                <p className="text-sm text-muted py-6 text-center">Loading grants...</p>
+              ) : activeGrants.length === 0 ? (
+                <p className="text-sm text-muted py-6 text-center">No active grants.</p>
+              ) : (
+                activeGrants.map((grant) => (
+                  <div key={grant.id} className="rounded-md border border-border/50 bg-white/80 p-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-heading truncate">{grant.grantee_email}</p>
+                      <p className="text-xs text-muted mt-0.5">Permission: {grant.permission}</p>
+                    </div>
+                    <Button size="sm" variant="secondary" onClick={() => revokeGrant(grant.id)}>
+                      Revoke
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sponsors modal */}
       {isGuestCategoryOpen && (

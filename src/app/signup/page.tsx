@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
+import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -78,6 +79,7 @@ export default function SignupPage() {
     setIsSubmitting(true);
     // Extract handle if URL was provided
     const cleanHandle = extractLinkedInHandle(form.linkedin);
+    const normalizedOrganizationName = normalizeOrganizationName(form.organization);
     
     try {
       let organizationLogoUrl = form.organizationLogo;
@@ -102,7 +104,8 @@ export default function SignupPage() {
           data: {
             username: form.username.toLowerCase(),
             linkedin: cleanHandle,
-            organization_name: form.organization,
+            organization_name: normalizedOrganizationName,
+            organization_name_key: toOrganizationKey(normalizedOrganizationName),
             organization_logo_url: organizationLogoUrl,
           }
         }

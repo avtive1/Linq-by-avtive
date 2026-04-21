@@ -287,9 +287,9 @@ export function CardPreview({
   
   // Font Mapping
   const fontMap: Record<string, string> = {
-    inter: "var(--font-inter), sans-serif",
-    poppins: "var(--font-poppins), sans-serif",
-    outfit: "var(--font-outfit), sans-serif",
+    inter: "var(--font-inter-tight), sans-serif",
+    poppins: "var(--font-inter-tight), sans-serif",
+    outfit: "var(--font-inter-tight), sans-serif",
     times: "'Times New Roman', Times, serif",
   };
   const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;

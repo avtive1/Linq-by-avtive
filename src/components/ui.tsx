@@ -24,6 +24,7 @@ type InputProps = {
   readOnly?: boolean;
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
   maxLength?: number;
+  disabled?: boolean;
 };
 
 export function TextInput({
@@ -42,38 +43,41 @@ export function TextInput({
   readOnly,
   onFocus,
   maxLength,
+  disabled,
 }: InputProps) {
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (showPass ? "text" : "password") : type;
+  const isLocked = Boolean(disabled || readOnly);
 
   return (
     <div className={`flex flex-col gap-2 w-full group ${className}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-sm font-semibold text-heading leading-tight">
+          <label className="text-base font-semibold text-heading leading-tight">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-base font-bold">*</span>}
         </div>
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 overflow-hidden
+          flex items-center border rounded-md shadow-sm transition-all duration-200 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:border-red-500" 
             : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]"}
+          ${isLocked ? "bg-slate-100 cursor-not-allowed border-slate-200" : "bg-white"}
         `}
       >
         {prefix && (
           <div className="flex items-center h-full">
-            <span className="px-3 text-sm text-muted bg-surface/50 whitespace-nowrap h-full flex items-center">
+            <span className="px-3 text-base text-muted bg-surface/50 whitespace-nowrap h-full flex items-center font-medium">
               {prefix}
             </span>
           </div>
         )}
         {icon && (
-          <div className="pl-4 flex-shrink-0 text-muted">
+          <div className="pl-4 shrink-0 text-muted">
             {icon === "email" && <Mail size={18} />}
             {icon === "lock" && <Lock size={18} />}
             {icon === "user" && <User size={18} />}
@@ -87,9 +91,12 @@ export function TextInput({
           autoComplete={autoComplete}
           name={name}
           readOnly={readOnly}
+          disabled={disabled}
           onFocus={onFocus}
           maxLength={maxLength}
-          className={`flex-1 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 ${
+          className={`flex-1 py-3 text-base leading-6 border-none outline-none focus:ring-0 placeholder:text-muted/70 font-medium ${
+            isLocked ? "text-slate-500 cursor-not-allowed bg-transparent" : "text-heading bg-transparent"
+          } ${
             icon || prefix ? "px-3" : "pl-4 pr-3"
           }`}
         />
@@ -97,13 +104,13 @@ export function TextInput({
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="p-2 text-muted hover:text-heading transition-colors duration-150 rounded-[4px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97]"
+            className="p-2 text-muted hover:text-heading transition-colors duration-150 rounded-inline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97]"
           >
             {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         )}
       </div>
-      {error && <p className="text-xs font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-sm font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -118,6 +125,7 @@ type ButtonProps = {
   icon?: React.ReactNode;
   className?: string;
   disabled?: boolean;
+  title?: string;
 };
 
 export function Button({
@@ -130,23 +138,25 @@ export function Button({
   icon,
   className = "",
   disabled,
+  title,
 }: ButtonProps) {
   const isPrimary = variant === "primary";
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "h-9 px-3 text-xs rounded-[4px]",
-    md: "h-10 px-4 text-sm rounded-sm",
-    lg: "h-12 px-5 text-base rounded-md",
+    sm: "h-9 px-3 text-sm rounded-[4px]",
+    md: "h-10 px-4 text-base rounded-sm",
+    lg: "h-12 px-5 text-lg rounded-md",
   };
 
   return (
     <button
       type={type}
+      title={title}
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
       className={`
-        inline-flex items-center justify-center gap-2 font-semibold transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
+        inline-flex items-center justify-center gap-2 font-semibold tracking-[-0.01em] transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
         ${sizeClasses[size]}
         ${isPrimary 
           ? "bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-55 disabled:saturate-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
@@ -186,10 +196,10 @@ export function Select({
     <div className={`flex flex-col gap-2 w-full group ${disabled ? "opacity-60" : ""}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-sm font-semibold text-heading leading-tight">
+          <label className="text-base font-semibold text-heading leading-tight">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-base font-bold">*</span>}
         </div>
       )}
       <div 
@@ -206,7 +216,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-3 text-sm leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 appearance-none
+            flex-1 px-3 py-3 text-base leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 appearance-none font-medium
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -223,7 +233,7 @@ export function Select({
           </svg>
         </div>
       </div>
-      {error && <p className="text-xs font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-sm font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
     </div>
   );
 }
@@ -298,10 +308,10 @@ export function FilePicker({
     <div className="flex flex-col gap-2 w-full">
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-sm font-semibold text-heading leading-tight">
+          <label className="text-base font-semibold text-heading leading-tight">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-sm font-bold">*</span>}
+          {required && <span className="text-primary-strong text-base font-bold">*</span>}
         </div>
       )}
       <div className={`
@@ -316,21 +326,21 @@ export function FilePicker({
         />
         {value ? (
           <div className="flex items-center gap-3 px-3 py-2 flex-1 overflow-hidden">
-            <div className="w-8 h-8 rounded border border-border/50 overflow-hidden flex-shrink-0 flex items-center justify-center p-0.5">
+            <div className="w-8 h-8 rounded border border-border/50 overflow-hidden shrink-0 flex items-center justify-center p-0.5">
               <img src={value} alt="Preview" className="w-full h-full object-contain rounded-sm" />
             </div>
-            <span className="text-sm text-heading font-medium truncate">Photo selected</span>
+            <span className="text-base text-heading font-medium truncate">Photo selected</span>
           </div>
         ) : (
-          <div className="flex-1 px-4 py-3 text-sm text-muted/70 truncate">
+          <div className="flex-1 px-4 py-3 text-base text-muted/70 truncate font-medium">
             Choose File
           </div>
         )}
-        <div className="px-4 py-3 bg-surface border-l border-border text-sm font-semibold text-muted h-full flex items-center">
+        <div className="px-4 py-3 bg-surface border-l border-border text-base font-semibold text-muted h-full flex items-center">
           Browse
         </div>
       </div>
-      {error && <p className="text-xs font-medium leading-snug text-red-500">{error}</p>}
+      {error && <p className="text-sm font-medium leading-snug text-red-500">{error}</p>}
 
       {cropperOpen && tempImage && (
         freeFormCrop ? (

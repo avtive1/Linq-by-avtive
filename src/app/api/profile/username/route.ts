@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getAdminClient } from "@/lib/admin";
+import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_.]+$/;
 const USERNAME_CHANGE_COOLDOWN_DAYS = 24;
@@ -11,7 +12,7 @@ export async function PATCH(req: Request) {
   try {
     const body = (await req.json()) as { username?: string; organizationName?: string };
     const nextUsername = String(body?.username || "").trim().toLowerCase();
-    const nextOrganizationName = String(body?.organizationName || "").trim();
+    const nextOrganizationName = normalizeOrganizationName(String(body?.organizationName || ""));
 
     if (!nextUsername) {
       return NextResponse.json({ error: "Username is required." }, { status: 400 });
@@ -61,9 +62,36 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Profile not found." }, { status: 404 });
     }
 
+    const { data: membershipRow } = await admin
+      .from("organization_members")
+      .select("id")
+      .eq("member_user_id", userId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    const currentOrganizationKey = toOrganizationKey(String(currentProfile.organization_name || ""));
+    const { data: ownedOrganization } = await admin
+      .from("organizations")
+      .select("id, owner_user_id")
+      .eq("organization_name_key", currentOrganizationKey)
+      .maybeSingle();
+
+    const isOrganizationMember = Boolean(membershipRow?.id);
+    const isOrganizationOwner = Boolean(ownedOrganization?.owner_user_id === userId);
+    if (
+      isOrganizationMember &&
+      !isOrganizationOwner &&
+      (currentProfile.organization_name || "").trim().toLowerCase() !== nextOrganizationName
+    ) {
+      return NextResponse.json(
+        { error: "Only organization admin can change organization name." },
+        { status: 403 },
+      );
+    }
+
     const now = Date.now();
     const usernameChanged = (currentProfile.username || "").trim().toLowerCase() !== nextUsername;
-    const organizationChanged = (currentProfile.organization_name || "").trim() !== nextOrganizationName;
+    const organizationChanged = (currentProfile.organization_name || "").trim().toLowerCase() !== nextOrganizationName;
 
     if (usernameChanged && currentProfile.username_changed_at) {
       const last = new Date(currentProfile.username_changed_at).getTime();
@@ -103,6 +131,7 @@ export async function PATCH(req: Request) {
     const updatePayload: Record<string, unknown> = {
       username: nextUsername,
       organization_name: nextOrganizationName,
+      organization_name_key: toOrganizationKey(nextOrganizationName),
     };
     if (usernameChanged) updatePayload.username_changed_at = new Date().toISOString();
     if (organizationChanged) updatePayload.organization_name_changed_at = new Date().toISOString();
@@ -111,6 +140,34 @@ export async function PATCH(req: Request) {
 
     if (updateError) {
       return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    const { data: ownedOrganizationByUser } = await admin
+      .from("organizations")
+      .select("id, organization_name_key")
+      .eq("owner_user_id", userId)
+      .maybeSingle();
+
+    if (ownedOrganizationByUser?.id) {
+      const nextOrgKey = toOrganizationKey(nextOrganizationName);
+      const { error: orgUpdateError } = await admin
+        .from("organizations")
+        .update({
+          organization_name: nextOrganizationName,
+          organization_name_key: nextOrgKey,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", ownedOrganizationByUser.id);
+
+      if (orgUpdateError) {
+        if (orgUpdateError.code === "23505") {
+          return NextResponse.json(
+            { error: "This organization name is already claimed by another organization." },
+            { status: 409 },
+          );
+        }
+        return NextResponse.json({ error: orgUpdateError.message }, { status: 400 });
+      }
     }
 
     return NextResponse.json(
