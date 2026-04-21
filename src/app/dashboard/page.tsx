@@ -1141,7 +1141,7 @@ function DashboardContent() {
               />
               <p className="text-xs text-muted -mt-1">
                 {isOrgTeamMember
-                  ? "Only organization admin can change organization name."
+                  ? "Organization name is read-only for team members. Ask your organization admin to update it."
                   : "Organization name can be changed once every 90 days."}
               </p>
               {usernameError && <p className="text-sm font-medium text-red-500">{usernameError}</p>}

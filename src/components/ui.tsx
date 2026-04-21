@@ -49,12 +49,19 @@ export function TextInput({
   const isPassword = type === "password";
   const inputType = isPassword ? (showPass ? "text" : "password") : type;
   const isLocked = Boolean(disabled || readOnly);
+  const borderClasses = error
+    ? "border-red-500 focus-within:border-red-500"
+    : isLocked
+      ? "border-slate-200 focus-within:border-slate-300 focus-within:border-[1.5px]"
+      : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]";
 
   return (
     <div className={`flex flex-col gap-2 w-full group ${className}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-base font-semibold text-heading leading-tight">
+          <label
+            className={`text-base font-semibold leading-tight ${isLocked ? "text-muted" : "text-heading"}`}
+          >
             {label}
           </label>
           {required && <span className="text-primary-strong text-base font-bold">*</span>}
@@ -63,10 +70,8 @@ export function TextInput({
       <div 
         className={`
           flex items-center border rounded-md shadow-sm transition-all duration-200 overflow-hidden
-          ${error 
-            ? "border-red-500 focus-within:border-red-500" 
-            : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]"}
-          ${isLocked ? "bg-slate-100 cursor-not-allowed border-slate-200" : "bg-white"}
+          ${borderClasses}
+          ${isLocked ? "bg-slate-100 cursor-not-allowed" : "bg-white"}
         `}
       >
         {prefix && (

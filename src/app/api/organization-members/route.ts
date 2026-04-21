@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { seedViewEventGrantsForOrgMember } from "@/lib/organization/seedViewEventGrants";
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -119,6 +120,12 @@ export async function POST(req: Request) {
       { onConflict: "org_owner_user_id,member_user_id" },
     );
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+    try {
+      await seedViewEventGrantsForOrgMember(supabaseAdmin, ownerId, target.id);
+    } catch (e: any) {
+      return NextResponse.json({ error: e?.message || "Failed to seed default viewer access." }, { status: 400 });
+    }
 
     await supabaseAdmin
       .from("organization_role_permission_templates")
