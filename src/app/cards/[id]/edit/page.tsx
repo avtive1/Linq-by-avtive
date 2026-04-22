@@ -510,7 +510,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                   onClick={() => update("designType")("design1")}
                   className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
                       form.designType === "design1" 
-                        ? "bg-primary text-white border-primary shadow-md" 
+                        ? "bg-primary text-primary-foreground border-primary shadow-md" 
                         : "bg-white/70 border-border/80 text-heading hover:bg-white hover:border-primary/50"
                   }`}
                 >
@@ -521,7 +521,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                   onClick={() => update("designType")("design2")}
                   className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
                       form.designType === "design2" 
-                        ? "bg-primary text-white border-primary shadow-md" 
+                        ? "bg-primary text-primary-foreground border-primary shadow-md"
                         : "bg-white/70 border-border/80 text-heading hover:bg-white hover:border-primary/50"
                   }`}
                 >

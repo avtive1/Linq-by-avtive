@@ -1036,7 +1036,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={20} strokeWidth={1.5} className="text-primary-strong/40" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[13px] text-white font-medium border-2 border-white leading-[1.02]">
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[13px] text-primary-foreground font-medium border-2 border-white leading-[1.02]">
                         {card.name.charAt(0)}
                       </div>
                     </div>
@@ -1129,7 +1129,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
           />
-          <div className="relative w-full max-w-[440px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[440px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Take Access</h3>
@@ -1195,7 +1195,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsAccessInboxOpen(false)}
           />
-          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Pending Access Requests</h3>
@@ -1240,7 +1240,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsAccessControlOpen(false)}
           />
-          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Active Access Grants</h3>
@@ -1284,7 +1284,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsGuestCategoryOpen(false)}
           />
-          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Guest Category</h3>
@@ -1343,7 +1343,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsShareActionsOpen(false)}
           />
-          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>
@@ -1405,7 +1405,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
           />
-          <div className="relative max-h-[90vh] w-full max-w-[520px] overflow-hidden rounded-xl border border-white/60 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel">
+          <div className="relative max-h-[90vh] w-full max-w-[520px] overflow-hidden rounded-xl border border-border/70 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel">
             <div className="flex items-center justify-between border-b border-border/50 px-6 py-5">
               <div className="flex flex-col gap-1 pr-4">
                 <h2 className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</h2>
@@ -1462,7 +1462,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Event</h2>
@@ -1575,7 +1575,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isDeleting && setIsDeleteOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-red-500 tracking-[-0.03em] leading-[1.15]">Delete event?</h2>
@@ -1629,7 +1629,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isRenewing && setIsRenewOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">

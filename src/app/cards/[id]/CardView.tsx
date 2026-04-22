@@ -98,18 +98,18 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
              )}
 
              {/* View toggles: badge/print must work even without LinkedIn (QR back may be empty). */}
-             <div className="flex bg-white/5 p-1 rounded-md w-fit border border-white/10">
+             <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20">
                 <button
                   type="button"
                   onClick={() => setViewMode("horizontal")}
-                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("vertical")}
-                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
                 </button>
@@ -122,7 +122,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
               disabled={isDownloading}
               variant="blue"
               icon={<Share2 size={16} />}
-              className="shadow-lg flex-1 md:flex-initial min-w-[124px]"
+              className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
             >
               Share
             </Button>
@@ -132,7 +132,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                   disabled={isDownloading}
                   variant="secondary"
                   icon={<Printer size={18} />}
-                  className="shadow-lg flex-1 md:flex-initial min-w-[124px]"
+                  className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
                >
                   Print Badge
                </Button>
@@ -141,7 +141,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                   onClick={handleDownload}
                   disabled={isDownloading}
                   icon={<Download size={18} />}
-                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial min-w-[124px]"
+                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
                >
                   {isDownloading ? "Preparing…" : "Download"}
                </Button>

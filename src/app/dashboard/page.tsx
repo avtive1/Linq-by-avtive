@@ -876,7 +876,7 @@ function DashboardContent() {
                 <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-lg font-medium text-primary-strong">Attendees</span>
+                <span className="text-lg font-semibold text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
@@ -892,7 +892,7 @@ function DashboardContent() {
                 <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-lg font-medium text-primary-strong">Total Campaigns</span>
+                <span className="text-lg font-semibold text-primary-strong">Total Campaigns</span>
               </div>
             </div>
           </div>
@@ -905,7 +905,7 @@ function DashboardContent() {
             <input
               type="text"
               placeholder="Search campaigns..."
-              className="w-full h-12 pl-20 pr-6 py-0 bg-white/80 backdrop-blur-md border border-white/60 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
+              className="w-full h-12 pl-20 pr-6 py-0 bg-white/80 backdrop-blur-md border border-border/60 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1009,7 +1009,7 @@ function DashboardContent() {
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      className="px-2 py-1 rounded-md bg-primary text-white text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
+                      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "approve")}
                     >
                       Approve
@@ -1036,7 +1036,7 @@ function DashboardContent() {
                   <span className="text-heading truncate">{req.requester_email} • {req.event_name} • {req.requested_action}</span>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      className="px-2 py-1 rounded-md bg-primary text-white text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
+                      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "approve")}
                     >
                       Approve
@@ -1116,7 +1116,7 @@ function DashboardContent() {
                     </h3>
                     
                     <div className="flex flex-col gap-2 mb-6">
-                      <div className="flex items-center gap-3 text-heading font-normal bg-white/40 w-fit px-3 py-2 rounded-md border border-white/60 shadow-sm">
+                      <div className="flex items-center gap-3 text-heading font-normal bg-white/50 w-fit px-3 py-2 rounded-md border border-border/60 shadow-sm">
                         <Calendar size={18} className="text-primary-strong" />
                         <span className="text-sm leading-[1.6] tracking-[0em]">{evt.date}</span>
                       </div>
@@ -1158,7 +1158,7 @@ function DashboardContent() {
               setIsEventModalOpen(false);
             }}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
@@ -1284,7 +1284,7 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
           />
-          <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-white/60 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Profile</h2>
@@ -1359,7 +1359,7 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
-          <div className="relative w-full max-w-[720px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[720px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="px-12 pt-12 pb-8 flex items-center justify-between border-b border-border/10">
               <div className="flex flex-col gap-1">
@@ -1418,7 +1418,7 @@ function DashboardContent() {
                       teamMembers.map((m) => (
                         <div 
                           key={m.id} 
-                          className="group flex items-center justify-between p-6 bg-white/50 border border-white/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
+                          className="group flex items-center justify-between p-6 bg-white/60 border border-border/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
                         >
                           <div className="flex items-center gap-6 min-w-0">
                             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm border border-primary/20 shrink-0">

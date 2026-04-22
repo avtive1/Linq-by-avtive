@@ -150,8 +150,8 @@ export function Button({
   
   const sizeClasses = {
     sm: "h-9 px-3 text-[14px] leading-[1.25] rounded-md font-normal",
-    md: "h-11 px-5 text-[16px] leading-[1.25] rounded-md font-medium",
-    lg: "h-12 px-6 text-[17px] leading-[1.25] rounded-md font-medium",
+    md: "h-10 px-4 text-[16px] leading-[1.25] rounded-md font-medium",
+    lg: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-medium",
   };
 
   return (
@@ -164,10 +164,10 @@ export function Button({
         inline-flex items-center justify-center gap-2 tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
         ${sizeClasses[size]}
         ${isPrimary 
-          ? "bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/25 hover:brightness-95 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-55 disabled:saturate-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
+          ? "bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/25 hover:brightness-95 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-70 disabled:saturate-75 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
           : isBlue
-          ? "bg-heading text-white border border-heading shadow-lg shadow-heading/25 hover:brightness-110 hover:shadow-xl hover:shadow-heading/30 disabled:opacity-55 disabled:saturate-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
-          : "bg-white border border-border text-heading hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 disabled:opacity-55 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"}
+          ? "bg-heading text-white border border-heading shadow-lg shadow-heading/25 hover:brightness-110 hover:shadow-xl hover:shadow-heading/30 disabled:opacity-70 disabled:saturate-80 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"
+          : "bg-white border border-border text-heading hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
       `}
