@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -363,6 +363,7 @@ function DashboardContent() {
     () => !isOrgOwner && myOrgJoinRequests.some((req) => String(req.status || "").toLowerCase() === "pending"),
     [isOrgOwner, myOrgJoinRequests],
   );
+  const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -747,6 +748,18 @@ function DashboardContent() {
               <div className="text-lg font-normal text-muted flex items-center gap-2 mt-1 leading-[1.6]">
                 <User size={18} className="text-primary-strong/70" />
                 <span>{userName}</span>
+                {!isPreviewMode && (isOrgOwner || isOrgTeamMember) && (
+                  <span
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${
+                      isOrgOwner
+                        ? "bg-primary/10 text-primary-strong border-primary/25"
+                        : "bg-surface text-heading/80 border-border/70"
+                    }`}
+                  >
+                    {isOrgOwner ? <ShieldCheck size={12} /> : <UserCheck size={12} />}
+                    {isOrgOwner ? "Organization Admin" : "Team Member"}
+                  </span>
+                )}
                 {!isPreviewMode && (
                   <button
                     type="button"
@@ -801,19 +814,19 @@ function DashboardContent() {
               <Button
                 variant="secondary"
                 onClick={() => {
-                  if (isOrgTeamMember && !grantedPermissions.includes("create_event")) {
+                  if (isOrgTeamMember && !hasCreateCampaignPermission) {
                     setIsRequestPermissionModalOpen(true);
                     return;
                   }
                   setIsEventModalOpen(true);
                 }}
                 className={`min-w-[168px] whitespace-nowrap justify-center bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
-                  isOrgTeamMember && !grantedPermissions.includes("create_event")
+                  isOrgTeamMember && !hasCreateCampaignPermission
                     ? "cursor-help shadow-inner bg-danger/5 border-danger/20 text-danger hover:bg-danger/10 hover:border-danger/30"
                     : "shadow-sm hover:shadow-md"
                 }`}
-                title={isOrgTeamMember && !grantedPermissions.includes("create_event") ? "take access first from admin of organization" : ""}
-                icon={isOrgTeamMember && !grantedPermissions.includes("create_event") ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
+                title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
+                icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
               >
                 <span>New Campaign</span>
               </Button>
@@ -899,6 +912,37 @@ function DashboardContent() {
           </div>
         </div>
 
+        {isOrgTeamMember && (
+          <div className="glass-panel p-4 rounded-md mb-6 border border-primary/20 bg-primary/5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-sm font-medium text-heading inline-flex items-center gap-2">
+                <Lock size={14} className="text-primary-strong" />
+                Your Access
+              </p>
+              <span
+                className={`text-xs px-2 py-1 rounded-full border ${
+                  hasCreateCampaignPermission
+                    ? "text-primary-strong bg-primary/10 border-primary/25"
+                    : "text-amber-700 bg-amber-50 border-amber-200"
+                }`}
+              >
+                {hasCreateCampaignPermission ? "Can create campaigns" : "Campaign creation locked"}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {grantedPermissions.length > 0 ? (
+                grantedPermissions.map((perm) => (
+                  <span key={perm} className="text-[11px] uppercase tracking-wide px-2 py-1 rounded-md border border-primary/20 bg-white text-primary-strong">
+                    {perm.replaceAll("_", " ")}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-muted">No active permissions yet. Request access from your organization admin.</span>
+              )}
+            </div>
+          </div>
+        )}
+
         {isOrgTeamMember && myAccessRequests.length > 0 && (
           <div className="glass-panel p-4 rounded-md mb-6">
             <p className="text-sm font-medium text-heading mb-2">My Access Requests</p>
@@ -939,6 +983,18 @@ function DashboardContent() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {!isOrgTeamMember && isOrgOwner && (orgJoinInbox.length > 0 || inboxRequests.length > 0 || failedNotifications.length > 0) && (
+          <div className="glass-panel p-4 rounded-md mb-6 border border-primary/20 bg-primary/5">
+            <p className="text-sm font-medium text-heading inline-flex items-center gap-2">
+              <ShieldCheck size={14} className="text-primary-strong" />
+              Admin Workspace
+            </p>
+            <p className="text-xs text-muted mt-1">
+              Review organization join requests, access approvals, and notification health.
+            </p>
           </div>
         )}
 
