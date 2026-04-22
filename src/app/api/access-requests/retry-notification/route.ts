@@ -58,7 +58,9 @@ export async function POST(req: Request) {
 
     const ownerEmail = ownerData?.user?.email;
     const requesterEmail = requesterData?.user?.email;
-    const eventName = String(eventData?.name || "your campaign");
+    const eventName = requestRow.event_id
+      ? String(eventData?.name || "your campaign")
+      : "Organization Workspace";
 
     if (target === "owner") {
       if (!ownerEmail) return NextResponse.json({ error: "Owner email missing." }, { status: 400 });

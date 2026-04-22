@@ -91,7 +91,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     ]);
 
     const requesterEmail = requesterData?.user?.email;
-    const eventName = String(eventData?.name || "your campaign");
+    const eventName = requestRow.event_id 
+      ? String(eventData?.name || "your campaign")
+      : "Organization Workspace";
     let notifyError: string | null = null;
     if (requesterEmail) {
       const emailResult = await sendTransactionalEmail({

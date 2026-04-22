@@ -40,14 +40,19 @@ export async function GET() {
 
     const enriched = await Promise.all(
       (requests || []).map(async (r) => {
-        const [{ data: userData }, { data: eventData }] = await Promise.all([
-          supabaseAdmin.auth.admin.getUserById(r.requester_user_id),
-          supabaseAdmin.from("events").select("name").eq("id", r.event_id).maybeSingle(),
-        ]);
+        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(r.requester_user_id);
+        if (!r.event_id) {
+          return {
+            ...r,
+            requester_email: userData?.user?.email || "unknown",
+            event_name: "Organization Workspace",
+          };
+        }
+        const { data: eventData } = await supabaseAdmin.from("events").select("name").eq("id", r.event_id).maybeSingle();
         return {
           ...r,
           requester_email: userData?.user?.email || "unknown",
-          event_name: eventData?.name || "Unknown event",
+          event_name: eventData?.name || "Organization Workspace",
         };
       }),
     );

@@ -11,6 +11,11 @@ const supabaseAdmin = createClient(
 
 export async function GET() {
   try {
+    // Hide notification failure UI when email delivery is intentionally disabled.
+    if (!process.env.RESEND_API_KEY) {
+      return NextResponse.json({ data: [] }, { status: 200 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,13 +47,18 @@ export async function GET() {
 
     const enriched = await Promise.all(
       (data || []).map(async (row) => {
-        const [{ data: eventData }, { data: requesterData }] = await Promise.all([
-          supabaseAdmin.from("events").select("name").eq("id", row.event_id).maybeSingle(),
-          supabaseAdmin.auth.admin.getUserById(row.requester_user_id),
-        ]);
+        const { data: requesterData } = await supabaseAdmin.auth.admin.getUserById(row.requester_user_id);
+        if (!row.event_id) {
+          return {
+            ...row,
+            event_name: "Organization Workspace",
+            requester_email: requesterData?.user?.email || "unknown",
+          };
+        }
+        const { data: eventData } = await supabaseAdmin.from("events").select("name").eq("id", row.event_id).maybeSingle();
         return {
           ...row,
-          event_name: String(eventData?.name || "Unknown campaign"),
+          event_name: String(eventData?.name || "Organization Workspace"),
           requester_email: requesterData?.user?.email || "unknown",
         };
       }),

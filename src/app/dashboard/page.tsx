@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -124,6 +124,10 @@ function DashboardContent() {
     totalEvents: 0,
     totalAttendees: 0,
   });
+
+  const [isRequestPermissionModalOpen, setIsRequestPermissionModalOpen] = useState(false);
+  const [permissionRequestReason, setPermissionRequestReason] = useState("");
+  const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -612,6 +616,41 @@ function DashboardContent() {
     }
   };
 
+  const handleRequestPermission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!permissionRequestReason.trim()) {
+      toast.error("Please provide a reason for the request.");
+      return;
+    }
+
+    setIsSubmittingPermissionRequest(true);
+    try {
+      const res = await fetch("/api/access-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ownerId: orgOwnerUserId,
+          requestedAction: "create_event",
+          note: permissionRequestReason.trim(),
+        }),
+      });
+
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Failed to submit request.");
+        return;
+      }
+
+      toast.success("Access request sent to organization owner.");
+      setIsRequestPermissionModalOpen(false);
+      setPermissionRequestReason("");
+    } catch {
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsSubmittingPermissionRequest(false);
+    }
+  };
+
   const isJoinBlocked =
     !isCheckingAuth &&
     !isPreviewMode &&
@@ -763,18 +802,20 @@ function DashboardContent() {
                 variant="secondary"
                 onClick={() => {
                   if (isOrgTeamMember && !grantedPermissions.includes("create_event")) {
-                    toast.error("You don't have permission to create campaigns. Contact your organization admin.");
+                    setIsRequestPermissionModalOpen(true);
                     return;
                   }
                   setIsEventModalOpen(true);
                 }}
-                className={`bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
-                  isOrgTeamMember && !grantedPermissions.includes("create_event") ? "opacity-50" : ""
+                className={`min-w-[168px] whitespace-nowrap justify-center bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
+                  isOrgTeamMember && !grantedPermissions.includes("create_event")
+                    ? "cursor-help shadow-inner bg-danger/5 border-danger/20 text-danger hover:bg-danger/10 hover:border-danger/30"
+                    : "shadow-sm hover:shadow-md"
                 }`}
-                icon={<Calendar size={18} />}
+                title={isOrgTeamMember && !grantedPermissions.includes("create_event") ? "take access first from admin of organization" : ""}
+                icon={isOrgTeamMember && !grantedPermissions.includes("create_event") ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
               >
-                <span className="hidden sm:inline">New Campaign</span>
-                <span className="inline sm:hidden">Campaign</span>
+                <span>New Campaign</span>
               </Button>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && (
@@ -790,7 +831,10 @@ function DashboardContent() {
                   setTeamError("");
                   await loadteamMembers();
                 }}
-                className={isOrgTeamMember ? "opacity-50" : ""}
+                className={`min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 ${
+                  isOrgTeamMember ? "opacity-50" : "shadow-sm hover:shadow-md"
+                }`}
+                icon={<Users size={18} />}
               >
                 Team Access
               </Button>
@@ -1486,6 +1530,51 @@ function DashboardContent() {
                   </div>
                 </form>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Request Permission Modal */}
+      {isRequestPermissionModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white/95 border border-border/40 w-full max-w-[500px] rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/[0.02]">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="text-danger" size={20} />
+                <h2 className="text-xl font-semibold text-heading tracking-tight">Request Creation Access</h2>
+              </div>
+              <button onClick={() => setIsRequestPermissionModalOpen(false)} className="text-muted hover:text-heading transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <p className="text-sm text-muted mb-6 leading-[1.6]">
+                You currently don't have permission to create campaigns. To get access, please send a request to your organization admin with a short reason.
+              </p>
+              
+              <form onSubmit={handleRequestPermission}>
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-heading mb-2">Reason for access</label>
+                  <textarea
+                    className="w-full min-h-[120px] bg-white border border-border/40 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all placeholder:text-muted/40"
+                    placeholder="E.g., I need to create a campaign for the upcoming tech conference..."
+                    value={permissionRequestReason}
+                    onChange={(e) => setPermissionRequestReason(e.target.value)}
+                    required
+                  />
+                </div>
+                
+                <div className="flex gap-3">
+                  <Button type="button" variant="secondary" fullWidth onClick={() => setIsRequestPermissionModalOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest}>
+                    {isSubmittingPermissionRequest ? "Sending..." : "Send Request"}
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
         </div>

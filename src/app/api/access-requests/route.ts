@@ -90,14 +90,15 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const { eventId, requestedAction, note } = (await req.json()) as {
+    const { eventId, ownerId, requestedAction, note } = (await req.json()) as {
       eventId?: string;
+      ownerId?: string;
       requestedAction?: string;
       note?: string;
     };
 
-    if (!eventId || !requestedAction) {
-      return NextResponse.json({ error: "eventId and requestedAction are required." }, { status: 400 });
+    if ((!eventId && !ownerId) || !requestedAction) {
+      return NextResponse.json({ error: "Either eventId or ownerId, and requestedAction are required." }, { status: 400 });
     }
     const trimmedNote = String(note || "").trim();
     if (!trimmedNote) {
@@ -124,24 +125,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: eventRow, error: eventErr } = await supabaseAdmin
-      .from("events")
-      .select("id, user_id")
-      .eq("id", eventId)
-      .single();
-    if (eventErr || !eventRow) {
-      return NextResponse.json({ error: "Event not found." }, { status: 404 });
+    let finalOwnerId = ownerId;
+    let eventName = "Organization Level Access";
+
+    if (eventId) {
+      const { data: eventRow, error: eventErr } = await supabaseAdmin
+        .from("events")
+        .select("id, user_id, name")
+        .eq("id", eventId)
+        .single();
+      if (eventErr || !eventRow) {
+        return NextResponse.json({ error: "Event not found." }, { status: 404 });
+      }
+      finalOwnerId = eventRow.user_id;
+      eventName = eventRow.name;
     }
-    if (eventRow.user_id === userId) {
+
+    if (!finalOwnerId) {
+      return NextResponse.json({ error: "ownerId could not be determined." }, { status: 400 });
+    }
+
+    if (finalOwnerId === userId) {
       return NextResponse.json({ error: "Owners do not need access requests." }, { status: 400 });
     }
 
     const { data, error } = await supabaseAdmin
       .from("access_requests")
       .insert({
-        event_id: eventId,
+        event_id: eventId || null,
         requester_user_id: userId,
-        owner_user_id: eventRow.user_id,
+        owner_user_id: finalOwnerId,
         requested_action: requestedAction,
         note: trimmedNote,
         status: "pending",
@@ -150,18 +163,19 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
+      if (error.code === '23505') {
+        return NextResponse.json({ error: "You already have a pending request for this action." }, { status: 409 });
+      }
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
-    const [{ data: ownerData }, { data: requesterData }, { data: eventData }] = await Promise.all([
-      supabaseAdmin.auth.admin.getUserById(eventRow.user_id),
+    const [{ data: ownerData }, { data: requesterData }] = await Promise.all([
+      supabaseAdmin.auth.admin.getUserById(finalOwnerId),
       supabaseAdmin.auth.admin.getUserById(userId),
-      supabaseAdmin.from("events").select("name").eq("id", eventId).maybeSingle(),
     ]);
 
     const ownerEmail = ownerData?.user?.email;
     const requesterEmail = requesterData?.user?.email || "unknown";
-    const eventName = String(eventData?.name || "your campaign");
     let notifyError: string | null = null;
     if (ownerEmail) {
       const emailResult = await sendTransactionalEmail({

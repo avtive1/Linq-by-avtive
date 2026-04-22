@@ -39,8 +39,11 @@ export async function GET() {
 
     const enriched = await Promise.all(
       (requests || []).map(async (r) => {
+        if (!r.event_id) {
+          return { ...r, event_name: "Organization Workspace" };
+        }
         const { data: eventData } = await supabaseAdmin.from("events").select("name").eq("id", r.event_id).maybeSingle();
-        return { ...r, event_name: eventData?.name || "Unknown event" };
+        return { ...r, event_name: eventData?.name || "Organization Workspace" };
       }),
     );
 
