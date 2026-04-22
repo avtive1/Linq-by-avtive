@@ -1394,6 +1394,7 @@ function DashboardContent() {
                   {!isOrgTeamMember && (
                     <Button 
                       variant="primary" 
+                      size="sm"
                       onClick={() => {
                         setTeamInviteEmail("");
                         setTeamInviteRoleLabel("");
@@ -1402,6 +1403,7 @@ function DashboardContent() {
                       }}
                       icon={<Plus size={18} />}
                       fullWidth
+                      className="text-[14px]"
                     >
                       Invite New Member
                     </Button>
@@ -1441,7 +1443,7 @@ function DashboardContent() {
                                 setTeamError("");
                                 setTeamModalView("edit");
                               }}
-                              className="transition-all shadow-sm border-primary/20 text-primary-strong"
+                              className="transition-all shadow-sm border-primary/20 text-primary-strong text-[14px]"
                             >
                               Edit Access
                             </Button>
