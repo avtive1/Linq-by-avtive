@@ -130,7 +130,7 @@ export default async function CardViewPage(props: {
 
   if (!card) {
     return (
-      <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
+      <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
         <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
           <div className="w-12 h-12 rounded-full bg-surface flex items-center justify-center text-muted">

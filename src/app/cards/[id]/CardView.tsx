@@ -66,7 +66,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   };
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-8 md:py-12 px-4 sm:px-6 overflow-x-hidden print:p-0">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-12 md:py-16 px-6 sm:px-12 lg:px-16 overflow-x-hidden print:p-0">
       <GradientBackground />
 
       <div className="no-print relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">
@@ -74,7 +74,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           <div className="flex flex-col gap-4">
              {isShareMode ? (
                 <div className="flex items-center gap-3">
-                   <span className="text-sm font-semibold tracking-[0.04em] text-muted/65">
+                   <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/65">
                      Avtive attendee portal
                    </span>
                 </div>
@@ -82,7 +82,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                 <div className="flex items-center gap-3">
                   <Link
                     href="/"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
                   >
                     <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
                     Home
@@ -90,7 +90,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                   <span className="text-muted/20">/</span>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 text-sm font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
                   >
                     Dashboard
                   </Link>
@@ -98,18 +98,18 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
              )}
 
              {/* View toggles: badge/print must work even without LinkedIn (QR back may be empty). */}
-             <div className="flex bg-white/5 p-1 rounded-sm w-fit border border-white/10">
+             <div className="flex bg-white/5 p-1 rounded-md w-fit border border-white/10">
                 <button
                   type="button"
                   onClick={() => setViewMode("horizontal")}
-                  className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("vertical")}
-                  className={`px-4 py-2 rounded-[4px] text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-white shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
                 </button>
@@ -190,13 +190,13 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
         </div>
 
         <div className="text-center flex flex-col gap-2">
-          <p className="text-sm text-slate-400 font-medium leading-relaxed">
+          <p className="text-sm text-slate-400 font-normal leading-[1.6]">
             {viewMode === "horizontal" 
                ? "This design is optimized for LinkedIn posts and social sharing."
                : "This design is optimized for physical printing and event registration."
             }
           </p>
-          <span className="text-xs font-semibold tracking-[0.04em] text-heading/45">
+          <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading/45">
             Attendee ID: {card.id.slice(-8).toUpperCase()}
           </span>
         </div>

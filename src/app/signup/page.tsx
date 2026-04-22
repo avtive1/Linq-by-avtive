@@ -186,7 +186,7 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-6 px-4 sm:px-6 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-6 sm:px-12 lg:px-16 overflow-hidden bg-transparent">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
@@ -214,7 +214,7 @@ export default function SignupPage() {
                 <Mail size={26} />
               </div>
               <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Check your inbox</h1>
+                <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Check your inbox</h1>
                 <p className="text-base text-muted leading-[1.55] max-w-[320px]">
                   We sent a confirmation link to <span className="font-semibold text-heading">{form.email}</span>.
                   Click it to activate your account, then sign in.
@@ -229,7 +229,7 @@ export default function SignupPage() {
           ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Create your profile</h1>
+              <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create your profile</h1>
               <p className="text-base text-muted leading-[1.55]">
                 Set up once. Generate a card for every event you attend.
               </p>
@@ -300,10 +300,10 @@ export default function SignupPage() {
                 />
                 {form.username.length >= 2 && (
                   <div className="absolute right-0 top-0 pt-[28px]">
-                    {usernameStatus === "loading" && <div className="text-[10px] font-bold text-muted animate-pulse">Checking...</div>}
-                    {usernameStatus === "available" && <div className="text-[10px] font-bold text-green-500">Available</div>}
-                    {usernameStatus === "taken" && <div className="text-[10px] font-bold text-danger">Taken</div>}
-                    {usernameStatus === "invalid" && <div className="text-[10px] font-bold text-danger">Invalid chars</div>}
+                    {usernameStatus === "loading" && <div className="text-[13px] leading-[1.25] font-medium text-muted animate-pulse">Checking...</div>}
+                    {usernameStatus === "available" && <div className="text-[13px] leading-[1.25] font-medium text-green-500">Available</div>}
+                    {usernameStatus === "taken" && <div className="text-[13px] leading-[1.25] font-medium text-danger">Taken</div>}
+                    {usernameStatus === "invalid" && <div className="text-[13px] leading-[1.25] font-medium text-danger">Invalid chars</div>}
                   </div>
                 )}
               </div>

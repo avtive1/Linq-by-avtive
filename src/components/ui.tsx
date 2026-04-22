@@ -60,23 +60,23 @@ export function TextInput({
       {label && (
         <div className="flex items-center gap-1">
           <label
-            className={`text-base font-semibold leading-tight ${isLocked ? "text-muted" : "text-heading"}`}
+            className={`text-[15px] font-medium leading-[1.25] tracking-[0.01em] ${isLocked ? "text-muted" : "text-heading"}`}
           >
             {label}
           </label>
-          {required && <span className="text-primary-strong text-base font-bold">*</span>}
+          {required && <span className="text-primary-strong text-[15px] font-semibold leading-[1.25]">*</span>}
         </div>
       )}
       <div 
         className={`
-          flex items-center border rounded-md shadow-sm transition-all duration-200 overflow-hidden
+          flex h-10 items-center border rounded-md shadow-sm transition-all duration-200 overflow-hidden
           ${borderClasses}
           ${isLocked ? "bg-slate-100 cursor-not-allowed" : "bg-white"}
         `}
       >
         {prefix && (
           <div className="flex items-center h-full">
-            <span className="px-3 text-base text-muted bg-surface/50 whitespace-nowrap h-full flex items-center font-medium">
+            <span className="px-3 text-[15px] leading-[1.25] tracking-[0.01em] text-muted bg-surface/50 whitespace-nowrap h-full flex items-center font-medium">
               {prefix}
             </span>
           </div>
@@ -99,10 +99,10 @@ export function TextInput({
           disabled={disabled}
           onFocus={onFocus}
           maxLength={maxLength}
-          className={`flex-1 py-3 text-base leading-6 border-none outline-none focus:ring-0 placeholder:text-muted/70 font-medium ${
+          className={`h-full flex-1 py-0 text-[15px] leading-[1.6] border-none outline-none focus:ring-0 placeholder:text-muted/55 font-medium ${
             isLocked ? "text-slate-500 cursor-not-allowed bg-transparent" : "text-heading bg-transparent"
           } ${
-            icon || prefix ? "px-3" : "pl-4 pr-3"
+            icon || prefix ? "px-3" : "px-3"
           }`}
         />
         {isPassword && (
@@ -115,7 +115,7 @@ export function TextInput({
           </button>
         )}
       </div>
-      {error && <p className="text-sm font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-[15px] font-medium leading-[1.55] text-red-500 mt-1">{error}</p>}
     </div>
   );
 }
@@ -149,9 +149,9 @@ export function Button({
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "h-9 px-3 text-sm rounded-[4px]",
-    md: "h-10 px-4 text-base rounded-sm",
-    lg: "h-12 px-5 text-lg rounded-md",
+    sm: "h-9 px-3 text-sm leading-[1.25] rounded-md",
+    md: "h-10 px-4 text-[15px] leading-[1.25] rounded-md",
+    lg: "h-12 px-5 text-base leading-[1.25] rounded-md",
   };
 
   return (
@@ -161,7 +161,8 @@ export function Button({
       onClick={!disabled ? onClick : undefined}
       disabled={disabled}
       className={`
-        inline-flex items-center justify-center gap-2 font-semibold tracking-[-0.01em] transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
+        inline-flex items-center justify-center gap-2 tracking-[0em] transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
+        ${isPrimary || isBlue ? "font-semibold" : "font-medium"}
         ${sizeClasses[size]}
         ${isPrimary 
           ? "bg-primary text-primary-foreground border border-primary shadow-lg shadow-primary/25 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-55 disabled:saturate-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100" 
@@ -201,15 +202,15 @@ export function Select({
     <div className={`flex flex-col gap-2 w-full group ${disabled ? "opacity-60" : ""}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-base font-semibold text-heading leading-tight">
+          <label className="text-[15px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-base font-bold">*</span>}
+          {required && <span className="text-primary-strong text-[15px] font-semibold leading-[1.25]">*</span>}
         </div>
       )}
       <div 
         className={`
-          flex items-center bg-white border rounded-md shadow-sm transition-all duration-200 overflow-hidden
+          flex h-10 items-center bg-white border rounded-md shadow-sm transition-all duration-200 overflow-hidden
           ${error 
             ? "border-red-500 focus-within:border-red-500" 
             : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]"}
@@ -221,7 +222,7 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            flex-1 px-3 py-3 text-base leading-6 text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/70 appearance-none font-medium
+            h-full flex-1 px-3 py-0 text-[15px] leading-[1.6] text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/55 appearance-none font-medium
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -238,7 +239,7 @@ export function Select({
           </svg>
         </div>
       </div>
-      {error && <p className="text-sm font-medium leading-snug text-red-500 mt-0.5">{error}</p>}
+      {error && <p className="text-[15px] font-medium leading-[1.55] text-red-500 mt-1">{error}</p>}
     </div>
   );
 }
@@ -313,14 +314,14 @@ export function FilePicker({
     <div className="flex flex-col gap-2 w-full">
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-base font-semibold text-heading leading-tight">
+          <label className="text-[15px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
             {label}
           </label>
-          {required && <span className="text-primary-strong text-base font-bold">*</span>}
+          {required && <span className="text-primary-strong text-[15px] font-semibold leading-[1.25]">*</span>}
         </div>
       )}
       <div className={`
-        relative flex items-center bg-white border rounded-md shadow-sm overflow-hidden transition-all duration-200
+        relative flex h-10 items-center bg-white border rounded-md shadow-sm overflow-hidden transition-all duration-200
         ${error ? "border-red-500" : "border-border/60 hover:border-primary/40 hover:bg-white"}
       `}>
         <input
@@ -331,21 +332,21 @@ export function FilePicker({
         />
         {value ? (
           <div className="flex items-center gap-3 px-3 py-2 flex-1 overflow-hidden">
-            <div className="w-8 h-8 rounded border border-border/50 overflow-hidden shrink-0 flex items-center justify-center p-0.5">
+            <div className="w-8 h-8 rounded-md border border-border/50 overflow-hidden shrink-0 flex items-center justify-center p-1">
               <img src={value} alt="Preview" className="w-full h-full object-contain rounded-sm" />
             </div>
-            <span className="text-base text-heading font-medium truncate">Photo selected</span>
+            <span className="text-[15px] leading-[1.6] text-heading font-medium truncate">Photo selected</span>
           </div>
         ) : (
-          <div className="flex-1 px-4 py-3 text-base text-muted/70 truncate font-medium">
+          <div className="flex-1 px-3 py-2 text-[15px] leading-[1.6] text-muted/55 truncate font-medium">
             Choose File
           </div>
         )}
-        <div className="px-4 py-3 bg-surface border-l border-border text-base font-semibold text-muted h-full flex items-center">
+        <div className="px-3 py-2 bg-surface border-l border-border text-[15px] leading-[1.25] font-medium tracking-[0.01em] text-muted h-full flex items-center">
           Browse
         </div>
       </div>
-      {error && <p className="text-sm font-medium leading-snug text-red-500">{error}</p>}
+      {error && <p className="text-[15px] font-medium leading-[1.55] text-red-500">{error}</p>}
 
       {cropperOpen && tempImage && (
         freeFormCrop ? (

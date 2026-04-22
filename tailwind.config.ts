@@ -24,10 +24,10 @@ export default {
         sans: ["var(--font-inter-tight)", "ui-sans-serif", "system-ui"],
       },
       borderRadius: {
-        sm: "6px",
+        sm: "8px",
         md: "8px",
-        lg: "12px",
-        xl: "14px",
+        lg: "8px",
+        xl: "8px",
         full: "9999px",
       },
     },

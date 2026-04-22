@@ -207,7 +207,7 @@ function OrganizationBrand({
     <>
       <div className={`overflow-hidden rounded-md bg-white/95 ${iconClassName}`}>
         {logoUrl ? (
-          <img src={logoUrl} alt={name || "Organization logo"} className="h-full w-full object-contain p-1.5" />
+          <img src={logoUrl} alt={name || "Organization logo"} className="h-full w-full object-contain p-2" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs font-bold text-heading/70">
             {name?.trim()?.slice(0, 2).toUpperCase() || "OR"}
@@ -371,7 +371,7 @@ export function CardPreview({
 
         {/* Branding */}
         {hasOrganizationBranding ? (
-          <div className="absolute left-[31px] top-[40px] z-5 flex items-center gap-2.5">
+          <div className="absolute left-[31px] top-[40px] z-5 flex items-center gap-3">
             <OrganizationBrand
               name={data.organizationName || "Organization"}
               logoUrl={data.organizationLogoUrl}

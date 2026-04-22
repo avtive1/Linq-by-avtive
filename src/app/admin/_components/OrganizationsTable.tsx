@@ -79,19 +79,19 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
         <input
           type="text"
           placeholder="Search by username, email or organization..."
-          className="w-full pl-11 pr-4 py-2.5 bg-white/60 backdrop-blur-md border border-border/50 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm"
+          className="w-full h-10 pl-12 pr-3 py-0 bg-white/60 backdrop-blur-md border border-border/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      <div className="bg-white/50 backdrop-blur-md rounded-xl border border-border/50 overflow-hidden shadow-sm">
+      <div className="bg-white/50 backdrop-blur-md rounded-md border border-border/50 overflow-hidden shadow-sm">
         <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[820px] text-left border-collapse">
             <thead>
-              <tr className="bg-surface border-b border-border text-xs font-semibold tracking-[0.02em] text-muted">
+              <tr className="bg-surface border-b border-border text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted">
                 <th 
-                  className="py-4 px-6 font-semibold cursor-pointer hover:text-heading transition-colors"
+                  className="py-4 px-6 font-medium cursor-pointer hover:text-heading transition-colors"
                   onClick={() => toggleSort("username")}
                 >
                   <div className="flex items-center">
@@ -99,7 +99,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th 
-                  className="py-4 px-6 font-semibold cursor-pointer hover:text-heading transition-colors"
+                  className="py-4 px-6 font-medium cursor-pointer hover:text-heading transition-colors"
                   onClick={() => toggleSort("organizationName")}
                 >
                   <div className="flex items-center">
@@ -107,7 +107,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th 
-                  className="py-4 px-6 font-semibold cursor-pointer hover:text-heading transition-colors"
+                  className="py-4 px-6 font-medium cursor-pointer hover:text-heading transition-colors"
                   onClick={() => toggleSort("created_at")}
                 >
                   <div className="flex items-center">
@@ -115,7 +115,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th 
-                  className="py-4 px-6 font-semibold text-center cursor-pointer hover:text-heading transition-colors"
+                  className="py-4 px-6 font-medium text-center cursor-pointer hover:text-heading transition-colors"
                   onClick={() => toggleSort("eventCount")}
                 >
                   <div className="flex items-center justify-center">
@@ -123,7 +123,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th 
-                  className="py-4 px-6 font-semibold text-center cursor-pointer hover:text-heading transition-colors"
+                  className="py-4 px-6 font-medium text-center cursor-pointer hover:text-heading transition-colors"
                   onClick={() => toggleSort("attendeeCount")}
                 >
                   <div className="flex items-center justify-center">
@@ -138,25 +138,25 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                 <tr key={org.id} className="hover:bg-white transition-colors group cursor-default">
                   <td className="py-4 px-6">
                     <div className="flex flex-col">
-                      <span className="font-bold text-heading text-sm">@{org.username || 'unknown'}</span>
-                      <span className="text-[10px] text-muted truncate max-w-[150px]">{org.email}</span>
+                      <span className="font-medium text-heading text-sm">@{org.username || 'unknown'}</span>
+                      <span className="text-[13px] leading-[1.25] text-muted truncate max-w-[150px]">{org.email}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6 font-semibold text-heading text-sm">{org.organizationName || <span className="text-muted/60 font-medium">—</span>}</td>
+                  <td className="py-4 px-6 font-normal text-heading text-sm">{org.organizationName || <span className="text-muted/60 font-normal">—</span>}</td>
                   <td className="py-4 px-6 text-muted text-sm">{new Date(org.created_at).toLocaleDateString()}</td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center bg-info/10 text-info font-semibold px-3 py-1 rounded-sm text-sm">
+                    <span className="inline-flex items-center justify-center bg-info/10 text-info font-medium px-3 py-1 rounded-md text-sm leading-[1.25]">
                       {org.eventCount}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-semibold px-3 py-1 rounded-sm text-sm">
+                    <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-medium px-3 py-1 rounded-md text-sm leading-[1.25]">
                       {org.attendeeCount}
                     </span>
                   </td>
                   <td className="py-4 px-6 text-right">
                     <Link href={`/admin/organizations/${org.id}`}>
-                      <button className="flex items-center gap-1 text-xs font-semibold text-primary-strong hover:text-primary-strong bg-primary/10 hover:bg-primary/15 border border-primary/30 px-4 py-2 rounded-sm transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 ml-auto">
+                      <button className="flex items-center gap-1 text-[13px] leading-[1.25] font-normal tracking-[0.01em] text-primary-strong hover:text-primary-strong bg-primary/10 hover:bg-primary/15 border border-primary/30 px-4 py-2 rounded-md transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 ml-auto">
                         Deep Dive <ChevronRight size={14} />
                       </button>
                     </Link>

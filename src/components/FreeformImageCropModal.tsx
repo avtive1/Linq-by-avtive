@@ -86,7 +86,7 @@ export function FreeformImageCropModal({
         <div className="shrink-0 px-5 py-4 sm:px-6 sm:py-5 border-b border-border/50 flex items-center justify-between bg-white/50">
           <div className="flex flex-col">
             <h3 className="text-xl font-bold text-heading leading-tight">{title}</h3>
-            <p className="text-xs text-muted font-medium mt-0.5">{subtitle}</p>
+            <p className="text-xs text-muted font-medium mt-1">{subtitle}</p>
           </div>
           <button
             type="button"

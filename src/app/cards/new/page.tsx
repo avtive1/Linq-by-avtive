@@ -255,7 +255,7 @@ function NewCardForm() {
 
   if (!eventId) {
     return (
-      <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
+      <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
         <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Invalid registration link</p>
@@ -272,16 +272,16 @@ function NewCardForm() {
 
   if (eventPast) {
     return (
-      <main className="relative min-h-screen w-full flex items-center justify-center p-6 text-center bg-transparent">
+      <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
         <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-amber-500/20">
           <div className="w-16 h-16 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-600">
             <Lock size={32} />
           </div>
           <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-bold text-heading tracking-tight">Registration Expired</h2>
+            <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Registration Expired</h2>
             <p className="text-sm text-muted leading-relaxed">
-              We&apos;re sorry, but the registration for <span className="font-bold text-heading">{form.eventName}</span> has ended as the event date has passed.
+              We&apos;re sorry, but the registration for <span className="font-medium text-heading">{form.eventName}</span> has ended as the event date has passed.
             </p>
           </div>
           <div className="w-full h-px bg-border/50" />
@@ -308,16 +308,16 @@ function NewCardForm() {
       <GradientBackground />
 
       {/* Left Sidebar - Form */}
-      <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-6 md:p-11 overflow-y-auto lg:h-screen animate-slide-up">
-        <div className="flex items-center gap-3 mb-8">
-          <span className="text-sm font-semibold tracking-[0.04em] text-muted/65">
+      <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-8 md:p-12 overflow-y-auto lg:h-screen animate-slide-up">
+        <div className="flex items-center gap-4 mb-12">
+          <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/65">
             Avtive attendee portal
           </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          <div className="flex flex-col gap-2">
-            <h1 className="text-3xl font-bold text-heading tracking-tight leading-tight">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-12">
+          <div className="flex flex-col gap-4">
+            <h1 className="text-3xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
               Event Registration
             </h1>
             <p className="text-base text-muted leading-[1.55]">
@@ -340,7 +340,7 @@ function NewCardForm() {
             </div>
           )}
 
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-8">
             <TextInput
               label="Full Name"
               required
@@ -410,13 +410,13 @@ function NewCardForm() {
       </div>
 
         {/* Right Content - Preview */}
-        <div className="flex-1 flex flex-col items-center py-8 px-3 sm:px-5 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
+        <div className="flex-1 flex flex-col items-center py-12 px-6 sm:px-8 lg:px-12 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
 
-          <div className="w-full flex-1 flex flex-col items-center justify-start px-1 sm:px-2 xl:px-3 pt-7">
-             <div className="w-full flex flex-col xl:flex-row gap-7 xl:gap-12 items-center xl:items-start justify-center max-w-[1320px] mx-auto min-h-max">
+          <div className="w-full flex-1 flex flex-col items-center justify-start px-4 sm:px-6 xl:px-8 pt-8">
+             <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center max-w-[1320px] mx-auto min-h-max">
                 {/* Horizontal Card Preview */}
                 <div className="flex flex-col items-center gap-8 shrink-0 w-full xl:w-auto">
-                   <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Social post layout</h3>
+                   <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Social post layout</h3>
                    <div className="horizontal-preview-frame">
                       <div className="preview-card-capture horizontal-preview">
                         <CardPreview data={form} preview />
@@ -425,7 +425,7 @@ function NewCardForm() {
                    <Button 
                       onClick={() => handleSubmit()} 
                       disabled={loading}
-                      className="rounded-md min-w-[240px] px-8 h-11 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-bold text-sm tracking-wide"
+                      className="rounded-md h-11 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
                    >
                       {loading ? "Saving..." : "Save & View"}
                    </Button>
@@ -434,7 +434,7 @@ function NewCardForm() {
                 {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
                 {form.linkedin && (
                    <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
-                      <h3 className="text-xs font-bold tracking-[0.06em] text-muted/55">Event badge layout</h3>
+                      <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Event badge layout</h3>
                       <div className="vertical-preview-frame mt-1">
                         <div className="preview-card-capture vertical-preview">
                           <CardPreview data={form} preview isVertical verticalSide={1} />
@@ -443,7 +443,7 @@ function NewCardForm() {
                       <Button 
                          variant="secondary"
                          onClick={() => setShowPrintPreview(true)} 
-                         className="rounded-md min-w-[240px] px-8 h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-bold tracking-wide border-white/20"
+                         className="rounded-md h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-normal tracking-[0.01em] border-white/20"
                       >
                          Save & View
                       </Button>
@@ -451,10 +451,10 @@ function NewCardForm() {
                 )}
              </div>
           </div>
-        <div className="w-full max-w-[1040px] mt-6 flex flex-col lg:flex-row gap-4 animate-slide-up bg-white/45 border border-white/20 px-4 py-4 sm:px-5 sm:py-5 rounded-xl glass-panel shadow-md backdrop-blur-xl">
+        <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
            {/* Item 1: Layout Selection */}
-           <div className="flex-1 flex flex-col gap-2.5">
-              <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Layout style</span>
+           <div className="flex-1 flex flex-col gap-3">
+              <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted/65">Layout style</span>
               <div className="flex gap-2 h-10">
                  <button
                     type="button"
@@ -484,8 +484,8 @@ function NewCardForm() {
            <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
            {/* Item 2: Theme Selection */}
-           <div className="flex flex-col gap-2.5 items-center lg:items-start shrink-0">
-              <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Theme color</span>
+           <div className="flex flex-col gap-3 items-center lg:items-start shrink-0">
+              <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted/65">Theme color</span>
               <div className="flex gap-2 h-10 items-center">
                  {colors.map((c) => (
                     <button
@@ -512,7 +512,7 @@ function NewCardForm() {
 
            {/* Item 3: Typography Selection */}
            <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
-              <span className="text-xs font-semibold tracking-[0.04em] text-muted/65">Typography</span>
+              <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted/65">Typography</span>
               <div className="h-11">
                  <Select
                     value={form.fontFamily}
@@ -536,7 +536,7 @@ function NewCardForm() {
         {showPrintPreview && (
           <div className="fixed inset-0 z-100 bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in print:bg-white print:p-0 print:block">
              <div className="w-full max-w-4xl flex justify-between items-center mb-12 print:hidden">
-                <h2 className="text-xl font-bold text-white tracking-tight">Print Ready Badge</h2>
+                <h2 className="text-xl font-semibold text-white tracking-[-0.03em] leading-[1.15]">Print Ready Badge</h2>
                 <div className="flex gap-4">
                    <Button variant="secondary" onClick={() => setShowPrintPreview(false)}>Close Overlay</Button>
                    <Button onClick={() => window.print()}>Print Card Now</Button>
@@ -545,13 +545,13 @@ function NewCardForm() {
 
              <div className="flex flex-col lg:flex-row gap-12 print:flex-col print:gap-20 print:items-center">
                 <div className="flex flex-col items-center gap-6">
-                   <span className="text-xs font-semibold text-white/50 tracking-[0.04em] print:hidden">Front side (Photo)</span>
+                   <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-[1.25] print:hidden">Front side (Photo)</span>
                    <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
                       <CardPreview data={form} isVertical verticalSide={1} />
                    </div>
                 </div>
                 <div className="flex flex-col items-center gap-6">
-                   <span className="text-xs font-semibold text-white/50 tracking-[0.04em] print:hidden">Back side (QR)</span>
+                   <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-[1.25] print:hidden">Back side (QR)</span>
                    <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
                       <CardPreview data={form} isVertical verticalSide={2} />
                    </div>
@@ -562,7 +562,7 @@ function NewCardForm() {
                 <p className="text-sm text-white/60 mb-4 leading-relaxed">
                   For the best experience, use heavy cardstock and set your printer to <b>Portrait</b> with <b>Default</b> margins.
                 </p>
-                <p className="text-xs font-semibold text-primary tracking-[0.04em]">Fold along the center after printing</p>
+                <p className="text-[13px] font-medium text-primary tracking-[0.01em] leading-[1.25]">Fold along the center after printing</p>
              </div>
           </div>
         )}
@@ -641,7 +641,7 @@ export default function NewCardPage() {
         <GradientBackground />
 
         {/* Skeleton Sidebar */}
-        <div className="relative z-10 w-full lg:w-[460px] glass-panel p-6 md:p-11 lg:h-screen">
+        <div className="relative z-10 w-full lg:w-[460px] glass-panel p-8 md:p-12 lg:h-screen">
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-2">
               <Skeleton className="w-48 h-10" />

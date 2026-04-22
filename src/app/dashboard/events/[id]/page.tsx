@@ -712,7 +712,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     return (
       <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
         <GradientBackground />
-        <div className="relative z-10 w-full max-w-[1240px] px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+        <div className="relative z-10 w-full max-w-[1240px] px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-64 h-12" />
@@ -739,7 +739,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     return (
       <main className="relative min-h-screen w-full bg-white flex flex-col items-center justify-center gap-4">
         <GradientBackground />
-        <div className="relative z-10 text-xl font-bold text-heading">Campaign not found</div>
+        <div className="relative z-10 text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Campaign not found</div>
         <Link href="/dashboard" className="relative z-10">
           <Button variant="secondary" icon={<ArrowLeft size={16} />}>Back to Dashboard</Button>
         </Link>
@@ -750,7 +750,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
-        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
+        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-medium shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles size={18} />
             <span>Admin Preview Mode &mdash; Read Only</span>
@@ -762,7 +762,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up relative z-30">
           <div className="flex flex-col gap-2 sm:gap-3">
@@ -771,19 +771,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 router.refresh();
                 router.push("/dashboard");
               }}
-            className="flex items-center gap-2 text-sm font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
+            className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
             </button>
-            <span className="text-sm font-semibold tracking-[0.04em] text-muted/70 mt-1">
+            <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70 mt-1">
               Campaign details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
-              <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
                 {eventData.name}
               </h1>
-              <span className={`text-xs font-semibold tracking-[0.02em] px-3 py-1 rounded-sm border ${status.classes}`}>
+              <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-3 py-1 rounded-md border ${status.classes}`}>
                 {status.label}
               </span>
             </div>
@@ -816,8 +816,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                   {isShareOpen && (
                     <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-xl py-1 z-9999 animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="px-4 py-1.5 mb-1 border-b border-border/40">
-                        <span className="text-[10px] font-bold text-muted/50 uppercase tracking-widest">Share Options</span>
+                      <div className="px-4 py-2 mb-1 border-b border-border/40">
+                        <span className="text-[13px] font-medium text-muted/50 uppercase tracking-[0.01em] leading-[1.25]">Share Options</span>
                       </div>
                       
                       <button
@@ -833,7 +833,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={16} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-heading leading-tight">Guest</span>
+                          <span className="font-medium text-sm text-heading leading-[1.25]">Guest</span>
                         </div>
                       </button>
 
@@ -849,7 +849,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={16} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-sm text-heading leading-tight">Visitor</span>
+                          <span className="font-medium text-sm text-heading leading-[1.25]">Visitor</span>
                         </div>
                       </button>
                     </div>
@@ -861,7 +861,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   onClick={() => setIsShareOpen(!isShareOpen)}
                   disabled={status.label === "Past"}
                   icon={<LinkIcon size={18} />}
-                  className={`flex sm:hidden px-3 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                  className={`flex sm:hidden px-4 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                 >
                   <span className="sr-only">Share Form Link</span>
                 </Button>
@@ -908,7 +908,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
                   disabled={!canManageEvent}
                   icon={<Handshake size={16} />}
-                  className={`flex md:hidden px-3 ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                  className={`flex md:hidden px-4 ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   aria-label="Sponsors"
                 >
                   <span className="sr-only">Sponsors</span>
@@ -973,12 +973,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-0">
-              <span className="text-sm font-semibold tracking-[0.02em] text-muted/80 leading-tight">Live Attendees</span>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[3.25rem] font-bold text-heading tracking-tight leading-none">
+              <span className="text-sm font-normal tracking-[0.01em] text-muted/80 leading-[1.25]">Live Attendees</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-[3.25rem] font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className="text-base font-semibold text-primary-strong leading-tight">Attendees</span>
+                <span className="text-base font-medium text-primary-strong leading-[1.25]">Attendees</span>
               </div>
             </div>
           </div>
@@ -1004,7 +1004,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <input
               type="text"
               placeholder="Search attendees in this campaign..."
-              className="w-full pl-14 pr-6 py-3 bg-white/70 backdrop-blur-md border border-white/50 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
+              className="w-full pl-16 pr-8 py-4 bg-white/70 backdrop-blur-md border border-white/50 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1015,7 +1015,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         {cards.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6 animate-slide-up delay-300">
             <div className="flex flex-col gap-1">
-              <p className="text-heading font-bold text-lg">No attendees yet</p>
+              <p className="text-heading font-medium text-lg">No attendees yet</p>
               <p className="text-sm text-muted">Share the registration link to invite attendees to register for this campaign.</p>
             </div>
           </div>
@@ -1036,27 +1036,27 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={20} strokeWidth={1.5} className="text-primary-strong/40" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-xs text-white font-bold border-2 border-white leading-none">
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[13px] text-white font-medium border-2 border-white leading-[1.02]">
                         {card.name.charAt(0)}
                       </div>
                     </div>
-                    <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-sm sm:text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-snug">
+                        <h3 className="font-medium text-sm sm:text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-[1.25]">
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
-                          <span className="text-xs bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-tight shrink-0">
+                          <span className="text-[13px] bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.25] shrink-0">
                             {card.guestCategory}
                           </span>
                         )}
                         {card.company && (
-                          <span className="text-xs bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-tight shrink-0">
+                          <span className="text-[13px] bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.25] shrink-0">
                             {card.company}
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted font-semibold tracking-[0.02em]">
+                      <div className="flex flex-wrap items-center gap-2 text-[13px] leading-[1.25] text-muted font-normal tracking-[0.01em]">
                         <span className="flex items-center gap-1">
                           <BarChart3 size={10} className="text-primary-strong/70" />
                           {card.role}
@@ -1124,7 +1124,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       {isAccessRequestOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
@@ -1132,7 +1132,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[440px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-heading tracking-tight">Take Access</h3>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Take Access</h3>
                 <p className="text-sm text-muted">Request approval from organization admin to perform restricted actions.</p>
               </div>
               <button
@@ -1150,7 +1150,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 submitAccessRequest(accessRequestAction, accessRequestNote);
               }}
             >
-              <label className="text-sm font-semibold text-heading">Requested action</label>
+              <label className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Requested action</label>
               <select
                 value={accessRequestAction}
                 onChange={(e) => setAccessRequestAction(e.target.value)}
@@ -1190,7 +1190,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isAccessInboxOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsAccessInboxOpen(false)}
@@ -1198,7 +1198,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-heading tracking-tight">Pending Access Requests</h3>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Pending Access Requests</h3>
                 <p className="text-sm text-muted">Approve or reject member access for this campaign.</p>
               </div>
               <button
@@ -1215,8 +1215,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               ) : (
                 pendingAccessRequests.map((req) => (
                   <div key={req.id} className="rounded-md border border-border/50 bg-white/80 p-3">
-                    <p className="text-sm font-semibold text-heading">{req.requester_email}</p>
-                    <p className="text-xs text-muted mt-0.5">Action: {req.requested_action}</p>
+                    <p className="text-sm font-medium text-heading">{req.requester_email}</p>
+                    <p className="text-xs text-muted mt-1">Action: {req.requested_action}</p>
                     {req.note ? <p className="text-xs text-muted mt-1">Reason: {req.note}</p> : null}
                     <div className="flex gap-2 mt-3">
                       <Button size="sm" onClick={() => reviewAccessRequest(req.id, "approve")}>
@@ -1235,7 +1235,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isAccessControlOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsAccessControlOpen(false)}
@@ -1243,7 +1243,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-heading tracking-tight">Active Access Grants</h3>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Active Access Grants</h3>
                 <p className="text-sm text-muted">Revoke member permissions for this campaign.</p>
               </div>
               <button
@@ -1263,8 +1263,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 activeGrants.map((grant) => (
                   <div key={grant.id} className="rounded-md border border-border/50 bg-white/80 p-3 flex items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-heading truncate">{grant.grantee_email}</p>
-                      <p className="text-xs text-muted mt-0.5">Permission: {grant.permission}</p>
+                      <p className="text-sm font-medium text-heading truncate">{grant.grantee_email}</p>
+                      <p className="text-xs text-muted mt-1">Permission: {grant.permission}</p>
                     </div>
                     <Button size="sm" variant="secondary" onClick={() => revokeGrant(grant.id)}>
                       Revoke
@@ -1279,7 +1279,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Sponsors modal */}
       {isGuestCategoryOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsGuestCategoryOpen(false)}
@@ -1287,7 +1287,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-heading tracking-tight">Guest Category</h3>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Guest Category</h3>
                 <p className="text-sm text-muted">Type category like Judge, Speaker, Chief Guest, Evaluator.</p>
               </div>
               <button
@@ -1323,7 +1323,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   if (guestCategoryError) setGuestCategoryError("");
                 }}
               />
-              {guestCategoryError && <p className="text-xs font-semibold text-red-500">{guestCategoryError}</p>}
+              {guestCategoryError && <p className="text-sm font-normal leading-[1.6] text-red-500">{guestCategoryError}</p>}
               <div className="flex gap-3 pt-1">
                 <Button type="button" variant="secondary" fullWidth onClick={() => setIsGuestCategoryOpen(false)}>
                   Cancel
@@ -1338,7 +1338,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isShareActionsOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsShareActionsOpen(false)}
@@ -1346,7 +1346,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-bold text-heading tracking-tight">Share Registration</h3>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>
                 <p className="text-sm text-muted">Use the link directly or share on LinkedIn.</p>
               </div>
               <button
@@ -1359,7 +1359,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
             <div className="px-6 pb-6 flex flex-col gap-3">
               <div className="rounded-md border border-border/60 bg-surface/40 px-3 py-2">
-                <p className="text-xs font-semibold text-muted mb-1">Default LinkedIn caption</p>
+                <p className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted mb-1">Default LinkedIn caption</p>
                 <p className="text-xs text-heading wrap-break-word">{shareDraftMessage}</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -1400,7 +1400,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Sponsors modal */}
       {isSponsorsOpen && eventData && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
@@ -1408,7 +1408,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative max-h-[90vh] w-full max-w-[520px] overflow-hidden rounded-xl border border-white/60 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel">
             <div className="flex items-center justify-between border-b border-border/50 px-6 py-5">
               <div className="flex flex-col gap-1 pr-4">
-                <h2 className="text-xl font-bold tracking-tight text-heading">Event sponsors</h2>
+                <h2 className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</h2>
                 <p className="text-sm text-muted">
                   Up to five logos with names. They appear on every attendee card for this campaign.
                 </p>
@@ -1457,7 +1457,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Edit Event Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
@@ -1465,7 +1465,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Edit Event</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Event</h2>
                 <p className="text-sm text-muted">Update the event details below.</p>
               </div>
               <button
@@ -1496,7 +1496,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
-                     <label className="text-sm font-semibold text-heading leading-tight">Location Type</label>
+                     <label className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location Type</label>
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
@@ -1512,7 +1512,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                 {editForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-sm font-semibold text-heading leading-tight">Location <span className="text-primary-strong">*</span></label>
+                     <label className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location <span className="text-primary-strong">*</span></label>
                      <div className="flex items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
                         <input type="text" value="Webinar" disabled className="flex-1 py-3 text-sm leading-6 text-muted bg-transparent outline-none cursor-not-allowed" />
@@ -1570,7 +1570,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Delete Event Modal */}
       {isDeleteOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isDeleting && setIsDeleteOpen(false)}
@@ -1578,9 +1578,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-red-500 tracking-tight">Delete event?</h2>
+                <h2 className="text-2xl font-semibold text-red-500 tracking-[-0.03em] leading-[1.15]">Delete event?</h2>
                 <p className="text-sm text-muted">
-                  This permanently removes the event, <span className="font-semibold text-heading">{cards.length}</span> attendee {cards.length === 1 ? "card" : "cards"}, and all uploaded photos. This cannot be undone.
+                  This permanently removes the event, <span className="font-medium text-heading">{cards.length}</span> attendee {cards.length === 1 ? "card" : "cards"}, and all uploaded photos. This cannot be undone.
                 </p>
               </div>
               <button
@@ -1624,7 +1624,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
       {/* Renew Event Modal */}
       {isRenewOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isRenewing && setIsRenewOpen(false)}
@@ -1633,7 +1633,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Renew Event</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Renew Event</h2>
                 <p className="text-sm text-muted">Update the details to reactivate this campaign.</p>
               </div>
               <button
@@ -1702,7 +1702,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
     <Suspense fallback={
       <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
         <GradientBackground />
-        <div className="relative z-10 w-full max-w-[1240px] px-4 sm:px-6 py-10 sm:py-16 md:py-20">
+        <div className="relative z-10 w-full max-w-[1240px] px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-64 h-12" />

@@ -583,19 +583,19 @@ function DashboardContent() {
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
-        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-bold shadow-sm">
+        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-medium shadow-sm">
           <div className="flex items-center gap-2">
             <Sparkles size={18} />
             <span>Admin Organization Preview &mdash; Read Only</span>
           </div>
-          <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-sm hover:brightness-110 transition-all text-xs">
+          <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-md hover:brightness-110 transition-all text-[13px] leading-[1.25] font-normal">
             Exit Preview
           </Link>
         </div>
       )}
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+      <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
         {isCheckingAuth ? (
           <>
             <div className="flex flex-col gap-6 mb-12">
@@ -626,19 +626,19 @@ function DashboardContent() {
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href={isPreviewMode ? "/admin" : "/"} 
-              className="flex items-center gap-2 text-sm font-bold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2"
+              className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               {isPreviewMode ? "Back to Admin" : "Back to Home"}
             </Link>
-            <span className="text-sm font-semibold tracking-[0.04em] text-muted/70">
+            <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70">
               AVTIVE
             </span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-heading tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
-              <div className="text-lg font-medium text-muted flex items-center gap-2 mt-1 leading-snug">
+              <div className="text-lg font-normal text-muted flex items-center gap-2 mt-1 leading-[1.6]">
                 <User size={18} className="text-primary-strong/70" />
                 <span>{userName}</span>
                 {!isPreviewMode && (
@@ -650,7 +650,7 @@ function DashboardContent() {
                       setUsernameError("");
                       setIsUsernameModalOpen(true);
                     }}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-sm border border-border/60 text-muted hover:text-heading hover:bg-white/60 transition-all"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 text-muted hover:text-heading hover:bg-white/60 transition-all"
                     aria-label="Edit username"
                     title="Edit username"
                   >
@@ -660,20 +660,20 @@ function DashboardContent() {
               </div>
             )}
             {isPreviewMode && (
-              <p className="text-sm font-semibold text-danger/85 mt-1">Read-only admin perspective. Editing and creation are disabled.</p>
+              <p className="text-sm font-normal text-danger/85 mt-1 leading-[1.6]">Read-only admin perspective. Editing and creation are disabled.</p>
             )}
             {!isPreviewMode && isOrgTeamMember && (
-              <p className="text-sm font-semibold text-heading/70 mt-1">
+              <p className="text-sm font-normal text-heading/70 mt-1 leading-[1.6]">
                 Team role: {orgRoleLabel || "Member"} (organization-level access)
               </p>
             )}
             {!isPreviewMode && !isOrgTeamMember && isOrgOwner && (
-              <p className="text-sm font-semibold text-primary-strong/85 mt-1">
+              <p className="text-sm font-normal text-primary-strong/85 mt-1 leading-[1.6]">
                 Organization owner mode: you can review team join requests and manage access.
               </p>
             )}
             {!isPreviewMode && !isOrgTeamMember && hasPendingOrgJoin && (
-              <p className="text-sm font-semibold text-amber-700 mt-1">
+              <p className="text-sm font-normal text-amber-700 mt-1 leading-[1.6]">
                 Organization join is pending approval. Owner-level actions are disabled until approved.
               </p>
             )}
@@ -684,7 +684,7 @@ function DashboardContent() {
                <Link href="/admin">
                 <Button
                   variant="secondary"
-                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 px-4 font-bold"
+                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium"
                   icon={<Sparkles size={18} />}
                 >
                   Admin Panel
@@ -695,7 +695,7 @@ function DashboardContent() {
               <Button
                 variant="secondary"
                 onClick={() => setIsEventModalOpen(true)}
-                className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 px-4"
+                className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45"
                 icon={<Calendar size={18} />}
               >
                 <span className="hidden sm:inline">New Campaign</span>
@@ -718,7 +718,6 @@ function DashboardContent() {
               variant="secondary"
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="px-3"
               icon={isLoggingOut ? undefined : <LogOut size={18} />}
             >
               <span className="hidden sm:inline">{isLoggingOut ? "..." : "Logout"}</span>
@@ -727,48 +726,48 @@ function DashboardContent() {
         </div>
         
         {/* Bento Grid Statistics Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-8 delay-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-6 rounded-lg md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-16 h-16 rounded-sm bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+          <div className="glass-panel p-6 rounded-md md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-16 h-16 rounded-md bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
               <Users size={32} />
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               <span className="ui-eyebrow">Live Presence</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-heading tracking-tight leading-none">
+                <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-lg font-semibold text-primary-strong">Attendees</span>
+                <span className="text-lg font-medium text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-6 rounded-lg md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
-            <div className="w-14 h-14 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
+          <div className="glass-panel p-6 rounded-md md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
+            <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
               <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="ui-eyebrow mb-0.5">Activity Tracking</span>
+              <span className="ui-eyebrow mb-1">Activity Tracking</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-heading tracking-tight leading-none">
+                <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-lg font-semibold text-primary-strong">Total Campaigns</span>
+                <span className="text-lg font-medium text-primary-strong">Total Campaigns</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200">
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search campaigns..."
-              className="w-full pl-14 pr-6 py-3 bg-white/80 backdrop-blur-md border border-white/60 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
+              className="w-full h-10 pl-16 pr-3 py-0 bg-white/80 backdrop-blur-md border border-white/60 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -776,13 +775,13 @@ function DashboardContent() {
         </div>
 
         {isOrgTeamMember && myAccessRequests.length > 0 && (
-          <div className="glass-panel p-4 rounded-lg mb-6">
-            <p className="text-sm font-bold text-heading mb-2">My Access Requests</p>
+          <div className="glass-panel p-4 rounded-md mb-6">
+            <p className="text-sm font-medium text-heading mb-2">My Access Requests</p>
             <div className="flex flex-col gap-2">
               {myAccessRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading">{req.event_name} • {req.requested_action}</span>
-                  <span className={`font-semibold ${
+                  <span className={`font-medium ${
                     req.status === "approved" ? "text-green-600" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
                   }`}>
                     {req.status}
@@ -794,22 +793,22 @@ function DashboardContent() {
         )}
 
         {!isOrgTeamMember && !isOrgOwner && myOrgJoinRequests.length > 0 && (
-          <div className="glass-panel p-4 rounded-lg mb-6">
-            <p className="text-sm font-bold text-heading mb-2">My Organization Join Requests</p>
+          <div className="glass-panel p-4 rounded-md mb-6">
+            <p className="text-sm font-medium text-heading mb-2">My Organization Join Requests</p>
             <div className="flex flex-col gap-2">
               {myOrgJoinRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <div className="flex flex-col min-w-0">
                     <span className="text-heading truncate">
                       Organization: {req.requested_org_name} • Reviewer: {req.owner_email}
                     </span>
                     {String(req.status || "").toLowerCase() === "rejected" && req.reapply_after && (
-                      <span className="text-muted text-[0.8125rem] mt-0.5">
+                      <span className="text-muted text-[0.8125rem] mt-1">
                         Reapply after: {new Date(req.reapply_after).toLocaleString()}
                       </span>
                     )}
                   </div>
-                  <span className={`font-semibold shrink-0 border px-2 py-0.5 rounded-full ${formatJoinStatus(req.status).className}`}>
+                  <span className={`font-medium shrink-0 border px-2 py-1 rounded-full ${formatJoinStatus(req.status).className}`}>
                     {formatJoinStatus(req.status).label}
                   </span>
                 </div>
@@ -819,23 +818,23 @@ function DashboardContent() {
         )}
 
         {!isOrgTeamMember && isOrgOwner && orgJoinInbox.length > 0 && (
-          <div className="glass-panel p-4 rounded-lg mb-6">
-            <p className="text-sm font-bold text-heading mb-2">Organization Join Inbox</p>
+          <div className="glass-panel p-4 rounded-md mb-6">
+            <p className="text-sm font-medium text-heading mb-2">Organization Join Inbox</p>
             <div className="flex flex-col gap-2">
               {orgJoinInbox.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">
                     Requester: {req.requester_email} • Wants to join: {req.requested_org_name}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      className="px-2 py-1 rounded-sm bg-primary text-white font-semibold"
+                      className="px-2 py-1 rounded-md bg-primary text-white text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "approve")}
                     >
                       Approve
                     </button>
                     <button
-                      className="px-2 py-1 rounded-sm border border-border font-semibold"
+                      className="px-2 py-1 rounded-md border border-border text-[13px] leading-[1.25] font-normal tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "reject")}
                     >
                       Reject
@@ -848,21 +847,21 @@ function DashboardContent() {
         )}
 
         {!isOrgTeamMember && inboxRequests.length > 0 && (
-          <div className="glass-panel p-4 rounded-lg mb-6">
-            <p className="text-sm font-bold text-heading mb-2">Pending Access Inbox</p>
+          <div className="glass-panel p-4 rounded-md mb-6">
+            <p className="text-sm font-medium text-heading mb-2">Pending Access Inbox</p>
             <div className="flex flex-col gap-2">
               {inboxRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">{req.requester_email} • {req.event_name} • {req.requested_action}</span>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      className="px-2 py-1 rounded-sm bg-primary text-white font-semibold"
+                      className="px-2 py-1 rounded-md bg-primary text-white text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "approve")}
                     >
                       Approve
                     </button>
                     <button
-                      className="px-2 py-1 rounded-sm border border-border font-semibold"
+                      className="px-2 py-1 rounded-md border border-border text-[13px] leading-[1.25] font-normal tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "reject")}
                     >
                       Reject
@@ -875,16 +874,16 @@ function DashboardContent() {
         )}
 
         {!isOrgTeamMember && failedNotifications.length > 0 && (
-          <div className="glass-panel p-4 rounded-lg mb-6">
-            <p className="text-sm font-bold text-heading mb-2">Failed Notifications</p>
+          <div className="glass-panel p-4 rounded-md mb-6">
+            <p className="text-sm font-medium text-heading mb-2">Failed Notifications</p>
             <div className="flex flex-col gap-2">
               {failedNotifications.slice(0, 6).map((row) => (
-                <div key={row.id} className="flex items-center justify-between gap-3 text-xs bg-white/60 border border-border/50 rounded-sm px-3 py-2">
+                <div key={row.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">
                     {row.event_name} • {row.requester_email} • {row.requested_action}
                   </span>
                   <button
-                    className="px-2 py-1 rounded-sm border border-border font-semibold inline-flex items-center gap-1 shrink-0"
+                    className="px-2 py-1 rounded-md border border-border text-[13px] leading-[1.25] font-normal inline-flex items-center gap-1 shrink-0"
                     onClick={() => retryNotification(row.id, row.status)}
                     disabled={retryingNotificationId === row.id}
                   >
@@ -911,47 +910,47 @@ function DashboardContent() {
               filteredEvents.map((evt) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 rounded-lg transition-all duration-200 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 rounded-md transition-all duration-200 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       {evt.logo_url && (
-                        <div className="w-20 h-20 rounded-sm bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 shrink-0">
+                        <div className="w-20 h-20 rounded-md bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 shrink-0">
                           <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-cover block" />
                         </div>
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2 ml-auto">
-                      <span className={`text-xs font-semibold tracking-[0.02em] px-3 py-1 rounded-sm border ${status.classes}`}>
+                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-3 py-1 rounded-md border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-xs font-bold leading-snug text-primary-strong bg-primary/10 px-3 py-1 rounded-xs">
+                      <div className="flex items-center text-[13px] font-medium leading-[1.25] text-primary-strong bg-primary/10 px-3 py-1 rounded-md">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
                   </div>
                   
                   <div className="flex flex-col grow">
-                    <h3 className="font-bold text-2xl text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-[1.2] mb-2">
+                    <h3 className="font-semibold text-2xl tracking-[-0.03em] text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-[1.15] mb-2">
                       {evt.name}
                     </h3>
                     
                     <div className="flex flex-col gap-2 mb-6">
-                      <div className="flex items-center gap-3 text-heading font-semibold bg-white/40 w-fit px-3 py-2 rounded-sm border border-white/60 shadow-sm">
+                      <div className="flex items-center gap-3 text-heading font-normal bg-white/40 w-fit px-3 py-2 rounded-md border border-white/60 shadow-sm">
                         <Calendar size={18} className="text-primary-strong" />
-                        <span className="text-sm leading-snug tracking-tight">{evt.date}</span>
+                        <span className="text-sm leading-[1.6] tracking-[0em]">{evt.date}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-muted font-medium px-1">
+                      <div className="flex items-center gap-3 text-muted font-normal px-1">
                         {(evt.location || "").trim().toLowerCase() === "webinar" ? (
                           <Globe size={18} className="text-muted/60" />
                         ) : (
                           <MapPin size={18} className="text-muted/60" />
                         )}
-                        <span className="text-sm leading-snug tracking-tight truncate max-w-[200px]">{evt.location}</span>
+                        <span className="text-sm leading-[1.6] tracking-[0em] truncate max-w-[200px]">{evt.location}</span>
                       </div>
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-semibold text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
                     View Campaign
                     <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
                   </Link>
@@ -971,25 +970,25 @@ function DashboardContent() {
 
       {/* Event Creation Modal */}
       {isEventModalOpen && !isPreviewMode && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
             onClick={() => {
               setIsEventModalOpen(false);
             }}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-white/60 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Create New Campaign</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create New Campaign</h2>
                 <p className="text-sm text-muted">Add details for the upcoming conference.</p>
               </div>
               <button 
                 onClick={() => {
                   setIsEventModalOpen(false);
                 }}
-                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <X size={20} />
               </button>
@@ -1007,7 +1006,7 @@ function DashboardContent() {
                   onChange={(v) => setEventForm({ ...eventForm, name: v })}
                 />
                 <p
-                  className={`-mt-2 text-xs font-medium ${
+                  className={`-mt-2 text-sm leading-[1.6] font-normal ${
                     eventForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"
                   }`}
                 >
@@ -1017,7 +1016,7 @@ function DashboardContent() {
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
-                     <label className="text-sm font-semibold text-heading leading-tight">Location Type</label>
+                     <label className="text-[13px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location Type</label>
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
@@ -1033,10 +1032,10 @@ function DashboardContent() {
 
                 {eventForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-sm font-semibold text-heading leading-tight">Location <span className="text-primary-strong">*</span></label>
-                     <div className="flex items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
+                     <label className="text-[13px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
+                     <div className="flex h-10 items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
-                        <input type="text" value="Webinar" disabled className="flex-1 py-3 text-sm leading-6 text-muted bg-transparent outline-none cursor-not-allowed" />
+                        <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-sm leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
                      </div>
                    </div>
                 ) : (
@@ -1099,20 +1098,20 @@ function DashboardContent() {
       )}
 
       {isUsernameModalOpen && !isPreviewMode && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
           />
-          <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-white/60 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Edit Profile</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Profile</h2>
                 <p className="text-sm text-muted">This updates your profile everywhere in the app.</p>
               </div>
               <button
                 onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
-                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
@@ -1148,7 +1147,7 @@ function DashboardContent() {
                   ? "Organization name is read-only for team members. Ask your organization admin to update it."
                   : "Organization name can be changed once every 90 days."}
               </p>
-              {usernameError && <p className="text-sm font-medium text-red-500">{usernameError}</p>}
+              {usernameError && <p className="text-sm font-normal leading-[1.6] text-red-500">{usernameError}</p>}
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Button
                   variant="secondary"
@@ -1174,20 +1173,20 @@ function DashboardContent() {
       )}
 
       {isTeamModalOpen && !isPreviewMode && !isOrgTeamMember && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
-          <div className="relative w-full max-w-[520px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[520px] glass-panel bg-white/95 border border-white/60 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-bold text-heading tracking-tight">Organization Team Access</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Organization Team Access</h2>
                 <p className="text-sm text-muted">Add members by email and assign any role label.</p>
               </div>
               <button
                 onClick={() => setIsTeamModalOpen(false)}
-                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
@@ -1209,7 +1208,7 @@ function DashboardContent() {
                   onChange={setTeamInviteRoleLabel}
                 />
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-heading leading-tight">Default permissions for this role</label>
+                  <label className="text-[13px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Default permissions for this role</label>
                   <label className="flex items-center gap-2 text-sm text-heading">
                     <input
                       type="checkbox"
@@ -1259,32 +1258,32 @@ function DashboardContent() {
                     Delete cards
                   </label>
                 </div>
-                {teamError && <p className="text-sm font-medium text-red-500">{teamError}</p>}
+                {teamError && <p className="text-sm font-normal leading-[1.6] text-red-500">{teamError}</p>}
                 <Button type="submit" disabled={isSubmittingTeamInvite}>
                   {isSubmittingTeamInvite ? "Saving..." : "Add / Update Member"}
                 </Button>
               </form>
               <div className="rounded-md border border-border/50 bg-white/60 p-3 max-h-56 overflow-y-auto">
-                <p className="text-xs font-semibold text-muted mb-2">Current members</p>
+                <p className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted mb-2">Current members</p>
                 {teamMembers.length === 0 ? (
                   <p className="text-sm text-muted">No members added yet.</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {teamMembers.map((m) => (
-                      <div key={m.id} className="text-sm text-heading flex flex-col gap-1 border border-border/40 rounded-sm px-2 py-2">
+                      <div key={m.id} className="text-sm text-heading flex flex-col gap-1 border border-border/40 rounded-md px-2 py-2">
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate">{m.member_email}</span>
-                          <span className="text-xs bg-primary/10 text-primary-strong border border-primary/20 px-2 py-0.5 rounded-inline">{m.role_label}</span>
+                          <span className="text-xs bg-primary/10 text-primary-strong border border-primary/20 px-2 py-1 rounded-inline">{m.role_label}</span>
                         </div>
                         <div className="flex flex-wrap gap-1">
                           {(m.permissions || []).length > 0 ? (
                             (m.permissions || []).map((perm) => (
-                              <span key={`${m.id}-${perm}`} className="text-[10px] bg-surface px-1.5 py-0.5 rounded-inline border border-border/50">
+                              <span key={`${m.id}-${perm}`} className="text-[13px] leading-[1.25] bg-surface px-2 py-1 rounded-inline border border-border/50">
                                 {perm}
                               </span>
                             ))
                           ) : (
-                            <span className="text-[10px] text-muted">No default permissions</span>
+                            <span className="text-[13px] leading-[1.25] text-muted">No default permissions</span>
                           )}
                         </div>
                       </div>
@@ -1305,7 +1304,7 @@ export default function DashboardPage() {
     <Suspense fallback={
       <main className="relative min-h-screen w-full bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 max-w-[1240px] mx-auto px-4 sm:px-6 py-8 sm:py-12 md:py-16">
+        <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-48 h-10" />

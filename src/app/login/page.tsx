@@ -48,13 +48,13 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-6 px-4 sm:px-6 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-6 sm:px-12 lg:px-16 overflow-hidden bg-transparent">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         <Link 
           href="/" 
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
         >
           <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
@@ -73,7 +73,7 @@ export default function LoginPage() {
         <div className="glass-panel rounded-xl p-6 sm:p-8 shadow-2xl shadow-primary/5">
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Welcome back</h1>
+              <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Welcome back</h1>
               <p className="text-base text-muted leading-[1.55]">
                 Please enter your details to sign in.
               </p>

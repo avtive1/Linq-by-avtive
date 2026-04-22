@@ -99,41 +99,41 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div className="px-4 sm:px-6 py-8 sm:py-12 flex flex-col gap-12">
+    <div className="px-6 sm:px-12 lg:px-16 py-12 sm:py-16 flex flex-col gap-16">
       <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-bold text-heading tracking-tight">Platform Overview</h1>
+        <h1 className="text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">Platform Overview</h1>
         <p className="text-muted">Real-time global insights and management hub.</p>
       </div>
 
       {/* Global Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm relative overflow-hidden">
-          <div className="w-16 h-16 rounded-sm bg-primary/20 flex items-center justify-center text-primary-strong shrink-0">
+        <div className="glass-panel p-6 rounded-md flex items-center gap-6 group hover:bg-white transition-all shadow-sm relative overflow-hidden">
+          <div className="w-16 h-16 rounded-md bg-primary/20 flex items-center justify-center text-primary-strong shrink-0">
             <Building2 size={28} />
           </div>
           <div className="flex flex-col">
             <span className="ui-eyebrow mb-1">Total Orgs</span>
-            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalOrgs}</span>
+            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalOrgs}</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-sm bg-info/15 flex items-center justify-center text-info shrink-0">
+        <div className="glass-panel p-6 rounded-md flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-md bg-info/15 flex items-center justify-center text-info shrink-0">
             <BarChart3 size={28} />
           </div>
           <div className="flex flex-col">
             <span className="ui-eyebrow mb-1">Total Events</span>
-            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalEvents}</span>
+            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalEvents}</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-sm bg-heading/15 flex items-center justify-center text-heading shrink-0">
+        <div className="glass-panel p-6 rounded-md flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-md bg-heading/15 flex items-center justify-center text-heading shrink-0">
             <Users size={28} />
           </div>
           <div className="flex flex-col">
             <span className="ui-eyebrow mb-1">Total Attendees</span>
-            <span className="text-5xl font-bold text-heading tracking-tight leading-none">{totalAttendees}</span>
+            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalAttendees}</span>
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content: Organizations Table */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <h2 className="text-2xl font-bold text-heading tracking-tight pl-2 flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2 flex items-center gap-2">
             Organizations Directory
           </h2>
           <OrganizationsTable initialOrganizations={organizations} />
@@ -149,31 +149,31 @@ export default async function AdminDashboardPage() {
 
         {/* Sidebar: Recent Activity */}
         <div className="lg:col-span-1 flex flex-col gap-6">
-          <h2 className="text-2xl font-bold text-heading tracking-tight pl-2 flex items-center gap-2">
+          <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2 flex items-center gap-2">
              <Activity size={24} className="text-primary-strong" /> Recent Activity
           </h2>
           
           <div className="flex flex-col gap-4">
             {recentEvents.map(evt => (
-              <div key={evt.id} className="glass-panel p-4 rounded-lg flex flex-col gap-2 hover:bg-white transition-all group">
+              <div key={evt.id} className="glass-panel p-4 rounded-md flex flex-col gap-2 hover:bg-white transition-all group">
                 <div className="flex justify-between items-start">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-muted/60 bg-surface px-2 py-0.5 rounded-sm border border-border/40">
+                  <span className="text-[13px] uppercase tracking-[0.01em] font-medium text-muted/60 bg-surface px-2 py-1 rounded-md border border-border/40 leading-[1.25]">
                     New Event
                   </span>
-                  <span className="text-[10px] font-bold text-muted/50">
+                  <span className="text-[13px] font-normal text-muted/50 leading-[1.25]">
                     {new Date(evt.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <h3 className="font-bold text-heading group-hover:text-primary-strong transition-colors truncate">
+                <h3 className="font-medium text-heading group-hover:text-primary-strong transition-colors truncate">
                   {evt.name}
                 </h3>
-                <p className="text-xs text-muted font-medium flex items-center gap-1.5 truncate">
+                <p className="text-sm leading-[1.6] text-muted font-normal flex items-center gap-2 truncate">
                   <Building2 size={12} className="shrink-0" /> 
                   {evt.orgName ? `${evt.orgName} (@${evt.username || 'unknown'})` : evt.orgEmail}
                 </p>
-                <div className="mt-2 pt-2 border-t border-border/30 flex justify-between items-center text-[11px] font-bold">
+                <div className="mt-2 pt-2 border-t border-border/30 flex justify-between items-center text-[13px] font-medium leading-[1.25]">
                   <span className="text-muted/60">{evt.location}</span>
-                  <Link href={`/admin/organizations/${evt.user_id}`} className="text-primary-strong hover:underline flex items-center gap-0.5">
+                  <Link href={`/admin/organizations/${evt.user_id}`} className="text-primary-strong hover:underline flex items-center gap-1">
                     View Org <ChevronRight size={12} />
                   </Link>
                 </div>
