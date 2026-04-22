@@ -73,39 +73,8 @@ export async function POST(req: Request) {
     if (existingOrg?.owner_user_id) {
       selectedOwnerId = existingOrg.owner_user_id;
     } else {
-      const { data: allProfiles, error: candidatesErr } = await supabaseAdmin
-        .from("profiles")
-        .select("id, organization_name, organization_name_key, role, created_at")
-        .neq("id", userId)
-        .limit(2000);
-      if (candidatesErr) return NextResponse.json({ error: candidatesErr.message }, { status: 400 });
-
-      const candidates = (allProfiles || []).filter((row) => {
-        const fromName = toOrganizationKey(String(row.organization_name || ""));
-        const fromKey = toOrganizationKey(String(row.organization_name_key || ""));
-        return fromName === requestedOrgKey || fromKey === requestedOrgKey;
-      });
-      if (candidates.length === 0) {
-        return NextResponse.json({ data: { status: "no_owner_found" } }, { status: 200 });
-      }
-
-      const sorted = [...candidates].sort((a, b) => {
-        const aAdmin = String(a.role || "").toLowerCase() === "admin" ? 0 : 1;
-        const bAdmin = String(b.role || "").toLowerCase() === "admin" ? 0 : 1;
-        if (aAdmin !== bAdmin) return aAdmin - bAdmin;
-        return String(a.created_at || "").localeCompare(String(b.created_at || ""));
-      });
-      selectedOwnerId = sorted[0].id;
-
-      const { error: orgInsertErr } = await supabaseAdmin.from("organizations").upsert({
-        organization_name: normalizeOrganizationName(String(sorted[0].organization_name || requestedOrgName)),
-        organization_name_key: requestedOrgKey,
-        owner_user_id: selectedOwnerId,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: "organization_name_key" });
-      if (orgInsertErr) {
-        return NextResponse.json({ error: orgInsertErr.message }, { status: 400 });
-      }
+      // Owner assignment is explicit (founder-assigned), never auto-selected from first signup/profile.
+      return NextResponse.json({ data: { status: "no_owner_found" } }, { status: 200 });
     }
 
     if (!selectedOwnerId) {

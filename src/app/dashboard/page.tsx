@@ -106,6 +106,8 @@ function DashboardContent() {
   const [retryingNotificationId, setRetryingNotificationId] = useState("");
   const [orgJoinInbox, setOrgJoinInbox] = useState<OrgJoinInboxRequest[]>([]);
   const [myOrgJoinRequests, setMyOrgJoinRequests] = useState<MyOrgJoinRequest[]>([]);
+  const [joinGateStatus, setJoinGateStatus] = useState<"pending" | "awaiting_owner" | null>(null);
+  const [joinGateOrgName, setJoinGateOrgName] = useState("");
   
   const [eventForm, setEventForm] = useState({
     name: "",
@@ -150,6 +152,9 @@ function DashboardContent() {
       // Logic for Effective User ID
       let effectiveId = session.user.id;
       let effectiveName = session.user.email?.split("@")[0] || "";
+      let userIsOrgTeamMemberLocal = false;
+      let userIsOrgOwnerLocal = false;
+      let gateStatus: "pending" | "awaiting_owner" | null = null;
 
       const { data: profileRow } = await supabase
         .from("profiles")
@@ -169,7 +174,9 @@ function DashboardContent() {
         if (memberPayload?.data?.org_owner_user_id) {
           effectiveId = memberPayload.data.org_owner_user_id;
           setIsOrgTeamMember(true);
+          userIsOrgTeamMemberLocal = true;
           setIsOrgOwner(false);
+          userIsOrgOwnerLocal = false;
           setOrgRoleLabel(String(memberPayload.data.role_label || ""));
           setOrgOwnerUserId(String(memberPayload.data.org_owner_user_id || ""));
           setGrantedPermissions(memberPayload.data.permissions || []);
@@ -198,13 +205,23 @@ function DashboardContent() {
             (ownedMembers || []).length > 0 ||
             ownerByRegistry;
           setIsOrgOwner(userIsOrgOwner);
+          userIsOrgOwnerLocal = userIsOrgOwner;
           if (profileRow?.organization_name?.trim() && !userIsOrgOwner) {
             try {
-              await fetch("/api/organization-join-requests", {
+              const joinRes = await fetch("/api/organization-join-requests", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ organizationName: profileRow.organization_name.trim() }),
               });
+              if (joinRes.ok) {
+                const joinPayload = await joinRes.json();
+                const status = String(joinPayload?.data?.status || "").toLowerCase();
+                if (status === "created" || status === "pending_exists" || status === "reapply_later") {
+                  gateStatus = "pending";
+                } else if (status === "no_owner_found") {
+                  gateStatus = "awaiting_owner";
+                }
+              }
             } catch {}
           }
           try {
@@ -212,6 +229,13 @@ function DashboardContent() {
             const myJoinPayload = await myJoinRes.json();
             if (myJoinRes.ok && Array.isArray(myJoinPayload?.data)) {
               setMyOrgJoinRequests(myJoinPayload.data);
+              if (
+                myJoinPayload.data.some(
+                  (req: { status?: string }) => String(req.status || "").toLowerCase() === "pending",
+                )
+              ) {
+                gateStatus = "pending";
+              }
             }
           } catch {}
           try {
@@ -235,6 +259,8 @@ function DashboardContent() {
               setFailedNotifications(failedPayload.data);
             }
           } catch {}
+          setJoinGateStatus(gateStatus);
+          setJoinGateOrgName(profileRow?.organization_name?.trim() || "");
         }
       }
 
@@ -245,6 +271,10 @@ function DashboardContent() {
       }
       
       setUserName(effectiveName);
+      if (!isActuallyAdmin && !userIsOrgTeamMemberLocal && !userIsOrgOwnerLocal && (gateStatus === "pending" || gateStatus === "awaiting_owner")) {
+        setIsCheckingAuth(false);
+        return;
+      }
       fetchData(effectiveId, () => isMounted);
       setIsCheckingAuth(false);
     };
@@ -579,6 +609,41 @@ function DashboardContent() {
       toast.error("Could not review organization join request.");
     }
   };
+
+  const isJoinBlocked =
+    !isCheckingAuth &&
+    !isPreviewMode &&
+    !isOrgTeamMember &&
+    !isOrgOwner &&
+    (joinGateStatus === "pending" || joinGateStatus === "awaiting_owner");
+
+  if (isJoinBlocked) {
+    return (
+      <main className="relative min-h-screen w-full bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+          <div className="mx-auto max-w-[760px] glass-panel rounded-md p-8 sm:p-12 flex flex-col gap-6 text-center">
+            <h1 className="text-3xl sm:text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
+              {joinGateStatus === "pending" ? "Organization access pending approval" : "Organization setup pending"}
+            </h1>
+            <p className="text-base text-muted leading-[1.6]">
+              {joinGateStatus === "pending"
+                ? `Your request to join ${joinGateOrgName ? `"${joinGateOrgName}"` : "this organization"} is awaiting founder approval. Dashboard access will unlock after approval.`
+                : `No founder is assigned yet for ${joinGateOrgName ? `"${joinGateOrgName}"` : "this organization"}. Ask your admin to assign the founder email, then try again.`}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button variant="secondary" onClick={handleLogout}>
+                Log out
+              </Button>
+              <Link href="/" className="inline-flex">
+                <Button variant="secondary">Back to Home</Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="relative min-h-screen w-full bg-transparent">
