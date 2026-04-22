@@ -28,24 +28,63 @@ export async function GET() {
     const userId = authData.user?.id;
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data, error } = await supabaseAdmin
+    const userEmail = authData.user?.email?.toLowerCase();
+    if (!userId || !userEmail) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    // 1. Try lookup by UUID first
+    let { data, error } = await supabaseAdmin
       .from("organization_members")
-      .select("org_owner_user_id, role_label, status")
+      .select("id, org_owner_user_id, role_label, status, member_user_id, member_email")
       .eq("member_user_id", userId)
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
 
+    // 2. If not found, try lookup by Email (for pre-invites)
+    if (!data) {
+      const { data: emailMatch } = await supabaseAdmin
+        .from("organization_members")
+        .select("id, org_owner_user_id, role_label, status, member_user_id, member_email")
+        .eq("member_email", userEmail)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle();
+      
+      if (emailMatch) {
+        data = emailMatch;
+        // Lazy link: update the UUID if it's missing
+        if (!emailMatch.member_user_id) {
+          await supabaseAdmin
+            .from("organization_members")
+            .update({ member_user_id: userId })
+            .eq("id", emailMatch.id);
+        }
+      }
+    }
+
     if (data?.org_owner_user_id) {
-      // Member capabilities are sourced from actual active grants, not role template defaults.
+      // 1. Get global permissions from role templates
+      const { data: templateData } = await supabaseAdmin
+        .from("organization_role_permission_templates")
+        .select("permissions")
+        .eq("org_owner_user_id", data.org_owner_user_id)
+        .eq("role_label", data.role_label)
+        .maybeSingle();
+      
+      const rolePermissions = templateData?.permissions || [];
+
+      // 2. Get granular event-specific permissions
       const { data: grants } = await supabaseAdmin
         .from("access_grants")
         .select("permission")
         .eq("grantee_user_id", userId)
         .eq("status", "active");
-      const permissions = Array.from(
-        new Set((grants || []).map((row: { permission: string }) => row.permission)),
-      );
+      
+      const grantPermissions = (grants || []).map((row: { permission: string }) => row.permission);
+      
+      // Combine all permissions
+      const permissions = Array.from(new Set([...rolePermissions, ...grantPermissions]));
+
       return NextResponse.json({ data: { ...data, permissions } }, { status: 200 });
     }
 

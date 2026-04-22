@@ -36,25 +36,32 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from("organization_members")
-      .select("id, member_user_id, role_label, status, created_at")
+      .select("id, member_user_id, member_email, role_label, status, created_at")
       .eq("org_owner_user_id", ownerId)
       .order("created_at", { ascending: false });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     const rows = await Promise.all(
       (data || []).map(async (row) => {
-        const [{ data: userData }, { data: grants }] = await Promise.all([
-          supabaseAdmin.auth.admin.getUserById(row.member_user_id),
-          supabaseAdmin
-            .from("access_grants")
-            .select("permission")
-            .eq("grantee_user_id", row.member_user_id)
-            .eq("status", "active"),
-        ]);
-        const permissions = Array.from(new Set((grants || []).map((g: { permission: string }) => g.permission)));
+        let permissions: string[] = [];
+        let email = row.member_email || "unknown";
+
+        if (row.member_user_id) {
+          const [{ data: userData }, { data: grants }] = await Promise.all([
+            supabaseAdmin.auth.admin.getUserById(row.member_user_id),
+            supabaseAdmin
+              .from("access_grants")
+              .select("permission")
+              .eq("grantee_user_id", row.member_user_id)
+              .eq("status", "active"),
+          ]);
+          permissions = Array.from(new Set((grants || []).map((g: { permission: string }) => g.permission)));
+          if (userData?.user?.email) email = userData.user.email;
+        }
+
         return {
           ...row,
-          member_email: userData?.user?.email || "unknown",
+          member_email: email,
           permissions,
         };
       }),
@@ -88,20 +95,19 @@ export async function POST(req: Request) {
     if (listError) return NextResponse.json({ error: listError.message }, { status: 400 });
 
     const target = (usersData?.users || []).find((u) => (u.email || "").toLowerCase() === normalizedEmail);
-    if (!target?.id) {
-      return NextResponse.json({ error: "No user found with this email." }, { status: 404 });
-    }
-    if (target.id === ownerId) {
+    if (target?.id === ownerId) {
       return NextResponse.json({ error: "Owner cannot add self as member." }, { status: 400 });
     }
 
+    // Check if this email is already an active member of ANY organization
     const { data: activeMembership } = await supabaseAdmin
       .from("organization_members")
       .select("org_owner_user_id")
-      .eq("member_user_id", target.id)
+      .or(`member_email.eq.${normalizedEmail}${target?.id ? `,member_user_id.eq.${target.id}` : ""}`)
       .eq("status", "active")
       .limit(1)
       .maybeSingle();
+
     if (activeMembership?.org_owner_user_id && activeMembership.org_owner_user_id !== ownerId) {
       return NextResponse.json(
         { error: "This user already belongs to another active organization." },
@@ -109,22 +115,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const { error } = await supabaseAdmin.from("organization_members").upsert(
+    // Upsert the membership based on org_owner_user_id and member_email
+    const { error: upsertError } = await supabaseAdmin.from("organization_members").upsert(
       {
         org_owner_user_id: ownerId,
-        member_user_id: target.id,
+        member_email: normalizedEmail,
+        member_user_id: target?.id || null,
         role_label: nextRoleLabel,
         status: "active",
         updated_at: new Date().toISOString(),
       },
-      { onConflict: "org_owner_user_id,member_user_id" },
+      { onConflict: "org_owner_user_id,member_email" }
     );
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (upsertError) return NextResponse.json({ error: upsertError.message }, { status: 400 });
 
-    try {
-      await seedViewEventGrantsForOrgMember(supabaseAdmin, ownerId, target.id);
-    } catch (e: any) {
-      return NextResponse.json({ error: e?.message || "Failed to seed default viewer access." }, { status: 400 });
+    // If user exists, seed default view grants
+    if (target?.id) {
+      try {
+        await seedViewEventGrantsForOrgMember(supabaseAdmin, ownerId, target.id);
+      } catch (e: any) {
+        // Log but don't fail the whole request
+        console.error("Grant seeding failed:", e);
+      }
     }
 
     await supabaseAdmin

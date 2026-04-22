@@ -108,7 +108,8 @@ function DashboardContent() {
   const [myOrgJoinRequests, setMyOrgJoinRequests] = useState<MyOrgJoinRequest[]>([]);
   const [joinGateStatus, setJoinGateStatus] = useState<"pending" | "awaiting_owner" | null>(null);
   const [joinGateOrgName, setJoinGateOrgName] = useState("");
-  
+  const [teamModalView, setTeamModalView] = useState<"list" | "add" | "edit">("list");
+  const [selectedMemberToEdit, setSelectedMemberToEdit] = useState<TeamMember | null>(null);
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
@@ -756,25 +757,39 @@ function DashboardContent() {
                 </Button>
                </Link>
             )}
-            {!isPreviewMode && (!isOrgTeamMember || grantedPermissions.includes("create_event")) && !hasPendingOrgJoin && (
+            {!isPreviewMode && !hasPendingOrgJoin && (
               <Button
                 variant="secondary"
-                onClick={() => setIsEventModalOpen(true)}
-                className="bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45"
+                onClick={() => {
+                  if (isOrgTeamMember && !grantedPermissions.includes("create_event")) {
+                    toast.error("You don't have permission to create campaigns. Contact your organization admin.");
+                    return;
+                  }
+                  setIsEventModalOpen(true);
+                }}
+                className={`bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
+                  isOrgTeamMember && !grantedPermissions.includes("create_event") ? "opacity-50" : ""
+                }`}
                 icon={<Calendar size={18} />}
               >
                 <span className="hidden sm:inline">New Campaign</span>
                 <span className="inline sm:hidden">Campaign</span>
               </Button>
             )}
-            {!isPreviewMode && !isOrgTeamMember && !hasPendingOrgJoin && (
+            {!isPreviewMode && !hasPendingOrgJoin && (
               <Button
                 variant="secondary"
                 onClick={async () => {
+                  if (isOrgTeamMember) {
+                    toast.error("Access management is restricted to organization owners.");
+                    return;
+                  }
                   setIsTeamModalOpen(true);
+                  setTeamModalView("list");
                   setTeamError("");
                   await loadTeamMembers();
                 }}
+                className={isOrgTeamMember ? "opacity-50" : ""}
               >
                 Team Access
               </Button>
@@ -1237,125 +1252,239 @@ function DashboardContent() {
         </div>
       )}
 
-      {isTeamModalOpen && !isPreviewMode && !isOrgTeamMember && (
+      {isTeamModalOpen && !isPreviewMode && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
-          <div className="relative w-full max-w-[520px] glass-panel bg-white/95 border border-white/60 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+          <div className="relative w-full max-w-[520px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-border/10">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Organization Team Access</h2>
-                <p className="text-sm text-muted">Add members by email and assign any role label.</p>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                  {teamModalView === "list" && "Organization Team"}
+                  {teamModalView === "add" && "Invite Member"}
+                  {teamModalView === "edit" && "Manage Access"}
+                </h2>
+                <p className="text-sm text-muted">
+                  {teamModalView === "list" && "Manage your organization team members and their roles."}
+                  {teamModalView === "add" && "Step 1: Enter member information."}
+                  {teamModalView === "edit" && (teamInviteEmail ? `Step 2: Set permissions for ${teamInviteEmail}` : "Manage permissions")}
+                </p>
               </div>
               <button
-                onClick={() => setIsTeamModalOpen(false)}
+                onClick={() => {
+                  if (teamModalView !== "list") {
+                    setTeamModalView("list");
+                  } else {
+                    setIsTeamModalOpen(false);
+                  }
+                }}
                 className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
-                <X size={20} />
+                {teamModalView === "list" ? <X size={20} /> : <ArrowLeft size={20} />}
               </button>
             </div>
-            <div className="px-8 pb-8 flex flex-col gap-4">
-              <form onSubmit={handleAddTeamMember} className="flex flex-col gap-3">
-                <TextInput
-                  label="Member Email"
-                  required
-                  placeholder="member@company.com"
-                  value={teamInviteEmail}
-                  onChange={setTeamInviteEmail}
-                />
-                <TextInput
-                  label="Role Label"
-                  required
-                  placeholder="e.g. Director, Media Manager, Ops Lead"
-                  value={teamInviteRoleLabel}
-                  onChange={setTeamInviteRoleLabel}
-                />
-                <div className="flex flex-col gap-2">
-                  <label className="text-[13px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Default permissions for this role</label>
-                  <label className="flex items-center gap-2 text-sm text-heading">
-                    <input
-                      type="checkbox"
-                      checked={teamPermissionDraft.includes("create_event")}
-                      onChange={(e) =>
-                        setTeamPermissionDraft((prev) =>
-                          e.target.checked ? Array.from(new Set([...prev, "create_event"])) : prev.filter((p) => p !== "create_event"),
-                        )
-                      }
-                    />
-                    Create new campaigns
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-heading">
-                    <input
-                      type="checkbox"
-                      checked={teamPermissionDraft.includes("manage_event")}
-                      onChange={(e) =>
-                        setTeamPermissionDraft((prev) =>
-                          e.target.checked ? Array.from(new Set([...prev, "manage_event"])) : prev.filter((p) => p !== "manage_event"),
-                        )
-                      }
-                    />
-                    Manage existing events
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-heading">
-                    <input
-                      type="checkbox"
-                      checked={teamPermissionDraft.includes("edit_cards")}
-                      onChange={(e) =>
-                        setTeamPermissionDraft((prev) =>
-                          e.target.checked ? Array.from(new Set([...prev, "edit_cards"])) : prev.filter((p) => p !== "edit_cards"),
-                        )
-                      }
-                    />
-                    Edit cards
-                  </label>
-                  <label className="flex items-center gap-2 text-sm text-heading">
-                    <input
-                      type="checkbox"
-                      checked={teamPermissionDraft.includes("delete_cards")}
-                      onChange={(e) =>
-                        setTeamPermissionDraft((prev) =>
-                          e.target.checked ? Array.from(new Set([...prev, "delete_cards"])) : prev.filter((p) => p !== "delete_cards"),
-                        )
-                      }
-                    />
-                    Delete cards
-                  </label>
-                </div>
-                {teamError && <p className="text-sm font-normal leading-[1.6] text-red-500">{teamError}</p>}
-                <Button type="submit" disabled={isSubmittingTeamInvite}>
-                  {isSubmittingTeamInvite ? "Saving..." : "Add / Update Member"}
-                </Button>
-              </form>
-              <div className="rounded-md border border-border/50 bg-white/60 p-3 max-h-56 overflow-y-auto">
-                <p className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted mb-2">Current members</p>
-                {teamMembers.length === 0 ? (
-                  <p className="text-sm text-muted">No members added yet.</p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {teamMembers.map((m) => (
-                      <div key={m.id} className="text-sm text-heading flex flex-col gap-1 border border-border/40 rounded-md px-2 py-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="truncate">{m.member_email}</span>
-                          <span className="text-xs bg-primary/10 text-primary-strong border border-primary/20 px-2 py-1 rounded-inline">{m.role_label}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {(m.permissions || []).length > 0 ? (
-                            (m.permissions || []).map((perm) => (
-                              <span key={`${m.id}-${perm}`} className="text-[13px] leading-[1.25] bg-surface px-2 py-1 rounded-inline border border-border/50">
-                                {perm}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-[13px] leading-[1.25] text-muted">No default permissions</span>
+
+            <div className="px-8 py-8">
+              {teamModalView === "list" && (
+                <div className="flex flex-col gap-6">
+                  {!isOrgTeamMember && (
+                    <Button 
+                      variant="primary" 
+                      onClick={() => {
+                        setTeamInviteEmail("");
+                        setTeamInviteRoleLabel("");
+                        setTeamPermissionDraft([]);
+                        setTeamModalView("add");
+                      }}
+                      icon={<Plus size={18} />}
+                      fullWidth
+                    >
+                      Invite New Member
+                    </Button>
+                  )}
+
+                  <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
+                    {teamMembers.length === 0 ? (
+                      <div className="py-12 text-center flex flex-col items-center gap-3 bg-surface/30 rounded-xl border border-dashed border-border/50">
+                        <Users size={32} className="text-muted/40" />
+                        <p className="text-sm text-muted">No members added yet.</p>
+                      </div>
+                    ) : (
+                      teamMembers.map((m) => (
+                        <div 
+                          key={m.id} 
+                          className="group flex items-center justify-between p-4 bg-white/50 border border-white/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
+                        >
+                          <div className="flex items-center gap-4 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm border border-primary/20 shrink-0">
+                              {m.member_email.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex flex-col min-w-0">
+                              <span className="text-sm font-semibold text-heading truncate">{m.member_email}</span>
+                              <span className="text-xs text-muted font-medium bg-surface/50 w-fit px-2 py-0.5 rounded-md border border-border/30 mt-0.5">{m.role_label}</span>
+                            </div>
+                          </div>
+                          
+                          {!isOrgTeamMember && (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              icon={<Pencil size={14} />}
+                              onClick={() => {
+                                setTeamInviteEmail(m.member_email);
+                                setTeamInviteRoleLabel(m.role_label);
+                                setTeamPermissionDraft(m.permissions || []);
+                                setTeamError("");
+                                setTeamModalView("edit");
+                              }}
+                              className="transition-all shadow-sm border-primary/20 text-primary-strong"
+                            >
+                              Edit Access
+                            </Button>
                           )}
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {teamModalView === "add" && (
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!teamInviteEmail || !teamInviteRoleLabel) {
+                      setTeamError("Please fill in both email and role.");
+                      return;
+                    }
+                    setTeamError("");
+                    setTeamModalView("edit"); // Move to permission selection
+                  }} 
+                  className="flex flex-col gap-6"
+                >
+                  <div className="flex flex-col gap-4">
+                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 mb-2">
+                      <p className="text-[13px] text-primary-strong font-medium">Step 1: Member Details</p>
+                      <p className="text-[11px] text-muted leading-relaxed">Enter the details of the person you want to invite. You will configure their permissions in the next step.</p>
+                    </div>
+                    <TextInput
+                      label="Member Email"
+                      required
+                      type="email"
+                      placeholder="colleague@company.com"
+                      value={teamInviteEmail}
+                      onChange={setTeamInviteEmail}
+                    />
+                    <TextInput
+                      label="Role Label"
+                      required
+                      placeholder="e.g. Media Manager, Lead Designer"
+                      value={teamInviteRoleLabel}
+                      onChange={setTeamInviteRoleLabel}
+                    />
+                  </div>
+                  
+                  {teamError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-100">{teamError}</p>}
+                  
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      fullWidth 
+                      onClick={() => setTeamModalView("list")}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      fullWidth 
+                    >
+                      Next: Set Permissions
+                    </Button>
+                  </div>
+                </form>
+              )}
+
+              {teamModalView === "edit" && (
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddTeamMember(e);
+                  }} 
+                  className="flex flex-col gap-6"
+                >
+                  <div className="flex flex-col gap-5">
+                    <TextInput
+                      label="Role Label"
+                      required
+                      placeholder="e.g. Director"
+                      value={teamInviteRoleLabel}
+                      onChange={setTeamInviteRoleLabel}
+                    />
+                    
+                    <div className="flex flex-col gap-3">
+                      <label className="text-[13px] font-semibold text-heading uppercase tracking-wider opacity-60">Permissions</label>
+                      <div className="grid gap-2">
+                        {[
+                          { id: "create_event", label: "Create Campaigns", desc: "Allow creating new events and campaigns" },
+                          { id: "manage_event", label: "Manage Events", desc: "Full access to edit and manage existing events" },
+                          { id: "edit_cards", label: "Edit Cards", desc: "Can edit attendee card details" },
+                          { id: "delete_cards", label: "Delete Cards", desc: "Can remove attendee cards" },
+                        ].map((perm) => (
+                          <label 
+                            key={perm.id} 
+                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer hover:bg-surface/50 ${
+                              teamPermissionDraft.includes(perm.id) 
+                              ? "bg-primary/5 border-primary/30" 
+                              : "bg-white/30 border-border/30"
+                            }`}
+                          >
+                            <div className="pt-1">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 rounded-md accent-primary"
+                                checked={teamPermissionDraft.includes(perm.id)}
+                                onChange={(e) =>
+                                  setTeamPermissionDraft((prev) =>
+                                    e.target.checked ? Array.from(new Set([...prev, perm.id])) : prev.filter((p) => p !== perm.id),
+                                  )
+                                }
+                              />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-semibold text-heading leading-none mb-1">{perm.label}</span>
+                              <span className="text-[11px] text-muted leading-tight">{perm.desc}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {teamError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-100">{teamError}</p>}
+
+                  <div className="flex gap-3 pt-2">
+                    <Button 
+                      type="button" 
+                      variant="secondary" 
+                      fullWidth 
+                      onClick={() => setTeamModalView("list")}
+                    >
+                      Back
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      fullWidth 
+                      disabled={isSubmittingTeamInvite}
+                    >
+                      {isSubmittingTeamInvite ? "Saving..." : "Update Permissions"}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
