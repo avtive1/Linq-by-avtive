@@ -63,28 +63,15 @@ export async function GET() {
     }
 
     if (data?.org_owner_user_id) {
-      // 1. Get global permissions from role templates
-      const { data: templateData } = await supabaseAdmin
-        .from("organization_role_permission_templates")
-        .select("permissions")
-        .eq("org_owner_user_id", data.org_owner_user_id)
-        .eq("role_label", data.role_label)
-        .maybeSingle();
-      
-      const rolePermissions = templateData?.permissions || [];
-
-      // 2. Get granular event-specific permissions
+      // Member capabilities are sourced from actual active grants, not role template defaults.
       const { data: grants } = await supabaseAdmin
         .from("access_grants")
         .select("permission")
         .eq("grantee_user_id", userId)
         .eq("status", "active");
-      
-      const grantPermissions = (grants || []).map((row: { permission: string }) => row.permission);
-      
-      // Combine all permissions
-      const permissions = Array.from(new Set([...rolePermissions, ...grantPermissions]));
-
+      const permissions = Array.from(
+        new Set((grants || []).map((row: { permission: string }) => row.permission)),
+      );
       return NextResponse.json({ data: { ...data, permissions } }, { status: 200 });
     }
 

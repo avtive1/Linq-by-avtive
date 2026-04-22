@@ -107,9 +107,10 @@ function DashboardContent() {
   const [orgJoinInbox, setOrgJoinInbox] = useState<OrgJoinInboxRequest[]>([]);
   const [myOrgJoinRequests, setMyOrgJoinRequests] = useState<MyOrgJoinRequest[]>([]);
   const [joinGateStatus, setJoinGateStatus] = useState<"pending" | "awaiting_owner" | null>(null);
+  // REVERT_FIX_MARKER_V1
   const [joinGateOrgName, setJoinGateOrgName] = useState("");
   const [teamModalView, setTeamModalView] = useState<"list" | "add" | "edit">("list");
-  const [selectedMemberToEdit, setSelectedMemberToEdit] = useState<TeamMember | null>(null);
+  const [selectedMemberToEdit, setSelectedMemberToEdit] = useState<OrgMemberRow | null>(null);
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
@@ -153,7 +154,7 @@ function DashboardContent() {
       // Logic for Effective User ID
       let effectiveId = session.user.id;
       let effectiveName = session.user.email?.split("@")[0] || "";
-      let userIsOrgTeamMemberLocal = false;
+      let userisOrgTeamMemberLocal = false;
       let userIsOrgOwnerLocal = false;
       let gateStatus: "pending" | "awaiting_owner" | null = null;
 
@@ -175,7 +176,7 @@ function DashboardContent() {
         if (memberPayload?.data?.org_owner_user_id) {
           effectiveId = memberPayload.data.org_owner_user_id;
           setIsOrgTeamMember(true);
-          userIsOrgTeamMemberLocal = true;
+          userisOrgTeamMemberLocal = true;
           setIsOrgOwner(false);
           userIsOrgOwnerLocal = false;
           setOrgRoleLabel(String(memberPayload.data.role_label || ""));
@@ -272,7 +273,7 @@ function DashboardContent() {
       }
       
       setUserName(effectiveName);
-      if (!isActuallyAdmin && !userIsOrgTeamMemberLocal && !userIsOrgOwnerLocal && (gateStatus === "pending" || gateStatus === "awaiting_owner")) {
+      if (!isActuallyAdmin && !userisOrgTeamMemberLocal && !userIsOrgOwnerLocal && (gateStatus === "pending" || gateStatus === "awaiting_owner")) {
         setIsCheckingAuth(false);
         return;
       }
@@ -496,7 +497,7 @@ function DashboardContent() {
     }
   };
 
-  const loadTeamMembers = async () => {
+  const loadteamMembers = async () => {
     try {
       const res = await fetch("/api/organization-members");
       const payload = await res.json();
@@ -510,7 +511,7 @@ function DashboardContent() {
     }
   };
 
-  const handleAddTeamMember = async (e: React.FormEvent) => {
+  const handleAddOrgMemberRow = async (e: React.FormEvent) => {
     e.preventDefault();
     setTeamError("");
     if (!teamInviteEmail.trim() || !teamInviteRoleLabel.trim()) {
@@ -537,7 +538,7 @@ function DashboardContent() {
       setTeamInviteRoleLabel("");
       setTeamPermissionDraft([]);
       toast.success("Team member access updated.");
-      await loadTeamMembers();
+      await loadteamMembers();
     } catch {
       setTeamError("Could not add team member.");
     } finally {
@@ -787,7 +788,7 @@ function DashboardContent() {
                   setIsTeamModalOpen(true);
                   setTeamModalView("list");
                   setTeamError("");
-                  await loadTeamMembers();
+                  await loadteamMembers();
                 }}
                 className={isOrgTeamMember ? "opacity-50" : ""}
               >
@@ -1412,7 +1413,7 @@ function DashboardContent() {
                 <form 
                   onSubmit={(e) => {
                     e.preventDefault();
-                    handleAddTeamMember(e);
+                    handleAddOrgMemberRow(e);
                   }} 
                   className="flex flex-col gap-6"
                 >
