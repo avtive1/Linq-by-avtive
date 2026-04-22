@@ -665,7 +665,7 @@ function DashboardContent() {
         <GradientBackground />
         <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="mx-auto max-w-[760px] glass-panel rounded-md p-8 sm:p-12 flex flex-col gap-6 text-center">
-            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [text-shadow:0_0_0.8px_currentColor]">
+            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]">
               {joinGateStatus === "pending" ? "Organization access pending approval" : "Organization setup pending"}
             </h1>
             <p className="text-base text-muted leading-[1.6]">
@@ -739,9 +739,9 @@ function DashboardContent() {
               {isPreviewMode ? "Back to Admin" : "Back to Home"}
             </Link>
             <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70">
-              AVTIVE
+              {organizationName?.trim() || "Organization"}
             </span>
-            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [text-shadow:0_0_0.8px_currentColor]">
+            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]">
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
@@ -873,7 +873,7 @@ function DashboardContent() {
             <div className="flex flex-col gap-1">
               <span className="ui-eyebrow">Live Presence</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
+                <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
                 <span className="text-lg font-semibold text-primary-strong">Attendees</span>
@@ -889,7 +889,7 @@ function DashboardContent() {
             <div className="flex flex-col">
               <span className="ui-eyebrow mb-1">Activity Tracking</span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
+                <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
                 <span className="text-lg font-semibold text-primary-strong">Total Campaigns</span>

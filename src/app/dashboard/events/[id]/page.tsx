@@ -780,7 +780,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               Campaign details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
-              <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [text-shadow:0_0_0.8px_currentColor]">
+              <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]">
                 {eventData.name}
               </h1>
               <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-3 py-1 rounded-md border ${status.classes}`}>
