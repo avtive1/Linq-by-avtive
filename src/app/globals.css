@@ -88,8 +88,23 @@ small,
 }
 
 .text-\[13px\],
+.text-\[14px\],
 .text-\[15px\] {
   font-size: 1rem !important;
+}
+
+/* Keep larger arbitrary sizes coherent on a simple big-readable scale. */
+.text-\[16px\],
+.text-\[17px\],
+.text-\[17\.5px\] {
+  font-size: 1.125rem !important;
+}
+
+.text-\[18px\],
+.text-\[19px\],
+.text-\[19\.5px\],
+.text-\[20px\] {
+  font-size: 1.25rem !important;
 }
 
 /* Skip native form controls: they often sit inside overflow-hidden shells; a clipped
