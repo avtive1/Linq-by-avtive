@@ -89,16 +89,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       .eq("id", id);
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 400 });
 
+    let requesterEmail = "";
+
     if (decision === "approve") {
+      // Fetch email to satisfy the unique constraint (org_owner_user_id, member_email)
+      const { data: requesterUser } = await supabaseAdmin.auth.admin.getUserById(requestRow.requester_user_id);
+      requesterEmail = requesterUser?.user?.email || "";
+
       const { error: memberErr } = await supabaseAdmin.from("organization_members").upsert(
         {
           org_owner_user_id: requestRow.owner_user_id,
           member_user_id: requestRow.requester_user_id,
+          member_email: requesterEmail.toLowerCase(),
           role_label: nextRoleLabel,
           status: "active",
           updated_at: new Date().toISOString(),
         },
-        { onConflict: "org_owner_user_id,member_user_id" },
+        { onConflict: "org_owner_user_id,member_email" },
       );
       if (memberErr) return NextResponse.json({ error: memberErr.message }, { status: 400 });
 
@@ -107,10 +114,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       } catch (e: any) {
         return NextResponse.json({ error: e?.message || "Failed to seed default viewer access." }, { status: 400 });
       }
+    } else {
+      const { data: requesterUser } = await supabaseAdmin.auth.admin.getUserById(requestRow.requester_user_id);
+      requesterEmail = requesterUser?.user?.email || "";
     }
 
-    const { data: requesterUser } = await supabaseAdmin.auth.admin.getUserById(requestRow.requester_user_id);
-    const requesterEmail = requesterUser?.user?.email;
     if (requesterEmail) {
       await sendTransactionalEmail({
         to: requesterEmail,
