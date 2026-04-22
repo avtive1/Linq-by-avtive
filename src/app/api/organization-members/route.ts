@@ -151,7 +151,7 @@ export async function POST(req: Request) {
         { onConflict: "org_owner_user_id,role_label" },
       );
 
-    if (normalizedPermissions.length > 0) {
+    if (normalizedPermissions.length > 0 && target?.id) {
       const { data: ownerEvents } = await supabaseAdmin.from("events").select("id").eq("user_id", ownerId);
       const eventIds = (ownerEvents || []).map((e) => e.id);
       if (eventIds.length > 0) {
@@ -182,7 +182,7 @@ export async function POST(req: Request) {
       }
     }
 
-    if (target.email) {
+    if (target?.email) {
       await sendTransactionalEmail({
         to: target.email,
         subject: "You were granted organization access",
