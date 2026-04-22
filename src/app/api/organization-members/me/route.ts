@@ -36,7 +36,16 @@ export async function GET() {
       .limit(1)
       .maybeSingle();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    if (data?.org_owner_user_id && data?.role_label) {
+      const { data: template } = await supabaseAdmin
+        .from("organization_role_permission_templates")
+        .select("permissions")
+        .eq("org_owner_user_id", data.org_owner_user_id)
+        .eq("role_label", data.role_label)
+        .maybeSingle();
+      return NextResponse.json({ data: { ...data, permissions: template?.permissions || [] } }, { status: 200 });
+    }
+
     return NextResponse.json({ data: data || null }, { status: 200 });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || "Failed to load membership." }, { status: 500 });

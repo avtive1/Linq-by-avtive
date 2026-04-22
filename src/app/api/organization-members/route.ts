@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     if (!normalizedEmail || !nextRoleLabel) {
       return NextResponse.json({ error: "email and roleLabel are required." }, { status: 400 });
     }
-    const allowedPermissions = ["manage_event", "edit_cards", "delete_cards"];
+    const allowedPermissions = ["create_event", "manage_event", "edit_cards", "delete_cards"];
     const normalizedPermissions = (permissions || []).filter((p) => allowedPermissions.includes(p));
 
     const { data: usersData, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });

@@ -91,6 +91,8 @@ function DashboardContent() {
   const [isOrgTeamMember, setIsOrgTeamMember] = useState(false);
   const [isOrgOwner, setIsOrgOwner] = useState(false);
   const [orgRoleLabel, setOrgRoleLabel] = useState("");
+  const [orgOwnerUserId, setOrgOwnerUserId] = useState("");
+  const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
   const [teamInviteRoleLabel, setTeamInviteRoleLabel] = useState("");
@@ -169,6 +171,8 @@ function DashboardContent() {
           setIsOrgTeamMember(true);
           setIsOrgOwner(false);
           setOrgRoleLabel(String(memberPayload.data.role_label || ""));
+          setOrgOwnerUserId(String(memberPayload.data.org_owner_user_id || ""));
+          setGrantedPermissions(memberPayload.data.permissions || []);
           try {
             const mineRes = await fetch("/api/access-requests/mine");
             const minePayload = await mineRes.json();
@@ -391,7 +395,7 @@ function DashboardContent() {
         location_type: eventForm.location_type,
         date: eventForm.date,
         time: eventForm.time,
-        user_id: user.id,
+        user_id: impersonateId || (isOrgTeamMember ? (orgOwnerUserId || user.id) : user.id),
         logo_url: logoUrl
       };
       
@@ -402,7 +406,7 @@ function DashboardContent() {
       router.refresh();
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
-      fetchData(user.id);
+      fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || user.id) : user.id));
     } catch (err: any) {
       console.error(err);
       toast.error("Failed to create event. Please try again.");
@@ -687,7 +691,7 @@ function DashboardContent() {
                 </Button>
                </Link>
             )}
-            {!isPreviewMode && !isOrgTeamMember && !hasPendingOrgJoin && (
+            {!isPreviewMode && (!isOrgTeamMember || grantedPermissions.includes("create_event")) && !hasPendingOrgJoin && (
               <Button
                 variant="secondary"
                 onClick={() => setIsEventModalOpen(true)}
@@ -1136,11 +1140,11 @@ function DashboardContent() {
                   setOrganizationDraft(v);
                   if (usernameError) setUsernameError("");
                 }}
-                disabled={isOrgTeamMember}
-                readOnly={isOrgTeamMember}
+                disabled={isOrgTeamMember || hasPendingOrgJoin}
+                readOnly={isOrgTeamMember || hasPendingOrgJoin}
               />
               <p className="text-xs text-muted -mt-1">
-                {isOrgTeamMember
+                {isOrgTeamMember || hasPendingOrgJoin
                   ? "Organization name is read-only for team members. Ask your organization admin to update it."
                   : "Organization name can be changed once every 90 days."}
               </p>
@@ -1209,6 +1213,18 @@ function DashboardContent() {
                   <label className="flex items-center gap-2 text-sm text-heading">
                     <input
                       type="checkbox"
+                      checked={teamPermissionDraft.includes("create_event")}
+                      onChange={(e) =>
+                        setTeamPermissionDraft((prev) =>
+                          e.target.checked ? Array.from(new Set([...prev, "create_event"])) : prev.filter((p) => p !== "create_event"),
+                        )
+                      }
+                    />
+                    Create new campaigns
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-heading">
+                    <input
+                      type="checkbox"
                       checked={teamPermissionDraft.includes("manage_event")}
                       onChange={(e) =>
                         setTeamPermissionDraft((prev) =>
@@ -1216,7 +1232,7 @@ function DashboardContent() {
                         )
                       }
                     />
-                    Manage event
+                    Manage existing events
                   </label>
                   <label className="flex items-center gap-2 text-sm text-heading">
                     <input

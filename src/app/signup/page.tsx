@@ -22,7 +22,7 @@ export default function SignupPage() {
     linkedin: "",
   });
   const [usernameStatus, setUsernameStatus] = useState<"loading" | "available" | "taken" | "invalid" | null>(null);
-  const [usernameLocked, setUsernameLocked] = useState(true);
+  const [usernameLocked, setUsernameLocked] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
