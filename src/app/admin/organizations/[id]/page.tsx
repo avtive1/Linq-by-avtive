@@ -61,7 +61,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
   const totalAttendees = attendees.length;
 
   return (
-    <div className="px-6 sm:px-12 lg:px-16 py-12 sm:py-16">
+    <div className="px-2 sm:px-4 lg:px-6 py-12 sm:py-16">
       <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted hover:text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md w-fit mb-6">
         <ArrowLeft size={16} />
         Back to Dashboard

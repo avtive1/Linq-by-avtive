@@ -66,7 +66,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   };
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-12 md:py-16 px-6 sm:px-12 lg:px-16 overflow-x-hidden print:p-0">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-12 md:py-16 px-2 sm:px-4 lg:px-6 overflow-x-hidden print:p-0">
       <GradientBackground />
 
       <div className="no-print relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">

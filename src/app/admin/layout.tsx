@@ -63,7 +63,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </Link>
       </div>
 
-      <div className="relative z-10 w-full max-w-[1400px] mx-auto">
+      <div className="relative z-10 w-full max-w-[1640px] mx-auto">
         {children}
       </div>
     </div>

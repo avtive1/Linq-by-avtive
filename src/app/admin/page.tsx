@@ -99,7 +99,7 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div className="px-6 sm:px-12 lg:px-16 py-12 sm:py-16 flex flex-col gap-16">
+    <div className="px-2 sm:px-4 lg:px-6 py-12 sm:py-16 flex flex-col gap-16">
       <div className="flex flex-col gap-2">
         <h1 className="text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">Platform Overview</h1>
         <p className="text-muted">Real-time global insights and management hub.</p>

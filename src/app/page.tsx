@@ -5,7 +5,7 @@ import { Button } from "@/components/ui";
 
 export default function HomePage() {
   return (
-    <main className="relative min-h-screen w-full flex flex-col items-center justify-center px-6 sm:px-12 lg:px-16 py-12 sm:py-16 overflow-hidden">
+    <main className="relative min-h-screen w-full flex flex-col items-center justify-center px-2 sm:px-4 lg:px-6 py-12 sm:py-16 overflow-hidden">
       <GradientBackground />
 
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-[1100px] text-center">

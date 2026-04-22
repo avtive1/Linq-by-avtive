@@ -65,7 +65,7 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-6 sm:px-12 lg:px-16 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-hidden bg-transparent">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">

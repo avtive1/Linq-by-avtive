@@ -663,9 +663,9 @@ function DashboardContent() {
     return (
       <main className="relative min-h-screen w-full bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+        <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="mx-auto max-w-[760px] glass-panel rounded-md p-8 sm:p-12 flex flex-col gap-6 text-center">
-            <h1 className="text-3xl sm:text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [text-shadow:0_0_0.8px_currentColor]">
               {joinGateStatus === "pending" ? "Organization access pending approval" : "Organization setup pending"}
             </h1>
             <p className="text-base text-muted leading-[1.6]">
@@ -702,7 +702,7 @@ function DashboardContent() {
       )}
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+      <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
         {isCheckingAuth ? (
           <>
             <div className="flex flex-col gap-6 mb-12">
@@ -741,7 +741,7 @@ function DashboardContent() {
             <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70">
               AVTIVE
             </span>
-            <h1 className="text-3xl sm:text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [text-shadow:0_0_0.8px_currentColor]">
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
@@ -1359,7 +1359,7 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
-          <div className="relative w-full max-w-[720px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[660px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
             <div className="px-12 pt-12 pb-8 flex items-center justify-between border-b border-border/10">
               <div className="flex flex-col gap-1">
@@ -1388,7 +1388,7 @@ function DashboardContent() {
               </button>
             </div>
 
-            <div className="px-12 py-10">
+            <div className="px-8 py-8">
               {teamModalView === "list" && (
                 <div className="flex flex-col gap-8">
                   {!isOrgTeamMember && (
@@ -1408,7 +1408,7 @@ function DashboardContent() {
                     </Button>
                   )}
 
-                  <div className="flex flex-col gap-6 max-h-[520px] overflow-y-auto pr-2">
+                  <div className="flex flex-col gap-4 max-h-[520px] overflow-y-auto pr-2">
                     {teamMembers.length === 0 ? (
                       <div className="py-12 text-center flex flex-col items-center gap-3 bg-surface/30 rounded-xl border border-dashed border-border/50">
                         <Users size={32} className="text-muted/40" />
@@ -1418,9 +1418,9 @@ function DashboardContent() {
                       teamMembers.map((m) => (
                         <div 
                           key={m.id} 
-                          className="group flex items-center justify-between p-6 bg-white/60 border border-border/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
+                          className="group w-full flex items-center justify-between px-4 py-4 bg-white/60 border border-border/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
                         >
-                          <div className="flex items-center gap-6 min-w-0">
+                          <div className="flex items-center gap-4 min-w-0">
                             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm border border-primary/20 shrink-0">
                               {m.member_email.charAt(0).toUpperCase()}
                             </div>
@@ -1645,7 +1645,7 @@ export default function DashboardPage() {
     <Suspense fallback={
       <main className="relative min-h-screen w-full bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+        <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-48 h-10" />

@@ -712,7 +712,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     return (
       <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
         <GradientBackground />
-        <div className="relative z-10 w-full max-w-[1240px] px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+        <div className="relative z-10 w-full max-w-[1480px] px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-64 h-12" />
@@ -762,7 +762,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+      <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up relative z-30">
           <div className="flex flex-col gap-2 sm:gap-3">
@@ -780,7 +780,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               Campaign details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
-              <h1 className="text-3xl sm:text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
+              <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [text-shadow:0_0_0.8px_currentColor]">
                 {eventData.name}
               </h1>
               <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-3 py-1 rounded-md border ${status.classes}`}>
@@ -1702,7 +1702,7 @@ export default function EventPage({ params }: { params: Promise<{ id: string }> 
     <Suspense fallback={
       <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
         <GradientBackground />
-        <div className="relative z-10 w-full max-w-[1240px] px-6 sm:px-12 lg:px-16 py-12 sm:py-16 md:py-20">
+        <div className="relative z-10 w-full max-w-[1480px] px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-64 h-12" />
