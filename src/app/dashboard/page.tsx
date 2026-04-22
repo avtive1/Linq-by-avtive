@@ -1359,9 +1359,9 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
-          <div className="relative w-full max-w-[520px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[720px] glass-panel bg-white/95 border border-white/60 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-border/10">
+            <div className="px-12 pt-12 pb-8 flex items-center justify-between border-b border-border/10">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {teamModalView === "list" && "Organization Team"}
@@ -1388,9 +1388,9 @@ function DashboardContent() {
               </button>
             </div>
 
-            <div className="px-8 py-8">
+            <div className="px-12 py-10">
               {teamModalView === "list" && (
-                <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-8">
                   {!isOrgTeamMember && (
                     <Button 
                       variant="primary" 
@@ -1409,7 +1409,7 @@ function DashboardContent() {
                     </Button>
                   )}
 
-                  <div className="flex flex-col gap-3 max-h-[400px] overflow-y-auto pr-1">
+                  <div className="flex flex-col gap-6 max-h-[520px] overflow-y-auto pr-2">
                     {teamMembers.length === 0 ? (
                       <div className="py-12 text-center flex flex-col items-center gap-3 bg-surface/30 rounded-xl border border-dashed border-border/50">
                         <Users size={32} className="text-muted/40" />
@@ -1419,15 +1419,15 @@ function DashboardContent() {
                       teamMembers.map((m) => (
                         <div 
                           key={m.id} 
-                          className="group flex items-center justify-between p-4 bg-white/50 border border-white/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
+                          className="group flex items-center justify-between p-6 bg-white/50 border border-white/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
                         >
-                          <div className="flex items-center gap-4 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm border border-primary/20 shrink-0">
+                          <div className="flex items-center gap-6 min-w-0">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm border border-primary/20 shrink-0">
                               {m.member_email.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex flex-col min-w-0">
+                            <div className="flex flex-col gap-2 min-w-0">
                               <span className="text-sm font-semibold text-heading truncate">{m.member_email}</span>
-                              <span className="text-xs text-muted font-medium bg-surface/50 w-fit px-2 py-0.5 rounded-md border border-border/30 mt-0.5">{m.role_label}</span>
+                              <span className="text-xs text-muted font-medium bg-surface/50 w-fit px-3 py-1 rounded-md border border-border/30">{m.role_label}</span>
                             </div>
                           </div>
                           
@@ -1466,10 +1466,10 @@ function DashboardContent() {
                     setTeamError("");
                     setTeamModalView("edit"); // Move to permission selection
                   }} 
-                  className="flex flex-col gap-6"
+                  className="flex flex-col gap-8"
                 >
-                  <div className="flex flex-col gap-4">
-                    <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 mb-2">
+                  <div className="flex flex-col gap-6">
+                    <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 mb-2">
                       <p className="text-[13px] text-primary-strong font-medium">Step 1: Member Details</p>
                       <p className="text-[11px] text-muted leading-relaxed">Enter the details of the person you want to invite. You will configure their permissions in the next step.</p>
                     </div>
@@ -1517,9 +1517,9 @@ function DashboardContent() {
                     e.preventDefault();
                     handleAddOrgMemberRow(e);
                   }} 
-                  className="flex flex-col gap-6"
+                  className="flex flex-col gap-8"
                 >
-                  <div className="flex flex-col gap-5">
+                  <div className="flex flex-col gap-6">
                     <TextInput
                       label="Role Label"
                       required
@@ -1530,7 +1530,7 @@ function DashboardContent() {
                     
                     <div className="flex flex-col gap-3">
                       <label className="text-[13px] font-semibold text-heading uppercase tracking-wider opacity-60">Permissions</label>
-                      <div className="grid gap-2">
+                      <div className="grid gap-3">
                         {[
                           { id: "create_event", label: "Create Campaigns", desc: "Allow creating new events and campaigns" },
                           { id: "manage_event", label: "Manage Events", desc: "Full access to edit and manage existing events" },
@@ -1539,7 +1539,7 @@ function DashboardContent() {
                         ].map((perm) => (
                           <label 
                             key={perm.id} 
-                            className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer hover:bg-surface/50 ${
+                            className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer hover:bg-surface/50 ${
                               teamPermissionDraft.includes(perm.id) 
                               ? "bg-primary/5 border-primary/30" 
                               : "bg-white/30 border-border/30"

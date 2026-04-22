@@ -51,7 +51,7 @@ export default function LoginPage() {
     <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-6 sm:px-12 lg:px-16 overflow-hidden bg-transparent">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+      <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link 
           href="/" 
           className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
@@ -63,23 +63,23 @@ export default function LoginPage() {
         </Link>
 
         {/* Brand */}
-        <div className="mb-6 flex justify-center">
+        <div className="mb-8 flex justify-center">
           <span className="ui-eyebrow text-muted/70">
             AVTIVE
           </span>
         </div>
 
         {/* Login Card */}
-        <div className="glass-panel rounded-xl p-6 sm:p-8 shadow-2xl shadow-primary/5">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
+        <div className="glass-panel rounded-xl p-8 sm:p-12 shadow-2xl shadow-primary/5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Welcome back</h1>
               <p className="text-base text-muted leading-[1.55]">
                 Please enter your details to sign in.
               </p>
             </div>
 
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-6">
               <TextInput
                 label="Email Address"
                 required
@@ -100,7 +100,7 @@ export default function LoginPage() {
               />
               <Link
                 href="/forgot-password"
-                className="self-end text-xs font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
+                className="self-end text-sm font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
               >
                 Forgot password?
               </Link>
@@ -108,7 +108,7 @@ export default function LoginPage() {
 
             {/* Inline error message */}
             {error && (
-              <p className="text-sm text-red-500 font-medium -mt-4 text-center">
+              <p className="text-sm text-red-500 font-medium text-center">
                 {error}
               </p>
             )}

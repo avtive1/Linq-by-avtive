@@ -28,23 +28,23 @@ export function EventSponsorsForm({ rows, onChange, onFileError, disabled }: Pro
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted leading-snug">
           Add up to {MAX_EVENT_SPONSORS} sponsors. Each needs a name and logo. Logos appear on horizontal and vertical attendee cards.
         </p>
       </div>
 
-      <div className="flex flex-col gap-4 max-h-[min(52vh,420px)] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-6 max-h-[min(60vh,520px)] overflow-y-auto pr-2">
         {rows.length === 0 && (
-          <p className="text-xs text-muted/80 italic py-2">No sponsor slots yet. Use &quot;Add sponsor&quot; to start.</p>
+          <p className="text-sm text-muted/80 italic py-3">No sponsor slots yet. Use &quot;Add sponsor&quot; to start.</p>
         )}
         {rows.map((row, index) => (
           <div
             key={index}
-            className="rounded-lg border border-border/70 bg-white/60 p-4 flex flex-col gap-3 shadow-sm"
+            className="rounded-lg border border-border/70 bg-white/60 p-6 flex flex-col gap-4 shadow-sm"
           >
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-4">
               <span className="text-xs font-bold text-heading/70 uppercase tracking-wider">Sponsor {index + 1}</span>
               <button
                 type="button"

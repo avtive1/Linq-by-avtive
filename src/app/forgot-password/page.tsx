@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
     <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-6 sm:px-12 lg:px-16 overflow-hidden bg-transparent">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
+      <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link
           href="/login"
           className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
@@ -58,19 +58,19 @@ export default function ForgotPasswordPage() {
           <span>Back to sign in</span>
         </Link>
 
-        <div className="mb-6 flex justify-center">
+        <div className="mb-8 flex justify-center">
           <span className="ui-eyebrow text-muted/70">
             AVTIVE
           </span>
         </div>
 
-        <div className="glass-panel rounded-xl p-6 sm:p-8 shadow-2xl shadow-primary/5">
+        <div className="glass-panel rounded-xl p-8 sm:p-12 shadow-2xl shadow-primary/5">
           {sent ? (
-            <div className="flex flex-col items-center text-center gap-4 py-4">
+            <div className="flex flex-col items-center text-center gap-6 py-6">
               <div className="w-14 h-14 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong">
                 <Mail size={26} />
               </div>
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-4">
                 <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Check your inbox</h1>
                 <p className="text-base text-muted leading-[1.55] max-w-[320px]">
                   If an account exists for <span className="font-semibold text-heading">{email}</span>, we sent a reset link. Click it to set a new password.
@@ -83,8 +83,8 @@ export default function ForgotPasswordPage() {
               </Link>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-              <div className="flex flex-col gap-2">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+              <div className="flex flex-col gap-4">
                 <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Reset your password</h1>
                 <p className="text-base text-muted leading-[1.55]">
                   Enter your email and we&apos;ll send you a link to reset it.
