@@ -2,20 +2,20 @@
 
 @theme {
   --font-sans: var(--font-inter-tight), "ui-sans-serif", "system-ui";
-  --text-xs: 1.125rem;
-  --text-xs--line-height: calc(1.6 / 1.125);
-  --text-sm: 1.25rem;
-  --text-sm--line-height: calc(1.7 / 1.25);
-  --text-base: 1.375rem;
-  --text-base--line-height: calc(1.85 / 1.375);
-  --text-lg: 1.5rem;
-  --text-lg--line-height: calc(1.8 / 1.5);
-  --text-xl: 1.75rem;
-  --text-xl--line-height: calc(1.7 / 1.75);
+  --text-xs: 0.9375rem;
+  --text-xs--line-height: calc(1.35 / 0.9375);
+  --text-sm: 1rem;
+  --text-sm--line-height: calc(1.5 / 1);
+  --text-base: 1.125rem;
+  --text-base--line-height: calc(1.7 / 1.125);
+  --text-lg: 1.25rem;
+  --text-lg--line-height: calc(1.7 / 1.25);
+  --text-xl: 1.5rem;
+  --text-xl--line-height: calc(1.5 / 1.5);
   --text-2xl: 2rem;
-  --text-2xl--line-height: calc(1.5 / 2);
-  --text-3xl: 2.5rem;
-  --text-3xl--line-height: calc(1.24 / 2.5);
+  --text-2xl--line-height: calc(1.3 / 2);
+  --text-3xl: 2.375rem;
+  --text-3xl--line-height: calc(1.2 / 2.375);
   
   --color-primary: #79D980;          /* brand fill — buttons, tinted bgs, borders */
   --color-primary-strong: #1E7A24;   /* darker variant for text/icons on light bgs (AA on white) */
@@ -46,7 +46,7 @@ body {
   font-size: var(--text-base);
   line-height: 1.65;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.005em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -63,8 +63,8 @@ h6 {
   text-wrap: balance;
 }
 
-h1 { font-weight: 700; }
-h2 { font-weight: 700; }
+h1 { font-weight: 600; }
+h2 { font-weight: 600; }
 h3 { font-weight: 600; }
 h4 { font-weight: 600; }
 h5,
@@ -76,35 +76,44 @@ small,
   color: color-mix(in oklab, var(--color-muted) 90%, black 10%);
 }
 
-/* Keep all "normal" utility text weights visually stronger for Inter Tight. */
+/* Keep Tailwind "font-normal" aligned to readable default body weight. */
 .font-normal {
   font-weight: 500;
 }
 
 /* Quick coherence pass: uplift small arbitrary text sizes only. */
-.text-\[10px\],
-.text-\[11px\] {
-  font-size: 0.875rem !important;
+:not(button).text-\[10px\],
+:not(button).text-\[11px\] {
+  font-size: 0.9375rem !important;
 }
 
-.text-\[13px\],
-.text-\[14px\],
-.text-\[15px\] {
+:not(button).text-\[13px\],
+:not(button).text-\[14px\] {
+  font-size: 0.9375rem !important;
+}
+
+:not(button).text-\[15px\] {
   font-size: 1rem !important;
 }
 
 /* Keep larger arbitrary sizes coherent on a simple big-readable scale. */
-.text-\[16px\],
-.text-\[17px\],
-.text-\[17\.5px\] {
+:not(button).text-\[16px\],
+:not(button).text-\[17px\] {
+  font-size: 1.0625rem !important;
+}
+
+:not(button).text-\[17\.5px\] {
   font-size: 1.125rem !important;
 }
 
-.text-\[18px\],
-.text-\[19px\],
-.text-\[19\.5px\],
-.text-\[20px\] {
-  font-size: 1.25rem !important;
+:not(button).text-\[18px\],
+:not(button).text-\[19px\] {
+  font-size: 1.3125rem !important;
+}
+
+:not(button).text-\[19\.5px\],
+:not(button).text-\[20px\] {
+  font-size: 1.1875rem !important;
 }
 
 /* Skip native form controls: they often sit inside overflow-hidden shells; a clipped
@@ -162,7 +171,7 @@ small,
 @keyframes slide-up-fade {
   0% {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(12px);
   }
   100% {
     opacity: 1;
@@ -172,14 +181,14 @@ small,
 
 .animate-slide-up {
   opacity: 0;
-  animation: slide-up-fade 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.delay-100 { animation-delay: 100ms; }
-.delay-200 { animation-delay: 200ms; }
-.delay-300 { animation-delay: 300ms; }
-.delay-400 { animation-delay: 400ms; }
-.delay-500 { animation-delay: 500ms; }
+.delay-100 { animation-delay: 60ms; }
+.delay-200 { animation-delay: 120ms; }
+.delay-300 { animation-delay: 180ms; }
+.delay-400 { animation-delay: 240ms; }
+.delay-500 { animation-delay: 300ms; }
 
 @keyframes shimmer {
   0% { background-position: -1000px 0; }
@@ -209,4 +218,29 @@ small,
 nextjs-portal {
   left: unset !important;
   top: unset !important;
+}
+
+button,
+[role="button"] {
+  white-space: nowrap;
+}
+
+a {
+  transition: color 120ms ease, text-decoration-color 120ms ease;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+    scroll-behavior: auto !important;
+  }
 }

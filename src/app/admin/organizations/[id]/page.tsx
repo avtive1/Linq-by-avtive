@@ -74,7 +74,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               {profile?.organization_name || user.user_metadata?.organization_name || "Organization Details"}
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium">
-              <span className="text-primary-strong bg-primary/10 px-2 py-1 rounded-sm">
+              <span className="text-[12px] leading-[1.2] text-primary-strong bg-primary/10 px-2.5 py-0.5 rounded-sm">
                 @{profile?.username || user.email?.split("@")[0]}
               </span>
               <p className="text-muted flex items-center gap-2">

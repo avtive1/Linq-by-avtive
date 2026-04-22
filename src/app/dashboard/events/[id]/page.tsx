@@ -1000,11 +1000,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-slide-up delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search attendees in this campaign..."
-              className="w-full pl-16 pr-8 py-4 bg-white/70 backdrop-blur-md border border-white/50 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm text-heading shadow-sm placeholder:text-muted/60"
+              className="w-full h-12 pl-20 pr-8 py-0 bg-white/70 backdrop-blur-md border border-white/50 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/60"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1046,12 +1046,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
-                          <span className="text-[13px] bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.25] shrink-0">
+                          <span className="text-[12px] bg-primary/10 px-2.5 py-0.5 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.2] shrink-0">
                             {card.guestCategory}
                           </span>
                         )}
                         {card.company && (
-                          <span className="text-[13px] bg-primary/10 px-2 py-1 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.25] shrink-0">
+                          <span className="text-[12px] bg-primary/10 px-2.5 py-0.5 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.2] shrink-0">
                             {card.company}
                           </span>
                         )}
@@ -1470,7 +1470,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <X size={20} />
               </button>
@@ -1486,7 +1486,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   onChange={(v) => setEditForm({ ...editForm, name: v })}
                 />
                 <p
-                  className={`-mt-2 text-xs font-medium ${
+                  className={`-mt-2 text-[13px] font-normal leading-[1.6] ${
                     editForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"
                   }`}
                 >
@@ -1496,7 +1496,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
-                     <label className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location Type</label>
+                     <label className="text-[14px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location Type</label>
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
@@ -1512,10 +1512,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                 {editForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location <span className="text-primary-strong">*</span></label>
-                     <div className="flex items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
+                     <label className="text-[14px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location <span className="text-primary-strong">*</span></label>
+                     <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
-                        <input type="text" value="Webinar" disabled className="flex-1 py-3 text-sm leading-6 text-muted bg-transparent outline-none cursor-not-allowed" />
+                        <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
                      </div>
                    </div>
                 ) : (
@@ -1585,7 +1585,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
               <button
                 onClick={() => !isDeleting && setIsDeleteOpen(false)}
-                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 shrink-0"
+                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 shrink-0"
               >
                 <X size={20} />
               </button>
@@ -1638,7 +1638,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
               <button
                 onClick={() => !isRenewing && setIsRenewOpen(false)}
-                className="w-10 h-10 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <X size={20} />
               </button>

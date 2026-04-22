@@ -122,7 +122,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
               disabled={isDownloading}
               variant="blue"
               icon={<Share2 size={16} />}
-              className="shadow-lg flex-1 md:flex-initial min-w-[140px]"
+              className="shadow-lg flex-1 md:flex-initial min-w-[124px]"
             >
               Share
             </Button>
@@ -132,7 +132,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                   disabled={isDownloading}
                   variant="secondary"
                   icon={<Printer size={18} />}
-                  className="shadow-lg flex-1 md:flex-initial min-w-[140px]"
+                  className="shadow-lg flex-1 md:flex-initial min-w-[124px]"
                >
                   Print Badge
                </Button>
@@ -141,7 +141,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                   onClick={handleDownload}
                   disabled={isDownloading}
                   icon={<Download size={18} />}
-                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial min-w-[140px]"
+                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial min-w-[124px]"
                >
                   {isDownloading ? "Preparing…" : "Download"}
                </Button>

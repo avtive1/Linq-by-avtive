@@ -901,11 +901,11 @@ function DashboardContent() {
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200">
           <div className="relative flex-1">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search campaigns..."
-              className="w-full h-10 pl-16 pr-3 py-0 bg-white/80 backdrop-blur-md border border-white/60 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
+              className="w-full h-12 pl-20 pr-6 py-0 bg-white/80 backdrop-blur-md border border-white/60 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1169,7 +1169,7 @@ function DashboardContent() {
                 onClick={() => {
                   setIsEventModalOpen(false);
                 }}
-                className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
                 <X size={20} />
               </button>
@@ -1197,7 +1197,7 @@ function DashboardContent() {
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
-                     <label className="text-[13px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location Type</label>
+                     <label className="text-[14px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location Type</label>
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
@@ -1213,10 +1213,10 @@ function DashboardContent() {
 
                 {eventForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-[13px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
-                     <div className="flex h-10 items-center bg-surface border border-border/60 rounded-md shadow-sm px-3 overflow-hidden cursor-not-allowed">
+                     <label className="text-[14px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
+                     <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
-                        <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-sm leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
+                        <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
                      </div>
                    </div>
                 ) : (
@@ -1292,7 +1292,7 @@ function DashboardContent() {
               </div>
               <button
                 onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
-                className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
@@ -1308,8 +1308,8 @@ function DashboardContent() {
                   if (usernameError) setUsernameError("");
                 }}
               />
-              <p className="text-xs text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
-              <p className="text-xs text-muted -mt-1">Username can be changed once every 24 days.</p>
+              <p className="text-[13px] text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
+              <p className="text-[13px] text-muted -mt-1">Username can be changed once every 24 days.</p>
               <TextInput
                 label="Organization Name"
                 required
@@ -1323,7 +1323,7 @@ function DashboardContent() {
                 disabled={isOrgTeamMember || hasPendingOrgJoin}
                 readOnly={isOrgTeamMember || hasPendingOrgJoin}
               />
-              <p className="text-xs text-muted -mt-1">
+              <p className="text-[13px] text-muted -mt-1">
                 {isOrgTeamMember || hasPendingOrgJoin
                   ? "Organization name is read-only for team members. Ask your organization admin to update it."
                   : "Organization name can be changed once every 90 days."}
@@ -1382,7 +1382,7 @@ function DashboardContent() {
                     setIsTeamModalOpen(false);
                   }
                 }}
-                className="w-10 h-10 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 {teamModalView === "list" ? <X size={20} /> : <ArrowLeft size={20} />}
               </button>
@@ -1394,7 +1394,7 @@ function DashboardContent() {
                   {!isOrgTeamMember && (
                     <Button 
                       variant="primary" 
-                      size="sm"
+                      size="md"
                       onClick={() => {
                         setTeamInviteEmail("");
                         setTeamInviteRoleLabel("");
@@ -1403,7 +1403,6 @@ function DashboardContent() {
                       }}
                       icon={<Plus size={18} />}
                       fullWidth
-                      className="text-[14px]"
                     >
                       Invite New Member
                     </Button>
@@ -1426,8 +1425,8 @@ function DashboardContent() {
                               {m.member_email.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex flex-col gap-2 min-w-0">
-                              <span className="text-sm font-semibold text-heading truncate">{m.member_email}</span>
-                              <span className="text-xs text-muted font-medium bg-surface/50 w-fit px-3 py-1 rounded-md border border-border/30">{m.role_label}</span>
+                              <span className="text-base font-semibold text-heading truncate leading-[1.4]">{m.member_email}</span>
+                              <span className="text-[13px] leading-[1.25] text-muted font-medium bg-surface/50 w-fit px-3 py-1 rounded-md border border-border/30">{m.role_label}</span>
                             </div>
                           </div>
                           
@@ -1443,7 +1442,7 @@ function DashboardContent() {
                                 setTeamError("");
                                 setTeamModalView("edit");
                               }}
-                              className="transition-all shadow-sm border-primary/20 text-primary-strong text-[14px]"
+                              className="transition-all shadow-sm border-primary/20 text-primary-strong"
                             >
                               Edit Access
                             </Button>

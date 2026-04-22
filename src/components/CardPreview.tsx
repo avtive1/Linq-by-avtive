@@ -417,21 +417,21 @@ export function CardPreview({
 
 
         {/* Meta Info - Precisely positioned per provided CSS */}
-        <p className="absolute left-[30px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-medium leading-[24px]">
-          <img src="https://www.figma.com/api/mcp/asset/911c0336-0dbe-4d71-abd3-95e367313410" className="w-[15px] h-[15px]" alt="" />
+        <p className="absolute left-[30px] top-[356px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
+          <img src="https://www.figma.com/api/mcp/asset/911c0336-0dbe-4d71-abd3-95e367313410" className="w-[20px] h-[20px]" alt="" />
           {data.sessionDate || "Friday, 11th April, 2026"}
         </p>
-        <p className="absolute left-[261px] top-[356px] m-0 flex items-center gap-[7px] text-black text-[16px] font-medium leading-[24px]">
-          <img src="https://www.figma.com/api/mcp/asset/c70396aa-fad6-4461-a222-1ef86c1215c8" className="w-[15px] h-[15px]" alt="" />
+        <p className="absolute left-[261px] top-[356px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
+          <img src="https://www.figma.com/api/mcp/asset/c70396aa-fad6-4461-a222-1ef86c1215c8" className="w-[20px] h-[20px]" alt="" />
           {data.sessionTime || "05:00 PM"}
         </p>
-        <p className="absolute left-[30px] top-[390px] m-0 flex items-center gap-[7px] text-black text-[16px] font-medium leading-[24px]">
+        <p className="absolute left-[30px] top-[390px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
           {isWebinarLocation ? (
-            <svg className="w-[15px] h-[15px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z" />
             </svg>
           ) : (
-            <img src="https://www.figma.com/api/mcp/asset/09c9f77b-5728-4fe6-8b34-b3ad59fe884d" className="w-[15px] h-[15px]" alt="" />
+            <img src="https://www.figma.com/api/mcp/asset/09c9f77b-5728-4fe6-8b34-b3ad59fe884d" className="w-[20px] h-[20px]" alt="" />
           )}
           {data.location || "Expo Center, Islamabad, Pakistan"}
         </p>

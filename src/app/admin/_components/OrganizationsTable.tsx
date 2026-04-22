@@ -75,11 +75,11 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
     <div className="flex flex-col gap-6">
       {/* Search Bar */}
       <div className="relative max-w-md ml-2">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/60" size={18} />
+        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted/60" size={20} />
         <input
           type="text"
           placeholder="Search by username, email or organization..."
-          className="w-full h-10 pl-12 pr-3 py-0 bg-white/60 backdrop-blur-md border border-border/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-sm leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
+          className="w-full h-12 pl-14 pr-6 py-0 bg-white/60 backdrop-blur-md border border-border/50 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
