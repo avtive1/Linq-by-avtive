@@ -81,6 +81,17 @@ small,
   font-weight: 500;
 }
 
+/* Quick coherence pass: uplift small arbitrary text sizes only. */
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 0.875rem !important;
+}
+
+.text-\[13px\],
+.text-\[15px\] {
+  font-size: 1rem !important;
+}
+
 /* Skip native form controls: they often sit inside overflow-hidden shells; a clipped
    outline reads as a stray vertical bar. Use field-level focus styles (e.g. focus-within borders) instead. */
 :focus-visible:not(input, textarea, select) {

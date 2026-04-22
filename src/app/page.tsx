@@ -38,7 +38,7 @@ export default function HomePage() {
 
         {/* Branding Footer */}
         <div className="mt-8 animate-slide-up delay-300">
-          <span className="text-[15px] font-normal tracking-[0.01em] text-heading/65 leading-[1.25]">
+          <span className="text-[18px] font-normal tracking-[0.01em] text-heading/65 leading-[1.25]">
             Powered by AVTIVE
           </span>
         </div>
