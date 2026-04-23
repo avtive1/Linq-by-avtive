@@ -27,6 +27,9 @@ import {
   Sparkles,
   Globe,
   Handshake,
+  Activity,
+  TrendingUp,
+  Layers3,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -134,7 +137,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user?.id || "";
-  const { fadeUp, staggerItem } = useDashboardMotion();
+  const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick } = useAutoRefresh(Boolean(userId));
 
   useEffect(() => {
@@ -271,6 +274,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const canDeleteCards = canManageEvent || grantedPermissions.includes("delete_cards");
   const canExport = canManageEvent;
   const isTeamMemberEventMode = !isPreviewMode && !isEventOwner && isOrgAdminReviewer;
+  const isOrgAdminEventMode = !isPreviewMode && isEventOwner;
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -288,6 +292,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const previewCardsMax = Math.max(cards.length, filteredCards.length, 1);
   const previewVisiblePct = Math.max(8, Math.round((filteredCards.length / previewCardsMax) * 100));
   const previewTotalPct = Math.max(8, Math.round((cards.length / previewCardsMax) * 100));
+  const attendeeMax = Math.max(cards.length, 1);
+  const ownerGuestCount = cards.filter((card) => String(card.track || "").toLowerCase() === "guest").length;
+  const ownerVisitorCount = cards.filter((card) => String(card.track || "").toLowerCase() === "visitor").length;
+  const ownerProfileCompleteCount = cards.filter((card) => Boolean(card.email && card.company)).length;
+  const ownerTopRoles = useMemo(() => {
+    const roleMap = new Map<string, number>();
+    for (const card of cards) {
+      const role = String(card.role || "Attendee").trim() || "Attendee";
+      roleMap.set(role, (roleMap.get(role) || 0) + 1);
+    }
+    return Array.from(roleMap.entries())
+      .map(([role, count]) => ({ role, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [cards]);
 
   const handleDelete = async (cardId: string) => {
     if (!confirm("Are you sure you want to delete this attendee card?")) return;
@@ -779,6 +798,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         {/* Header row */}
         <motion.div
           className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 relative z-30"
+          viewport={presets.viewport}
           {...fadeUp(0.02)}
         >
           <div className="flex flex-col gap-2 sm:gap-3">
@@ -789,7 +809,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               }}
             className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
-              <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+              <motion.span {...hoverIconNudge(-2)} className="inline-flex">
+                <ArrowLeft size={12} className="transition-transform" />
+              </motion.span>
               {isPreviewMode ? "Back to Admin" : "Back to Dashboard"}
             </button>
             <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mt-1">
@@ -1034,8 +1056,111 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
         )}
+        {isOrgAdminEventMode && (
+          <motion.div
+            className="mb-8 rounded-sm border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
+            viewport={presets.viewport}
+            {...fadeUp(0.04)}
+            {...hoverLift(-2, 1.004)}
+          >
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-primary/25 bg-primary/12 text-primary-strong">
+                    <Activity size={15} />
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-heading/80">
+                    Organization Admin Event Console
+                  </span>
+                </div>
+                <span className="text-xs text-muted">Live attendee and composition insight</span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <motion.div
+                  className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
+                  viewport={presets.viewport}
+                  {...fadeUp(0.06)}
+                  {...hoverLift(-2, 1.005)}
+                >
+                  <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                    <Layers3 size={13} className="text-primary-strong" />
+                    Attendee Composition
+                  </p>
+                  <div className="space-y-2">
+                    {[
+                      { label: "Guests", value: ownerGuestCount, color: "bg-primary" },
+                      { label: "Visitors", value: ownerVisitorCount, color: "bg-info" },
+                      { label: "Complete Profiles", value: ownerProfileCompleteCount, color: "bg-heading/45" },
+                    ].map((row, rowIdx) => (
+                      <motion.div
+                        key={row.label}
+                        viewport={presets.viewport}
+                        {...staggerItem(rowIdx, 0.05, 0.18, 10, 0.26)}
+                      >
+                        <div className="mb-1 flex items-center justify-between text-xs text-muted">
+                          <span>{row.label}</span>
+                          <span className="font-semibold text-heading">{row.value}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-heading/10">
+                          <div
+                            className={`h-full rounded-full ${row.color}`}
+                            style={{ width: `${Math.max(8, Math.round((row.value / attendeeMax) * 100))}%` }}
+                          />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
+                  viewport={presets.viewport}
+                  {...fadeUp(0.08)}
+                  {...hoverLift(-2, 1.005)}
+                >
+                  <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                    <TrendingUp size={13} className="text-primary-strong" />
+                    Top Roles
+                  </p>
+                  <div className="space-y-2">
+                    {ownerTopRoles.length === 0 ? (
+                      <p className="text-sm text-muted">No attendee roles yet.</p>
+                    ) : (
+                      ownerTopRoles.map((entry, roleIdx) => {
+                        const maxRole = Math.max(ownerTopRoles[0]?.count || 1, 1);
+                        const widthPct = Math.max(8, Math.round((entry.count / maxRole) * 100));
+                        return (
+                          <motion.div
+                            key={entry.role}
+                            className="rounded-sm border border-primary/15 bg-white/75 px-3 py-2"
+                            viewport={presets.viewport}
+                            {...staggerItem(roleIdx, 0.04, 0.2, 8, 0.24)}
+                          >
+                            <div className="mb-1 flex items-center justify-between text-xs">
+                              <span className="truncate text-heading">{entry.role}</span>
+                              <span className="font-semibold text-heading">{entry.count}</span>
+                            </div>
+                            <div className="h-1.5 overflow-hidden rounded-full bg-heading/10">
+                              <div className="h-full rounded-full bg-primary" style={{ width: `${widthPct}%` }} />
+                            </div>
+                          </motion.div>
+                        );
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         {isTeamMemberEventMode && (
-          <div className="mb-8 rounded-sm border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm">
+          <motion.div
+            className="mb-8 rounded-sm border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
+            viewport={presets.viewport}
+            {...fadeUp(0.05)}
+            {...hoverLift(-2, 1.004)}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
                 Team Member View
@@ -1056,19 +1181,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <p className="mt-2 text-sm text-muted">
               Card operations and campaign actions are shown based on your granted permissions.
             </p>
-          </div>
+          </motion.div>
         )}
 
         {/* Stats Section */}
         <motion.div
-          className={`p-6 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm mb-10 group transition-all duration-200 animate-slide-up delay-100 ${
+          className={`p-6 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm mb-10 group transition-all duration-200 animate-slide-up delay-100 motion-token-enter motion-token-hover ${
             isPreviewMode
               ? "bg-white/85 border border-heading/20 shadow-md hover:shadow-lg"
-              : isTeamMemberEventMode
+              : isTeamMemberEventMode || isOrgAdminEventMode
                 ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
               : "glass-panel hover:shadow-2xl hover:shadow-primary/5"
           }`}
+          viewport={presets.viewport}
           {...fadeUp(0.06)}
+          {...(isTeamMemberEventMode || isOrgAdminEventMode ? hoverLift(-3, 1.008) : {})}
         >
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-sm bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
@@ -1100,7 +1227,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </motion.div>
 
         {/* Search Bar */}
-        <motion.div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200" {...fadeUp(0.1)}>
+        <motion.div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
@@ -1110,6 +1237,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 isPreviewMode
                   ? "bg-white/90 border border-heading/20 focus:bg-white"
                   : isTeamMemberEventMode
+                    ? "bg-white/92 border border-primary/20 focus:bg-white"
+                  : isOrgAdminEventMode
                     ? "bg-white/92 border border-primary/20 focus:bg-white"
                   : "bg-white/70 backdrop-blur-md border border-white/50 focus:bg-white"
               }`}
@@ -1136,11 +1265,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 sm:p-3 rounded-sm hover:-translate-y-0.5 ${
                   isPreviewMode
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
-                    : isTeamMemberEventMode
+                    : isTeamMemberEventMode || isOrgAdminEventMode
                       ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                     : "glass-panel hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
                 }`}
+                viewport={presets.viewport}
                 {...staggerItem(idx, 0.04, 0.24, 14, 0.28)}
+                {...hoverLift(-2, 1.004)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative">
@@ -1197,7 +1328,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       <Button
                         variant="secondary"
                         size="sm"
-                        icon={<ExternalLink size={12} />}
+                        icon={
+                          <motion.span {...hoverIconNudge(2)} className="inline-flex">
+                            <ExternalLink size={12} />
+                          </motion.span>
+                        }
                         className="rounded-sm bg-white/50 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
                       >
                         View
@@ -1521,7 +1656,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
                 {shareDraftRole === "visitor" && (
                   <Button
-                    icon={<LinkedInIcon size={16} />}
                     onClick={async () => {
                       try {
                         await navigator.clipboard.writeText(shareDraftMessage);

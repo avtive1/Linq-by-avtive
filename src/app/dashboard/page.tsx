@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3 } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -133,7 +133,7 @@ function DashboardContent() {
   const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user?.id || "";
-  const { fadeUp, staggerItem } = useDashboardMotion();
+  const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick } = useAutoRefresh(Boolean(userId));
 
   useEffect(() => {
@@ -415,9 +415,30 @@ function DashboardContent() {
   );
   const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
   const isTeamMemberMode = !isPreviewMode && isOrgTeamMember;
+  const isOrgAdminMode = !isPreviewMode && !isOrgTeamMember && isOrgOwner;
   const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
   const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
   const previewEventsPct = Math.max(8, Math.round((stats.totalEvents / previewMaxMetric) * 100));
+  const ownerStatusMetrics = useMemo(() => {
+    const counts = { upcoming: 0, ongoing: 0, past: 0 };
+    for (const evt of events) {
+      const status = getEventStatus(evt.date).label.toLowerCase();
+      if (status === "upcoming") counts.upcoming += 1;
+      else if (status === "ongoing") counts.ongoing += 1;
+      else counts.past += 1;
+    }
+    const max = Math.max(counts.upcoming, counts.ongoing, counts.past, 1);
+    return { ...counts, max };
+  }, [events]);
+  const ownerTopCampaigns = useMemo(() => {
+    return [...events]
+      .sort((a, b) => (b.attendeeCount || 0) - (a.attendeeCount || 0))
+      .slice(0, 5);
+  }, [events]);
+  const ownerAvgAttendees = useMemo(() => {
+    if (stats.totalEvents <= 0) return 0;
+    return Math.round(stats.totalAttendees / stats.totalEvents);
+  }, [stats.totalAttendees, stats.totalEvents]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -794,6 +815,7 @@ function DashboardContent() {
         {/* Header row */}
         <motion.div
           className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12"
+          viewport={presets.viewport}
           {...fadeUp(0.02)}
         >
           <div className="flex flex-col gap-1 sm:gap-2">
@@ -801,7 +823,9 @@ function DashboardContent() {
               href={isPreviewMode ? "/admin" : "/"} 
               className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2"
             >
-              <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+              <motion.span {...hoverIconNudge(-2)} className="inline-flex">
+                <ArrowLeft size={12} className="transition-transform" />
+              </motion.span>
               {isPreviewMode ? "Back to Admin" : "Back to Home"}
             </Link>
             <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70">
@@ -929,8 +953,136 @@ function DashboardContent() {
             </Button>
           </div>
         </motion.div>
+        {isOrgAdminMode && (
+          <motion.div
+            className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-6 py-6 shadow-lg"
+            viewport={presets.viewport}
+            {...fadeUp(0.04)}
+          >
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary-strong">
+                    <ShieldCheck size={20} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-heading/75">Organization Admin Console</p>
+                    <p className="text-sm text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-heading/70">
+                  <Activity size={14} className="text-primary-strong" />
+                  Live operational visibility
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                {[
+                  { label: "Total Campaigns", value: stats.totalEvents },
+                  { label: "Total Attendees", value: stats.totalAttendees },
+                  { label: "Avg / Campaign", value: ownerAvgAttendees },
+                  { label: "Highest Campaign Reach", value: ownerTopCampaigns[0]?.attendeeCount || 0 },
+                ].map((kpi, kpiIdx) => (
+                  <motion.div
+                    key={kpi.label}
+                    className="rounded-md border border-primary/20 bg-white/90 px-4 py-3 motion-token-enter motion-token-hover"
+                    viewport={presets.viewport}
+                    {...staggerItem(kpiIdx, 0.05, 0.22, 12, 0.28)}
+                    {...hoverLift(-3, 1.008)}
+                  >
+                    <p className="text-xs uppercase tracking-wide text-muted">{kpi.label}</p>
+                    <p className="mt-1 text-3xl font-semibold leading-tight text-heading">
+                      <AnimatedCounter value={kpi.value} />
+                    </p>
+                  </motion.div>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <motion.div
+                  className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
+                  viewport={presets.viewport}
+                  {...fadeUp(0.08)}
+                  {...hoverLift(-2, 1.005)}
+                >
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                    <Layers3 size={14} className="text-primary-strong" />
+                    Campaign Status Mix
+                  </p>
+                  <div className="space-y-3">
+                    {[
+                      { label: "Upcoming", value: ownerStatusMetrics.upcoming, color: "bg-primary" },
+                      { label: "Ongoing", value: ownerStatusMetrics.ongoing, color: "bg-info" },
+                      { label: "Past", value: ownerStatusMetrics.past, color: "bg-heading/45" },
+                    ].map((row, rowIdx) => (
+                      <motion.div
+                        key={row.label}
+                        viewport={presets.viewport}
+                        {...staggerItem(rowIdx, 0.05, 0.18, 10, 0.26)}
+                      >
+                        <div className="mb-1 flex items-center justify-between text-xs text-muted">
+                          <span>{row.label}</span>
+                          <span className="font-semibold text-heading">{row.value}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-heading/10">
+                          <div
+                            className={`h-full rounded-full ${row.color}`}
+                            style={{ width: `${Math.max(8, Math.round((row.value / ownerStatusMetrics.max) * 100))}%` }}
+                          />
+                        </div>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
+                  viewport={presets.viewport}
+                  {...fadeUp(0.1)}
+                  {...hoverLift(-2, 1.005)}
+                >
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                    <TrendingUp size={14} className="text-primary-strong" />
+                    Top Campaigns by Attendees
+                  </p>
+                  <div className="space-y-2">
+                    {ownerTopCampaigns.length === 0 ? (
+                      <p className="text-sm text-muted">No campaigns yet.</p>
+                    ) : (
+                      ownerTopCampaigns.map((evt, topIdx) => {
+                        const maxAttendees = Math.max(ownerTopCampaigns[0]?.attendeeCount || 1, 1);
+                        const widthPct = Math.max(8, Math.round(((evt.attendeeCount || 0) / maxAttendees) * 100));
+                        return (
+                          <motion.div
+                            key={evt.id}
+                            className="rounded-md border border-primary/15 bg-white/75 px-3 py-2"
+                            viewport={presets.viewport}
+                            {...staggerItem(topIdx, 0.04, 0.2, 8, 0.24)}
+                          >
+                            <div className="mb-1 flex items-center justify-between gap-2 text-xs">
+                              <span className="truncate text-heading">{evt.name}</span>
+                              <span className="shrink-0 font-semibold text-heading">{evt.attendeeCount || 0}</span>
+                            </div>
+                            <div className="h-1.5 overflow-hidden rounded-full bg-heading/10">
+                              <div className="h-full rounded-full bg-primary" style={{ width: `${widthPct}%` }} />
+                            </div>
+                          </motion.div>
+                        );
+                      })
+                    )}
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        )}
         {isTeamMemberMode && (
-          <div className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm">
+          <motion.div
+            className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
+            viewport={presets.viewport}
+            {...fadeUp(0.05)}
+            {...hoverLift(-2, 1.004)}
+          >
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
                 Team Dashboard
@@ -951,57 +1103,73 @@ function DashboardContent() {
             <p className="mt-2 text-sm text-muted">
               This workspace prioritizes assigned campaigns and permission visibility for day-to-day execution.
             </p>
-          </div>
+          </motion.div>
         )}
         {/* Bento Grid Statistics Section */}
-        <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100" {...fadeUp(0.06)}>
+        <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100" viewport={presets.viewport} {...fadeUp(0.06)}>
           {/* Main Stat - Large Tile */}
-          <div
-            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 ${
+          <motion.div
+            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 motion-token-enter motion-token-hover ${
               isPreviewMode
                 ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
-                : isTeamMemberMode
+                : isTeamMemberMode || isOrgAdminMode
                   ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                 : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
             }`}
+            viewport={presets.viewport}
+            {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
           >
-            <div className="w-16 h-16 rounded-md bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
+            <div className={`w-16 h-16 rounded-md flex items-center justify-center shadow-lg shrink-0 group-hover:scale-105 transition-transform ${
+              isOrgAdminMode || isTeamMemberMode
+                ? "bg-primary/12 text-primary-strong border border-primary/25"
+                : "bg-primary text-primary-foreground shadow-primary/30"
+            }`}>
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="ui-eyebrow">{isTeamMemberMode ? "Assigned Reach" : "Live Presence"}</span>
+              <span className={isOrgAdminMode ? "text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow"}>
+                {isTeamMemberMode ? "Assigned Reach" : isOrgAdminMode ? "Organization Reach" : "Live Presence"}
+              </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
+                <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-lg font-bold text-primary-strong">Attendees</span>
+                <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Attendees</span>
               </div>
             </div>
-          </div>
+          </motion.div>
           
           {/* Secondary Stat - Active Events */}
-          <div
-            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 ${
+          <motion.div
+            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 motion-token-enter motion-token-hover ${
               isPreviewMode
                 ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
-                : isTeamMemberMode
+                : isTeamMemberMode || isOrgAdminMode
                   ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                 : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
             }`}
+            viewport={presets.viewport}
+            {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
           >
-            <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
+            <div className={`w-14 h-14 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+              isOrgAdminMode || isTeamMemberMode
+                ? "bg-primary/12 text-primary-strong border border-primary/25"
+                : "bg-primary/15 text-primary-strong hover:bg-primary/25"
+            }`}>
               <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="ui-eyebrow mb-1">{isTeamMemberMode ? "Assigned Workload" : "Activity Tracking"}</span>
+              <span className={isOrgAdminMode ? "mb-1 text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow mb-1"}>
+                {isTeamMemberMode ? "Assigned Workload" : isOrgAdminMode ? "Campaign Command" : "Activity Tracking"}
+              </span>
               <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
+                <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-lg font-bold text-primary-strong">Total Campaigns</span>
+                <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Total Campaigns</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </motion.div>
         {isPreviewMode && (
           <div className="motion-token-enter mb-8 rounded-md border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
@@ -1032,7 +1200,7 @@ function DashboardContent() {
         )}
 
         {/* Search Bar */}
-        <motion.div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200" {...fadeUp(0.1)}>
+        <motion.div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
@@ -1041,7 +1209,9 @@ function DashboardContent() {
               className={`w-full h-12 pl-20 pr-6 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
                 isPreviewMode
                   ? "bg-white/90 border border-heading/20 focus:bg-white"
-                  : "bg-white/80 backdrop-blur-md border border-border/60 focus:bg-white"
+                  : isTeamMemberMode || isOrgAdminMode
+                    ? "bg-white/92 border border-primary/20 focus:bg-white"
+                    : "bg-white/80 backdrop-blur-md border border-border/60 focus:bg-white"
               }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1050,7 +1220,12 @@ function DashboardContent() {
         </motion.div>
 
         {isOrgTeamMember && (
-          <div className="p-4 rounded-md mb-6 border border-primary/25 bg-linear-to-r from-primary/8 to-white shadow-sm">
+          <motion.div
+            className="p-4 rounded-md mb-6 border border-primary/25 bg-linear-to-r from-primary/8 to-white shadow-sm motion-token-enter motion-token-hover"
+            viewport={presets.viewport}
+            {...fadeUp(0.07)}
+            {...hoverLift(-2, 1.004)}
+          >
             <div className="flex items-center justify-between gap-3 mb-3">
               <p className="text-sm font-medium text-heading inline-flex items-center gap-2">
                 <Lock size={14} className="text-primary-strong" />
@@ -1077,11 +1252,15 @@ function DashboardContent() {
                 <span className="text-xs text-muted">No active permissions yet. Request access from your organization admin.</span>
               )}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {isOrgTeamMember && myAccessRequests.length > 0 && (
-          <div className="p-4 rounded-md mb-6 border border-border/60 bg-white/92 shadow-sm">
+          <motion.div
+            className="p-4 rounded-md mb-6 border border-border/60 bg-white/92 shadow-sm motion-token-enter"
+            viewport={presets.viewport}
+            {...fadeUp(0.09)}
+          >
             <p className="text-sm font-medium text-heading mb-2">My Pending Access Workflow</p>
             <div className="flex flex-col gap-2">
               {myAccessRequests.slice(0, 4).map((req) => (
@@ -1095,7 +1274,7 @@ function DashboardContent() {
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {!isOrgTeamMember && !isOrgOwner && myOrgJoinRequests.length > 0 && (
@@ -1233,11 +1412,13 @@ function DashboardContent() {
                   className={`group motion-token-enter motion-token-hover flex flex-col justify-between p-6 rounded-md hover:-translate-y-2 ${
                     isPreviewMode
                       ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
-                      : isTeamMemberMode
+                      : isTeamMemberMode || isOrgAdminMode
                         ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/40"
                       : "glass-panel hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40"
                   } ${status.label === "Past" ? "opacity-75 grayscale-[0.3]" : ""}`}
+                  viewport={presets.viewport}
                   {...staggerItem(idx, 0.05, 0.28, 16, 0.3)}
+                  {...hoverLift(-6, 1.01)}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -1280,7 +1461,9 @@ function DashboardContent() {
                   
                   <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
                     View Campaign
-                    <ChevronRight size={20} className="transition-transform duration-200 group-hover:translate-x-1.5 group-hover:scale-110" />
+                    <motion.span {...hoverIconNudge(3)} className="inline-flex">
+                      <ChevronRight size={20} className="transition-transform duration-200" />
+                    </motion.span>
                   </Link>
                 </motion.div>
                 );
