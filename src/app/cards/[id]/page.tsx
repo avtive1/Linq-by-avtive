@@ -111,10 +111,7 @@ export default async function CardViewPage(props: {
                 (typeof userData?.publicMetadata?.organization_name === "string"
                   ? String(userData.publicMetadata.organization_name)
                   : "");
-              organizationLogoUrl =
-                typeof userData?.publicMetadata?.organization_logo_url === "string"
-                  ? String(userData.publicMetadata.organization_logo_url)
-                  : "";
+              organizationLogoUrl = "";
             } catch (brandingErr) {
               console.error("Branding fetch failed:", brandingErr);
             }
