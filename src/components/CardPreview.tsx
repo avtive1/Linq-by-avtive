@@ -259,6 +259,7 @@ export function CardPreview({
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const isWebinarLocation = (data.location || "").trim().toLowerCase() === "webinar";
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
+  const hasSponsors = filterSponsors(data.sponsors).length > 0;
 
   const theme = COLOR_THEMES[data.color || "purple"] || COLOR_THEMES.purple;
   
@@ -321,7 +322,7 @@ export function CardPreview({
         {/* Background Overlays */}
         <img 
           src="https://www.figma.com/api/mcp/asset/cfa963ed-fe15-42b0-a98e-e2e901c4176a" 
-          className="absolute left-[-151px] top-[438px] w-[878px] h-[586px] object-cover opacity-[0.11] pointer-events-none max-w-none" 
+          className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] pointer-events-none max-w-none" 
           alt="" 
         />
         {!isDesign1 && (
@@ -337,10 +338,10 @@ export function CardPreview({
         <div 
           className="absolute left-0 top-0 w-[576px] bg-white pointer-events-none"
           style={{ 
-            height: isDesign1 ? "447px" : "459px",
+            height: isDesign1 ? "447px" : "542px",
             clipPath: isDesign1 
               ? "none" 
-              : "polygon(0 0, 100% 0, 100% 447px, 464px 447px, 464px 542px, 369px 447px, 0 447px)"
+              : "polygon(0 0, 100% 0, 100% 447px, 486px 447px, 486px 542px, 336px 447px, 0 447px)"
           }}
         />
 
@@ -421,15 +422,41 @@ export function CardPreview({
 
         {/* Central Element (Photo or QR) */}
         {verticalSide === 1 ? (
-          /* SIDE 1: User Photo - Matching qr-wrap positioning and size */
-          <div 
-            className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm overflow-hidden border-2 border-white/20 bg-white/10 flex items-center justify-center z-4"
-          >
-            {data.photo ? (
-              <img src={data.photo} className="w-full h-full object-cover" />
-            ) : (
-              <DefaultAvatarPlaceholder className="w-full h-full" />
-            )}
+          /* SIDE 1: QR Code / placeholder (replaces profile image on vertical as requested) */
+          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4">
+             {qrUrl ? (
+               <>
+                  <img 
+                    src={qrUrl} 
+                    className="absolute left-[25.28px] top-[25.28px] w-[193.3px] h-[193.3px]" 
+                    alt="QR Code" 
+                  />
+                  <img 
+                    src="https://www.figma.com/api/mcp/asset/7aa825de-d504-49de-b966-373e13e071b6" 
+                    className="absolute left-[95.53px] top-[97.7px] w-[52.24px] h-[48.88px]" 
+                    alt=""
+                  />
+               </>
+             ) : (
+               <div className="w-full h-full bg-linear-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
+                 <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">
+                   <div
+                     className="absolute inset-0 opacity-70"
+                     style={{
+                       backgroundImage:
+                         "repeating-linear-gradient(0deg, #9ca3af 0 8px, #e5e7eb 8px 16px), repeating-linear-gradient(90deg, #9ca3af 0 8px, #e5e7eb 8px 16px)",
+                       backgroundBlendMode: "multiply",
+                     }}
+                   />
+                   <div className="absolute left-0 top-0 w-[34px] h-[34px] border-r border-b border-slate-500 bg-[#cbd5e1]" />
+                   <div className="absolute right-0 top-0 w-[34px] h-[34px] border-l border-b border-slate-500 bg-[#cbd5e1]" />
+                   <div className="absolute left-0 bottom-0 w-[34px] h-[34px] border-r border-t border-slate-500 bg-[#cbd5e1]" />
+                 </div>
+                 <div className="px-5 py-4 rounded-md bg-white/92 border border-slate-300 shadow-sm text-slate-700 text-[56px] font-bold tracking-[0.01em] text-center leading-[1.05] whitespace-pre-line">
+                   {"Enter link\nin form"}
+                 </div>
+               </div>
+             )}
           </div>
         ) : (
           /* SIDE 2: QR Code - Exactly matching qr-wrap and internal qr-image/qr-center */
@@ -588,10 +615,18 @@ export function CardPreview({
           <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
         </section>
 
-        <footer className="absolute left-0 bottom-0 h-[123px] w-full">
-          <img className="absolute bottom-0 left-0 h-full w-full" src="https://www.figma.com/api/mcp/asset/19a4081a-3d42-499b-8b23-eaca86dedae6" alt="" />
-          <HorizontalSponsorsDesign2 sponsors={data.sponsors} />
-        </footer>
+        {hasSponsors && (
+          <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
+            <div
+              className="absolute -top-px left-[154px] h-[36px] w-[52px]"
+              style={{
+                backgroundColor: theme.end,
+                clipPath: "polygon(0 0, 100% 0, 100% 100%)",
+              }}
+            />
+            <HorizontalSponsorsDesign2 sponsors={data.sponsors} />
+          </footer>
+        )}
       </div>
     );
   }
@@ -673,9 +708,11 @@ export function CardPreview({
         <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
       </section>
 
-      <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
-        <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
-      </footer>
+      {hasSponsors && (
+        <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
+          <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
+        </footer>
+      )}
     </div>
   );
 }

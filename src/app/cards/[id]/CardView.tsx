@@ -74,7 +74,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           <div className="flex flex-col gap-4">
              {isShareMode ? (
                 <div className="flex items-center gap-3">
-                   <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/65">
+                   <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/65">
                      Avtive attendee portal
                    </span>
                 </div>
@@ -102,14 +102,14 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                 <button
                   type="button"
                   onClick={() => setViewMode("horizontal")}
-                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`px-4 py-2 rounded-md text-[13px] leading-tight font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </button>
                 <button
                   type="button"
                   onClick={() => setViewMode("vertical")}
-                  className={`px-4 py-2 rounded-md text-[13px] leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`px-4 py-2 rounded-md text-[13px] leading-tight font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
                 </button>
@@ -170,43 +170,19 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           {viewMode === "horizontal" ? (
             <div className="card-scale-wrapper w-full">
               <div className="card-capture" style={{ width: "1200px", height: "628px" }}>
-                {card.cardPreviewUrl ? (
-                  <img
-                    src={card.cardPreviewUrl}
-                    alt={`${card.name || "Attendee"} card preview`}
-                    className="w-full h-full object-cover rounded-sm"
-                  />
-                ) : (
-                  <CardPreview data={card} isVertical={false} />
-                )}
+                <CardPreview data={card} isVertical={false} />
               </div>
             </div>
           ) : (
             <div className="vertical-pair-wrapper">
               <div className="vertical-card-frame">
                 <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  {card.verticalFrontUrl ? (
-                    <img
-                      src={card.verticalFrontUrl}
-                      alt={`${card.name || "Attendee"} badge front`}
-                      className="w-full h-full object-cover rounded-sm"
-                    />
-                  ) : (
-                    <CardPreview data={card} isVertical verticalSide={1} />
-                  )}
+                  <CardPreview data={card} isVertical verticalSide={1} />
                 </div>
               </div>
               <div className="vertical-card-frame">
                 <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  {card.verticalBackUrl ? (
-                    <img
-                      src={card.verticalBackUrl}
-                      alt={`${card.name || "Attendee"} badge back`}
-                      className="w-full h-full object-cover rounded-sm"
-                    />
-                  ) : (
-                    <CardPreview data={card} isVertical verticalSide={2} />
-                  )}
+                  <CardPreview data={card} isVertical verticalSide={2} />
                 </div>
               </div>
             </div>
@@ -220,7 +196,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
                : "This design is optimized for physical printing and event registration."
             }
           </p>
-          <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading/45">
+          <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-heading/45">
             Attendee ID: {card.id.slice(-8).toUpperCase()}
           </span>
         </div>
@@ -231,26 +207,10 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
          <div style={{ width: "762px", height: "666px", position: "relative" }}>
             <div style={{ transform: "scale(0.65)", transformOrigin: "top left", display: "flex", gap: "20px" }}>
                <div style={{ width: "576px", height: "1024px" }}>
-                  {card.verticalFrontUrl ? (
-                    <img
-                      src={card.verticalFrontUrl}
-                      alt={`${card.name || "Attendee"} badge front`}
-                      className="w-full h-full object-cover rounded-sm"
-                    />
-                  ) : (
-                    <CardPreview data={card} isVertical={true} verticalSide={1} />
-                  )}
+                  <CardPreview data={card} isVertical={true} verticalSide={1} />
                </div>
                <div style={{ width: "576px", height: "1024px" }}>
-                  {card.verticalBackUrl ? (
-                    <img
-                      src={card.verticalBackUrl}
-                      alt={`${card.name || "Attendee"} badge back`}
-                      className="w-full h-full object-cover rounded-sm"
-                    />
-                  ) : (
-                    <CardPreview data={card} isVertical={true} verticalSide={2} />
-                  )}
+                  <CardPreview data={card} isVertical={true} verticalSide={2} />
                </div>
             </div>
          </div>

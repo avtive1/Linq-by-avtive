@@ -257,7 +257,7 @@ function NewCardForm() {
           await uploadVertical(verticalFrontRef.current, "vertical-front");
           await uploadVertical(verticalBackRef.current, "vertical-back");
         } catch (verticalErr) {
-          console.error("Vertical preview upload failed:", verticalErr);
+          console.warn("Vertical preview upload skipped:", verticalErr);
         }
         router.push(`/cards/${body.data.id}?share=true`);
       }
