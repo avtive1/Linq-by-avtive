@@ -28,6 +28,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: email.trim().toLowerCase(),
         password,
+        callbackUrl: "/dashboard",
         redirect: false,
       });
       if (result?.error) {
