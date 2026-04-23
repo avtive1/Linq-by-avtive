@@ -106,6 +106,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     for (const key of allowed) {
       if (key in body) patch[key] = body[key];
     }
+    if ("sponsors" in patch) {
+      try {
+        patch.sponsors = JSON.stringify(patch.sponsors ?? []);
+      } catch {
+        return NextResponse.json({ error: "Invalid sponsors payload." }, { status: 400 });
+      }
+    }
     if (!Object.keys(patch).length) {
       return NextResponse.json({ error: "No valid fields provided." }, { status: 400 });
     }

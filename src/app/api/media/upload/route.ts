@@ -35,10 +35,6 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const userId = await getServerUserIdFromCookies(cookieStore);
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
     const body = (await req.json()) as {
       dataUrl?: string;
       folder?: string;
@@ -52,8 +48,21 @@ export async function POST(req: Request) {
     if (!folder) {
       return NextResponse.json({ error: "folder is required." }, { status: 400 });
     }
-    const allowed = await canUploadToFolder(userId, folder);
-    if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+    const normalizedFolder = folder.trim().replace(/^\/+|\/+$/g, "");
+    const isSignupOrgLogoUpload = normalizedFolder === "organization-logos";
+
+    let userId: string | null = null;
+    if (!isSignupOrgLogoUpload) {
+      const cookieStore = await cookies();
+      userId = await getServerUserIdFromCookies(cookieStore);
+      if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    if (userId) {
+      const allowed = await canUploadToFolder(userId, folder);
+      if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
     const uploaded = await uploadImageToCloudinary({
       file: dataUrl,

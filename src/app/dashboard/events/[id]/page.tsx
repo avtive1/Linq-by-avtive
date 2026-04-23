@@ -82,6 +82,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isShareActionsOpen, setIsShareActionsOpen] = useState(false);
   const [shareDraftUrl, setShareDraftUrl] = useState("");
   const [shareDraftMessage, setShareDraftMessage] = useState("");
+  const [shareDraftRole, setShareDraftRole] = useState<"guest" | "visitor">("visitor");
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Close share menu on outside click
@@ -691,10 +692,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
   };
 
-  const openShareActions = (url: string) => {
+  const openShareActions = (url: string, role: "guest" | "visitor") => {
     const message = `We are hosting ${eventData?.name || "our event"}. Register here: ${url}`;
     setShareDraftUrl(url);
     setShareDraftMessage(message);
+    setShareDraftRole(role);
     setIsShareActionsOpen(true);
   };
 
@@ -831,7 +833,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         onClick={() => {
                           const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=visitor`;
                           setIsShareOpen(false);
-                          openShareActions(url);
+                          openShareActions(url, "visitor");
                         }}
                         className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-surface transition-all group"
                       >
@@ -1306,7 +1308,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }
                 const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=guest&guestCategory=${encodeURIComponent(value)}`;
                 setIsGuestCategoryOpen(false);
-                openShareActions(url);
+                openShareActions(url, "guest");
               }}
             >
               <TextInput
@@ -1326,7 +1328,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   Cancel
                 </Button>
                 <Button type="submit" fullWidth>
-                  Copy Guest Link
+                  Save
                 </Button>
               </div>
             </form>
@@ -1344,7 +1346,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>
-                <p className="text-sm text-muted">Use the link directly or share on LinkedIn.</p>
+                <p className="text-sm text-muted">
+                  {shareDraftRole === "guest"
+                    ? "Use this guest link directly."
+                    : "Use the link directly or share on LinkedIn."}
+                </p>
               </div>
               <button
                 type="button"
@@ -1355,11 +1361,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </button>
             </div>
             <div className="px-6 pb-6 flex flex-col gap-3">
-              <div className="rounded-md border border-border/60 bg-surface/40 px-3 py-2">
-                <p className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted mb-1">Default LinkedIn caption</p>
-                <p className="text-xs text-heading wrap-break-word">{shareDraftMessage}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              {shareDraftRole === "visitor" && (
+                <div className="rounded-md border border-border/60 bg-surface/40 px-3 py-2">
+                  <p className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted mb-1">Default LinkedIn caption</p>
+                  <p className="text-xs text-heading wrap-break-word">{shareDraftMessage}</p>
+                </div>
+              )}
+              <div className={`grid gap-3 ${shareDraftRole === "visitor" ? "grid-cols-2" : "grid-cols-1"}`}>
                 <Button
                   variant="secondary"
                   icon={<LinkIcon size={16} />}
@@ -1374,21 +1382,23 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   Copy Link
                 </Button>
-                <Button
-                  icon={<LinkedInIcon size={16} />}
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(shareDraftMessage);
-                      toast.success("Caption copied. Paste it on LinkedIn post.");
-                    } catch {
-                      toast.error("Could not copy caption, but opening LinkedIn.");
-                    }
-                    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareDraftUrl)}`;
-                    window.open(linkedInUrl, "_blank", "noopener,noreferrer");
-                  }}
-                >
-                  LinkedIn
-                </Button>
+                {shareDraftRole === "visitor" && (
+                  <Button
+                    icon={<LinkedInIcon size={16} />}
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(shareDraftMessage);
+                        toast.success("Caption copied. Paste it on LinkedIn post.");
+                      } catch {
+                        toast.error("Could not copy caption, but opening LinkedIn.");
+                      }
+                      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareDraftUrl)}`;
+                      window.open(linkedInUrl, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    LinkedIn
+                  </Button>
+                )}
               </div>
             </div>
           </div>
