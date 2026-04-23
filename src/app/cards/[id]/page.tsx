@@ -23,7 +23,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
 // This makes the page a Server Component
 export default async function CardViewPage(props: { 
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ share?: string }>;
+  searchParams: Promise<{ share?: string; token?: string }>;
 }) {
   const params = await props.params;
   const searchParams = await props.searchParams;
