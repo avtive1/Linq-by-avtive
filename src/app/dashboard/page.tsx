@@ -410,6 +410,9 @@ function DashboardContent() {
     [isOrgOwner, myOrgJoinRequests],
   );
   const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
+  const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
+  const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
+  const previewEventsPct = Math.max(8, Math.round((stats.totalEvents / previewMaxMetric) * 100));
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -735,14 +738,19 @@ function DashboardContent() {
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
-        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-medium shadow-sm">
-          <div className="flex items-center gap-2">
-            <Sparkles size={18} />
-            <span>Admin Organization Preview &mdash; Read Only</span>
+        <div className="relative z-100 border-b border-white/20 bg-linear-to-r from-heading via-[#2B4F95] to-heading px-6 py-3 shadow-sm">
+          <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between text-sm font-medium text-white">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-primary" />
+              <span>Super Admin Inspection Mode &mdash; Organization View (Read Only)</span>
+            </div>
+            <Link
+              href="/admin"
+              className="no-link-underline rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[13px] font-medium text-white hover:no-link-underline hover:bg-white/20"
+            >
+              Exit Preview
+            </Link>
           </div>
-          <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-md hover:brightness-110 transition-all text-[13px] leading-[1.25] font-normal">
-            Exit Preview
-          </Link>
         </div>
       )}
       <GradientBackground />
@@ -915,11 +923,16 @@ function DashboardContent() {
             </Button>
           </div>
         </div>
-        
         {/* Bento Grid Statistics Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100">
           {/* Main Stat - Large Tile */}
-          <div className="glass-panel p-6 rounded-md md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
+          <div
+            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 ${
+              isPreviewMode
+                ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
+                : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
+            }`}
+          >
             <div className="w-16 h-16 rounded-md bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
               <Users size={32} />
             </div>
@@ -935,7 +948,13 @@ function DashboardContent() {
           </div>
           
           {/* Secondary Stat - Active Events */}
-          <div className="glass-panel p-6 rounded-md md:col-span-2 flex items-center gap-6 group hover:bg-white transition-all duration-200 hover:shadow-2xl hover:shadow-primary/5">
+          <div
+            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 ${
+              isPreviewMode
+                ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
+                : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
+            }`}
+          >
             <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 transition-transform hover:bg-primary/25 group-hover:scale-105">
               <BarChart3 size={28} />
             </div>
@@ -950,6 +969,33 @@ function DashboardContent() {
             </div>
           </div>
         </div>
+        {isPreviewMode && (
+          <div className="motion-token-enter mb-8 rounded-md border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
+            <div className="rounded-md border border-heading/15 bg-heading/3 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-heading/80">Inspection Snapshot</p>
+              <div className="mt-3 space-y-2">
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
+                    <span>Attendee volume</span>
+                    <span className="font-semibold text-heading">{stats.totalAttendees}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-heading/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-primary motion-token-hover" style={{ width: `${previewAttendeesPct}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
+                    <span>Campaign volume</span>
+                    <span className="font-semibold text-heading">{stats.totalEvents}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-heading/10 overflow-hidden">
+                    <div className="h-full rounded-full bg-heading/70 motion-token-hover" style={{ width: `${previewEventsPct}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200">
@@ -958,7 +1004,11 @@ function DashboardContent() {
             <input
               type="text"
               placeholder="Search campaigns..."
-              className="w-full h-12 pl-20 pr-6 py-0 bg-white/80 backdrop-blur-md border border-border/60 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55"
+              className={`w-full h-12 pl-20 pr-6 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
+                isPreviewMode
+                  ? "bg-white/90 border border-heading/20 focus:bg-white"
+                  : "bg-white/80 backdrop-blur-md border border-border/60 focus:bg-white"
+              }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1141,10 +1191,18 @@ function DashboardContent() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 delay-300">
             {filteredEvents.length > 0 ? (
-              filteredEvents.map((evt) => {
+              filteredEvents.map((evt, idx) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div key={evt.id} className={`group flex flex-col justify-between glass-panel p-6 rounded-md transition-all duration-200 hover:-translate-y-2 hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40 ${status.label === 'Past' ? 'opacity-75 grayscale-[0.3]' : ''}`}>
+                <div
+                  key={evt.id}
+                  className={`group motion-token-enter motion-token-hover flex flex-col justify-between p-6 rounded-md hover:-translate-y-2 ${
+                    isPreviewMode
+                      ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
+                      : "glass-panel hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40"
+                  } ${status.label === "Past" ? "opacity-75 grayscale-[0.3]" : ""}`}
+                  style={{ animationDelay: `${Math.min(idx * 60, 300)}ms` }}
+                >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       {evt.logo_url && (
@@ -1186,7 +1244,7 @@ function DashboardContent() {
                   
                   <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
                     View Campaign
-                    <ChevronRight size={20} className="group-hover:translate-x-1.5 transition-transform" />
+                    <ChevronRight size={20} className="transition-transform duration-200 group-hover:translate-x-1.5 group-hover:scale-110" />
                   </Link>
                 </div>
                 );

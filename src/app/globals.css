@@ -183,6 +183,26 @@ small,
   animation: slide-up-fade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+:root {
+  --motion-duration-fast: 160ms;
+  --motion-duration-standard: 260ms;
+  --motion-ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.motion-token-enter {
+  opacity: 0;
+  animation: slide-up-fade var(--motion-duration-standard) var(--motion-ease-standard) forwards;
+}
+
+.motion-token-hover {
+  transition:
+    transform var(--motion-duration-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-standard) var(--motion-ease-standard),
+    border-color var(--motion-duration-standard) var(--motion-ease-standard),
+    background-color var(--motion-duration-standard) var(--motion-ease-standard),
+    color var(--motion-duration-standard) var(--motion-ease-standard);
+}
+
 .delay-100 { animation-delay: 60ms; }
 .delay-200 { animation-delay: 120ms; }
 .delay-300 { animation-delay: 180ms; }
@@ -231,6 +251,15 @@ a {
 a:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* Use for link-as-button controls where underline should never appear. */
+.no-link-underline,
+.no-link-underline:hover,
+.no-link-underline:focus,
+.no-link-underline:focus-visible,
+.no-link-underline:active {
+  text-decoration: none !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

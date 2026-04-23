@@ -1,6 +1,16 @@
 import { listAdminUsers } from "@/lib/admin";
 import { queryNeon } from "@/lib/neon-db";
-import { Users, BarChart3, Building2, ChevronRight, Activity } from "lucide-react";
+import {
+  Users,
+  BarChart3,
+  Building2,
+  ChevronRight,
+  Activity,
+  ShieldCheck,
+  Sparkles,
+  ArrowUpRight,
+  UserRound,
+} from "lucide-react";
 import Link from "next/link";
 import OrganizationsTable from "./_components/OrganizationsTable";
 
@@ -61,6 +71,9 @@ export default async function AdminDashboardPage() {
   const totalOrgs = rawUsers.length;
   const totalEvents = rawEvents.length;
   const totalAttendees = rawAttendees.length;
+  const avgEventsPerOrg = totalOrgs > 0 ? (totalEvents / totalOrgs).toFixed(1) : "0.0";
+  const avgAttendeesPerEvent = totalEvents > 0 ? (totalAttendees / totalEvents).toFixed(1) : "0.0";
+  const mostRecentEventAt = rawEvents[0]?.created_at || null;
 
   // Map Users for quick lookup
   const userLookup = new Map();
@@ -121,90 +134,135 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div className="px-2 sm:px-4 lg:px-6 py-12 sm:py-16 flex flex-col gap-16">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">Platform Overview</h1>
-        <p className="text-muted">Real-time global insights and management hub.</p>
+    <div className="flex flex-col gap-12 px-2 py-10 sm:px-4 sm:py-12 lg:px-6">
+      <div className="relative animate-slide-up overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-white/90 via-white/80 to-primary/10 p-7 shadow-sm sm:p-8">
+        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-2xl" />
+        <div className="absolute -left-8 -bottom-10 h-32 w-32 rounded-full bg-info/10 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-3">
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-primary-strong">
+              <ShieldCheck size={14} />
+              Super Admin Command Center
+            </div>
+            <h1 className="text-4xl font-semibold tracking-[-0.03em] leading-[1.1] text-heading">Platform Overview</h1>
+            <p className="max-w-2xl text-sm leading-[1.6] text-muted">
+              A centralized operational view for governance, organization growth, and recent activity across the platform.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-md border border-border/60 bg-white/75 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.04em] text-muted">Avg events/org</p>
+              <p className="mt-1 text-xl font-semibold text-heading">{avgEventsPerOrg}</p>
+            </div>
+            <div className="rounded-md border border-border/60 bg-white/75 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.04em] text-muted">Avg attendees/event</p>
+              <p className="mt-1 text-xl font-semibold text-heading">{avgAttendeesPerEvent}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Global Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-panel p-6 rounded-md flex items-center gap-6 group hover:bg-white transition-all shadow-sm relative overflow-hidden">
-          <div className="w-16 h-16 rounded-md bg-primary/20 flex items-center justify-center text-primary-strong shrink-0">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-white/80 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-primary/15 text-primary-strong">
             <Building2 size={28} />
           </div>
-          <div className="flex flex-col">
-            <span className="ui-eyebrow mb-1">Total Orgs</span>
-            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalOrgs}</span>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="ui-eyebrow mb-1">Total Organizations</span>
+              <span className="text-5xl font-semibold tracking-[-0.03em] leading-[1.02] text-heading">{totalOrgs}</span>
+            </div>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-md flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-md bg-info/15 flex items-center justify-center text-info shrink-0">
+        <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-white/80 p-6 shadow-sm transition-all delay-100 hover:-translate-y-0.5 hover:shadow-md animate-slide-up">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-info/15 text-info">
             <BarChart3 size={28} />
           </div>
-          <div className="flex flex-col">
-            <span className="ui-eyebrow mb-1">Total Events</span>
-            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalEvents}</span>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="ui-eyebrow mb-1">Total Campaigns</span>
+              <span className="text-5xl font-semibold tracking-[-0.03em] leading-[1.02] text-heading">{totalEvents}</span>
+            </div>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-md flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-md bg-heading/15 flex items-center justify-center text-heading shrink-0">
+        <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-white/80 p-6 shadow-sm transition-all delay-200 hover:-translate-y-0.5 hover:shadow-md animate-slide-up">
+          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-heading/15 text-heading">
             <Users size={28} />
           </div>
-          <div className="flex flex-col">
-            <span className="ui-eyebrow mb-1">Total Attendees</span>
-            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalAttendees}</span>
+          <div className="flex items-end justify-between gap-4">
+            <div className="flex flex-col">
+              <span className="ui-eyebrow mb-1">Total Attendees</span>
+              <span className="text-5xl font-semibold tracking-[-0.03em] leading-[1.02] text-heading">{totalAttendees}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content: Organizations Table */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2 flex items-center gap-2">
-            Organizations Directory
-          </h2>
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 animate-slide-up delay-300">
+        <div className="lg:col-span-2 flex flex-col gap-5">
+          <div className="flex items-center gap-3 px-1">
+            <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
+              <UserRound size={22} className="text-primary-strong" />
+              Organizations Directory
+            </h2>
+          </div>
           <OrganizationsTable initialOrganizations={organizations} />
         </div>
 
-        {/* Sidebar: Recent Activity */}
-        <div className="lg:col-span-1 flex flex-col gap-6">
-          <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2 flex items-center gap-2">
-             <Activity size={24} className="text-primary-strong" /> Recent Activity
-          </h2>
-          
-          <div className="flex flex-col gap-4">
-            {recentEvents.map(evt => (
-              <div key={evt.id} className="glass-panel p-4 rounded-md flex flex-col gap-2 hover:bg-white transition-all group">
-                <div className="flex justify-between items-start">
-                  <span className="text-[13px] uppercase tracking-[0.01em] font-medium text-muted/60 bg-surface px-2 py-1 rounded-md border border-border/40 leading-[1.25]">
-                    New Event
-                  </span>
-                  <span className="text-[13px] font-normal text-muted/50 leading-[1.25]">
-                    {new Date(evt.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <h3 className="font-medium text-heading group-hover:text-primary-strong transition-colors truncate">
-                  {evt.name}
-                </h3>
-                <p className="text-sm leading-[1.6] text-muted font-normal flex items-center gap-2 truncate">
-                  <Building2 size={12} className="shrink-0" /> 
-                  {evt.orgName ? `${evt.orgName} (@${evt.username || 'unknown'})` : evt.orgEmail}
-                </p>
-                <div className="mt-2 pt-2 border-t border-border/30 flex justify-between items-center text-[13px] font-medium leading-[1.25]">
-                  <span className="text-muted/60">{evt.location}</span>
-                  <Link href={`/admin/organizations/${evt.user_id}`} className="text-primary-strong hover:underline flex items-center gap-1">
-                    View Org <ChevronRight size={12} />
-                  </Link>
-                </div>
-              </div>
-            ))}
-            {recentEvents.length === 0 && (
-              <p className="text-muted text-center py-8 bg-surface/30 border border-dashed border-border rounded-xl text-sm">No recent activity detected.</p>
-            )}
+        <div className="lg:col-span-1 flex flex-col gap-5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
+              <Activity size={22} className="text-primary-strong" />
+              Recent Activity
+            </h2>
+            <span className="text-xs text-muted">
+              {mostRecentEventAt ? `Updated ${new Date(mostRecentEventAt).toLocaleDateString()}` : "No updates yet"}
+            </span>
           </div>
+
+          <div className="rounded-xl border border-border/60 bg-white/70 p-4">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-primary-strong">
+              <Sparkles size={12} />
+              Live Feed
+            </div>
+            <div className="flex flex-col gap-3">
+              {recentEvents.map(evt => (
+                <div key={evt.id} className="group rounded-md border border-border/50 bg-white/85 p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm">
+                  <div className="flex items-start justify-between">
+                    <span className="rounded-md border border-border/40 bg-surface px-2 py-1 text-[11px] font-medium uppercase tracking-[0.04em] text-muted/70">
+                      New Campaign
+                    </span>
+                    <span className="text-[12px] text-muted/60">
+                      {new Date(evt.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <h3 className="mt-2 truncate text-sm font-semibold text-heading group-hover:text-primary-strong">
+                    {evt.name}
+                  </h3>
+                  <p className="mt-1 truncate text-xs text-muted">
+                    {evt.orgName ? `${evt.orgName} (@${evt.username || "unknown"})` : evt.orgEmail}
+                  </p>
+                  <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-2">
+                    <span className="truncate text-xs text-muted/70">{evt.location}</span>
+                    <Link
+                      href={`/admin/organizations/${evt.user_id}`}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-primary-strong hover:underline"
+                    >
+                      Open Org <ChevronRight size={12} />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+              {recentEvents.length === 0 && (
+                <p className="rounded-md border border-dashed border-border bg-surface/40 py-8 text-center text-sm text-muted">
+                  No recent activity detected.
+                </p>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

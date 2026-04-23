@@ -10,7 +10,8 @@ function createRouteMatcher(patterns: string[]) {
 }
 
 export async function proxy(request: NextRequest) {
-  const pathname = new URL(request.url).pathname;
+  const url = new URL(request.url);
+  const pathname = url.pathname;
   const secureCookie = process.env.NODE_ENV === "production";
   const token = await getToken({
     req: request,
@@ -18,11 +19,21 @@ export async function proxy(request: NextRequest) {
     secureCookie,
   });
   const userId = token?.uid || token?.sub;
+  const tokenRole = String(token?.role || "").toLowerCase();
+  const tokenEmail = String(token?.email || "").toLowerCase().trim();
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const isAdminUser = tokenRole === "admin" || Boolean(tokenEmail && adminEmails.includes(tokenEmail));
   if (isProtectedRoute.test(pathname) && !userId) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
+  if (pathname.startsWith("/dashboard") && userId && isAdminUser && !url.searchParams.get("impersonate")) {
+    return NextResponse.redirect(new URL("/admin", request.url));
+  }
   if (isAuthRoute(request) && userId) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL(isAdminUser ? "/admin" : "/dashboard", request.url));
   }
 }
 

@@ -13,6 +13,7 @@ export type AuthUserRecord = {
 };
 
 let schemaEnsured = false;
+let superAdminEnsured = false;
 
 export async function ensureAuthSchema() {
   if (schemaEnsured) return;
@@ -34,8 +35,112 @@ export async function ensureAuthSchema() {
   schemaEnsured = true;
 }
 
+function normalizeBootstrapUsername(email: string) {
+  const base = email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_]/g, "") || "superadmin";
+  return base.slice(0, 30) || "superadmin";
+}
+
+async function ensureBootstrapSuperAdmin() {
+  if (superAdminEnsured) return;
+  try {
+    const email = String(process.env.SUPERADMIN_EMAIL || "").trim().toLowerCase();
+    const password = String(process.env.SUPERADMIN_PASSWORD || "");
+    if (!email || !password) return;
+
+    await ensureAuthSchema();
+
+    const organizationName = normalizeOrganizationName(
+      String(process.env.SUPERADMIN_ORGANIZATION_NAME || "Platform Admin"),
+    );
+    const organizationKey = toOrganizationKey(organizationName);
+    const requestedUsername = normalizeBootstrapUsername(
+      String(process.env.SUPERADMIN_USERNAME || email),
+    );
+
+    const existingAuth = await queryNeonOne<{ user_id: string }>(
+      `SELECT user_id
+       FROM public.auth_users
+       WHERE lower(email) = lower($1)
+       LIMIT 1`,
+      [email],
+    );
+
+    let userId = existingAuth?.user_id || "";
+    if (!userId) userId = crypto.randomUUID();
+
+    const usernameTakenByOther = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.profiles
+       WHERE username = $1
+         AND id <> $2
+       LIMIT 1`,
+      [requestedUsername, userId],
+    );
+    const username = usernameTakenByOther?.id
+      ? `${requestedUsername}_${userId.replace(/-/g, "").slice(0, 8)}`
+      : requestedUsername;
+
+    const passwordHash = await argon2.hash(password);
+
+    const existingProfile = await queryNeonOne<{ id: string }>(
+      `SELECT id FROM public.profiles WHERE id = $1 LIMIT 1`,
+      [userId],
+    );
+    if (existingProfile?.id) {
+      await queryNeon(
+        `UPDATE public.profiles
+         SET role = 'admin',
+             username = $1,
+             organization_name = $2,
+             organization_name_key = $3
+         WHERE id = $4`,
+        [username, organizationName, organizationKey || null, userId],
+      );
+    } else {
+      await queryNeon(
+        `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
+         VALUES ($1, $2, $3, $4, 'admin', now())`,
+        [userId, username, organizationName, organizationKey || null],
+      );
+    }
+
+    if (existingAuth?.user_id) {
+      await queryNeon(
+        `UPDATE public.auth_users
+         SET email = $1,
+             password_hash = $2,
+             updated_at = now()
+         WHERE user_id = $3`,
+        [email, passwordHash, userId],
+      );
+    } else {
+      await queryNeon(
+        `INSERT INTO public.auth_users (user_id, email, password_hash, created_at, updated_at)
+         VALUES ($1, $2, $3, now(), now())`,
+        [userId, email, passwordHash],
+      );
+    }
+
+    if (organizationKey) {
+      await queryNeon(
+        `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
+         VALUES ($1, $2, $3, now(), now())
+         ON CONFLICT (organization_name_key)
+         DO UPDATE SET owner_user_id = EXCLUDED.owner_user_id, organization_name = EXCLUDED.organization_name, updated_at = now()`,
+        [organizationName, organizationKey, userId],
+      );
+    }
+
+    superAdminEnsured = true;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown bootstrap error";
+    console.error("SUPERADMIN bootstrap failed:", message);
+  }
+}
+
 export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord | null> {
   await ensureAuthSchema();
+  await ensureBootstrapSuperAdmin();
   return queryNeonOne<AuthUserRecord>(
     `SELECT au.user_id, au.email, au.password_hash, p.role, p.username, p.organization_name
      FROM public.auth_users au

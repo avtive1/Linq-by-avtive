@@ -81,6 +81,18 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
   const totalEvents = events.length;
   const totalAttendees = attendees.length;
+  const avgAttendeesPerEvent = totalEvents > 0 ? (totalAttendees / totalEvents).toFixed(1) : "0.0";
+  const maxAttendeesOnEvent = events.reduce(
+    (max, evt) => Math.max(max, Number(attendeeCountsByEvent.get(evt.id) || 0)),
+    0,
+  );
+  const chartRows = events.slice(0, 6).map((evt) => ({
+    id: evt.id,
+    name: evt.name,
+    attendees: Number(attendeeCountsByEvent.get(evt.id) || 0),
+    date: evt.date,
+  }));
+  const chartMax = Math.max(...chartRows.map((r) => r.attendees), 1);
 
   return (
     <div className="px-2 sm:px-4 lg:px-6 py-12 sm:py-16">
@@ -115,7 +127,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       </div>
 
       {/* Organization Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
           <div className="w-16 h-16 rounded-sm bg-info/15 flex items-center justify-center text-info shrink-0">
             <Calendar size={28} />
@@ -135,6 +147,56 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalAttendees}</span>
           </div>
         </div>
+
+        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
+          <div className="w-16 h-16 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong shrink-0">
+            <Users size={28} />
+          </div>
+          <div className="flex flex-col">
+            <span className="ui-eyebrow mb-1">Avg Attendees / Event</span>
+            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{avgAttendeesPerEvent}</span>
+            <span className="text-xs text-muted mt-1">Peak on one event: {maxAttendeesOnEvent}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Lightweight performance chart without dependencies */}
+      <div className="glass-panel p-6 rounded-lg mb-12">
+        <div className="flex items-center justify-between gap-3 mb-5">
+          <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+            Event Performance Snapshot
+          </h2>
+          <span className="text-xs px-3 py-1 rounded-full border border-border/60 bg-white text-muted">
+            Last {chartRows.length} events
+          </span>
+        </div>
+
+        {chartRows.length === 0 ? (
+          <p className="text-sm text-muted">No events available yet for chart insights.</p>
+        ) : (
+          <div className="space-y-3">
+            {chartRows.map((row) => {
+              const width = Math.max(8, Math.round((row.attendees / chartMax) * 100));
+              return (
+                <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_70px] items-center gap-3">
+                  <div>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="truncate text-heading font-medium">{row.name}</span>
+                      <span className="text-muted text-xs ml-3">{row.date}</span>
+                    </div>
+                    <div className="h-2.5 rounded-full bg-heading/10 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-linear-to-r from-primary to-primary-strong motion-token-hover"
+                        style={{ width: `${width}%` }}
+                      />
+                    </div>
+                  </div>
+                  <div className="text-right text-sm font-semibold text-heading">{row.attendees}</div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Events Table */}

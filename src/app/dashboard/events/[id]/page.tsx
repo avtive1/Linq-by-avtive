@@ -280,6 +280,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       return searchBlob.includes(query);
     });
   }, [searchQuery, cards]);
+  const previewCardsMax = Math.max(cards.length, filteredCards.length, 1);
+  const previewVisiblePct = Math.max(8, Math.round((filteredCards.length / previewCardsMax) * 100));
+  const previewTotalPct = Math.max(8, Math.round((cards.length / previewCardsMax) * 100));
 
   const handleDelete = async (cardId: string) => {
     if (!confirm("Are you sure you want to delete this attendee card?")) return;
@@ -750,14 +753,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   return (
     <main className="relative min-h-screen w-full bg-transparent">
       {isPreviewMode && (
-        <div className="relative z-100 bg-danger/10 backdrop-blur-md border-b border-danger/20 px-6 py-3 flex items-center justify-between text-danger text-sm font-medium shadow-sm">
-          <div className="flex items-center gap-2">
-            <Sparkles size={18} />
-            <span>Admin Preview Mode &mdash; Read Only</span>
+        <div className="relative z-100 border-b border-white/20 bg-linear-to-r from-heading via-[#2B4F95] to-heading px-6 py-3 shadow-sm">
+          <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between text-sm font-medium text-white">
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-primary" />
+              <span>Super Admin Inspection Mode &mdash; Event View (Read Only)</span>
+            </div>
+            <Link
+              href="/admin"
+              className="no-link-underline rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white hover:no-link-underline hover:bg-white/20"
+            >
+              Exit Preview
+            </Link>
           </div>
-          <Link href="/admin" className="bg-danger text-white px-3 py-1 rounded-sm hover:brightness-110 transition-all text-xs">
-            Exit Preview
-          </Link>
         </div>
       )}
       <GradientBackground />
@@ -769,12 +777,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <button
               onClick={() => {
                 router.refresh();
-                router.push("/dashboard");
+                router.push(isPreviewMode ? "/admin" : "/dashboard");
               }}
             className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
-              Back to Dashboard
+              {isPreviewMode ? "Back to Admin" : "Back to Dashboard"}
             </button>
             <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mt-1">
               Campaign details
@@ -972,8 +980,56 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
 
+        {isPreviewMode && (
+          <div className="motion-token-enter mb-8 rounded-sm border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-heading/20 bg-heading/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading">
+                Super Admin
+              </span>
+              <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
+                View Only
+              </span>
+              <span className="inline-flex items-center rounded-full border border-danger/25 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-danger">
+                Edit/Delete Disabled
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              This campaign is opened in inspection mode for platform-level oversight. You can review data and access posture, but cannot mutate records.
+            </p>
+            <div className="mt-4 rounded-sm border border-heading/15 bg-heading/3 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-heading/80">Event Snapshot</p>
+              <div className="mt-3 space-y-2">
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
+                    <span>Total attendees</span>
+                    <span className="font-semibold text-heading">{cards.length}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-heading/10">
+                    <div className="h-full rounded-full bg-primary motion-token-hover" style={{ width: `${previewTotalPct}%` }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
+                    <span>Visible in current filter</span>
+                    <span className="font-semibold text-heading">{filteredCards.length}</span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-heading/10">
+                    <div className="h-full rounded-full bg-heading/70 motion-token-hover" style={{ width: `${previewVisiblePct}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats Section */}
-        <div className="glass-panel p-6 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm mb-10 group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-200 animate-slide-up delay-100">
+        <div
+          className={`p-6 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm mb-10 group transition-all duration-200 animate-slide-up delay-100 ${
+            isPreviewMode
+              ? "bg-white/85 border border-heading/20 shadow-md hover:shadow-lg"
+              : "glass-panel hover:shadow-2xl hover:shadow-primary/5"
+          }`}
+        >
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-sm bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
               <Users size={32} />
@@ -1010,7 +1066,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <input
               type="text"
               placeholder="Search attendees in this campaign..."
-              className="w-full h-12 pl-20 pr-8 py-0 bg-white/70 backdrop-blur-md border border-white/50 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/60"
+              className={`w-full h-12 pl-20 pr-8 py-0 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/60 ${
+                isPreviewMode
+                  ? "bg-white/90 border border-heading/20 focus:bg-white"
+                  : "bg-white/70 backdrop-blur-md border border-white/50 focus:bg-white"
+              }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1028,10 +1088,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         ) : (
           <div className="grid gap-4 animate-slide-up delay-300">
             {filteredCards.length > 0 ? (
-              filteredCards.map((card) => (
+              filteredCards.map((card, idx) => (
                 <div
                   key={card.id}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 glass-panel p-2 sm:p-3 rounded-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
+                className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 sm:p-3 rounded-sm hover:-translate-y-0.5 ${
+                  isPreviewMode
+                    ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
+                    : "glass-panel hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
+                }`}
+                style={{ animationDelay: `${Math.min(idx * 45, 280)}ms` }}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative">
@@ -1085,45 +1150,58 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                   <div className="flex items-center gap-2">
                     <Link href={`/cards/${card.id}`} className="shrink-0">
-                      <Button variant="secondary" size="sm" icon={<ExternalLink size={12} />} className="rounded-sm bg-white/50 border-white/60">
-                        View
-                      </Button>
-                    </Link>
-                    {canEditCards ? (
-                      <Link href={`/cards/${card.id}/edit`} className="shrink-0">
-                        <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-sm bg-white/50 border-white/60">
-                          Edit
-                        </Button>
-                      </Link>
-                    ) : (
                       <Button
                         variant="secondary"
                         size="sm"
-                        icon={<Pencil size={14} />}
-                        className="rounded-sm bg-white/50 border-white/60 opacity-50 cursor-not-allowed grayscale"
-                        disabled
-                        title="Request access to edit attendee cards."
+                        icon={<ExternalLink size={12} />}
+                        className="rounded-sm bg-white/50 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
                       >
-                        Edit
+                        View
+                      </Button>
+                    </Link>
+                    {!isPreviewMode &&
+                      (canEditCards ? (
+                        <Link href={`/cards/${card.id}/edit`} className="shrink-0">
+                          <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-sm bg-white/50 border-white/60">
+                            Edit
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          icon={<Pencil size={14} />}
+                          className="rounded-sm bg-white/50 border-white/60 opacity-50 cursor-not-allowed grayscale"
+                          disabled
+                          title="Request access to edit attendee cards."
+                        >
+                          Edit
+                        </Button>
+                      ))}
+                    {!isPreviewMode && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          if (!canDeleteCards) return;
+                          handleDelete(card.id);
+                        }}
+                        disabled={!canDeleteCards}
+                        title={!canDeleteCards ? "Request access to delete attendee cards." : "Delete attendee card"}
+                        className={`w-10 h-10 p-0 rounded-inline transition-all shrink-0 ${
+                          canDeleteCards
+                            ? "text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200"
+                            : "text-muted/50 opacity-50 cursor-not-allowed grayscale"
+                        }`}
+                      >
+                        <Trash2 size={16} />
                       </Button>
                     )}
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        if (!canDeleteCards) return;
-                        handleDelete(card.id);
-                      }}
-                      disabled={!canDeleteCards}
-                      title={!canDeleteCards ? "Request access to delete attendee cards." : "Delete attendee card"}
-                      className={`w-10 h-10 p-0 rounded-inline transition-all shrink-0 ${
-                        canDeleteCards
-                          ? "text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200"
-                          : "text-muted/50 opacity-50 cursor-not-allowed grayscale"
-                      }`}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
+                    {isPreviewMode && (
+                      <span className="inline-flex items-center rounded-full border border-heading/20 bg-heading/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading">
+                        Read only
+                      </span>
+                    )}
                   </div>
                 </div>
               ))

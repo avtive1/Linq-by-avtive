@@ -28,7 +28,7 @@ export default function LoginPage() {
       const result = await signIn("credentials", {
         email: email.trim().toLowerCase(),
         password,
-        callbackUrl: "/dashboard",
+        callbackUrl: "/",
         redirect: false,
       });
       if (result?.error) {
@@ -36,7 +36,16 @@ export default function LoginPage() {
         return;
       }
       if (result?.ok) {
-        router.replace("/dashboard");
+        let target = "/dashboard";
+        try {
+          const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
+          const adminPayload = await adminRes.json().catch(() => ({}));
+          const isAdmin = Boolean(adminRes.ok && adminPayload?.data?.isAdmin);
+          target = isAdmin ? "/admin" : "/dashboard";
+        } catch {
+          target = "/dashboard";
+        }
+        router.replace(target);
         router.refresh();
         return;
       }
