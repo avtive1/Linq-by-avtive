@@ -768,14 +768,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               Back to Dashboard
             </button>
-            <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70 mt-1">
+            <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mt-1">
               Campaign details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
               <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]">
                 {eventData.name}
               </h1>
-              <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-3 py-1 rounded-md border ${status.classes}`}>
+              <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
                 {status.label}
               </span>
             </div>
@@ -809,7 +809,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   {isShareOpen && (
                     <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-xl py-1 z-9999 animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="px-4 py-2 mb-1 border-b border-border/40">
-                        <span className="text-[13px] font-medium text-muted/50 uppercase tracking-[0.01em] leading-[1.25]">Share Options</span>
+                        <span className="text-[13px] font-medium text-muted/50 uppercase tracking-[0.01em] leading-tight">Share Options</span>
                       </div>
                       
                       <button
@@ -825,7 +825,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={16} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium text-sm text-heading leading-[1.25]">Guest</span>
+                          <span className="font-medium text-sm text-heading leading-tight">Guest</span>
                         </div>
                       </button>
 
@@ -841,7 +841,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={16} />
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium text-sm text-heading leading-[1.25]">Visitor</span>
+                          <span className="font-medium text-sm text-heading leading-tight">Visitor</span>
                         </div>
                       </button>
                     </div>
@@ -965,12 +965,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-0">
-              <span className="text-sm font-normal tracking-[0.01em] text-muted/80 leading-[1.25]">Live Attendees</span>
+              <span className="text-sm font-normal tracking-[0.01em] text-muted/80 leading-tight">Live Attendees</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-[3.25rem] font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className="text-base font-medium text-primary-strong leading-[1.25]">Attendees</span>
+                <span className="text-base font-medium text-primary-strong leading-tight">Attendees</span>
               </div>
             </div>
           </div>
@@ -1041,7 +1041,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-medium text-sm sm:text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-[1.25]">
+                        <h3 className="font-medium text-sm sm:text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-tight">
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
@@ -1055,7 +1055,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-[13px] leading-[1.25] text-muted font-normal tracking-[0.01em]">
+                      <div className="flex flex-wrap items-center gap-2 text-[13px] leading-tight text-muted font-normal tracking-[0.01em]">
                         <span className="flex items-center gap-1">
                           <BarChart3 size={10} className="text-primary-strong/70" />
                           {card.role}
@@ -1149,7 +1149,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 submitAccessRequest(accessRequestAction, accessRequestNote);
               }}
             >
-              <label className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Requested action</label>
+              <label className="text-[13px] font-normal tracking-[0.01em] leading-tight text-heading">Requested action</label>
               <select
                 value={accessRequestAction}
                 onChange={(e) => setAccessRequestAction(e.target.value)}
@@ -1363,7 +1363,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="px-6 pb-6 flex flex-col gap-3">
               {shareDraftRole === "visitor" && (
                 <div className="rounded-md border border-border/60 bg-surface/40 px-3 py-2">
-                  <p className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted mb-1">Default LinkedIn caption</p>
+                  <p className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted mb-1">Default LinkedIn caption</p>
                   <p className="text-xs text-heading wrap-break-word">{shareDraftMessage}</p>
                 </div>
               )}
@@ -1503,7 +1503,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
-                     <label className="text-[14px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location Type</label>
+                     <label className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location Type</label>
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
@@ -1519,7 +1519,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                 {editForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-[14px] font-normal tracking-[0.01em] leading-[1.25] text-heading">Location <span className="text-primary-strong">*</span></label>
+                     <label className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location <span className="text-primary-strong">*</span></label>
                      <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
                         <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />

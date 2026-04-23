@@ -9,6 +9,7 @@ export async function POST(req: Request) {
       password?: string;
       username?: string;
       organizationName?: string;
+      organizationLogoUrl?: string;
       linkedin?: string;
     };
 
@@ -16,6 +17,7 @@ export async function POST(req: Request) {
     const password = String(body.password || "");
     const username = String(body.username || "").trim().toLowerCase();
     const organizationName = String(body.organizationName || "").trim();
+    const organizationLogoUrl = String(body.organizationLogoUrl || "").trim();
     const linkedin = String(body.linkedin || "").trim();
 
     if (!email || !password || !username || !organizationName) {
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: passwordIssues[0] }, { status: 400 });
     }
 
-    const data = await registerUser({ email, password, username, organizationName, linkedin });
+    const data = await registerUser({ email, password, username, organizationName, organizationLogoUrl, linkedin });
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Registration failed.";

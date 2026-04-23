@@ -58,6 +58,7 @@ export async function registerUser(input: {
   password: string;
   username: string;
   organizationName: string;
+  organizationLogoUrl?: string;
   linkedin?: string;
 }): Promise<{ userId: string; email: string; role: string }> {
   await ensureAuthSchema();
@@ -65,6 +66,7 @@ export async function registerUser(input: {
   const username = input.username.trim().toLowerCase();
   const organizationName = normalizeOrganizationName(input.organizationName);
   const organizationKey = toOrganizationKey(organizationName);
+  const organizationLogoUrl = String(input.organizationLogoUrl || "").trim();
   const linkedin = String(input.linkedin || "").trim();
 
   const existingEmail = await queryNeonOne<{ user_id: string }>(
@@ -106,6 +108,20 @@ export async function registerUser(input: {
        DO UPDATE SET organization_name = EXCLUDED.organization_name, updated_at = now()`,
       [organizationName, organizationKey, userId],
     );
+  }
+
+  // Optional column support: persist uploaded organization logo if schema has organization_logo_url.
+  if (organizationLogoUrl) {
+    try {
+      await queryNeon(
+        `UPDATE public.profiles
+         SET organization_logo_url = $1, updated_at = now()
+         WHERE id = $2`,
+        [organizationLogoUrl, userId],
+      );
+    } catch {
+      // Ignore when older schemas do not yet have organization_logo_url.
+    }
   }
 
   if (linkedin) {

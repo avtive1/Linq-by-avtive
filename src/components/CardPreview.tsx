@@ -265,8 +265,8 @@ export function CardPreview({
   // Font Mapping
   const fontMap: Record<string, string> = {
     inter: "var(--font-inter-tight), sans-serif",
-    poppins: "var(--font-inter-tight), sans-serif",
-    outfit: "var(--font-inter-tight), sans-serif",
+    poppins: "var(--font-poppins), sans-serif",
+    outfit: "var(--font-outfit), sans-serif",
     times: "'Times New Roman', Times, serif",
   };
   const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;
@@ -395,11 +395,15 @@ export function CardPreview({
 
         {/* Meta Info - Precisely positioned per provided CSS */}
         <p className="absolute left-[30px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
-          <img src="https://www.figma.com/api/mcp/asset/911c0336-0dbe-4d71-abd3-95e367313410" className="w-[20px] h-[20px]" alt="" />
+          <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z" />
+          </svg>
           {data.sessionDate || "Friday, 11th April, 2026"}
         </p>
         <p className="absolute left-[261px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
-          <img src="https://www.figma.com/api/mcp/asset/c70396aa-fad6-4461-a222-1ef86c1215c8" className="w-[20px] h-[20px]" alt="" />
+          <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z" />
+          </svg>
           {data.sessionTime || "05:00 PM"}
         </p>
         <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
@@ -408,7 +412,9 @@ export function CardPreview({
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z" />
             </svg>
           ) : (
-            <img src="https://www.figma.com/api/mcp/asset/09c9f77b-5728-4fe6-8b34-b3ad59fe884d" className="w-[20px] h-[20px]" alt="" />
+            <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z" />
+            </svg>
           )}
           {data.location || "Expo Center, Islamabad, Pakistan"}
         </p>
@@ -442,7 +448,7 @@ export function CardPreview({
                   />
                </>
              ) : (
-               <div className="w-full h-full bg-gradient-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
+               <div className="w-full h-full bg-linear-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
                  <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">
                    <div
                      className="absolute inset-0 opacity-70"
@@ -575,7 +581,9 @@ export function CardPreview({
               <DefaultAvatarPlaceholder className="w-full h-full" />
             )}
           </div>
-          <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]">{data.name || "Full Name"}</h2>
+          <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]" style={metaTextColor}>
+            {data.name || "Full Name"}
+          </h2>
           <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
           <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
         </section>
@@ -658,7 +666,9 @@ export function CardPreview({
             <DefaultAvatarPlaceholder className="w-full h-full" />
           )}
         </div>
-        <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap">{data.name || "Full Name"}</h2>
+        <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap" style={metaTextColor}>
+          {data.name || "Full Name"}
+        </h2>
         <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
         <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
       </section>

@@ -7,9 +7,12 @@ export async function listAdminUsers() {
     role: string | null;
     username: string | null;
     organization_name: string | null;
+    organization_logo_url: string | null;
     created_at: string | null;
   }>(
-    `SELECT p.id, au.email, p.role, p.username, p.organization_name, p.created_at
+    `SELECT p.id, au.email, p.role, p.username, p.organization_name,
+            to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url,
+            p.created_at
      FROM public.profiles p
      LEFT JOIN public.auth_users au ON au.user_id = p.id
      ORDER BY p.created_at DESC
@@ -20,6 +23,7 @@ export async function listAdminUsers() {
       ...r,
       user_metadata: {
         organization_name: r.organization_name || "",
+        organization_logo_url: r.organization_logo_url || "",
       },
     })),
   };
@@ -32,8 +36,10 @@ export async function getAdminUserById(userId: string) {
     role: string | null;
     username: string | null;
     organization_name: string | null;
+    organization_logo_url: string | null;
   }>(
-    `SELECT p.id, au.email, p.role, p.username, p.organization_name
+    `SELECT p.id, au.email, p.role, p.username, p.organization_name,
+            to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url
      FROM public.profiles p
      LEFT JOIN public.auth_users au ON au.user_id = p.id
      WHERE p.id = $1
@@ -47,6 +53,7 @@ export async function getAdminUserById(userId: string) {
     publicMetadata: {
       role: row.role || "user",
       organization_name: row.organization_name || "",
+      organization_logo_url: row.organization_logo_url || "",
     },
     username: row.username || "",
   };
@@ -54,8 +61,9 @@ export async function getAdminUserById(userId: string) {
 
 export async function getAdminUserByEmail(email: string) {
   const normalized = email.trim().toLowerCase();
-  const row = await queryNeonOne<{ id: string; email: string | null; role: string | null; organization_name: string | null }>(
-    `SELECT p.id, au.email, p.role, p.organization_name
+  const row = await queryNeonOne<{ id: string; email: string | null; role: string | null; organization_name: string | null; organization_logo_url: string | null }>(
+    `SELECT p.id, au.email, p.role, p.organization_name,
+            to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url
      FROM public.auth_users au
      JOIN public.profiles p ON p.id = au.user_id
      WHERE lower(au.email) = lower($1)
@@ -69,6 +77,7 @@ export async function getAdminUserByEmail(email: string) {
     publicMetadata: {
       role: row.role || "user",
       organization_name: row.organization_name || "",
+      organization_logo_url: row.organization_logo_url || "",
     },
   };
 }

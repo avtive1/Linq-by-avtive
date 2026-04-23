@@ -65,8 +65,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
     const [userData, profileData] = await Promise.all([
       getAdminUserById(eventRow.user_id).catch(() => null),
-      queryNeonOne<{ organization_name: string | null }>(
-        `SELECT organization_name FROM public.profiles WHERE id = $1`,
+      queryNeonOne<{ organization_name: string | null; organization_logo_url: string | null }>(
+        `SELECT
+           organization_name,
+           to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url
+         FROM public.profiles p
+         WHERE id = $1`,
         [eventRow.user_id],
       ),
     ]);
@@ -76,7 +80,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       (typeof userData?.publicMetadata?.organization_name === "string"
         ? String(userData.publicMetadata.organization_name)
         : "");
-    const organizationLogoUrl = "";
+    const organizationLogoUrl =
+      profileData?.organization_logo_url ||
+      (typeof userData?.publicMetadata?.organization_logo_url === "string"
+        ? String(userData.publicMetadata.organization_logo_url)
+        : "");
 
     return NextResponse.json(
       {

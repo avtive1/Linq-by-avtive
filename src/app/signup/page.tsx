@@ -105,6 +105,7 @@ export default function SignupPage() {
           password: form.password,
           username: form.username.toLowerCase(),
           organizationName: normalizedOrganizationName,
+          organizationLogoUrl,
           linkedin: cleanHandle,
         }),
       });
@@ -288,10 +289,10 @@ export default function SignupPage() {
                 />
                 {form.username.length >= 2 && (
                   <div className="absolute right-0 top-0 pt-[28px]">
-                    {usernameStatus === "loading" && <div className="text-[13px] leading-[1.25] font-medium text-muted animate-pulse">Checking...</div>}
-                    {usernameStatus === "available" && <div className="text-[13px] leading-[1.25] font-medium text-green-500">Available</div>}
-                    {usernameStatus === "taken" && <div className="text-[13px] leading-[1.25] font-medium text-danger">Taken</div>}
-                    {usernameStatus === "invalid" && <div className="text-[13px] leading-[1.25] font-medium text-danger">Invalid chars</div>}
+                    {usernameStatus === "loading" && <div className="text-[13px] leading-tight font-medium text-muted animate-pulse">Checking...</div>}
+                    {usernameStatus === "available" && <div className="text-[13px] leading-tight font-medium text-green-500">Available</div>}
+                    {usernameStatus === "taken" && <div className="text-[13px] leading-tight font-medium text-danger">Taken</div>}
+                    {usernameStatus === "invalid" && <div className="text-[13px] leading-tight font-medium text-danger">Invalid chars</div>}
                   </div>
                 )}
               </div>
