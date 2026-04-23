@@ -1,4 +1,4 @@
-import { Pool } from "pg";
+import { Pool, type QueryResultRow } from "pg";
 
 let pool: Pool | null = null;
 
@@ -24,7 +24,7 @@ export function getNeonPool(): Pool {
   return pool;
 }
 
-export async function queryNeon<T = Record<string, unknown>>(
+export async function queryNeon<T extends QueryResultRow = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
 ): Promise<T[]> {
@@ -32,7 +32,7 @@ export async function queryNeon<T = Record<string, unknown>>(
   return result.rows;
 }
 
-export async function queryNeonOne<T = Record<string, unknown>>(
+export async function queryNeonOne<T extends QueryResultRow = Record<string, unknown>>(
   sql: string,
   params: unknown[] = [],
 ): Promise<T | null> {
