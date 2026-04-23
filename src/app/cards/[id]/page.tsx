@@ -25,6 +25,7 @@ export default async function CardViewPage(props: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ share?: string; token?: string }>;
 }) {
+  const readString = (value: unknown) => (typeof value === "string" ? value : "");
   const params = await props.params;
   const searchParams = await props.searchParams;
   const id = params.id;
@@ -120,36 +121,36 @@ export default async function CardViewPage(props: {
       }
 
       card = {
-        id: secureRecord.id,
-        name: secureRecord.name,
+        id: readString(secureRecord.id),
+        name: readString(secureRecord.name),
       
-        role: secureRecord.role || "Attendee", 
-        company: secureRecord.company,
-        email: secureRecord.card_email,
-        eventId: secureRecord.event_id || undefined,
-        eventName: secureRecord.event_name,
-        sessionDate: secureRecord.session_date,
-        sessionTime: secureRecord.session_time || undefined,
-        location: secureRecord.location,
-        track: secureRecord.track,
-        year: secureRecord.year,
-        linkedin: secureRecord.linkedin,
-        photo: secureRecord.photo_url || undefined,
-        designType: secureRecord.design_type,
-        color: secureRecord.card_color,
-        fontFamily: secureRecord.card_font || undefined,
-        cardRole: secureRecord.track as "guest" | "visitor",
+        role: readString(secureRecord.role) || "Attendee", 
+        company: readString(secureRecord.company),
+        email: readString(secureRecord.card_email),
+        eventId: readString(secureRecord.event_id) || undefined,
+        eventName: readString(secureRecord.event_name),
+        sessionDate: readString(secureRecord.session_date),
+        sessionTime: readString(secureRecord.session_time) || undefined,
+        location: readString(secureRecord.location),
+        track: readString(secureRecord.track),
+        year: readString(secureRecord.year),
+        linkedin: readString(secureRecord.linkedin),
+        photo: readString(secureRecord.photo_url) || undefined,
+        designType: readString(secureRecord.design_type),
+        color: readString(secureRecord.card_color),
+        fontFamily: readString(secureRecord.card_font) || undefined,
+        cardRole: readString(secureRecord.track) as "guest" | "visitor",
         sponsors,
         organizationName,
         organizationLogoUrl,
-          cardPreviewUrl: typeof secureRecord.card_preview_url === "string" ? secureRecord.card_preview_url : undefined,
+          cardPreviewUrl: readString(secureRecord.card_preview_url) || undefined,
         verticalFrontUrl:
-          process.env.CLOUDINARY_CLOUD_NAME && secureRecord.event_id
-            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${secureRecord.event_id}/${secureRecord.id}-vertical-front`
+          process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
+            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-front`
             : undefined,
         verticalBackUrl:
-          process.env.CLOUDINARY_CLOUD_NAME && secureRecord.event_id
-            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${secureRecord.event_id}/${secureRecord.id}-vertical-back`
+          process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
+            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-back`
             : undefined,
       };
     }
