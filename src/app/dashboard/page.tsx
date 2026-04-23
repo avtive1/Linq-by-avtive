@@ -796,7 +796,7 @@ function DashboardContent() {
               <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
               {isPreviewMode ? "Back to Admin" : "Back to Home"}
             </Link>
-            <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70">
+            <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70">
               {organizationName?.trim() || "Organization"}
             </span>
             <h1
@@ -1051,7 +1051,7 @@ function DashboardContent() {
             <p className="text-sm font-medium text-heading mb-2">My Access Requests</p>
             <div className="flex flex-col gap-2">
               {myAccessRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading">{req.event_name} • {req.requested_action}</span>
                   <span className={`font-medium ${
                     req.status === "approved" ? "text-green-600" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
@@ -1069,7 +1069,7 @@ function DashboardContent() {
             <p className="text-sm font-medium text-heading mb-2">My Organization Join Requests</p>
             <div className="flex flex-col gap-2">
               {myOrgJoinRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <div className="flex flex-col min-w-0">
                     <span className="text-heading truncate">
                       Organization: {req.requested_org_name} • Reviewer: {req.owner_email}
@@ -1106,19 +1106,19 @@ function DashboardContent() {
             <p className="text-sm font-medium text-heading mb-2">Organization Join Inbox</p>
             <div className="flex flex-col gap-2">
               {orgJoinInbox.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">
                     Requester: {req.requester_email} • Wants to join: {req.requested_org_name}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
+                      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-tight font-medium tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "approve")}
                     >
                       Approve
                     </button>
                     <button
-                      className="px-2 py-1 rounded-md border border-border text-[13px] leading-[1.25] font-normal tracking-[0.01em]"
+                      className="px-2 py-1 rounded-md border border-border text-[13px] leading-tight font-normal tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "reject")}
                     >
                       Reject
@@ -1135,17 +1135,17 @@ function DashboardContent() {
             <p className="text-sm font-medium text-heading mb-2">Pending Access Inbox</p>
             <div className="flex flex-col gap-2">
               {inboxRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">{req.requester_email} • {req.event_name} • {req.requested_action}</span>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
-                      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-[1.25] font-medium tracking-[0.01em]"
+                      className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-tight font-medium tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "approve")}
                     >
                       Approve
                     </button>
                     <button
-                      className="px-2 py-1 rounded-md border border-border text-[13px] leading-[1.25] font-normal tracking-[0.01em]"
+                      className="px-2 py-1 rounded-md border border-border text-[13px] leading-tight font-normal tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "reject")}
                     >
                       Reject
@@ -1162,12 +1162,12 @@ function DashboardContent() {
             <p className="text-sm font-medium text-heading mb-2">Failed Notifications</p>
             <div className="flex flex-col gap-2">
               {failedNotifications.slice(0, 6).map((row) => (
-                <div key={row.id} className="flex items-center justify-between gap-3 text-[13px] leading-[1.25] bg-white/60 border border-border/50 rounded-md px-3 py-2">
+                <div key={row.id} className="flex items-center justify-between gap-3 text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">
                     {row.event_name} • {row.requester_email} • {row.requested_action}
                   </span>
                   <button
-                    className="px-2 py-1 rounded-md border border-border text-[13px] leading-[1.25] font-normal inline-flex items-center gap-1 shrink-0"
+                    className="px-2 py-1 rounded-md border border-border text-[13px] leading-tight font-normal inline-flex items-center gap-1 shrink-0"
                     onClick={() => retryNotification(row.id, row.status)}
                     disabled={retryingNotificationId === row.id}
                   >
@@ -1212,10 +1212,10 @@ function DashboardContent() {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2 ml-auto">
-                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-3 py-1 rounded-md border ${status.classes}`}>
+                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
                         {status.label}
                       </span>
-                      <div className="flex items-center text-[13px] font-medium leading-[1.25] text-primary-strong bg-primary/10 px-3 py-1 rounded-md">
+                      <div className="flex items-center text-[13px] font-medium leading-tight text-primary-strong bg-primary/10 px-3 py-1 rounded-md">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
                       </div>
                     </div>
@@ -1308,7 +1308,7 @@ function DashboardContent() {
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
-                     <label className="text-[14px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location Type</label>
+                     <label className="text-[14px] font-normal text-heading leading-tight tracking-[0.01em]">Location Type</label>
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
@@ -1324,7 +1324,7 @@ function DashboardContent() {
 
                 {eventForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-[14px] font-normal text-heading leading-[1.25] tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
+                     <label className="text-[14px] font-normal text-heading leading-tight tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
                      <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
                         <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
@@ -1537,7 +1537,7 @@ function DashboardContent() {
                             </div>
                             <div className="flex flex-col gap-2 min-w-0">
                               <span className="text-base font-semibold text-heading truncate leading-[1.4]">{m.member_email}</span>
-                              <span className="text-[13px] leading-[1.25] text-muted font-medium bg-surface/50 w-fit px-3 py-1 rounded-md border border-border/30">{m.role_label}</span>
+                              <span className="text-[13px] leading-tight text-muted font-medium bg-surface/50 w-fit px-3 py-1 rounded-md border border-border/30">{m.role_label}</span>
                             </div>
                           </div>
                           
@@ -1705,9 +1705,9 @@ function DashboardContent() {
 
       {/* Request Permission Modal */}
       {isRequestPermissionModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white/95 border border-border/40 w-full max-w-[500px] rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/[0.02]">
+            <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/2">
               <div className="flex items-center gap-2">
                 <AlertCircle className="text-danger" size={20} />
                 <h2 className="text-xl font-semibold text-heading tracking-tight">Request Creation Access</h2>

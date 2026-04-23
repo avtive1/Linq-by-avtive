@@ -14,7 +14,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Invalid Organization Id</h2>
         <Link href="/admin">
-          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
+          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-tight font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
         </Link>
       </div>
     );
@@ -26,7 +26,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Organization Not Found</h2>
         <Link href="/admin">
-          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
+          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-tight font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
         </Link>
       </div>
     );
@@ -118,7 +118,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           </div>
           <Link 
             href={`/dashboard?impersonate=${user.id}`}
-            className="flex items-center justify-center gap-2 bg-primary-strong/10 text-primary-strong border border-primary/30 px-5 py-2 rounded-md text-sm leading-[1.25] font-medium tracking-[0.01em] hover:bg-primary/20 transition-all active:scale-[0.97]"
+            className="flex items-center justify-center gap-2 bg-primary-strong/10 text-primary-strong border border-primary/30 px-5 py-2 rounded-md text-sm leading-tight font-medium tracking-[0.01em] hover:bg-primary/20 transition-all active:scale-[0.97]"
           >
             <Sparkles size={18} />
             View as Organization
@@ -207,7 +207,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
-              <tr className="bg-surface border-b border-border text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted">
+              <tr className="bg-surface border-b border-border text-[13px] font-normal tracking-[0.01em] leading-tight text-muted">
                 <th className="py-4 px-6 font-medium">Event Name</th>
                 <th className="py-4 px-6 font-medium">Date</th>
                 <th className="py-4 px-6 font-medium">Location</th>
@@ -226,12 +226,12 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                     <td className="py-4 px-6 text-muted text-sm">{evt.date}</td>
                     <td className="py-4 px-6 text-muted text-sm truncate max-w-[200px]">{evt.location}</td>
                     <td className="py-4 px-6">
-                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-[1.25] px-2 py-1 rounded-md border ${status.classes}`}>
+                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-2 py-1 rounded-md border ${status.classes}`}>
                         {status.label}
                       </span>
                     </td>
                     <td className="py-4 px-6 text-center">
-                      <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-medium px-3 py-1 rounded-md text-sm leading-[1.25]">
+                      <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-medium px-3 py-1 rounded-md text-sm leading-tight">
                         {aCount}
                       </span>
                     </td>

@@ -520,7 +520,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center max-w-[1320px] mx-auto min-h-max">
               {/* Horizontal Card Preview */}
               <div className="flex flex-col items-center gap-8 shrink-0 w-full xl:w-auto">
-                  <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Social post layout</h3>
+                  <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
                   <div className="horizontal-preview-frame">
                     <div className="preview-card-capture horizontal-preview">
                       <CardPreview data={form} preview />
@@ -536,7 +536,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               </div>
 
               <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
-                <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Event badge layout</h3>
+                <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
                 <div className="vertical-preview-frame mt-1">
                   <div className="preview-card-capture vertical-preview">
                     <CardPreview data={form} preview isVertical verticalSide={2} />
@@ -557,7 +557,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
           {/* Item 1: Layout Selection */}
           <div className="flex-1 flex flex-col gap-3">
-            <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted/65">Layout style</span>
+            <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Layout style</span>
             <div className="flex gap-2 h-10">
                 <button
                   type="button"
@@ -588,7 +588,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
           {/* Item 2: Theme Selection */}
           <div className="flex flex-col gap-3 items-center lg:items-start shrink-0">
-            <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted/65">Theme color</span>
+            <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Theme color</span>
             <div className="flex gap-2 h-10 items-center">
                 {colors.map((c) => (
                   <button
@@ -615,7 +615,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
           {/* Item 3: Typography Selection */}
           <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
-            <span className="text-[13px] font-normal tracking-[0.01em] leading-[1.25] text-muted/65">Typography</span>
+            <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
             <div className="h-11">
                 <Select
                   value={form.fontFamily}
@@ -647,13 +647,13 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
             <div className="flex flex-col lg:flex-row gap-12 print:flex-col print:gap-20 print:items-center">
                 <div className="flex flex-col items-center gap-6">
-                  <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-[1.25] print:hidden">Front side (Photo)</span>
+                  <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-tight print:hidden">Front side (Photo)</span>
                   <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
                       <CardPreview data={form} isVertical verticalSide={1} />
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-6">
-                  <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-[1.25] print:hidden">Back side (QR)</span>
+                  <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-tight print:hidden">Back side (QR)</span>
                   <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
                       <CardPreview data={form} isVertical verticalSide={2} />
                   </div>
@@ -664,7 +664,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                 <p className="text-sm text-white/60 mb-4 leading-relaxed">
                   For the best experience, use heavy cardstock and set your printer to <b>Portrait</b> with <b>Default</b> margins.
                 </p>
-                <p className="text-[13px] font-medium text-primary tracking-[0.01em] leading-[1.25]">Fold along the center after printing</p>
+                <p className="text-[13px] font-medium text-primary tracking-[0.01em] leading-tight">Fold along the center after printing</p>
             </div>
           </div>
         )}
