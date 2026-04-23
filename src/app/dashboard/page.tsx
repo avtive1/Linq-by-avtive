@@ -707,7 +707,10 @@ function DashboardContent() {
         <GradientBackground />
         <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="mx-auto max-w-[760px] glass-panel rounded-md p-8 sm:p-12 flex flex-col gap-6 text-center">
-            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]">
+            <h1
+              className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]"
+              style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
+            >
               {joinGateStatus === "pending" ? "Organization access pending approval" : "Organization setup pending"}
             </h1>
             <p className="text-base text-muted leading-[1.6]">
@@ -788,7 +791,10 @@ function DashboardContent() {
             <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70">
               {organizationName?.trim() || "Organization"}
             </span>
-            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [-webkit-text-stroke:0.35px_currentColor]">
+            <h1
+              className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]"
+              style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
+            >
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
@@ -923,7 +929,7 @@ function DashboardContent() {
                 <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-lg font-black text-primary-strong">Attendees</span>
+                <span className="text-lg font-bold text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
@@ -939,7 +945,7 @@ function DashboardContent() {
                 <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-lg font-black text-primary-strong">Total Campaigns</span>
+                <span className="text-lg font-bold text-primary-strong">Total Campaigns</span>
               </div>
             </div>
           </div>

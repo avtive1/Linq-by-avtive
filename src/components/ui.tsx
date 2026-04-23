@@ -150,8 +150,8 @@ export function Button({
   
   const sizeClasses = {
     sm: "h-9 px-3 text-[14px] leading-[1.25] rounded-md font-semibold",
-    md: "h-10 px-4 text-[16px] leading-[1.25] rounded-md font-bold",
-    lg: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-bold",
+    md: "h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold",
+    lg: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-semibold",
   };
 
   return (
