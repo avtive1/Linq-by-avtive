@@ -272,7 +272,6 @@ export function CardPreview({
   };
   const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;
 
-  // LinkedIn / QR Logic
   const rawQrInput = data.linkedin?.trim() || "";
   let finalQrUrl = "";
   if (rawQrInput) {
@@ -303,8 +302,10 @@ export function CardPreview({
         if (!cancelled) setQrUrl(null);
       }
     };
-    updateQr();
-    return () => { cancelled = true; };
+    void updateQr();
+    return () => {
+      cancelled = true;
+    };
   }, [finalQrUrl]);
 
   if (isVertical) {
@@ -420,68 +421,27 @@ export function CardPreview({
           {data.location || "Expo Center, Islamabad, Pakistan"}
         </p>
 
-        {/* Central Element (Photo or QR) */}
+        {/* Front (verticalSide 1): profile photo. Back (verticalSide 2): scannable QR from LinkedIn / URL field */}
         {verticalSide === 1 ? (
-          /* SIDE 1: QR Code / placeholder (replaces profile image on vertical as requested) */
-          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4 overflow-hidden">
-             {qrUrl ? (
-                  <img
-                    src={qrUrl}
-                    className="h-full w-full object-contain"
-                    alt="QR Code"
-                  />
-             ) : (
-               <div className="w-full h-full bg-linear-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
-                 <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">
-                   <div
-                     className="absolute inset-0 opacity-70"
-                     style={{
-                       backgroundImage:
-                         "repeating-linear-gradient(0deg, #9ca3af 0 8px, #e5e7eb 8px 16px), repeating-linear-gradient(90deg, #9ca3af 0 8px, #e5e7eb 8px 16px)",
-                       backgroundBlendMode: "multiply",
-                     }}
-                   />
-                   <div className="absolute left-0 top-0 w-[34px] h-[34px] border-r border-b border-slate-500 bg-[#cbd5e1]" />
-                   <div className="absolute right-0 top-0 w-[34px] h-[34px] border-l border-b border-slate-500 bg-[#cbd5e1]" />
-                   <div className="absolute left-0 bottom-0 w-[34px] h-[34px] border-r border-t border-slate-500 bg-[#cbd5e1]" />
-                 </div>
-                 <div className="px-5 py-4 rounded-md bg-white/92 border border-slate-300 shadow-sm text-slate-700 text-[56px] font-bold tracking-[0.01em] text-center leading-[1.05] whitespace-pre-line">
-                   {"Enter link\nin form"}
-                 </div>
-               </div>
-             )}
+          <div className="absolute left-[166px] top-[541px] z-4 flex h-[244px] w-[244px] items-center justify-center overflow-hidden rounded-lg border border-white/25 bg-white/10 shadow-md">
+            {data.photo ? (
+              <img src={data.photo} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
+            )}
           </div>
         ) : (
-          /* SIDE 2: QR Code - Exactly matching qr-wrap and internal qr-image/qr-center */
-          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4 overflow-hidden">
-             {qrUrl ? (
-                  <img
-                    src={qrUrl}
-                    className="h-full w-full object-contain"
-                    alt="QR Code"
-                  />
-             ) : (
-               <div className="w-full h-full bg-linear-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
-                 <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">
-                   <div
-                     className="absolute inset-0 opacity-70"
-                     style={{
-                       backgroundImage:
-                         "repeating-linear-gradient(0deg, #9ca3af 0 8px, #e5e7eb 8px 16px), repeating-linear-gradient(90deg, #9ca3af 0 8px, #e5e7eb 8px 16px)",
-                       backgroundBlendMode: "multiply",
-                     }}
-                   />
-                   <div className="absolute left-0 top-0 w-[34px] h-[34px] border-r border-b border-slate-500 bg-[#cbd5e1]" />
-                   <div className="absolute right-0 top-0 w-[34px] h-[34px] border-l border-b border-slate-500 bg-[#cbd5e1]" />
-                   <div className="absolute left-0 bottom-0 w-[34px] h-[34px] border-r border-t border-slate-500 bg-[#cbd5e1]" />
-                 </div>
-                 <div className="px-5 py-4 rounded-md bg-white/92 border border-slate-300 shadow-sm text-slate-700 text-[56px] font-bold tracking-[0.01em] text-center leading-[1.05] whitespace-pre-line">
-                   {"Enter link\nin form"}
-                 </div>
-               </div>
-             )}
+          <div className="absolute left-[166px] top-[541px] z-4 h-[244px] w-[244px] overflow-hidden rounded-lg border border-white/25 bg-white shadow-md">
+            {qrUrl ? (
+              <img src={qrUrl} className="h-full w-full object-contain" alt="QR Code" />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-linear-to-br from-[#eceff3] to-[#dbe3ec] px-3 text-center">
+                <p className="m-0 text-[13px] font-semibold leading-snug text-slate-600">
+                  Add a LinkedIn URL or link in the card form to show a QR code on the badge back.
+                </p>
+              </div>
+            )}
           </div>
-
         )}
 
         {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
