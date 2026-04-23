@@ -8,9 +8,9 @@ export const revalidate = 0; // Ensures this page is always fresh when loaded by
 
 type OrganizationRow = {
   id: string;
-  email?: string;
-  username?: string;
-  organizationName?: string;
+  email: string | undefined;
+  username: string | undefined;
+  organizationName: string | undefined;
   created_at: string;
   eventCount: number;
   attendeeCount: number;
