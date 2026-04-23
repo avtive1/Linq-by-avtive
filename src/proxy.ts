@@ -1,53 +1,29 @@
-import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+
+const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
+const isAuthRoute = createRouteMatcher(["/login(.*)", "/signup(.*)"]);
+
+function createRouteMatcher(patterns: string[]) {
+  const regexes = patterns.map((p) => new RegExp(`^${p.replace(/\(\.\*\)/g, ".*")}$`));
+  return (request: NextRequest) => regexes.some((re) => re.test(new URL(request.url).pathname));
+}
 
 export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
+  const pathname = new URL(request.url).pathname;
+  const secureCookie = process.env.NODE_ENV === "production";
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+    secureCookie,
   });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
-      if (!user) {
-          return NextResponse.redirect(new URL("/login", request.url));
-      }
+  const userId = token?.uid || token?.sub;
+  if (isProtectedRoute.test(pathname) && !userId) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
-
-  if (user && (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (isAuthRoute(request) && userId) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
-
-  return supabaseResponse;
 }
 
 export const config = {

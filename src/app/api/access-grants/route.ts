@@ -1,62 +1,78 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const eventId = url.searchParams.get("eventId");
+    const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 50), 1), 200);
+    const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
     if (!eventId) return NextResponse.json({ error: "eventId is required." }, { status: 400 });
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: eventRow, error: eventErr } = await supabaseAdmin
-      .from("events")
-      .select("user_id")
-      .eq("id", eventId)
-      .single();
+    const eventRow = await queryNeonOne<{ user_id: string | null }>(
+      `SELECT user_id FROM public.events WHERE id = $1`,
+      [eventId],
+    );
+    const eventErr = eventRow ? null : { message: "Event not found" };
     if (eventErr || !eventRow) return NextResponse.json({ error: "Event not found." }, { status: 404 });
     if (eventRow.user_id !== userId) return NextResponse.json({ data: [] }, { status: 200 });
 
-    const { data: grants, error } = await supabaseAdmin
-      .from("access_grants")
-      .select("id, grantee_user_id, permission, status, created_at")
-      .eq("event_id", eventId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-    const enriched = await Promise.all(
-      (grants || []).map(async (g) => {
-        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(g.grantee_user_id);
-        return { ...g, grantee_email: userData?.user?.email || "unknown" };
-      }),
+    const grants = await queryNeon<{
+      id: string;
+      grantee_user_id: string;
+      permission: string;
+      status: string;
+      created_at: string;
+    }>(
+      `SELECT id, grantee_user_id, permission, status, created_at
+       FROM public.access_grants
+       WHERE event_id = $1 AND status = 'active'
+       ORDER BY created_at DESC
+       LIMIT $2
+       OFFSET $3`,
+      [eventId, limit, offset],
     );
+    const countRow = await queryNeonOne<{ count: string }>(
+      `SELECT COUNT(*)::text AS count
+       FROM public.access_grants
+       WHERE event_id = $1 AND status = 'active'`,
+      [eventId],
+    );
+    const granteeIds = Array.from(new Set(grants.map((g) => g.grantee_user_id)));
+    const emailRows = granteeIds.length
+      ? await queryNeon<{ user_id: string; email: string }>(
+          `SELECT user_id, email
+           FROM public.auth_users
+           WHERE user_id = ANY($1::uuid[])`,
+          [granteeIds],
+        )
+      : [];
+    const emailByUserId = new Map(emailRows.map((r) => [r.user_id, r.email]));
 
-    return NextResponse.json({ data: enriched }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to load grants." }, { status: 500 });
+    const enriched = grants.map((g) => ({
+      ...g,
+      grantee_email: emailByUserId.get(g.grantee_user_id) || "unknown",
+    }));
+
+    return NextResponse.json(
+      {
+        data: enriched,
+        pagination: {
+          limit,
+          offset,
+          total: Number(countRow?.count || 0),
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to load grants.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

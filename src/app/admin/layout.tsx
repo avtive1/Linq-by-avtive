@@ -1,31 +1,14 @@
 import { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { getServerAuthSession } from "@/auth";
 import Link from "next/link";
 import { ArrowLeft, Shield } from "lucide-react";
 import GradientBackground from "@/components/GradientBackground";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
-  // Next.js 15+: cookies() is async and must be awaited
-  const cookieStore = await cookies();
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
-      },
-      set() {},
-      remove() {},
-    },
-  });
-
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
+  const session = await getServerAuthSession();
+  const userId = session?.user?.id;
+  if (!userId) {
     redirect("/login");
   }
 
@@ -33,8 +16,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const sessionEmail = session.user.email?.trim().toLowerCase();
-  const role = session.user.user_metadata?.role;
+  const sessionEmail = session?.user?.email?.trim().toLowerCase();
+  const role = String(session?.user?.role || "");
   const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
   const isAdminByEmail = Boolean(sessionEmail && adminEmails.includes(sessionEmail));
   if (!isAdminByRole && !isAdminByEmail) {

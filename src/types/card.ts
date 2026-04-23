@@ -29,6 +29,11 @@ export type CardData = {
   /** Organization branding resolved from event owner */
   organizationName?: string;
   organizationLogoUrl?: string;
+  /** Persisted Cloudinary render for fast reloads */
+  cardPreviewUrl?: string;
+  /** Persisted Cloudinary vertical renders */
+  verticalFrontUrl?: string;
+  verticalBackUrl?: string;
 };
 
 export type EventData = {

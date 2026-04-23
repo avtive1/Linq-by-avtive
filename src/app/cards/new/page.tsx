@@ -7,8 +7,6 @@ import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui
 
 import { Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
-import { supabase } from "@/lib/supabase";
-import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { parseEventSponsors } from "@/lib/sponsors";
@@ -21,6 +19,8 @@ function NewCardForm() {
   const initialRole = (searchParams.get("role") as "guest" | "visitor") || "visitor";
   const initialGuestCategory = searchParams.get("guestCategory") || "";
   const cardRef = useRef<HTMLDivElement>(null);
+  const verticalFrontRef = useRef<HTMLDivElement>(null);
+  const verticalBackRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState({
     name: "",
@@ -61,40 +61,32 @@ function NewCardForm() {
     let isMounted = true;
     const fetchEvent = async () => {
       setEventLoading(true);
-      const { data, error } = await supabase.from("events").select("*").eq("id", eventId).single();
-      if (!isMounted) return;
-
-      if (error || !data) {
-        setEventMissing(true);
-      } else {
-        const status = getEventStatus(data.date);
-        if (status.label === "Past") {
-          setEventPast(true);
-        }
-
-        setForm((f) => ({
-          ...f,
-          eventName: data.name || "",
-          location: data.location || "",
-          sessionDate: data.date || "",
-          sessionTime: data.time || "",
-          sponsors: parseEventSponsors((data as { sponsors?: unknown }).sponsors),
-        }));
-
-        try {
-          const brandingRes = await fetch(`/api/events/${eventId}/branding`);
-          const isJson = brandingRes.headers.get("content-type")?.includes("application/json");
-          const brandingPayload = isJson ? await brandingRes.json() : null;
-          if (brandingRes.ok && brandingPayload?.data) {
-            setForm((f) => ({
-              ...f,
-              organizationName: String(brandingPayload.data.organizationName || ""),
-              organizationLogoUrl: String(brandingPayload.data.organizationLogoUrl || ""),
-            }));
+      try {
+        const brandingRes = await fetch(`/api/events/${eventId}/branding`);
+        const isJson = brandingRes.headers.get("content-type")?.includes("application/json");
+        const brandingPayload = isJson ? await brandingRes.json() : null;
+        if (!isMounted) return;
+        if (!brandingRes.ok || !brandingPayload?.data?.eventName) {
+          setEventMissing(true);
+        } else {
+          const status = getEventStatus(String(brandingPayload.data.eventDate || ""));
+          if (status.label === "Past") {
+            setEventPast(true);
           }
-        } catch (brandingErr) {
-          console.error("Branding fetch failed:", brandingErr);
+
+          setForm((f) => ({
+            ...f,
+            eventName: String(brandingPayload.data.eventName || ""),
+            location: String(brandingPayload.data.eventLocation || ""),
+            sessionDate: String(brandingPayload.data.eventDate || ""),
+            sessionTime: String(brandingPayload.data.eventTime || ""),
+            sponsors: parseEventSponsors(brandingPayload.data.sponsors),
+            organizationName: String(brandingPayload.data.organizationName || ""),
+            organizationLogoUrl: String(brandingPayload.data.organizationLogoUrl || ""),
+          }));
         }
+      } catch (brandingErr) {
+        if (isMounted) setEventMissing(true);
       }
       setEventLoading(false);
     };
@@ -126,7 +118,7 @@ function NewCardForm() {
     ];
 
     requiredFields.forEach((field) => {
-      if (!(form as any)[field.key]) {
+      if (!form[field.key as keyof typeof form]) {
         newErrors[field.key] = `${field.label} is required`;
       }
     });
@@ -162,23 +154,21 @@ function NewCardForm() {
 
       // 1. Handle user photo upload (if any)
       if (form.photo && form.photo.startsWith('data:')) {
-        const res = await fetch(form.photo);
-        const blob = await res.blob();
-        const ext = blob.type.split("/")[1] || "jpg";
-        const fileName = `photo-${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('attendee_photos')
-          .upload(fileName, blob);
-
-        if (uploadError) throw uploadError;
-        photo_url = uploadData.path;
+        const uploadRes = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl: form.photo, folder: `attendees/${eventId}` }),
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok || !uploadPayload?.data?.url) throw new Error(uploadPayload?.error || "Photo upload failed.");
+        photo_url = String(uploadPayload.data.url);
       }
 
       // 2. Generate and Upload Social Preview Image BEFORE saving to DB
       let card_preview_url = "";
       if (cardRef.current) {
         try {
-          console.log("Generating social preview image...");
+          const { toPng } = await import("html-to-image");
           const dataUrl = await toPng(cardRef.current, {
             quality: 1,
             pixelRatio: 2, // 2x for high resolution
@@ -186,20 +176,16 @@ function NewCardForm() {
           });
 
           if (dataUrl && dataUrl.length > 100) {
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            // Generate a unique name for the preview
-            const previewFileName = `preview-${Date.now()}-${Math.random().toString(36).substring(2)}.png`;
-            
-            const { data: previewData, error: previewUploadError } = await supabase.storage
-              .from('card_previews')
-              .upload(previewFileName, blob, { contentType: 'image/png' });
-
-            if (!previewUploadError && previewData) {
-              card_preview_url = previewData.path;
-              console.log("Social preview uploaded:", card_preview_url);
+            const previewRes = await fetch("/api/media/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dataUrl, folder: `card-previews/${eventId}` }),
+            });
+            const previewPayload = await previewRes.json();
+            if (previewRes.ok && previewPayload?.data?.url) {
+              card_preview_url = String(previewPayload.data.url);
             } else {
-              console.error("Preview upload failed:", previewUploadError);
+              console.error("Preview upload failed:", previewPayload?.error);
             }
           }
         } catch (previewErr) {
@@ -243,11 +229,42 @@ function NewCardForm() {
       toast.success("Attendee card saved successfully!");
 
       if (body.data?.id) {
+        try {
+          const { toPng } = await import("html-to-image");
+          const cardId = String(body.data.id);
+          const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
+            if (!node) return;
+            const png = await toPng(node, {
+              quality: 1,
+              pixelRatio: 2,
+              backgroundColor: "#ffffff",
+            });
+            if (!png || png.length <= 100) return;
+            const uploadRes = await fetch("/api/media/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                dataUrl: png,
+                folder: `card-previews/${eventId}`,
+                publicId: `${cardId}-${suffix}`,
+              }),
+            });
+            const uploadPayload = await uploadRes.json();
+            if (!uploadRes.ok || !uploadPayload?.data?.url) {
+              throw new Error(uploadPayload?.error || `Failed to upload ${suffix} preview.`);
+            }
+          };
+          await uploadVertical(verticalFrontRef.current, "vertical-front");
+          await uploadVertical(verticalBackRef.current, "vertical-back");
+        } catch (verticalErr) {
+          console.error("Vertical preview upload failed:", verticalErr);
+        }
         router.push(`/cards/${body.data.id}?share=true`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+       const message = err instanceof Error ? err.message : "An unexpected error occurred.";
        console.error("Error creating card:", err);
-       toast.error(err.message || "An unexpected error occurred.");
+       toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -407,6 +424,12 @@ function NewCardForm() {
         <div ref={cardRef} style={{ width: '1200px', height: '628px' }}>
           <CardPreview data={form} />
         </div>
+        <div ref={verticalFrontRef} style={{ width: '576px', height: '1024px' }}>
+          <CardPreview data={form} isVertical verticalSide={1} />
+        </div>
+        <div ref={verticalBackRef} style={{ width: '576px', height: '1024px' }}>
+          <CardPreview data={form} isVertical verticalSide={2} />
+        </div>
       </div>
 
         {/* Right Content - Preview */}
@@ -431,24 +454,21 @@ function NewCardForm() {
                    </Button>
                 </div>
 
-                {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
-                {form.linkedin && (
-                   <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
-                      <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Event badge layout</h3>
-                      <div className="vertical-preview-frame mt-1">
-                        <div className="preview-card-capture vertical-preview">
-                          <CardPreview data={form} preview isVertical verticalSide={1} />
-                        </div>
-                      </div>
-                      <Button 
-                         variant="secondary"
-                         onClick={() => setShowPrintPreview(true)} 
-                         className="rounded-md h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-normal tracking-[0.01em] border-white/20"
-                      >
-                         Save & View
-                      </Button>
-                   </div>
-                )}
+                <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
+                  <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Event badge layout</h3>
+                  <div className="vertical-preview-frame mt-1">
+                    <div className="preview-card-capture vertical-preview">
+                      <CardPreview data={form} preview isVertical verticalSide={2} />
+                    </div>
+                  </div>
+                  <Button 
+                    variant="secondary"
+                    onClick={() => setShowPrintPreview(true)} 
+                    className="rounded-md h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-normal tracking-[0.01em] border-white/20"
+                  >
+                    Save & View
+                  </Button>
+                </div>
              </div>
           </div>
         <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
@@ -516,10 +536,7 @@ function NewCardForm() {
               <div className="h-11">
                  <Select
                     value={form.fontFamily}
-                    onChange={(val) => {
-                      const updateFn: any = update;
-                      updateFn("fontFamily")(val);
-                    }}
+                    onChange={(val) => update("fontFamily")(val)}
                     options={[
                        { label: "Inter (Default)", value: "inter" },
                        { label: "Poppins", value: "poppins" },

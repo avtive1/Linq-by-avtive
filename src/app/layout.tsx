@@ -3,6 +3,7 @@ import { Inter_Tight } from "next/font/google";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 import "./globals.css";
 
 const interTight = Inter_Tight({
@@ -21,10 +22,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={interTight.variable}>
       <body className={interTight.className}>
-        <Toaster position="top-center" richColors />
-        {children}
-        <Analytics />
-        <SpeedInsights />
+        <AuthSessionProvider>
+          <Toaster position="top-center" richColors />
+          {children}
+          <Analytics />
+          <SpeedInsights />
+        </AuthSessionProvider>
       </body>
     </html>
   );

@@ -3,7 +3,6 @@ import { useState } from "react";
 import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,14 +27,18 @@ export default function ForgotPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      const redirectTo = `${window.location.origin}/reset-password`;
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
       });
-      if (resetError) throw resetError;
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(String(payload?.error || "Failed to send reset email."));
+      }
 
       setSent(true);
-      toast.success("Reset link sent.");
+      toast.success("If the account exists, a reset email has been sent.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send reset email.");
     } finally {

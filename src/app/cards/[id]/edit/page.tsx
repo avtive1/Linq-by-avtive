@@ -4,14 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui";
-import { ArrowLeft, Lock } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
-import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
-import { toPng } from "html-to-image";
 import { toast } from "sonner";
 import { parseEventSponsors } from "@/lib/sponsors";
 import type { SponsorEntry } from "@/types/card";
 import { logSecurityEvent } from "@/lib/security/telemetry";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 type FormState = {
   name: string;
@@ -45,6 +44,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const router = useRouter();
   const { id } = use(params);
   const cardRef = useRef<HTMLDivElement>(null);
+  const verticalFrontRef = useRef<HTMLDivElement>(null);
+  const verticalBackRef = useRef<HTMLDivElement>(null);
 
   const [form, setForm] = useState<FormState>({
     name: "",
@@ -82,14 +83,20 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   useEffect(() => {
     let isMounted = true;
     const load = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!isMounted) return;
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-
       try {
+        if (!isValidUuid(id)) {
+          if (isMounted) setNotFound(true);
+          return;
+        }
+        const authRes = await fetch("/api/auth/me");
+        const authPayload = await authRes.json();
+        const userId = authPayload?.data?.userId ? String(authPayload.data.userId) : "";
+        if (!isMounted) return;
+        if (!userId) {
+          router.replace("/login");
+          return;
+        }
+
         const resp = await fetch(`/api/cards/${id}`, { method: "GET" });
         if (resp.status === 404) {
           if (isMounted) setNotFound(true);
@@ -113,23 +120,16 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         let organizationName = "";
         let organizationLogoUrl = "";
         if (record.event_id) {
-          const { data: ev } = await supabase
-            .from("events")
-            .select("sponsors")
-            .eq("id", record.event_id)
-            .single();
-          if (ev) sponsors = parseEventSponsors(ev.sponsors);
-
           try {
             const brandingRes = await fetch(`/api/events/${record.event_id}/branding`);
             const isJson = brandingRes.headers.get("content-type")?.includes("application/json");
             const brandingPayload = isJson ? await brandingRes.json() : null;
             if (brandingRes.ok && brandingPayload?.data) {
+              sponsors = parseEventSponsors(brandingPayload.data.sponsors);
               organizationName = String(brandingPayload.data.organizationName || "");
               organizationLogoUrl = String(brandingPayload.data.organizationLogoUrl || "");
             }
           } catch (brandingErr) {
-            console.error("Branding fetch failed:", brandingErr);
           }
         }
 
@@ -143,7 +143,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           sessionTime: record.session_time || "",
           location: record.location || "",
           track: record.track || "",
-          photo: record.photo_url ? getSupabaseFileUrl("attendee_photos", record.photo_url) : "",
+          photo: record.photo_url || "",
           year: record.year || new Date().getFullYear().toString(),
           linkedin: record.linkedin || "",
           designType: (record.design_type as "design1" | "design2") || "design1",
@@ -154,7 +154,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           organizationLogoUrl,
         });
       } catch (err) {
-        console.error("Edit load error:", err);
         toast.error("Failed to load card.");
       } finally {
         if (isMounted) setIsLoading(false);
@@ -212,51 +211,59 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
       // If the user picked a new photo, form.photo will be a fresh data URL.
       if (form.photo && form.photo.startsWith("data:")) {
-        const res = await fetch(form.photo);
-        const blob = await res.blob();
-        const ext = blob.type.split("/")[1] || "jpg";
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("attendee_photos")
-          .upload(fileName, blob);
-        
-        if (uploadError) {
+        const uploadRes = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl: form.photo, folder: `attendees/${eventId || "general"}` }),
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok || !uploadPayload?.data?.url) {
           toast.error("Failed to upload photo.");
-          throw uploadError;
+          throw new Error(uploadPayload?.error || "Photo upload failed.");
         }
 
         if (originalPhotoPath) {
-          await supabase.storage.from("attendee_photos").remove([originalPhotoPath]);
+          const deleteRes = await fetch("/api/media/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: originalPhotoPath }),
+          });
+          const deletePayload = await deleteRes.json().catch(() => null);
+          if (!deleteRes.ok || deletePayload?.success !== true) {
+            throw new Error(deletePayload?.error || "Failed to delete old photo.");
+          }
         }
-        photo_url = uploadData.path;
+        photo_url = String(uploadPayload.data.url);
       }
 
       // Generate Social Preview Image for Card updates
       let card_preview_url = "";
       if (cardRef.current) {
         try {
+          const { toPng } = await import("html-to-image");
           const dataUrl = await toPng(cardRef.current, {
             quality: 1,
             pixelRatio: 2,
             backgroundColor: "#ffffff",
           });
           if (dataUrl && dataUrl.length > 100) {
-            const res = await fetch(dataUrl);
-            const blob = await res.blob();
-            const previewFileName = `preview-${Date.now()}-${Math.random().toString(36).substring(2)}.png`;
-            const { data: previewData, error: previewUploadError } = await supabase.storage
-              .from('card_previews')
-              .upload(previewFileName, blob, { contentType: 'image/png' });
-            if (!previewUploadError && previewData) {
-              card_preview_url = previewData.path;
+            const previewRes = await fetch("/api/media/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dataUrl, folder: `card-previews/${eventId || "general"}` }),
+            });
+            const previewPayload = await previewRes.json();
+            if (!previewRes.ok || !previewPayload?.data?.url) {
+              throw new Error(previewPayload?.error || "Preview upload failed.");
             }
+            card_preview_url = String(previewPayload.data.url);
           }
         } catch (previewErr) {
           console.error("Failed to generate preview image:", previewErr);
         }
       }
 
-      const updatePayload: any = {
+      const updatePayload: Record<string, unknown> = {
         name: form.name,
         role: form.role,
         company: form.company,
@@ -291,6 +298,35 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       }
 
       toast.success("Card updated successfully.");
+      try {
+        const { toPng } = await import("html-to-image");
+        const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
+          if (!node) return;
+          const png = await toPng(node, {
+            quality: 1,
+            pixelRatio: 2,
+            backgroundColor: "#ffffff",
+          });
+          if (!png || png.length <= 100) return;
+          const uploadRes = await fetch("/api/media/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              dataUrl: png,
+              folder: `card-previews/${eventId || "general"}`,
+              publicId: `${id}-${suffix}`,
+            }),
+          });
+          const uploadPayload = await uploadRes.json();
+          if (!uploadRes.ok || !uploadPayload?.data?.url) {
+            throw new Error(uploadPayload?.error || `Failed to upload ${suffix} preview.`);
+          }
+        };
+        await uploadVertical(verticalFrontRef.current, "vertical-front");
+        await uploadVertical(verticalBackRef.current, "vertical-back");
+      } catch (verticalErr) {
+        console.error("Vertical preview upload failed:", verticalErr);
+      }
       router.refresh();
       if (eventId) {
         router.push(`/dashboard/events/${eventId}`);
@@ -298,7 +334,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         router.push(`/cards/${id}`);
       }
     } catch (err) {
-      console.error("Edit save error:", err);
+      const message = err instanceof Error ? err.message : "Failed to save changes.";
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -454,6 +491,12 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         <div ref={cardRef} style={{ width: '1200px', height: '628px' }}>
           <CardPreview data={form} />
         </div>
+        <div ref={verticalFrontRef} style={{ width: '576px', height: '1024px' }}>
+          <CardPreview data={form} isVertical verticalSide={1} />
+        </div>
+        <div ref={verticalBackRef} style={{ width: '576px', height: '1024px' }}>
+          <CardPreview data={form} isVertical verticalSide={2} />
+        </div>
       </div>
 
       {/* Right Content - Preview */}
@@ -478,24 +521,21 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                   </Button>
               </div>
 
-              {/* Vertical Card Preview - Only shown if LinkedIn/QR Link is provided */}
-              {form.linkedin && (
-                  <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
-                    <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Event badge layout</h3>
-                    <div className="vertical-preview-frame mt-1">
-                      <div className="preview-card-capture vertical-preview">
-                        <CardPreview data={form} preview isVertical verticalSide={1} />
-                      </div>
-                    </div>
-                    <Button 
-                        variant="secondary"
-                        onClick={() => setShowPrintPreview(true)} 
-                        className="rounded-md h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-normal tracking-[0.01em] border-white/20"
-                    >
-                        Save & View
-                    </Button>
+              <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
+                <h3 className="text-[13px] font-medium tracking-[0.01em] leading-[1.25] text-muted/55">Event badge layout</h3>
+                <div className="vertical-preview-frame mt-1">
+                  <div className="preview-card-capture vertical-preview">
+                    <CardPreview data={form} preview isVertical verticalSide={2} />
                   </div>
-              )}
+                </div>
+                <Button 
+                  variant="secondary"
+                  onClick={() => setShowPrintPreview(true)} 
+                  className="rounded-md h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-normal tracking-[0.01em] border-white/20"
+                >
+                  Save & View
+                </Button>
+              </div>
             </div>
         </div>
 
@@ -565,10 +605,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             <div className="h-11">
                 <Select
                   value={form.fontFamily}
-                  onChange={(val) => {
-                    const updateFn: any = update;
-                    updateFn("fontFamily")(val);
-                  }}
+                    onChange={(val) => update("fontFamily")(val)}
                   options={[
                       { label: "Inter (Default)", value: "inter" },
                       { label: "Poppins", value: "poppins" },

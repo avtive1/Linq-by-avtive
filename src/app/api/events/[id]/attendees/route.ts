@@ -1,89 +1,105 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getServerAuthSession } from "@/auth";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
-            } catch {}
-          },
-        },
-      },
-    );
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const viewerUserId = await getServerUserIdFromCookies(cookieStore);
+    if (!viewerUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await getServerAuthSession();
 
     const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
       .split(",")
       .map((e) => e.trim().toLowerCase())
       .filter(Boolean);
-    const role = session.user.user_metadata?.role;
+    const role = String(session?.user?.role || "");
     const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
     const isAdminByEmail = Boolean(
-      session.user.email && adminEmails.includes(session.user.email.toLowerCase()),
+      session?.user?.email &&
+        adminEmails.includes(session.user.email.toLowerCase()),
     );
     const isAdmin = isAdminByRole || isAdminByEmail;
 
     const requestUrl = new URL(req.url);
     const impersonateId = requestUrl.searchParams.get("impersonate");
 
-    const { data: event } = await supabaseAdmin.from("events").select("user_id").eq("id", id).single();
-    const ownsEvent = Boolean(event && event.user_id === session.user.id);
+    const event = await queryNeonOne<{ user_id: string | null }>(
+      `SELECT user_id FROM public.events WHERE id = $1`,
+      [id],
+    );
+    const ownsEvent = Boolean(event && event.user_id === viewerUserId);
     const canPreviewAsOrg = Boolean(
       event && isAdmin && impersonateId && event.user_id === impersonateId,
     );
 
     let isOrgTeamViewer = false;
+    let hasPrivilegedAttendeeRead = false;
     if (event?.user_id) {
-      const { data: membership } = await supabaseAdmin
-        .from("organization_members")
-        .select("id")
-        .eq("member_user_id", session.user.id)
-        .eq("org_owner_user_id", event.user_id)
-        .eq("status", "active")
-        .maybeSingle();
+      const membership = await queryNeonOne<{ id: string }>(
+        `SELECT id
+         FROM public.organization_members
+         WHERE member_user_id = $1
+           AND org_owner_user_id = $2
+           AND status = 'active'
+         LIMIT 1`,
+        [viewerUserId, event.user_id],
+      );
       isOrgTeamViewer = Boolean(membership?.id);
+      if (isOrgTeamViewer) {
+        const grants = await queryNeon<{ permission: string }>(
+          `SELECT permission
+           FROM public.access_grants
+           WHERE event_id = $1
+             AND grantee_user_id = $2
+             AND status = 'active'`,
+          [id, viewerUserId],
+        );
+        const permissions = new Set(grants.map((g) => String(g.permission || "")));
+        hasPrivilegedAttendeeRead =
+          permissions.has("manage_event") ||
+          permissions.has("edit_cards") ||
+          permissions.has("delete_cards");
+      }
     }
 
-    if (!event || (!ownsEvent && !canPreviewAsOrg && !isOrgTeamViewer)) {
+    if (!event || (!ownsEvent && !canPreviewAsOrg && !(isOrgTeamViewer && hasPrivilegedAttendeeRead))) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("attendees")
-      .select("*")
-      .eq("event_id", id)
-      .order("created_at", { ascending: false });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const data = await queryNeon<Record<string, unknown>>(
+      `SELECT * FROM public.attendees WHERE event_id = $1 ORDER BY created_at DESC`,
+      [id],
+    );
 
-    const decrypted = (data || []).map((row) => {
+    const decrypted: Array<Record<string, unknown>> = [];
+    for (const row of data || []) {
       const { row: secure, migrationPatch } = decryptAttendeeSensitiveFields(row);
-      if (Object.keys(migrationPatch).length > 0) {
-        supabaseAdmin.from("attendees").update(migrationPatch).eq("id", row.id).then(() => {});
+      if (Object.keys(migrationPatch).length > 0 && row.id) {
+        try {
+          await updateRows("attendees", migrationPatch, { id: row.id as string }, "id");
+        } catch (migrationError: unknown) {
+          const migrationMessage =
+            migrationError instanceof Error ? migrationError.message : "Failed to persist attendee migration patch.";
+          logSecurityEvent({
+            event: "security.event_attendees.migration_write_failed",
+            level: "error",
+            actorId: viewerUserId,
+            resourceId: String(row.id),
+            details: { reason: migrationMessage },
+          });
+          return NextResponse.json({ error: "Failed to process attendee records." }, { status: 500 });
+        }
       }
-      return secure;
-    });
+      decrypted.push(secure);
+    }
 
     return NextResponse.json({ data: decrypted });
   } catch (err) {

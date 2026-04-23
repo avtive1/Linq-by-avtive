@@ -1,57 +1,50 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { queryNeonOne, updateRows } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { validateCsrfOrigin } from "@/lib/security/csrf";
+import { isValidUuid } from "@/lib/validation/uuid";
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
-
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const csrf = validateCsrfOrigin(req);
+    if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
+
     const { id } = await params;
+    if (!isValidUuid(id)) {
+      return NextResponse.json({ error: "Invalid grant id." }, { status: 400 });
+    }
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: grantRow, error: grantErr } = await supabaseAdmin
-      .from("access_grants")
-      .select("id, event_id")
-      .eq("id", id)
-      .single();
+    const grantRow = await queryNeonOne<{ id: string; event_id: string }>(
+      `SELECT id, event_id FROM public.access_grants WHERE id = $1`,
+      [id],
+    );
+    const grantErr = grantRow ? null : { message: "Grant not found" };
     if (grantErr || !grantRow) return NextResponse.json({ error: "Grant not found." }, { status: 404 });
 
-    const { data: eventRow, error: eventErr } = await supabaseAdmin
-      .from("events")
-      .select("user_id")
-      .eq("id", grantRow.event_id)
-      .single();
+    const eventRow = await queryNeonOne<{ user_id: string | null }>(
+      `SELECT user_id FROM public.events WHERE id = $1`,
+      [grantRow.event_id],
+    );
+    const eventErr = eventRow ? null : { message: "Event not found" };
     if (eventErr || !eventRow) return NextResponse.json({ error: "Event not found." }, { status: 404 });
     if (eventRow.user_id !== userId) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
-    const { error } = await supabaseAdmin
-      .from("access_grants")
-      .update({ status: "revoked", updated_at: new Date().toISOString() })
-      .eq("id", id);
+    const updated = await updateRows(
+      "access_grants",
+      { status: "revoked", updated_at: new Date().toISOString() },
+      { id },
+      "id",
+    );
+    const error = updated.length ? null : { message: "Grant update failed" };
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to revoke grant." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to revoke grant.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

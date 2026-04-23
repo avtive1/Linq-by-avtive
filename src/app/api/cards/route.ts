@@ -1,24 +1,42 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 import { encryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { insertRow } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 
 export async function POST(req: Request) {
   try {
+    const cookieStore = await cookies();
+    const authUserId = await getServerUserIdFromCookies(cookieStore);
+    let tokenUserId: string | null = null;
+    const authHeader = req.headers.get("authorization") || "";
+    if (authHeader.toLowerCase().startsWith("bearer ")) {
+      const token = authHeader.slice(7).trim();
+      if (token) {
+        try {
+          const verified = await verifyAttendeeCardToken(token);
+          tokenUserId = String(verified.payload.sub || "").trim() || null;
+        } catch {
+          tokenUserId = null;
+        }
+      }
+    }
+    if (!authUserId && !tokenUserId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const payload = (await req.json()) as Record<string, unknown>;
     const securePayload = encryptAttendeeSensitiveFields(payload) as Record<string, unknown>;
 
-    let { data, error } = await supabaseAdmin
-      .from("attendees")
-      .insert(securePayload)
-      .select()
-      .single();
+    let data: Record<string, unknown> | null = null;
+    let error: { message: string } | null = null;
+    try {
+      data = await insertRow("attendees", securePayload);
+    } catch (insertError: unknown) {
+      error = { message: insertError instanceof Error ? insertError.message : "Insert failed" };
+    }
 
     // Backward-compatible fallback for environments where the lookup tag column
     // has not been migrated yet.
@@ -28,22 +46,21 @@ export async function POST(req: Request) {
     ) {
       const fallbackPayload = { ...securePayload };
       delete fallbackPayload.card_email_lookup_tag;
-      const retry = await supabaseAdmin
-        .from("attendees")
-        .insert(fallbackPayload)
-        .select()
-        .single();
-      data = retry.data;
-      error = retry.error;
+      try {
+        data = await insertRow("attendees", fallbackPayload);
+        error = null;
+      } catch (fallbackError: unknown) {
+        error = { message: fallbackError instanceof Error ? fallbackError.message : "Insert failed" };
+      }
     }
 
-    if (error) {
+    if (error || !data) {
       logSecurityEvent({
         event: "security.attendees.create_failed",
         level: "error",
-        details: { reason: error.message },
+        details: { reason: error?.message || "Insert failed" },
       });
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      return NextResponse.json({ error: error?.message || "Insert failed" }, { status: 400 });
     }
     return NextResponse.json({ data });
   } catch (err) {

@@ -1,14 +1,14 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker } from "@/components/ui";
 import { toast } from "sonner";
-import { Mail, ArrowLeft } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+import { ArrowLeft } from "lucide-react";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
-import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
+import { normalizeOrganizationName } from "@/lib/organization/normalize";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function SignupPage() {
   const [usernameLocked, setUsernameLocked] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
+  const usernameCheckSeq = useRef(0);
 
   const extractLinkedInHandle = (val: string) => {
     if (!val) return "";
@@ -77,7 +77,6 @@ export default function SignupPage() {
     if (!validate()) return;
     
     setIsSubmitting(true);
-    // Extract handle if URL was provided
     const cleanHandle = extractLinkedInHandle(form.linkedin);
     const normalizedOrganizationName = normalizeOrganizationName(form.organization);
     
@@ -86,52 +85,54 @@ export default function SignupPage() {
       // Never store large base64 payloads in auth metadata/JWT.
       // Upload logo and store only a public URL.
       if (organizationLogoUrl.startsWith("data:")) {
-        const logoBlob = await fetch(organizationLogoUrl).then((r) => r.blob());
-        const ext = logoBlob.type.split("/")[1] || "png";
-        const fileName = `org-logos/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("organization-logos")
-          .upload(fileName, logoBlob, { contentType: logoBlob.type || "image/png" });
-        if (uploadError) throw uploadError;
-        const { data: pub } = supabase.storage.from("organization-logos").getPublicUrl(uploadData.path);
-        organizationLogoUrl = pub.publicUrl;
+        const uploadRes = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl: organizationLogoUrl, folder: "organization-logos" }),
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok || !uploadPayload?.data?.url) {
+          throw new Error(uploadPayload?.error || "Organization logo upload failed.");
+        }
+        organizationLogoUrl = String(uploadPayload.data.url);
       }
 
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const registerRes = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+          username: form.username.toLowerCase(),
+          organizationName: normalizedOrganizationName,
+          linkedin: cleanHandle,
+        }),
+      });
+      const registerPayload = await registerRes.json().catch(() => ({}));
+      if (!registerRes.ok) {
+        throw new Error(registerPayload?.error || "Failed to create account.");
+      }
+
+      const result = await signIn("credentials", {
         email: form.email,
         password: form.password,
-        options: {
-          data: {
-            username: form.username.toLowerCase(),
-            linkedin: cleanHandle,
-            organization_name: normalizedOrganizationName,
-            organization_name_key: toOrganizationKey(normalizedOrganizationName),
-            organization_logo_url: organizationLogoUrl,
-          }
-        }
+        redirect: false,
       });
-
-      if (signUpError) throw signUpError;
-
-      // If Supabase email confirmation is enabled, no session is returned —
-      // surface a "check your inbox" state instead of redirecting.
-      if (!data.session) {
-        setEmailSent(true);
-        toast.success("Check your inbox to confirm your email.");
-        return;
+      if (result?.error || !result?.ok) {
+        throw new Error("Account created, but sign-in failed. Please sign in manually.");
       }
-
       toast.success("Account created successfully!");
       router.refresh();
       router.push("/dashboard");
-    } catch (err: any) {
-      setErrors({ email: err?.message || "Failed to create account. Email may already exist." });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to create account. Email may already exist.";
+      setErrors({ email: message });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const checkUsername = async (username: string) => {
+  const checkUsername = async (username: string, signal?: AbortSignal) => {
     if (username.length < 3) {
       setUsernameStatus(null);
       return;
@@ -144,20 +145,20 @@ export default function SignupPage() {
 
     setUsernameStatus("loading");
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", username.toLowerCase())
-        .maybeSingle();
-
-      if (error) throw error;
-      
-      if (data) {
+      const res = await fetch(
+        `/api/profile/username/availability?username=${encodeURIComponent(username.toLowerCase())}`,
+        { signal },
+      );
+      if (!res.ok) throw new Error("Username availability check failed.");
+      const payload = await res.json();
+      if (signal?.aborted) return;
+      if (payload?.data?.available === false) {
         setUsernameStatus("taken");
       } else {
         setUsernameStatus("available");
       }
     } catch (err) {
+      if ((err as { name?: string })?.name === "AbortError") return;
       console.error("Username check error:", err);
       setUsernameStatus(null);
     }
@@ -171,11 +172,17 @@ export default function SignupPage() {
       return;
     }
 
-    const timeout = setTimeout(() => {
-      checkUsername(form.username);
+    const controller = new AbortController();
+    const seq = ++usernameCheckSeq.current;
+    const timeout = setTimeout(async () => {
+      await checkUsername(form.username, controller.signal);
+      if (seq !== usernameCheckSeq.current || controller.signal.aborted) return;
     }, 500);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      controller.abort();
+      clearTimeout(timeout);
+    };
   }, [form.username]);
 
   const update = (key: keyof typeof form) => (val: string) => {
@@ -208,25 +215,6 @@ export default function SignupPage() {
 
         {/* Signup Card */}
         <div className="glass-panel rounded-xl p-6 sm:p-8 shadow-2xl shadow-primary/5">
-          {emailSent ? (
-            <div className="flex flex-col items-center text-center gap-4 py-4">
-              <div className="w-14 h-14 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong">
-                <Mail size={26} />
-              </div>
-              <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Check your inbox</h1>
-                <p className="text-base text-muted leading-[1.55] max-w-[320px]">
-                  We sent a confirmation link to <span className="font-semibold text-heading">{form.email}</span>.
-                  Click it to activate your account, then sign in.
-                </p>
-              </div>
-              <Link href="/login" className="w-full mt-2">
-                <Button variant="primary" fullWidth size="lg" className="h-12 text-base shadow-lg shadow-primary/20">
-                  Go to sign in
-                </Button>
-              </Link>
-            </div>
-          ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create your profile</h1>
@@ -358,7 +346,6 @@ export default function SignupPage() {
               </Link>
             </div>
           </form>
-          )}
         </div>
       </div>
     </main>

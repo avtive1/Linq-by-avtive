@@ -1,14 +1,9 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeonOne, updateRows } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserEmailById } from "@/lib/admin";
 
 export async function POST(req: Request) {
   try {
@@ -21,28 +16,19 @@ export async function POST(req: Request) {
     }
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: requestRow, error: reqErr } = await supabaseAdmin
-      .from("access_requests")
-      .select("*")
-      .eq("id", requestId)
-      .single();
+    const requestRow = await queryNeonOne<{
+      id: string;
+      owner_user_id: string;
+      requester_user_id: string;
+      event_id: string | null;
+      requested_action: string;
+      note: string | null;
+      status: string;
+    }>(`SELECT * FROM public.access_requests WHERE id = $1`, [requestId]);
+    const reqErr = requestRow ? null : { message: "Access request not found." };
     if (reqErr || !requestRow) {
       return NextResponse.json({ error: "Access request not found." }, { status: 404 });
     }
@@ -50,14 +36,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
-    const [{ data: ownerData }, { data: requesterData }, { data: eventData }] = await Promise.all([
-      supabaseAdmin.auth.admin.getUserById(requestRow.owner_user_id),
-      supabaseAdmin.auth.admin.getUserById(requestRow.requester_user_id),
-      supabaseAdmin.from("events").select("name").eq("id", requestRow.event_id).maybeSingle(),
+    const [ownerEmail, requesterEmail, eventData] = await Promise.all([
+      getAdminUserEmailById(requestRow.owner_user_id),
+      getAdminUserEmailById(requestRow.requester_user_id),
+      requestRow.event_id
+        ? queryNeonOne<{ name: string }>(`SELECT name FROM public.events WHERE id = $1`, [requestRow.event_id])
+        : Promise.resolve(null),
     ]);
-
-    const ownerEmail = ownerData?.user?.email;
-    const requesterEmail = requesterData?.user?.email;
     const eventName = requestRow.event_id
       ? String(eventData?.name || "your campaign")
       : "Organization Workspace";
@@ -75,13 +60,20 @@ export async function POST(req: Request) {
           `Please review this request in your dashboard.`,
       });
       if (!emailResult.sent) {
-        await supabaseAdmin.from("access_requests").update({ notification_error: emailResult.error || "Retry failed." }).eq("id", requestId);
+        await updateRows(
+          "access_requests",
+          { notification_error: emailResult.error || "Retry failed." },
+          { id: requestId },
+          "id",
+        );
         return NextResponse.json({ error: emailResult.error || "Retry failed." }, { status: 500 });
       }
-      await supabaseAdmin
-        .from("access_requests")
-        .update({ owner_notified_at: new Date().toISOString(), notification_error: null })
-        .eq("id", requestId);
+      await updateRows(
+        "access_requests",
+        { owner_notified_at: new Date().toISOString(), notification_error: null },
+        { id: requestId },
+        "id",
+      );
       return NextResponse.json({ success: true }, { status: 200 });
     }
 
@@ -97,15 +89,23 @@ export async function POST(req: Request) {
         `Check your dashboard for updated capabilities.`,
     });
     if (!emailResult.sent) {
-      await supabaseAdmin.from("access_requests").update({ notification_error: emailResult.error || "Retry failed." }).eq("id", requestId);
+      await updateRows(
+        "access_requests",
+        { notification_error: emailResult.error || "Retry failed." },
+        { id: requestId },
+        "id",
+      );
       return NextResponse.json({ error: emailResult.error || "Retry failed." }, { status: 500 });
     }
-    await supabaseAdmin
-      .from("access_requests")
-      .update({ requester_notified_at: new Date().toISOString(), notification_error: null })
-      .eq("id", requestId);
+    await updateRows(
+      "access_requests",
+      { requester_notified_at: new Date().toISOString(), notification_error: null },
+      { id: requestId },
+      "id",
+    );
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to retry notification." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to retry notification.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

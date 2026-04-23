@@ -1,48 +1,31 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { insertRow, queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserEmailById } from "@/lib/admin";
 
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
     const eventId = url.searchParams.get("eventId");
+    const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 50), 1), 200);
+    const offset = Math.max(Number(url.searchParams.get("offset") || 0), 0);
     if (!eventId) {
       return NextResponse.json({ error: "eventId is required." }, { status: 400 });
     }
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data: eventRow, error: eventErr } = await supabaseAdmin
-      .from("events")
-      .select("id, user_id")
-      .eq("id", eventId)
-      .single();
+    const eventRow = await queryNeonOne<{ id: string; user_id: string }>(
+      `SELECT id, user_id FROM public.events WHERE id = $1`,
+      [eventId],
+    );
+    const eventErr = eventRow ? null : { message: "Event not found." };
     if (eventErr || !eventRow) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
@@ -50,13 +33,15 @@ export async function GET(req: Request) {
     const isEventOwner = eventRow.user_id === userId;
     let isOrgAdminReviewer = false;
     if (!isEventOwner) {
-      const { data: membership } = await supabaseAdmin
-        .from("organization_members")
-        .select("id")
-        .eq("member_user_id", userId)
-        .eq("org_owner_user_id", eventRow.user_id)
-        .eq("status", "active")
-        .maybeSingle();
+      const membership = await queryNeonOne<{ id: string }>(
+        `SELECT id
+         FROM public.organization_members
+         WHERE member_user_id = $1
+           AND org_owner_user_id = $2
+           AND status = 'active'
+         LIMIT 1`,
+        [userId, eventRow.user_id],
+      );
       isOrgAdminReviewer = Boolean(membership?.id);
     }
 
@@ -64,27 +49,60 @@ export async function GET(req: Request) {
       return NextResponse.json({ data: { requests: [] } }, { status: 200 });
     }
 
-    const { data: requests, error } = await supabaseAdmin
-      .from("access_requests")
-      .select("id, requester_user_id, requested_action, note, status, created_at")
-      .eq("event_id", eventId)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-    const enriched = await Promise.all(
-      (requests || []).map(async (r) => {
-        const { data: userData } = await supabaseAdmin.auth.admin.getUserById(r.requester_user_id);
-        return {
-          ...r,
-          requester_email: userData?.user?.email || "unknown",
-        };
-      }),
+    const requests = await queryNeon<{
+      id: string;
+      requester_user_id: string;
+      requested_action: string;
+      note: string | null;
+      status: string;
+      created_at: string;
+    }>(
+      `SELECT id, requester_user_id, requested_action, note, status, created_at
+       FROM public.access_requests
+       WHERE event_id = $1
+         AND status = 'pending'
+       ORDER BY created_at DESC
+       LIMIT $2
+       OFFSET $3`,
+      [eventId, limit, offset],
     );
+    const countRow = await queryNeonOne<{ count: string }>(
+      `SELECT COUNT(*)::text AS count
+       FROM public.access_requests
+       WHERE event_id = $1
+         AND status = 'pending'`,
+      [eventId],
+    );
+    const requesterIds = Array.from(new Set(requests.map((r) => r.requester_user_id)));
+    const requesterEmailRows = requesterIds.length
+      ? await queryNeon<{ user_id: string; email: string }>(
+          `SELECT user_id, email
+           FROM public.auth_users
+           WHERE user_id = ANY($1::uuid[])`,
+          [requesterIds],
+        )
+      : [];
+    const requesterEmailById = new Map(requesterEmailRows.map((r) => [r.user_id, r.email]));
 
-    return NextResponse.json({ data: { requests: enriched } }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to fetch access requests." }, { status: 500 });
+    const enriched = requests.map((r) => ({
+      ...r,
+      requester_email: requesterEmailById.get(r.requester_user_id) || "unknown",
+    }));
+
+    return NextResponse.json(
+      {
+        data: { requests: enriched },
+        pagination: {
+          limit,
+          offset,
+          total: Number(countRow?.count || 0),
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to fetch access requests.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -106,21 +124,7 @@ export async function POST(req: Request) {
     }
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -129,11 +133,11 @@ export async function POST(req: Request) {
     let eventName = "Organization Level Access";
 
     if (eventId) {
-      const { data: eventRow, error: eventErr } = await supabaseAdmin
-        .from("events")
-        .select("id, user_id, name")
-        .eq("id", eventId)
-        .single();
+      const eventRow = await queryNeonOne<{ id: string; user_id: string; name: string }>(
+        `SELECT id, user_id, name FROM public.events WHERE id = $1`,
+        [eventId],
+      );
+      const eventErr = eventRow ? null : { message: "Event not found." };
       if (eventErr || !eventRow) {
         return NextResponse.json({ error: "Event not found." }, { status: 404 });
       }
@@ -149,33 +153,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Owners do not need access requests." }, { status: 400 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("access_requests")
-      .insert({
-        event_id: eventId || null,
-        requester_user_id: userId,
-        owner_user_id: finalOwnerId,
-        requested_action: requestedAction,
-        note: trimmedNote,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      if (error.code === '23505') {
+    let data: Record<string, unknown> | null = null;
+    try {
+      data = await insertRow(
+        "access_requests",
+        {
+          event_id: eventId || null,
+          requester_user_id: userId,
+          owner_user_id: finalOwnerId,
+          requested_action: requestedAction,
+          note: trimmedNote,
+          status: "pending",
+        },
+        "id",
+      );
+    } catch (error: unknown) {
+      const isUniqueViolation =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        String((error as { code?: string }).code) === "23505";
+      if (isUniqueViolation) {
         return NextResponse.json({ error: "You already have a pending request for this action." }, { status: 409 });
       }
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      const message = error instanceof Error ? error.message : "Failed to create access request.";
+      return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    const [{ data: ownerData }, { data: requesterData }] = await Promise.all([
-      supabaseAdmin.auth.admin.getUserById(finalOwnerId),
-      supabaseAdmin.auth.admin.getUserById(userId),
-    ]);
+    if (!data?.id) {
+      return NextResponse.json({ error: "Failed to create access request." }, { status: 400 });
+    }
 
-    const ownerEmail = ownerData?.user?.email;
-    const requesterEmail = requesterData?.user?.email || "unknown";
+    const requestId = String(data.id);
+
+    const [ownerEmail, requesterEmail] = await Promise.all([
+      getAdminUserEmailById(finalOwnerId),
+      getAdminUserEmailById(userId),
+    ]);
+    const safeRequesterEmail = requesterEmail || "unknown";
     let notifyError: string | null = null;
     if (ownerEmail) {
       const emailResult = await sendTransactionalEmail({
@@ -183,16 +198,18 @@ export async function POST(req: Request) {
         subject: `Access request for ${eventName}`,
         text:
           `A team member requested access for ${eventName}.\n\n` +
-          `Requester: ${requesterEmail}\n` +
+          `Requester: ${safeRequesterEmail}\n` +
           `Action: ${requestedAction}\n` +
           `Reason: ${(note || "").trim() || "N/A"}\n\n` +
           `Please review this request in your dashboard.`,
       });
       if (emailResult.sent) {
-        await supabaseAdmin
-          .from("access_requests")
-          .update({ owner_notified_at: new Date().toISOString(), notification_error: null })
-          .eq("id", data.id);
+        await updateRows(
+          "access_requests",
+          { owner_notified_at: new Date().toISOString(), notification_error: null },
+          { id: requestId },
+          "id",
+        );
       } else {
         notifyError = emailResult.error || "Owner notification failed.";
       }
@@ -200,14 +217,17 @@ export async function POST(req: Request) {
       notifyError = "Owner email missing; notification skipped.";
     }
     if (notifyError) {
-      await supabaseAdmin
-        .from("access_requests")
-        .update({ notification_error: notifyError })
-        .eq("id", data.id);
+      await updateRows(
+        "access_requests",
+        { notification_error: notifyError },
+        { id: requestId },
+        "id",
+      );
     }
 
     return NextResponse.json({ data }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to create access request." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to create access request.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

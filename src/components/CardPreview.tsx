@@ -3,13 +3,6 @@ import { useState, useEffect, useCallback } from "react";
 import QRCode from "qrcode";
 import { CardData, SponsorEntry } from "@/types/card";
 
-const FALLBACK_H1_SPONSORS =
-  "https://www.figma.com/api/mcp/asset/60137d44-eb2a-4405-bd79-67be246fc1ec";
-const FALLBACK_H2_SPONSORS =
-  "https://www.figma.com/api/mcp/asset/304933ce-cbdb-4ff8-a402-c39459b6d08d";
-const FALLBACK_VERTICAL_PARTNERS =
-  "https://www.figma.com/api/mcp/asset/3afad43f-8750-426f-8511-10ff0d714f6e";
-
 /** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
 const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
 const SPONSOR_STRIP_MAX_W_H1_PX = 1120;
@@ -36,10 +29,8 @@ function SponsorStripRow({
   const count = items.length;
   const [opticalPadByKey, setOpticalPadByKey] = useState<Record<string, number>>({});
 
-  if (count === 0) return null;
-
   const innerBudget = maxStripWidthPx * 0.94;
-  const fairShareW = innerBudget / count;
+  const fairShareW = innerBudget / Math.max(count, 1);
   /** Cap near fair share so N logos + optical padding rarely overflow the strip */
   const imgCapPx = Math.max(40, Math.floor(fairShareW * 0.92));
 
@@ -55,6 +46,8 @@ function SponsorStripRow({
     },
     [fairShareW, imgCapPx, logoHeightPx],
   );
+
+  if (count === 0) return null;
 
   return (
     <div
@@ -99,20 +92,21 @@ function SponsorStripRow({
 
 function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
   if (!s?.length) return [];
-  return s.filter((x) => x.logo_url?.trim()).slice(0, 5);
+  return s
+    .filter((x) => x.logo_url?.trim())
+    .filter((x) => {
+      const url = String(x.logo_url || "").toLowerCase();
+      // Ignore legacy placeholder assets so the strip stays empty unless real logos were uploaded.
+      if (!url) return false;
+      if (url.includes("figma.com/api/mcp/asset")) return false;
+      return true;
+    })
+    .slice(0, 5);
 }
 
 function HorizontalSponsorsDesign1({ sponsors }: { sponsors?: SponsorEntry[] }) {
   const list = filterSponsors(sponsors);
-  if (!list.length) {
-    return (
-      <img
-        src={FALLBACK_H1_SPONSORS}
-        className="h-[46px] w-[1045px] max-w-full object-contain"
-        alt="Sponsors"
-      />
-    );
-  }
+  if (!list.length) return null;
   return (
     <div className="flex h-full w-full max-w-[1120px] items-center justify-center">
       <SponsorStripRow
@@ -126,15 +120,7 @@ function HorizontalSponsorsDesign1({ sponsors }: { sponsors?: SponsorEntry[] }) 
 
 function HorizontalSponsorsDesign2({ sponsors }: { sponsors?: SponsorEntry[] }) {
   const list = filterSponsors(sponsors);
-  if (!list.length) {
-    return (
-      <img
-        className="absolute left-[276px] top-[42px] h-[38px] w-[861px] object-contain"
-        src={FALLBACK_H2_SPONSORS}
-        alt="Sponsors"
-      />
-    );
-  }
+  if (!list.length) return null;
   return (
     <div className="absolute left-[276px] top-[28px] flex h-[78px] w-[861px] items-center justify-center">
       <SponsorStripRow
@@ -161,16 +147,7 @@ function VerticalSponsorsStrip({ sponsors }: { sponsors?: SponsorEntry[] }) {
     justifyContent: "center",
   };
 
-  if (!list.length) {
-    return (
-      <img
-        src={FALLBACK_VERTICAL_PARTNERS}
-        className="absolute z-4 object-contain"
-        style={{ left: 77, bottom: 35, width: 423, height: 33 }}
-        alt="Partners"
-      />
-    );
-  }
+  if (!list.length) return null;
   return (
     <div style={stripStyle}>
       <SponsorStripRow
@@ -465,7 +442,24 @@ export function CardPreview({
                   />
                </>
              ) : (
-               <div className="w-full h-full bg-slate-100 animate-pulse" />
+               <div className="w-full h-full bg-gradient-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
+                 <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">
+                   <div
+                     className="absolute inset-0 opacity-70"
+                     style={{
+                       backgroundImage:
+                         "repeating-linear-gradient(0deg, #9ca3af 0 8px, #e5e7eb 8px 16px), repeating-linear-gradient(90deg, #9ca3af 0 8px, #e5e7eb 8px 16px)",
+                       backgroundBlendMode: "multiply",
+                     }}
+                   />
+                   <div className="absolute left-0 top-0 w-[34px] h-[34px] border-r border-b border-slate-500 bg-[#cbd5e1]" />
+                   <div className="absolute right-0 top-0 w-[34px] h-[34px] border-l border-b border-slate-500 bg-[#cbd5e1]" />
+                   <div className="absolute left-0 bottom-0 w-[34px] h-[34px] border-r border-t border-slate-500 bg-[#cbd5e1]" />
+                 </div>
+                 <div className="px-5 py-4 rounded-md bg-white/92 border border-slate-300 shadow-sm text-slate-700 text-[56px] font-bold tracking-[0.01em] text-center leading-[1.05] whitespace-pre-line">
+                   {"Enter link\nin form"}
+                 </div>
+               </div>
              )}
           </div>
 

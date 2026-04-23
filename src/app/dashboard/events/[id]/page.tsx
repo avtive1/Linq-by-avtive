@@ -2,10 +2,11 @@
 import { useState, useEffect, use, useMemo, Suspense, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
 
-import { supabase, getFileUrl as getSupabaseFileUrl } from "@/lib/supabase";
 import {
   Plus,
   Users,
@@ -33,6 +34,7 @@ import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 type AttendeeCard = CardData & { photo_path?: string };
 type PendingAccessRequest = {
@@ -127,33 +129,39 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isLoadingGrants, setIsLoadingGrants] = useState(false);
   const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
+  const { data: session } = useSession();
+  const userId = session?.user?.id || "";
 
   useEffect(() => {
     let isMounted = true;
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
       if (!isMounted) return;
-      if (!session) {
+      if (!userId) {
         router.replace("/login");
         return;
       }
-      const viewerId = session.user.id;
-      setCurrentUserId(viewerId);
-      fetchEventData(viewerId);
+      setCurrentUserId(userId);
+      fetchEventData(userId);
     };
 
     const fetchEventData = async (viewerId: string) => {
-      if (!id || id === "id") return;
+      if (!id || id === "id" || !isValidUuid(id)) {
+        if (isMounted) {
+          setEventData(null);
+          setCards([]);
+          setIsLoading(false);
+        }
+        return;
+      }
 
       setIsLoading(true);
       try {
-        const { data: eventRecord, error: eventError } = await supabase
-          .from("events")
-          .select("*")
-          .eq("id", id)
-          .single();
-
-        if (eventError) throw eventError;
+        const eventRes = await fetch(
+          `/api/events/${id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
+        );
+        const eventPayload = await eventRes.json();
+        if (!eventRes.ok) throw new Error(eventPayload?.error || "Failed to load event.");
+        const eventRecord = eventPayload.data;
         if (!isMounted) return;
 
         setEventData({
@@ -168,20 +176,20 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           sponsors: parseEventSponsors(eventRecord.sponsors),
         });
 
-        let orgAdminReviewer = false;
-        try {
-          const memberRes = await fetch("/api/organization-members/me");
-          const memberPayload = await memberRes.json();
-          const orgOwnerId = memberRes.ok ? String(memberPayload?.data?.org_owner_user_id || "") : "";
-          orgAdminReviewer = Boolean(orgOwnerId && orgOwnerId === String(eventRecord.user_id || ""));
-        } catch {
-          orgAdminReviewer = false;
-        }
-        setIsOrgAdminReviewer(orgAdminReviewer);
+        const [memberResult, attendeeRes] = await Promise.all([
+          fetch("/api/organization-members/me")
+            .then(async (res) => {
+              const payload = await res.json().catch(() => null);
+              const ownerId = res.ok ? String(payload?.data?.org_owner_user_id || "") : "";
+              return Boolean(ownerId && ownerId === String(eventRecord.user_id || ""));
+            })
+            .catch(() => false),
+          fetch(
+            `/api/events/${id}/attendees${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
+          ),
+        ]);
+        setIsOrgAdminReviewer(memberResult);
 
-        const attendeeRes = await fetch(
-          `/api/events/${id}/attendees${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
-        );
         if (!attendeeRes.ok) {
           const errPayload = await attendeeRes.json().catch(() => null);
           const errMsg = typeof errPayload?.error === "string" ? errPayload.error : attendeeRes.statusText;
@@ -206,26 +214,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             year: String(secure.year || ""),
             linkedin: String(secure.linkedin || ""),
             event_id: String(secure.event_id || ""),
-            photo: typeof secure.photo_url === "string" && secure.photo_url
-              ? getSupabaseFileUrl("attendee_photos", secure.photo_url)
-              : undefined,
+            photo: typeof secure.photo_url === "string" && secure.photo_url ? secure.photo_url : undefined,
             photo_path: typeof secure.photo_url === "string" ? secure.photo_url : undefined,
           };
         });
 
         setCards(mappedCards);
 
-        if (viewerId) {
-          const { data: grants } = await supabase
-            .from("access_grants")
-            .select("permission")
-            .eq("event_id", id)
-            .eq("grantee_user_id", viewerId)
-            .eq("status", "active");
-          setGrantedPermissions((grants || []).map((g: { permission: string }) => g.permission));
-        }
+        setGrantedPermissions(Array.isArray(eventPayload?.data?.permissions) ? eventPayload.data.permissions : []);
 
-        if (eventRecord.user_id === viewerId || orgAdminReviewer) {
+        if (eventRecord.user_id === viewerId || memberResult) {
           try {
             const reqRes = await fetch(`/api/access-requests?eventId=${id}`);
             const reqPayload = await reqRes.json();
@@ -239,8 +237,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           setPendingAccessRequests([]);
         }
 
-      } catch (err: any) {
-        console.error("Supabase Fetch Error:", err.message || err);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("Event Fetch Error:", message);
         toast.error("Failed to load event data.");
       } finally {
         if (isMounted) setIsLoading(false);
@@ -249,7 +248,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode]);
+  }, [id, router, impersonateId, isPreviewMode, userId]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
@@ -281,11 +280,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       const card = cards.find(c => c.id === cardId);
       const photoPath = card?.photo_path;
       if (photoPath) {
-        await supabase.storage.from("attendee_photos").remove([photoPath]);
+        await fetch("/api/media/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: photoPath }),
+        });
       }
 
-      const { error } = await supabase.from("attendees").delete().eq("id", cardId);
-      if (error) throw error;
+      const deleteRes = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
+      const deletePayload = await deleteRes.json();
+      if (!deleteRes.ok) throw new Error(deletePayload?.error || "Failed to delete card.");
 
       setCards(prev => prev.filter(c => c.id !== cardId));
       toast.success("Card deleted successfully.");
@@ -321,18 +325,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     setIsSavingEdit(true);
     try {
-      const { error } = await supabase
-        .from("events")
-        .update({
+      const updateRes = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: editForm.name,
           location: editForm.location_type === "webinar" ? "Webinar" : editForm.location,
           location_type: editForm.location_type,
           date: editForm.date,
           time: editForm.time,
-        })
-        .eq("id", id);
-
-      if (error) throw error;
+        }),
+      });
+      const updatePayload = await updateRes.json();
+      if (!updateRes.ok) throw new Error(updatePayload?.error || "Failed to update event.");
 
       setEventData((prev) => prev ? {
         ...prev,
@@ -380,33 +385,29 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     setIsRenewing(true);
     try {
+      if (!userId) {
+        throw new Error("You must be logged in to renew an event.");
+      }
       let logo_url = eventData?.logo_url || "";
 
       // Upload new logo
       if (renewForm.logo && renewForm.logo.startsWith('data:')) {
-        const res = await fetch(renewForm.logo);
-        const blob = await res.blob();
-        const ext = blob.type.split("/")[1] || "png";
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('event-logos')
-          .upload(fileName, blob);
-
-        if (uploadError) {
-          console.error("Logo upload error:", uploadError);
-          throw new Error(`Logo upload failed: ${uploadError.message}`);
+        const uploadRes = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dataUrl: renewForm.logo,
+            folder: `events/${userId}`,
+          }),
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok || !uploadPayload?.data?.url) {
+          throw new Error(uploadPayload?.error || "Logo upload failed.");
         }
-        const { data: { publicUrl } } = supabase.storage.from('event-logos').getPublicUrl(uploadData.path);
-        logo_url = publicUrl;
+        logo_url = String(uploadPayload.data.url);
       }
 
       // Create a duplicate/renewed event in DB instead of updating the old one
-      const { data: authData } = await supabase.auth.getUser();
-      if (!authData.user) {
-        throw new Error("You must be logged in to renew an event.");
-      }
-
       const insertPayload = {
         name: eventData?.name || "Renewed Event",
         location: renewForm.location.trim(),
@@ -414,27 +415,26 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         date: renewForm.date,
         time: eventData?.time || "",
         logo_url: logo_url,
-        user_id: authData.user.id,
+        user_id: userId,
         sponsors: eventData?.sponsors?.length ? eventData.sponsors : [],
       };
-      console.log("Creating renewed event copy:", insertPayload);
-
-      const { data: createdEvent, error } = await supabase
-        .from("events")
-        .insert(insertPayload)
-        .select()
-        .single();
-
-      if (error) {
-        console.error("Supabase insert error:", error);
-        throw new Error(`Database insert failed: ${error.message}`);
+      const createRes = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...insertPayload,
+          ownerId: userId,
+        }),
+      });
+      const createPayload = await createRes.json();
+      if (!createRes.ok) {
+        throw new Error(createPayload?.error || "Database insert failed.");
       }
 
-      if (!createdEvent) {
+      const createdEvent = createPayload?.data;
+      if (!createdEvent?.id) {
         throw new Error("Insert failed: no data returned.");
       }
-
-      console.log("Renew copy successful:", createdEvent);
 
       toast.success(`Event renewed successfully! Redirecting...`);
       setIsRenewOpen(false);
@@ -444,9 +444,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         router.refresh();
         router.push(`/dashboard/events/${createdEvent.id}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to renew event. Please try again.";
       console.error("Renewal error:", err);
-      toast.error(err.message || "Failed to renew event. Please try again.");
+      toast.error(message);
     } finally {
       setIsRenewing(false);
     }
@@ -456,14 +457,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     if (!eventData) return;
     setIsDuplicating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!userId) {
         toast.error("You need to be signed in to duplicate.");
         return;
       }
-      const { data: created, error } = await supabase
-        .from("events")
-        .insert({
+      const duplicateRes = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           name: `${eventData.name} (Copy)`,
           location: eventData.location,
           location_type: eventData.location_type || "onsite",
@@ -471,12 +472,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           time: eventData.time || "",
           logo_url: eventData.logo_url || "",
           sponsors: eventData.sponsors?.length ? eventData.sponsors : [],
-          user_id: user.id,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+          ownerId: userId,
+        }),
+      });
+      const duplicatePayload = await duplicateRes.json();
+      if (!duplicateRes.ok) throw new Error(duplicatePayload?.error || "Failed to duplicate event.");
+      const created = duplicatePayload?.data;
 
       toast.success("Event duplicated.");
       if (created?.id) {
@@ -508,45 +509,30 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         .filter((p): p is string => !!p);
 
       if (photoPaths.length > 0) {
-        const { error: storageErr } = await supabase.storage.from("attendee_photos").remove(photoPaths);
-        if (storageErr) console.error("Storage delete warning:", storageErr); // Non-fatal
+        await Promise.all(
+          photoPaths.map((url) =>
+            fetch("/api/media/delete", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ url }),
+            }),
+          ),
+        );
       }
 
-      // 2. Delete attendees first (to avoid foreign key violations if not CASCADE)
-      const { data: deletedAttendees, error: attendeeErr } = await supabase
-        .from("attendees")
-        .delete()
-        .eq("event_id", id)
-        .select();
-      
-      if (attendeeErr) {
-        console.error("Attendee delete error:", attendeeErr);
-        throw new Error(`Could not delete attendees: ${attendeeErr.message}`);
-      }
-
-      // 3. Delete the event itself
-      const { data: deletedEvent, error: eventErr } = await supabase
-        .from("events")
-        .delete()
-        .eq("id", id)
-        .select();
-        
-      if (eventErr) {
-        console.error("Event delete error:", eventErr);
-        throw new Error(`Could not delete event: ${eventErr.message}`);
-      }
-
-      // 4. Verification Check: Did RLS silently block it?
-      if (!deletedEvent || deletedEvent.length === 0) {
-        throw new Error("RLS Blocked: You do not have DELETE permission on the 'events' table in Supabase. Please add a DELETE policy.");
+      const deleteRes = await fetch(`/api/events/${id}`, { method: "DELETE" });
+      const deletePayload = await deleteRes.json();
+      if (!deleteRes.ok) {
+        throw new Error(deletePayload?.error || "Could not delete event.");
       }
 
       toast.success("Event deleted permanently.");
       router.refresh();
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete event.";
       console.error("Error deleting event:", err);
-      toast.error(err.message || "Failed to delete event.");
+      toast.error(message);
     } finally {
       setIsDeleting(false);
     }
@@ -563,11 +549,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     if (!eventData || isPreviewMode) return;
     setIsSavingSponsors(true);
     try {
-      const { data: auth } = await supabase.auth.getUser();
-      if (!auth.user) throw new Error("Not signed in");
-      const resolved = await resolveSponsorRowsToEntries(supabase, auth.user.id, id, sponsorRows);
-      const { error } = await supabase.from("events").update({ sponsors: resolved }).eq("id", id);
-      if (error) throw error;
+      if (!userId) throw new Error("Not signed in");
+      const resolved = await resolveSponsorRowsToEntries(userId, id, sponsorRows);
+      const saveRes = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sponsors: resolved }),
+      });
+      const savePayload = await saveRes.json();
+      if (!saveRes.ok) throw new Error(savePayload?.error || "Failed to save sponsors.");
       setEventData((prev) => (prev ? { ...prev, sponsors: resolved } : prev));
       toast.success("Sponsors saved.");
       setIsSponsorsOpen(false);
@@ -1031,7 +1021,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="relative">
                       <div className="w-12 h-12 rounded-inline bg-white border border-border overflow-hidden shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-200">
                         {card.photo ? (
-                          <img src={card.photo} alt={card.name} className="w-full h-full object-cover" />
+                          <Image
+                            src={card.photo}
+                            alt={card.name}
+                            width={48}
+                            height={48}
+                            sizes="48px"
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <User size={20} strokeWidth={1.5} className="text-primary-strong/40" />
                         )}

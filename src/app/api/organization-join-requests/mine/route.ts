@@ -1,53 +1,46 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeon } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserEmailById } from "@/lib/admin";
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data, error } = await supabaseAdmin
-      .from("organization_join_requests")
-      .select("id, owner_user_id, requested_org_name, status, created_at, reviewed_at, reapply_after, rejection_reason")
-      .eq("requester_user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const data = await queryNeon<{
+      id: string;
+      owner_user_id: string;
+      requested_org_name: string;
+      status: string;
+      created_at: string;
+      reviewed_at: string | null;
+      reapply_after: string | null;
+      rejection_reason: string | null;
+    }>(
+      `SELECT id, owner_user_id, requested_org_name, status, created_at, reviewed_at, reapply_after, rejection_reason
+       FROM public.organization_join_requests
+       WHERE requester_user_id = $1
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId],
+    );
 
     const rows = await Promise.all(
-      (data || []).map(async (row) => {
-        const { data: ownerData } = await supabaseAdmin.auth.admin.getUserById(row.owner_user_id);
+      data.map(async (row) => {
+        const ownerEmail = await getAdminUserEmailById(row.owner_user_id);
         return {
           ...row,
-          owner_email: ownerData?.user?.email || "unknown",
+          owner_email: ownerEmail || "unknown",
         };
       }),
     );
 
     return NextResponse.json({ data: rows }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to load your join requests." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to load your join requests.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

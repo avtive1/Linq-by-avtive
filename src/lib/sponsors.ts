@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { SponsorEntry } from "@/types/card";
 
 export const MAX_EVENT_SPONSORS = 5;
@@ -31,7 +30,6 @@ export function parseEventSponsors(raw: unknown): SponsorEntry[] {
 export type SponsorFormRow = { name: string; logo: string };
 
 export async function resolveSponsorRowsToEntries(
-  supabase: SupabaseClient,
   userId: string,
   eventId: string,
   rows: SponsorFormRow[],
@@ -45,15 +43,19 @@ export async function resolveSponsorRowsToEntries(
 
     let logo_url = row.logo.trim();
     if (logo_url.startsWith("data:")) {
-      const blob = await fetch(logo_url).then((r) => r.blob());
-      const ext = (blob.type.split("/")[1] || "png").replace(/[^a-z0-9]/gi, "") || "png";
-      const path = `${userId}/sponsors/${eventId}/${Date.now()}-${seq}.${ext}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("event-logos")
-        .upload(path, blob, { contentType: blob.type || "image/png" });
-      if (uploadError) throw uploadError;
-      const { data: pub } = supabase.storage.from("event-logos").getPublicUrl(uploadData.path);
-      logo_url = pub.publicUrl;
+      const uploadRes = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dataUrl: logo_url,
+          folder: `${userId}/sponsors/${eventId}`,
+        }),
+      });
+      const uploadPayload = await uploadRes.json();
+      if (!uploadRes.ok || !uploadPayload?.data?.url) {
+        throw new Error(uploadPayload?.error || "Failed to upload sponsor logo.");
+      }
+      logo_url = String(uploadPayload.data.url);
     }
     out.push({ name, logo_url });
     seq++;

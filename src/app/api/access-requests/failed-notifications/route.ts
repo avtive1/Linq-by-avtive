@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserEmailById } from "@/lib/admin";
 
 export async function GET() {
   try {
@@ -17,55 +12,54 @@ export async function GET() {
     }
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("access_requests")
-      .select("id, event_id, requested_action, status, notification_error, created_at, requester_user_id")
-      .eq("owner_user_id", userId)
-      .not("notification_error", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const data = await queryNeon<{
+      id: string;
+      event_id: string | null;
+      requested_action: string;
+      status: string;
+      notification_error: string | null;
+      created_at: string;
+      requester_user_id: string;
+    }>(
+      `SELECT id, event_id, requested_action, status, notification_error, created_at, requester_user_id
+       FROM public.access_requests
+       WHERE owner_user_id = $1
+         AND notification_error IS NOT NULL
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [userId],
+    );
 
     const enriched = await Promise.all(
-      (data || []).map(async (row) => {
-        const { data: requesterData } = await supabaseAdmin.auth.admin.getUserById(row.requester_user_id);
+      data.map(async (row) => {
+        const requesterEmail = await getAdminUserEmailById(row.requester_user_id);
         if (!row.event_id) {
           return {
             ...row,
             event_name: "Organization Workspace",
-            requester_email: requesterData?.user?.email || "unknown",
+            requester_email: requesterEmail || "unknown",
           };
         }
-        const { data: eventData } = await supabaseAdmin.from("events").select("name").eq("id", row.event_id).maybeSingle();
+        const eventData = await queryNeonOne<{ name: string }>(
+          `SELECT name FROM public.events WHERE id = $1`,
+          [row.event_id],
+        );
         return {
           ...row,
           event_name: String(eventData?.name || "Organization Workspace"),
-          requester_email: requesterData?.user?.email || "unknown",
+          requester_email: requesterEmail || "unknown",
         };
       }),
     );
 
     return NextResponse.json({ data: enriched }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to load failed notifications." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to load failed notifications.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

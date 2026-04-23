@@ -99,7 +99,7 @@ export function TextInput({
           disabled={disabled}
           onFocus={onFocus}
           maxLength={maxLength}
-          className={`h-full flex-1 py-0 text-[16px] leading-[1.6] border-none outline-none focus:ring-0 placeholder:text-muted/55 font-medium ${
+          className={`h-full flex-1 py-0 text-[16px] leading-[1.6] border-none outline-none focus:ring-0 placeholder:text-muted/40 placeholder:font-normal font-normal ${
             isLocked ? "text-slate-500 cursor-not-allowed bg-transparent" : "text-heading bg-transparent"
           } ${
             icon || prefix ? "px-4" : "px-4"
@@ -149,9 +149,9 @@ export function Button({
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "h-9 px-3 text-[14px] leading-[1.25] rounded-md font-normal",
-    md: "h-10 px-4 text-[16px] leading-[1.25] rounded-md font-medium",
-    lg: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-medium",
+    sm: "h-9 px-3 text-[14px] leading-[1.25] rounded-md font-semibold",
+    md: "h-10 px-4 text-[16px] leading-[1.25] rounded-md font-bold",
+    lg: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-bold",
   };
 
   return (
@@ -221,7 +221,8 @@ export function Select({
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
           className={`
-            h-full flex-1 px-4 py-0 text-[16px] leading-[1.6] text-heading bg-transparent border-none outline-none focus:ring-0 placeholder:text-muted/55 appearance-none font-medium
+            h-full flex-1 px-4 py-0 text-[16px] leading-[1.6] bg-transparent border-none outline-none focus:ring-0 appearance-none
+            ${value ? "text-heading font-normal" : "text-muted/40 font-normal"}
             ${disabled ? "cursor-not-allowed" : "cursor-pointer"}
           `}
         >
@@ -400,7 +401,7 @@ export function AnimatedCounter({ value, duration = 1500 }: { value: number; dur
     startTimeRef.current = null;
 
     if (startValue === endValue) {
-      setDisplayValue(endValue);
+      countRef.current = endValue;
       return;
     }
 

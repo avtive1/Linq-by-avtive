@@ -1,17 +1,25 @@
-import { getAdminClient } from "@/lib/admin";
+import { getAdminUserById } from "@/lib/admin";
+import { queryNeon } from "@/lib/neon-db";
 import { Users, Calendar, ArrowLeft, Mail, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { getEventStatus } from "@/lib/utils";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 export const revalidate = 0;
 
 export default async function OrganizationDrillDownPage(props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
-  const adminClient = getAdminClient();
-
-  // 1. Fetch User Details
-  const { data: userResponse, error: userError } = await adminClient.auth.admin.getUserById(params.id);
-  const user = userResponse?.user;
+  if (!isValidUuid(params.id)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20">
+        <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Invalid Organization Id</h2>
+        <Link href="/admin">
+          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-[1.25] font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
+        </Link>
+      </div>
+    );
+  }
+  const user = await getAdminUserById(params.id).catch(() => null);
 
   if (!user) {
     return (
@@ -25,30 +33,44 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
   }
 
   // 1.5 Fetch Profile Details (for username and organization name)
-  const { data: profile } = await adminClient
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
+  const [profile] = await queryNeon<{
+    id: string;
+    username: string | null;
+    organization_name: string | null;
+  }>(
+    `SELECT id, username, organization_name
+     FROM public.profiles
+     WHERE id = $1
+     LIMIT 1`,
+    [user.id],
+  );
 
   // 2. Fetch Events for this User
-  const { data: rawEvents, error: eventError } = await adminClient
-    .from("events")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-  
-  const events = rawEvents || [];
+  const events = await queryNeon<{
+    id: string;
+    user_id: string;
+    name: string;
+    date: string;
+    location: string;
+    created_at: string;
+  }>(
+    `SELECT id, user_id, name, date, location, created_at
+     FROM public.events
+     WHERE user_id = $1
+     ORDER BY created_at DESC`,
+    [user.id],
+  );
   const eventIds = events.map(e => e.id);
 
   // 3. Fetch Attendees for these Events
-  let attendees: any[] = [];
+  let attendees: Array<{ id: string; event_id: string }> = [];
   if (eventIds.length > 0) {
-    const { data: attendeeData } = await adminClient
-      .from("attendees")
-      .select("id, event_id")
-      .in("event_id", eventIds);
-    attendees = attendeeData || [];
+    attendees = await queryNeon<{ id: string; event_id: string }>(
+      `SELECT id, event_id
+       FROM public.attendees
+       WHERE event_id = ANY($1::uuid[])`,
+      [eventIds],
+    );
   }
 
   // Count Attendees per Event
@@ -71,14 +93,14 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
             <h1 className="text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1] flex items-center gap-3">
-              {profile?.organization_name || user.user_metadata?.organization_name || "Organization Details"}
+              {profile?.organization_name || "Organization Details"}
             </h1>
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium">
               <span className="text-[12px] leading-[1.2] text-primary-strong bg-primary/10 px-2.5 py-0.5 rounded-sm">
-                @{profile?.username || user.email?.split("@")[0]}
+                @{profile?.username || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "unknown"}
               </span>
               <p className="text-muted flex items-center gap-2">
-                <Mail size={16} /> {user.email}
+                <Mail size={16} /> {user?.emailAddresses?.[0]?.emailAddress || "unknown"}
               </p>
             </div>
           </div>
@@ -156,7 +178,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               })}
               {events.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-muted">This organization hasn't hosted any events yet.</td>
+                  <td colSpan={5} className="py-12 text-center text-muted">This organization hasn&apos;t hosted any events yet.</td>
                 </tr>
               )}
             </tbody>

@@ -1,37 +1,59 @@
-import { getAdminClient } from "@/lib/admin";
+import { listAdminUsers } from "@/lib/admin";
+import { queryNeon } from "@/lib/neon-db";
 import { Users, BarChart3, Building2, ChevronRight, Activity } from "lucide-react";
 import Link from "next/link";
 import OrganizationsTable from "./_components/OrganizationsTable";
 
 export const revalidate = 0; // Ensures this page is always fresh when loaded by admin
 
-export default async function AdminDashboardPage() {
-  const adminClient = getAdminClient();
+type OrganizationRow = {
+  id: string;
+  email?: string;
+  username?: string;
+  organizationName?: string;
+  created_at: string;
+  eventCount: number;
+  attendeeCount: number;
+  eventIds: Set<string>;
+};
 
+export default async function AdminDashboardPage() {
   // 1. Fetch All Organizations (Users)
-  const { data: userData, error: userError } = await adminClient.auth.admin.listUsers();
+  const userData = await listAdminUsers();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
     .map((e) => e.toLowerCase().trim())
     .filter(Boolean);
-  const rawUsers = (userData?.users || []).filter((u) => {
+  const rawUsers = (userData?.data || []).filter((u) => {
     const email = u.email?.toLowerCase().trim();
     return !email || !adminEmails.includes(email);
   });
 
   // 2. Fetch All Events
-  const { data: events, error: eventError } = await adminClient
-    .from("events")
-    .select("id, user_id, name, created_at, date, location")
-    .order("created_at", { ascending: false });
-  const rawEvents = events || [];
+  const rawEvents = await queryNeon<{
+    id: string;
+    user_id: string;
+    name: string;
+    created_at: string;
+    date: string;
+    location: string;
+  }>(
+    `SELECT id, user_id, name, created_at, date, location
+     FROM public.events
+     ORDER BY created_at DESC`,
+  );
 
   // 3. Fetch All Attendees
-  const { data: attendees, error: attendeeError } = await adminClient.from("attendees").select("id, event_id, created_at");
-  const rawAttendees = attendees || [];
+  const rawAttendees = await queryNeon<{ id: string; event_id: string; created_at: string }>(
+    `SELECT id, event_id, created_at FROM public.attendees`,
+  );
 
   // 4. Fetch All Profiles (for usernames)
-  const { data: profiles, error: profileError } = await adminClient.from("profiles").select("*");
+  const profiles = await queryNeon<{
+    id: string;
+    username: string | null;
+    organization_name: string | null;
+  }>(`SELECT id, username, organization_name FROM public.profiles`);
   const profileLookup = new Map();
   (profiles || []).forEach(p => profileLookup.set(p.id, p));
 
@@ -79,7 +101,7 @@ export default async function AdminDashboardPage() {
     }
   });
 
-  const organizations = Array.from(orgMap.values()) as any[];
+  const organizations: OrganizationRow[] = Array.from(orgMap.values()) as OrganizationRow[];
 
   // Recent Activity Feed
   const recentEvents = rawEvents.slice(0, 5).map(evt => {

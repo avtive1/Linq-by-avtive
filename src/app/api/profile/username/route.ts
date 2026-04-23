@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { getAdminClient } from "@/lib/admin";
+import { queryNeonOne, updateRows } from "@/lib/neon-db";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
 
 const USERNAME_REGEX = /^[a-zA-Z0-9_.]+$/;
 const USERNAME_CHANGE_COOLDOWN_DAYS = 24;
@@ -31,50 +31,45 @@ export async function PATCH(req: Request) {
     }
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) {
+    const userId = await getServerUserIdFromCookies(cookieStore);
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const admin = getAdminClient();
-    const userId = session.user.id;
-
-    const { data: currentProfile, error: profileError } = await admin
-      .from("profiles")
-      .select("username, organization_name, username_changed_at, organization_name_changed_at")
-      .eq("id", userId)
-      .single();
+    const currentProfile = await queryNeonOne<{
+      username: string | null;
+      organization_name: string | null;
+      username_changed_at: string | null;
+      organization_name_changed_at: string | null;
+    }>(
+      `SELECT username, organization_name, username_changed_at, organization_name_changed_at
+       FROM public.profiles
+       WHERE id = $1`,
+      [userId],
+    );
+    const profileError = currentProfile ? null : { message: "Profile not found." };
 
     if (profileError || !currentProfile) {
       return NextResponse.json({ error: "Profile not found." }, { status: 404 });
     }
 
-    const { data: membershipRow } = await admin
-      .from("organization_members")
-      .select("id")
-      .eq("member_user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
+    const membershipRow = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.organization_members
+       WHERE member_user_id = $1
+         AND status = 'active'
+       LIMIT 1`,
+      [userId],
+    );
 
     const currentOrganizationKey = toOrganizationKey(String(currentProfile.organization_name || ""));
-    const { data: ownedOrganization } = await admin
-      .from("organizations")
-      .select("id, owner_user_id")
-      .eq("organization_name_key", currentOrganizationKey)
-      .maybeSingle();
+    const ownedOrganization = await queryNeonOne<{ id: string; owner_user_id: string }>(
+      `SELECT id, owner_user_id
+       FROM public.organizations
+       WHERE organization_name_key = $1
+       LIMIT 1`,
+      [currentOrganizationKey],
+    );
 
     const isOrganizationMember = Boolean(membershipRow?.id);
     const isOrganizationOwner = Boolean(ownedOrganization?.owner_user_id === userId);
@@ -117,12 +112,14 @@ export async function PATCH(req: Request) {
       }
     }
 
-    const { data: existing } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("username", nextUsername)
-      .neq("id", userId)
-      .maybeSingle();
+    const existing = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.profiles
+       WHERE username = $1
+         AND id <> $2
+       LIMIT 1`,
+      [nextUsername, userId],
+    );
 
     if (existing?.id) {
       return NextResponse.json({ error: "Username is already taken." }, { status: 409 });
@@ -136,37 +133,49 @@ export async function PATCH(req: Request) {
     if (usernameChanged) updatePayload.username_changed_at = new Date().toISOString();
     if (organizationChanged) updatePayload.organization_name_changed_at = new Date().toISOString();
 
-    const { error: updateError } = await admin.from("profiles").update(updatePayload).eq("id", userId);
-
-    if (updateError) {
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    const updatedProfiles = await updateRows("profiles", updatePayload, { id: userId }, "id");
+    if (!updatedProfiles.length) {
+      return NextResponse.json({ error: "Failed to update profile." }, { status: 400 });
     }
 
-    const { data: ownedOrganizationByUser } = await admin
-      .from("organizations")
-      .select("id, organization_name_key")
-      .eq("owner_user_id", userId)
-      .maybeSingle();
+    const ownedOrganizationByUser = await queryNeonOne<{ id: string; organization_name_key: string }>(
+      `SELECT id, organization_name_key
+       FROM public.organizations
+       WHERE owner_user_id = $1
+       LIMIT 1`,
+      [userId],
+    );
 
     if (ownedOrganizationByUser?.id) {
       const nextOrgKey = toOrganizationKey(nextOrganizationName);
-      const { error: orgUpdateError } = await admin
-        .from("organizations")
-        .update({
-          organization_name: nextOrganizationName,
-          organization_name_key: nextOrgKey,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", ownedOrganizationByUser.id);
-
-      if (orgUpdateError) {
-        if (orgUpdateError.code === "23505") {
+      try {
+        const updatedOrganizations = await updateRows(
+          "organizations",
+          {
+            organization_name: nextOrganizationName,
+            organization_name_key: nextOrgKey,
+            updated_at: new Date().toISOString(),
+          },
+          { id: ownedOrganizationByUser.id },
+          "id",
+        );
+        if (!updatedOrganizations.length) {
+          return NextResponse.json({ error: "Failed to update organization." }, { status: 400 });
+        }
+      } catch (error: unknown) {
+        const isUniqueViolation =
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          String((error as { code?: string }).code) === "23505";
+        if (isUniqueViolation) {
           return NextResponse.json(
             { error: "This organization name is already claimed by another organization." },
             { status: 409 },
           );
         }
-        return NextResponse.json({ error: orgUpdateError.message }, { status: 400 });
+        const message = error instanceof Error ? error.message : "Failed to update organization.";
+        return NextResponse.json({ error: message }, { status: 400 });
       }
     }
 
@@ -174,7 +183,44 @@ export async function PATCH(req: Request) {
       { data: { username: nextUsername, organizationName: nextOrganizationName } },
       { status: 200 },
     );
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to update username." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to update username.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+    const userId = await getServerUserIdFromCookies(cookieStore);
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const profile = await queryNeonOne<{
+      username: string | null;
+      organization_name: string | null;
+    }>(
+      `SELECT username, organization_name
+       FROM public.profiles
+       WHERE id = $1`,
+      [userId],
+    );
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found." }, { status: 404 });
+    }
+
+    return NextResponse.json(
+      {
+        data: {
+          username: String(profile.username || ""),
+          organizationName: String(profile.organization_name || ""),
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to load profile.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

@@ -2,9 +2,9 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
@@ -80,6 +80,7 @@ function DashboardContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -128,207 +129,252 @@ function DashboardContent() {
   const [isRequestPermissionModalOpen, setIsRequestPermissionModalOpen] = useState(false);
   const [permissionRequestReason, setPermissionRequestReason] = useState("");
   const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
+  const { data: session } = useSession();
+  const userId = session?.user?.id || "";
 
   useEffect(() => {
     let isMounted = true;
+    const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+    const resolveAuthedUserIdWithRetry = async () => {
+      const sessionUserId = String(session?.user?.id || "").trim();
+      if (sessionUserId) return sessionUserId;
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        try {
+          const authRes = await fetch("/api/auth/me", { cache: "no-store" });
+          const authPayload = await authRes.json();
+          const resolvedUserId =
+            authPayload &&
+            typeof authPayload === "object" &&
+            "data" in authPayload &&
+            authPayload.data &&
+            typeof authPayload.data === "object" &&
+            "userId" in authPayload.data &&
+            typeof authPayload.data.userId === "string"
+              ? authPayload.data.userId
+              : "";
+          if (resolvedUserId) return resolvedUserId;
+        } catch {}
+        await wait(200);
+      }
+      return "";
+    };
+
     const checkUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!isMounted) return;
-      
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-      
-      // Check for admin - for client side UI toggle
-      const adminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || "")
-        .split(",")
-        .map((e) => e.trim().toLowerCase())
-        .filter(Boolean);
-      const role = session.user.user_metadata?.role;
-      const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
-      const isActuallyAdmin = Boolean(
-        isAdminByRole || (session.user.email && adminEmails.includes(session.user.email.toLowerCase())),
-      );
-      
-      if (isActuallyAdmin) {
-        setIsAdmin(true);
-      }
+      try {
+        setBootstrapError("");
+        const userId = await resolveAuthedUserIdWithRetry();
+        if (!isMounted) return;
+        
+        if (!userId) {
+          router.replace("/login");
+          return;
+        }
+        
+        // Check for admin using server-owned config only.
+        let isActuallyAdmin = false;
+        try {
+          const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
+          const adminPayload = await adminRes.json().catch(() => ({}));
+          isActuallyAdmin = Boolean(
+            adminRes.ok &&
+              adminPayload &&
+              typeof adminPayload === "object" &&
+              "data" in adminPayload &&
+              adminPayload.data &&
+              typeof adminPayload.data === "object" &&
+              "isAdmin" in adminPayload.data &&
+              Boolean(adminPayload.data.isAdmin),
+          );
+        } catch {
+          isActuallyAdmin = false;
+        }
+        
+        if (isActuallyAdmin) {
+          setIsAdmin(true);
+        }
 
-      // Logic for Effective User ID
-      let effectiveId = session.user.id;
-      let effectiveName = session.user.email?.split("@")[0] || "";
-      let userisOrgTeamMemberLocal = false;
-      let userIsOrgOwnerLocal = false;
-      let gateStatus: "pending" | "awaiting_owner" | null = null;
+        // Logic for Effective User ID
+        let effectiveId = userId;
+        let effectiveName = "";
+        let userisOrgTeamMemberLocal = false;
+        let userIsOrgOwnerLocal = false;
+        let gateStatus: "pending" | "awaiting_owner" | null = null;
 
-      const { data: profileRow } = await supabase
-        .from("profiles")
-        .select("username, organization_name")
-        .eq("id", session.user.id)
-        .single();
-      if (profileRow?.username?.trim()) {
-        effectiveName = profileRow.username.trim();
-      }
-      if (profileRow?.organization_name?.trim()) {
-        setOrganizationName(profileRow.organization_name.trim());
-      }
-
-      const memberRes = await fetch("/api/organization-members/me");
-      if (memberRes.ok) {
-        const memberPayload = await memberRes.json();
-        if (memberPayload?.data?.org_owner_user_id) {
-          effectiveId = memberPayload.data.org_owner_user_id;
-          setIsOrgTeamMember(true);
-          userisOrgTeamMemberLocal = true;
-          setIsOrgOwner(false);
-          userIsOrgOwnerLocal = false;
-          setOrgRoleLabel(String(memberPayload.data.role_label || ""));
-          setOrgOwnerUserId(String(memberPayload.data.org_owner_user_id || ""));
-          setGrantedPermissions(memberPayload.data.permissions || []);
-          try {
-            const mineRes = await fetch("/api/access-requests/mine");
-            const minePayload = await mineRes.json();
-            if (mineRes.ok && Array.isArray(minePayload?.data)) {
-              setMyAccessRequests(minePayload.data);
-            }
-          } catch {}
-        } else {
-          setIsOrgTeamMember(false);
-          setOrgRoleLabel("");
-          const [{ data: ownedEvents }, { data: ownedMembers }, ownerStateRes] = await Promise.all([
-            supabase.from("events").select("id").eq("user_id", session.user.id).limit(1),
-            supabase.from("organization_members").select("id").eq("org_owner_user_id", session.user.id).limit(1),
-            fetch("/api/organization-owner/me"),
-          ]);
-          let ownerByRegistry = false;
-          if (ownerStateRes.ok) {
-            const ownerStatePayload = await ownerStateRes.json();
-            ownerByRegistry = Boolean(ownerStatePayload?.data?.isOwner);
+        let profileRow: { username?: string; organizationName?: string } | null = null;
+        const [profileRes, memberRes] = await Promise.all([
+          fetch("/api/profile/username").catch(() => null),
+          fetch("/api/organization-members/me").catch(() => null),
+        ]);
+        try {
+          if (profileRes?.ok) {
+            const profilePayload = await profileRes.json();
+            profileRow =
+              profilePayload &&
+              typeof profilePayload === "object" &&
+              "data" in profilePayload &&
+              profilePayload.data &&
+              typeof profilePayload.data === "object"
+                ? (profilePayload.data as { username?: string; organizationName?: string })
+                : null;
           }
-          const userIsOrgOwner =
-            (ownedEvents || []).length > 0 ||
-            (ownedMembers || []).length > 0 ||
-            ownerByRegistry;
-          setIsOrgOwner(userIsOrgOwner);
-          userIsOrgOwnerLocal = userIsOrgOwner;
-          if (profileRow?.organization_name?.trim() && !userIsOrgOwner) {
+        } catch {}
+        if (profileRow?.username?.trim()) {
+          effectiveName = profileRow.username.trim();
+        }
+        if (profileRow?.organizationName?.trim()) {
+          setOrganizationName(profileRow.organizationName.trim());
+        }
+
+        if (memberRes?.ok) {
+          const memberPayload = await memberRes.json();
+          const memberData =
+            memberPayload &&
+            typeof memberPayload === "object" &&
+            "data" in memberPayload &&
+            memberPayload.data &&
+            typeof memberPayload.data === "object"
+              ? (memberPayload.data as Record<string, unknown>)
+              : null;
+          if (typeof memberData?.org_owner_user_id === "string" && memberData.org_owner_user_id) {
+            effectiveId = memberData.org_owner_user_id;
+            setIsOrgTeamMember(true);
+            userisOrgTeamMemberLocal = true;
+            setIsOrgOwner(false);
+            userIsOrgOwnerLocal = false;
+            setOrgRoleLabel(String(memberData.role_label || ""));
+            setOrgOwnerUserId(String(memberData.org_owner_user_id || ""));
+            setGrantedPermissions(Array.isArray(memberData.permissions) ? (memberData.permissions as string[]) : []);
             try {
-              const joinRes = await fetch("/api/organization-join-requests", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ organizationName: profileRow.organization_name.trim() }),
-              });
-              if (joinRes.ok) {
-                const joinPayload = await joinRes.json();
-                const status = String(joinPayload?.data?.status || "").toLowerCase();
-                if (status === "created" || status === "pending_exists" || status === "reapply_later") {
-                  gateStatus = "pending";
-                } else if (status === "no_owner_found") {
-                  gateStatus = "awaiting_owner";
+              const mineRes = await fetch("/api/access-requests/mine");
+              const minePayload = await mineRes.json();
+              if (mineRes.ok && Array.isArray(minePayload?.data)) {
+                setMyAccessRequests(minePayload.data);
+              }
+            } catch {}
+          } else {
+            setIsOrgTeamMember(false);
+            setOrgRoleLabel("");
+            const [ownedEventsRes, ownedMembersRes, ownerStateRes] = await Promise.all([
+              fetch(`/api/events?ownerId=${encodeURIComponent(userId)}`),
+              fetch("/api/organization-members"),
+              fetch("/api/organization-owner/me"),
+            ]);
+            const ownedEventsPayload = ownedEventsRes.ok ? await ownedEventsRes.json() : null;
+            const ownedMembersPayload = ownedMembersRes.ok ? await ownedMembersRes.json() : null;
+            const ownedEvents = Array.isArray(ownedEventsPayload?.data) ? ownedEventsPayload.data : [];
+            const ownedMembers = Array.isArray(ownedMembersPayload?.data) ? ownedMembersPayload.data : [];
+            let ownerByRegistry = false;
+            if (ownerStateRes.ok) {
+              const ownerStatePayload = await ownerStateRes.json();
+              ownerByRegistry = Boolean(ownerStatePayload?.data?.isOwner);
+            }
+            const userIsOrgOwner =
+              ownedEvents.length > 0 || ownedMembers.length > 0 || ownerByRegistry;
+            setIsOrgOwner(userIsOrgOwner);
+            userIsOrgOwnerLocal = userIsOrgOwner;
+            if (profileRow?.organizationName?.trim() && !userIsOrgOwner) {
+              try {
+                const joinRes = await fetch("/api/organization-join-requests", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
+                });
+                if (joinRes.ok) {
+                  const joinPayload = await joinRes.json();
+                  const status = String(joinPayload?.data?.status || "").toLowerCase();
+                  if (status === "created" || status === "pending_exists" || status === "reapply_later") {
+                    gateStatus = "pending";
+                  } else if (status === "no_owner_found") {
+                    gateStatus = "awaiting_owner";
+                  }
+                }
+              } catch {}
+            }
+            const [myJoinRes, inboxRes, orgJoinInboxRes, failedRes] = await Promise.all([
+              fetch("/api/organization-join-requests/mine").catch(() => null),
+              fetch("/api/access-requests/inbox").catch(() => null),
+              fetch("/api/organization-join-requests/inbox").catch(() => null),
+              fetch("/api/access-requests/failed-notifications").catch(() => null),
+            ]);
+            try {
+              if (myJoinRes?.ok) {
+                const myJoinPayload = await myJoinRes.json();
+                if (Array.isArray(myJoinPayload?.data)) {
+                  setMyOrgJoinRequests(myJoinPayload.data);
+                  if (
+                    myJoinPayload.data.some(
+                      (req: { status?: string }) => String(req.status || "").toLowerCase() === "pending",
+                    )
+                  ) {
+                    gateStatus = "pending";
+                  }
                 }
               }
             } catch {}
-          }
-          try {
-            const myJoinRes = await fetch("/api/organization-join-requests/mine");
-            const myJoinPayload = await myJoinRes.json();
-            if (myJoinRes.ok && Array.isArray(myJoinPayload?.data)) {
-              setMyOrgJoinRequests(myJoinPayload.data);
-              if (
-                myJoinPayload.data.some(
-                  (req: { status?: string }) => String(req.status || "").toLowerCase() === "pending",
-                )
-              ) {
-                gateStatus = "pending";
+            try {
+              if (inboxRes?.ok) {
+                const inboxPayload = await inboxRes.json();
+                if (Array.isArray(inboxPayload?.data)) setInboxRequests(inboxPayload.data);
               }
-            }
-          } catch {}
-          try {
-            const inboxRes = await fetch("/api/access-requests/inbox");
-            const inboxPayload = await inboxRes.json();
-            if (inboxRes.ok && Array.isArray(inboxPayload?.data)) {
-              setInboxRequests(inboxPayload.data);
-            }
-          } catch {}
-          try {
-            const orgJoinInboxRes = await fetch("/api/organization-join-requests/inbox");
-            const orgJoinInboxPayload = await orgJoinInboxRes.json();
-            if (orgJoinInboxRes.ok && Array.isArray(orgJoinInboxPayload?.data)) {
-              setOrgJoinInbox(orgJoinInboxPayload.data);
-            }
-          } catch {}
-          try {
-            const failedRes = await fetch("/api/access-requests/failed-notifications");
-            const failedPayload = await failedRes.json();
-            if (failedRes.ok && Array.isArray(failedPayload?.data)) {
-              setFailedNotifications(failedPayload.data);
-            }
-          } catch {}
-          setJoinGateStatus(gateStatus);
-          setJoinGateOrgName(profileRow?.organization_name?.trim() || "");
+            } catch {}
+            try {
+              if (orgJoinInboxRes?.ok) {
+                const orgJoinInboxPayload = await orgJoinInboxRes.json();
+                if (Array.isArray(orgJoinInboxPayload?.data)) setOrgJoinInbox(orgJoinInboxPayload.data);
+              }
+            } catch {}
+            try {
+              if (failedRes?.ok) {
+                const failedPayload = await failedRes.json();
+                if (Array.isArray(failedPayload?.data)) setFailedNotifications(failedPayload.data);
+              }
+            } catch {}
+            setJoinGateStatus(gateStatus);
+            setJoinGateOrgName(profileRow?.organizationName?.trim() || "");
+          }
         }
-      }
 
-      if (impersonateId && isActuallyAdmin) {
-        effectiveId = impersonateId;
-        setIsPreviewMode(true);
-        effectiveName = "Organization View"; 
-      }
-      
-      setUserName(effectiveName);
-      if (!isActuallyAdmin && !userisOrgTeamMemberLocal && !userIsOrgOwnerLocal && (gateStatus === "pending" || gateStatus === "awaiting_owner")) {
+        if (impersonateId && isActuallyAdmin) {
+          effectiveId = impersonateId;
+          setIsPreviewMode(true);
+          effectiveName = "Organization View"; 
+        }
+        
+        setUserName(effectiveName);
+        if (!isActuallyAdmin && !userisOrgTeamMemberLocal && !userIsOrgOwnerLocal && (gateStatus === "pending" || gateStatus === "awaiting_owner")) {
+          setIsCheckingAuth(false);
+          return;
+        }
+        fetchData(effectiveId, () => isMounted);
         setIsCheckingAuth(false);
-        return;
+      } catch (bootstrapErr) {
+        console.error("Dashboard bootstrap error:", bootstrapErr);
+        if (!isMounted) return;
+        setBootstrapError("Failed to initialize dashboard. Please refresh.");
+        setIsCheckingAuth(false);
+        setEvents([]);
+        setStats({ totalEvents: 0, totalAttendees: 0 });
       }
-      fetchData(effectiveId, () => isMounted);
-      setIsCheckingAuth(false);
     };
     checkUser();
     return () => { isMounted = false; };
-  }, [router, impersonateId]);
+  }, [router, impersonateId, session, userId]);
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
       // 1. Fetch all events owned by this user
-      const { data: eventRecords, error: eventError } = await supabase
-        .from("events")
-        .select("*")
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (eventError) throw eventError;
-      const validEventRecords = eventRecords || [];
-
-      // 2. Fetch all attendees for THESE specific events (including public registrations)
-      const eventIds = validEventRecords.map(e => e.id);
-      let attendeeRecords: any[] = [];
-      
-      if (eventIds.length > 0) {
-        const { data: attendeeData, error: attendeeError } = await supabase
-          .from("attendees")
-          .select("*")
-          .in('event_id', eventIds);
-        
-        if (attendeeError) throw attendeeError;
-        attendeeRecords = attendeeData || [];
+      const eventsRes = await fetch(`/api/events?ownerId=${encodeURIComponent(userId)}`);
+      const eventsPayload = await eventsRes.json();
+      if (!eventsRes.ok) {
+        const message = String(eventsPayload?.error || "Failed to load events.");
+        // Keep preview/dashboard stable instead of crashing the whole data load on one auth edge case.
+        setEvents([]);
+        setStats({ totalEvents: 0, totalAttendees: 0 });
+        toast.error(message);
+        return;
       }
-      
-      const eventCounts = new Map<string, number>();
-      attendeeRecords.forEach(a => {
-        if (a.event_id) {
-          eventCounts.set(a.event_id, (eventCounts.get(a.event_id) || 0) + 1);
-        }
-      });
-
-      const mappedEvents: DashboardEventData[] = validEventRecords.map(r => ({
-        id: r.id,
-        name: r.name,
-        location: r.location,
-        date: r.date,
-        logo_url: r.logo_url,
-        attendeeCount: eventCounts.get(r.id) || 0,
-      }));
+      const mappedEvents: DashboardEventData[] = Array.isArray(eventsPayload?.data) ? eventsPayload.data : [];
       
       if (getIsMounted && !getIsMounted()) return;
 
@@ -336,10 +382,10 @@ function DashboardContent() {
       
       setStats({
         totalEvents: mappedEvents.length,
-        totalAttendees: attendeeRecords.length,
+        totalAttendees: mappedEvents.reduce((sum, evt) => sum + (evt.attendeeCount || 0), 0),
       });
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching dashboard data:", err);
       toast.error("Could not load data. Please refresh and try again.");
     }
@@ -368,7 +414,7 @@ function DashboardContent() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await supabase.auth.signOut();
+      await signOut({ redirect: false });
       // Hard redirect to clear next.js client cache immediately and feel responsive
       window.location.href = "/login";
     } catch (err) {
@@ -398,28 +444,19 @@ function DashboardContent() {
 
     setIsSubmittingEvent(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("No user found");
+      if (!userId) throw new Error("No user found");
       
       let logoUrl = "";
       if (eventForm.logo) {
         try {
-          // Convert base64 to Blob
-          const base64Data = eventForm.logo.split(",")[1];
-          const blob = await fetch(`data:image/png;base64,${base64Data}`).then(res => res.blob());
-          const fileName = `${user.id}/${Date.now()}.png`;
-          
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from("event-logos")
-            .upload(fileName, blob, { contentType: 'image/png' });
-            
-          if (uploadError) throw uploadError;
-          
-          const { data: { publicUrl } } = supabase.storage
-            .from("event-logos")
-            .getPublicUrl(uploadData.path);
-            
-          logoUrl = publicUrl;
+          const uploadRes = await fetch("/api/media/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dataUrl: eventForm.logo, folder: `events/${userId}` }),
+          });
+          const uploadPayload = await uploadRes.json();
+          if (!uploadRes.ok || !uploadPayload?.data?.url) throw new Error(uploadPayload?.error || "Logo upload failed.");
+          logoUrl = String(uploadPayload.data.url);
         } catch (uploadErr) {
           console.error("Logo upload failed:", uploadErr);
           toast.error("Logo upload failed, but creating event anyway...");
@@ -432,19 +469,24 @@ function DashboardContent() {
         location_type: eventForm.location_type,
         date: eventForm.date,
         time: eventForm.time,
-        user_id: impersonateId || (isOrgTeamMember ? (orgOwnerUserId || user.id) : user.id),
-        logo_url: logoUrl
+        ownerId: impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId),
+        logo_url: logoUrl,
       };
-      
-      const { data: inserted, error } = await supabase.from("events").insert(data).select("id").single();
-      if (error) throw error;
+
+      const createRes = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const createPayload = await createRes.json();
+      if (!createRes.ok) throw new Error(createPayload?.error || "Failed to create event.");
 
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
       setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
-      fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || user.id) : user.id));
-    } catch (err: any) {
+      fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId));
+    } catch (err: unknown) {
       console.error(err);
       toast.error("Failed to create event. Please try again.");
     } finally {
@@ -728,6 +770,11 @@ function DashboardContent() {
           </>
         ) : (
           <>
+        {bootstrapError ? (
+          <div className="mb-6 rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+            {bootstrapError}
+          </div>
+        ) : null}
         {/* Header row */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12">
           <div className="flex flex-col gap-1 sm:gap-2">
@@ -741,7 +788,7 @@ function DashboardContent() {
             <span className="text-sm font-normal tracking-[0.01em] leading-[1.25] text-muted/70">
               {organizationName?.trim() || "Organization"}
             </span>
-            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]">
+            <h1 className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1] [-webkit-text-stroke:0.35px_currentColor]">
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
@@ -876,7 +923,7 @@ function DashboardContent() {
                 <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalAttendees} />
                 </span>
-                <span className="text-lg font-semibold text-primary-strong">Attendees</span>
+                <span className="text-lg font-black text-primary-strong">Attendees</span>
               </div>
             </div>
           </div>
@@ -892,7 +939,7 @@ function DashboardContent() {
                 <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalEvents} />
                 </span>
-                <span className="text-lg font-semibold text-primary-strong">Total Campaigns</span>
+                <span className="text-lg font-black text-primary-strong">Total Campaigns</span>
               </div>
             </div>
           </div>
@@ -1608,7 +1655,7 @@ function DashboardContent() {
             
             <div className="p-6">
               <p className="text-sm text-muted mb-6 leading-[1.6]">
-                You currently don't have permission to create campaigns. To get access, please send a request to your organization admin with a short reason.
+                You currently don&apos;t have permission to create campaigns. To get access, please send a request to your organization admin with a short reason.
               </p>
               
               <form onSubmit={handleRequestPermission}>

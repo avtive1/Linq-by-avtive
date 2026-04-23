@@ -1,42 +1,25 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeonOne } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
 
 export async function GET() {
   try {
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-
-    const { data: authData } = await supabase.auth.getUser();
-    const userId = authData.user?.id;
+    const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: orgRow, error } = await supabaseAdmin
-      .from("organizations")
-      .select("id, organization_name, organization_name_key")
-      .eq("owner_user_id", userId)
-      .limit(1)
-      .maybeSingle();
-
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    const orgRow = await queryNeonOne<{
+      id: string;
+      organization_name: string;
+      organization_name_key: string;
+    }>(
+      `SELECT id, organization_name, organization_name_key
+       FROM public.organizations
+       WHERE owner_user_id = $1
+       LIMIT 1`,
+      [userId],
+    );
 
     return NextResponse.json(
       {
@@ -47,7 +30,8 @@ export async function GET() {
       },
       { status: 200 },
     );
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to check owner state." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to check owner state.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

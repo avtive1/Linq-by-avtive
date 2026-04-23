@@ -11,12 +11,12 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-[1100px] text-center">
         {/* Hero Section */}
         <div className="flex flex-col gap-6 animate-slide-up delay-100">
-          <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-semibold tracking-[-0.03em] text-heading leading-[1.05] text-balance max-w-[760px] mx-auto">
+          <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-extrabold tracking-[-0.03em] text-heading leading-[1.05] text-balance max-w-[760px] mx-auto">
             Run events. Share a link.
             <br />
             <span className="bg-gradient-to-r from-heading to-primary bg-clip-text text-transparent drop-shadow-sm">Done.</span>
           </h1>
-          <p className="text-base sm:text-lg text-heading/75 leading-[1.6] max-w-[980px] mx-auto text-balance font-normal">
+          <p className="text-lg sm:text-xl text-heading/75 leading-[1.6] max-w-[980px] mx-auto text-balance font-normal">
             Create your event, share a single registration link, and let attendees
             generate their own beautiful, downloadable conference cards.
           </p>
@@ -38,7 +38,7 @@ export default function HomePage() {
 
         {/* Branding Footer */}
         <div className="mt-8 animate-slide-up delay-300">
-          <span className="text-[18px] font-normal tracking-[0.01em] text-heading/65 leading-[1.25]">
+          <span className="text-[17px] font-normal tracking-[0.01em] text-heading/65 leading-[1.25]">
             Powered by AVTIVE
           </span>
         </div>

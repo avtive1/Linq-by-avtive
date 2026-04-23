@@ -1,59 +1,58 @@
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const configuredAdminEmails = (process.env.NEXT_PUBLIC_ADMIN_EMAILS || process.env.NEXT_PUBLIC_ADMIN_EMAIL || "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  const parseError = (err: unknown) => {
+    if (err instanceof Error && err.message) return err.message;
+    return "Incorrect email or password.";
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
+    setIsSubmitting(true);
     try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+      const result = await signIn("credentials", {
+        email: email.trim().toLowerCase(),
         password,
+        redirect: false,
       });
-
-      if (signInError) throw signInError;
-
-      toast.success("Welcome back!");
-
-      const isAdminByEmail = configuredAdminEmails.includes(email.toLowerCase());
-      const role = data.user?.user_metadata?.role;
-      const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
-
-      if (isAdminByEmail || isAdminByRole) {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
+      if (result?.error) {
+        setError("Incorrect email or password.");
+        return;
       }
-    } catch (err: any) {
-      setError(err.message || "Incorrect email or password.");
+      if (result?.ok) {
+        router.replace("/dashboard");
+        router.refresh();
+        return;
+      }
+      setError("Sign-in failed. Please try again.");
+    } catch (err: unknown) {
+      setError(parseError(err));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-hidden bg-transparent">
       <GradientBackground />
-
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
         >
           <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
@@ -62,77 +61,27 @@ export default function LoginPage() {
           <span>Back to Home</span>
         </Link>
 
-        {/* Brand */}
         <div className="mb-8 flex justify-center">
-          <span className="ui-eyebrow text-muted/70">
-            AVTIVE
-          </span>
+          <span className="ui-eyebrow text-muted/70">AVTIVE</span>
         </div>
 
-        {/* Login Card */}
         <div className="glass-panel rounded-xl p-8 sm:p-12 shadow-2xl shadow-primary/5">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Welcome back</h1>
-              <p className="text-base text-muted leading-[1.55]">
-                Please enter your details to sign in.
-              </p>
+              <p className="text-base text-muted leading-[1.55]">Please enter your details to sign in.</p>
             </div>
 
             <div className="flex flex-col gap-6">
-              <TextInput
-                label="Email Address"
-                required
-                type="email"
-                placeholder="you@example.com"
-                icon="email"
-                value={email}
-                onChange={setEmail}
-              />
-              <TextInput
-                label="Password"
-                required
-                type="password"
-                placeholder="••••••••••••"
-                icon="lock"
-                value={password}
-                onChange={setPassword}
-              />
-              <Link
-                href="/forgot-password"
-                className="self-end text-sm font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
-              >
-                Forgot password?
-              </Link>
+              <TextInput label="Email Address" required type="email" placeholder="you@example.com" icon="email" value={email} onChange={setEmail} />
+              <TextInput label="Password" required type="password" placeholder="••••••••••••" icon="lock" value={password} onChange={setPassword} />
             </div>
 
-            {/* Inline error message */}
-            {error && (
-              <p className="text-sm text-red-500 font-medium text-center">
-                {error}
-              </p>
-            )}
+            {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
 
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              size="lg"
-              disabled={!email || !password}
-              className="h-12 text-base shadow-lg shadow-primary/20"
-            >
-              Sign in
+            <Button type="submit" variant="primary" fullWidth size="lg" disabled={!email || !password || isSubmitting} className="h-12 text-base shadow-lg shadow-primary/20">
+              {isSubmitting ? "Signing in..." : "Sign in"}
             </Button>
-
-            <div className="flex items-center justify-center gap-1 text-sm text-muted">
-              <span>Don't have an account?</span>
-              <Link
-                href="/signup"
-                className="font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
-              >
-                Create one
-              </Link>
-            </div>
           </form>
         </div>
       </div>

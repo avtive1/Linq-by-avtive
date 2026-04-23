@@ -4,14 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:stable": "powershell -ExecutionPolicy Bypass -File ./scripts/run-shadow.ps1 -Mode dev",
     "build": "next build",
+    "build:stable": "powershell -ExecutionPolicy Bypass -File ./scripts/run-shadow.ps1 -Mode build",
     "start": "next start",
+    "start:stable": "powershell -ExecutionPolicy Bypass -File ./scripts/run-shadow.ps1 -Mode start",
     "lint": "eslint",
     "security:reencrypt-attendees": "tsx scripts/reencrypt-attendees.ts"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.10.0",
-    "@supabase/supabase-js": "^2.101.1",
+    "@auth/pg-adapter": "^1.11.2",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/qrcode": "^1.5.6",
     "@vercel/analytics": "^2.0.1",
@@ -21,6 +23,8 @@
     "html-to-image": "^1.11.13",
     "jose": "^6.2.2",
     "next": "^16.2.1",
+    "next-auth": "^4.24.14",
+    "pg": "^8.20.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

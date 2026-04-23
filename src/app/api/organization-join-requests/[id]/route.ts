@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 import { seedViewEventGrantsForOrgMember } from "@/lib/organization/seedViewEventGrants";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { queryNeonOne, updateRows } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserEmailById } from "@/lib/admin";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    if (!isValidUuid(id)) {
+      return NextResponse.json({ error: "Invalid request id." }, { status: 400 });
+    }
     const { decision, roleLabel, rejectionReason } = (await req.json()) as {
       decision?: "approve" | "reject";
       roleLabel?: string;
@@ -24,27 +23,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const cookieStore = await cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll() {},
-        },
-      },
-    );
-    const { data: authData } = await supabase.auth.getUser();
-    const reviewerId = authData.user?.id;
+    const reviewerId = await getServerUserIdFromCookies(cookieStore);
     if (!reviewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { data: requestRow, error: reqErr } = await supabaseAdmin
-      .from("organization_join_requests")
-      .select("*")
-      .eq("id", id)
-      .single();
+    const requestRow = await queryNeonOne<{
+      id: string;
+      requester_user_id: string;
+      owner_user_id: string;
+      requested_org_name: string;
+      status: string;
+    }>(`SELECT * FROM public.organization_join_requests WHERE id = $1`, [id]);
+    const reqErr = requestRow ? null : { message: "Join request not found." };
     if (reqErr || !requestRow) return NextResponse.json({ error: "Join request not found." }, { status: 404 });
     if (requestRow.owner_user_id !== reviewerId) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     if (requestRow.status !== "pending") return NextResponse.json({ error: "Already reviewed." }, { status: 409 });
@@ -54,13 +43,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const nextRejectionReason = String(rejectionReason || "").trim();
 
     if (decision === "approve") {
-      const { data: existingMembership } = await supabaseAdmin
-        .from("organization_members")
-        .select("id, org_owner_user_id")
-        .eq("member_user_id", requestRow.requester_user_id)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle();
+      const existingMembership = await queryNeonOne<{ id: string; org_owner_user_id: string }>(
+        `SELECT id, org_owner_user_id
+         FROM public.organization_members
+         WHERE member_user_id = $1
+           AND status = 'active'
+         LIMIT 1`,
+        [requestRow.requester_user_id],
+      );
 
       if (
         existingMembership?.id &&
@@ -73,50 +63,56 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     }
 
-    const { error: updateErr } = await supabaseAdmin
-      .from("organization_join_requests")
-      .update({
+    const updatedJoinRequests = await updateRows(
+      "organization_join_requests",
+      {
         status: nextStatus,
         reviewed_by_user_id: reviewerId,
         reviewed_at: new Date().toISOString(),
-        reapply_after:
-          decision === "reject"
-            ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-            : null,
+        reapply_after: decision === "reject" ? new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString() : null,
         rejection_reason: decision === "reject" ? (nextRejectionReason || null) : null,
         updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
+      },
+      { id },
+      "id",
+    );
+    const updateErr = updatedJoinRequests.length ? null : { message: "Failed to update join request." };
     if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 400 });
 
     let requesterEmail = "";
 
     if (decision === "approve") {
       // Fetch email to satisfy the unique constraint (org_owner_user_id, member_email)
-      const { data: requesterUser } = await supabaseAdmin.auth.admin.getUserById(requestRow.requester_user_id);
-      requesterEmail = requesterUser?.user?.email || "";
+      requesterEmail = (await getAdminUserEmailById(requestRow.requester_user_id)) || "";
 
-      const { error: memberErr } = await supabaseAdmin.from("organization_members").upsert(
-        {
-          org_owner_user_id: requestRow.owner_user_id,
-          member_user_id: requestRow.requester_user_id,
-          member_email: requesterEmail.toLowerCase(),
-          role_label: nextRoleLabel,
-          status: "active",
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "org_owner_user_id,member_email" },
+      await queryNeonOne(
+        `INSERT INTO public.organization_members
+         (org_owner_user_id, member_user_id, member_email, role_label, status, updated_at)
+         VALUES ($1, $2, $3, $4, 'active', $5)
+         ON CONFLICT (org_owner_user_id, member_email)
+         DO UPDATE SET
+           member_user_id = EXCLUDED.member_user_id,
+           role_label = EXCLUDED.role_label,
+           status = 'active',
+           updated_at = EXCLUDED.updated_at
+         RETURNING id`,
+        [
+          requestRow.owner_user_id,
+          requestRow.requester_user_id,
+          requesterEmail.toLowerCase(),
+          nextRoleLabel,
+          new Date().toISOString(),
+        ],
       );
-      if (memberErr) return NextResponse.json({ error: memberErr.message }, { status: 400 });
 
       try {
-        await seedViewEventGrantsForOrgMember(supabaseAdmin, requestRow.owner_user_id, requestRow.requester_user_id);
-      } catch (e: any) {
-        return NextResponse.json({ error: e?.message || "Failed to seed default viewer access." }, { status: 400 });
+        await seedViewEventGrantsForOrgMember(requestRow.owner_user_id, requestRow.requester_user_id);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed to seed default viewer access.";
+        return NextResponse.json({ error: message }, { status: 400 });
       }
     } else {
-      const { data: requesterUser } = await supabaseAdmin.auth.admin.getUserById(requestRow.requester_user_id);
-      requesterEmail = requesterUser?.user?.email || "";
+      requesterEmail = (await getAdminUserEmailById(requestRow.requester_user_id)) || "";
     }
 
     if (requesterEmail) {
@@ -132,7 +128,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to review join request." }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to review join request.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

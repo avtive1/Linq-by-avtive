@@ -1,38 +1,102 @@
 import { NextResponse } from "next/server";
-import { getAdminClient } from "@/lib/admin";
+import { cookies } from "next/headers";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserById } from "@/lib/admin";
+import { queryNeonOne } from "@/lib/neon-db";
+import { parseEventSponsors } from "@/lib/sponsors";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const cookieStore = await cookies();
+    const userId = await getServerUserIdFromCookies(cookieStore);
     const { id } = await params;
-    const admin = getAdminClient();
+    if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
 
-    const { data: eventRow, error: eventErr } = await admin
-      .from("events")
-      .select("user_id")
-      .eq("id", id)
-      .single();
+    const eventRow = await queryNeonOne<{
+      user_id: string | null;
+      name: string | null;
+      location: string | null;
+      date: string | null;
+      time: string | null;
+      sponsors: unknown;
+    }>(
+      `SELECT user_id, name, location, date, time, sponsors
+       FROM public.events
+       WHERE id = $1`,
+      [id],
+    );
+    const eventErr = eventRow ? null : { message: "Event not found." };
 
     if (eventErr || !eventRow?.user_id) {
-      return NextResponse.json({ data: { organizationName: "", organizationLogoUrl: "" } }, { status: 200 });
+      return NextResponse.json(
+        {
+          data: {
+            organizationName: "",
+            organizationLogoUrl: "",
+            eventName: "",
+            eventLocation: "",
+            eventDate: "",
+            eventTime: "",
+            sponsors: [],
+          },
+        },
+        { status: 200 },
+      );
     }
 
-    const [{ data: userData }, { data: profileData }] = await Promise.all([
-      admin.auth.admin.getUserById(eventRow.user_id),
-      admin.from("profiles").select("organization_name").eq("id", eventRow.user_id).maybeSingle(),
+    if (!userId) {
+      // Public callers may only see event-level presentation metadata.
+      return NextResponse.json(
+        {
+          data: {
+            organizationName: "",
+            organizationLogoUrl: "",
+            eventName: String(eventRow.name || ""),
+            eventLocation: String(eventRow.location || ""),
+            eventDate: String(eventRow.date || ""),
+            eventTime: String(eventRow.time || ""),
+            sponsors: parseEventSponsors(eventRow.sponsors),
+          },
+        },
+        { status: 200 },
+      );
+    }
+
+    const [userData, profileData] = await Promise.all([
+      getAdminUserById(eventRow.user_id).catch(() => null),
+      queryNeonOne<{ organization_name: string | null }>(
+        `SELECT organization_name FROM public.profiles WHERE id = $1`,
+        [eventRow.user_id],
+      ),
     ]);
 
     const organizationName =
       profileData?.organization_name ||
-      (typeof userData?.user?.user_metadata?.organization_name === "string"
-        ? userData.user.user_metadata.organization_name
+      (typeof userData?.publicMetadata?.organization_name === "string"
+        ? String(userData.publicMetadata.organization_name)
         : "");
     const organizationLogoUrl =
-      typeof userData?.user?.user_metadata?.organization_logo_url === "string"
-        ? userData.user.user_metadata.organization_logo_url
+      typeof userData?.publicMetadata?.organization_logo_url === "string"
+        ? String(userData.publicMetadata.organization_logo_url)
         : "";
 
-    return NextResponse.json({ data: { organizationName, organizationLogoUrl } }, { status: 200 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to load branding." }, { status: 500 });
+    return NextResponse.json(
+      {
+        data: {
+          organizationName,
+          organizationLogoUrl,
+          eventName: String(eventRow.name || ""),
+          eventLocation: String(eventRow.location || ""),
+          eventDate: String(eventRow.date || ""),
+          eventTime: String(eventRow.time || ""),
+          sponsors: parseEventSponsors(eventRow.sponsors),
+        },
+      },
+      { status: 200 },
+    );
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to load branding.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

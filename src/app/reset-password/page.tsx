@@ -1,16 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -18,20 +19,10 @@ export default function ResetPasswordPage() {
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
 
   useEffect(() => {
-    // Supabase fires PASSWORD_RECOVERY when the user lands here from the email link.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") {
-        setHasRecoverySession(true);
-      }
-    });
-
-    // Also check existing session — if user already has a recovery session in cookies.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setHasRecoverySession(true);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+    const t = String(searchParams.get("token") || "");
+    setToken(t);
+    setHasRecoverySession(Boolean(t));
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,17 +36,27 @@ export default function ResetPasswordPage() {
 
     if (!confirmPassword) newErrors.confirmPassword = "Please confirm your password";
     else if (confirmPassword !== password) newErrors.confirmPassword = "Passwords do not match";
+    if (!token) newErrors.token = "Missing reset token.";
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
+      const res = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token,
+          password,
+        }),
+      });
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(payload?.error || "Could not complete password reset.");
+      }
 
       toast.success("Password updated. Please sign in.");
-      await supabase.auth.signOut();
       router.push("/login");
     } catch (err) {
       setErrors({ password: err instanceof Error ? err.message : "Failed to update password." });
@@ -92,9 +93,10 @@ export default function ResetPasswordPage() {
               <p className="text-base text-muted leading-[1.55]">
                 {hasRecoverySession
                   ? "Choose a strong password you'll remember."
-                  : "Open this page from the link in your email. The reset session is missing."}
+                  : "Request a fresh reset code from forgot password."}
               </p>
             </div>
+            {errors.token ? <p className="text-sm text-red-500">{errors.token}</p> : null}
 
             <TextInput
               label="New Password"

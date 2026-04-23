@@ -21,6 +21,11 @@ interface OrganizationsTableProps {
 type SortField = "username" | "organizationName" | "created_at" | "eventCount" | "attendeeCount";
 type SortOrder = "asc" | "desc";
 
+function renderSortIcon(field: SortField, activeField: SortField, activeOrder: SortOrder) {
+  if (activeField !== field) return <ArrowUpDown size={14} className="ml-1 opacity-20" />;
+  return <ArrowUpDown size={14} className={`ml-1 ${activeOrder === "asc" ? "rotate-180" : ""} transition-transform`} />;
+}
+
 export default function OrganizationsTable({ initialOrganizations }: OrganizationsTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<SortField>("username");
@@ -41,8 +46,8 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
 
     // Sort
     result.sort((a, b) => {
-      let valA: any = a[sortField];
-      let valB: any = b[sortField];
+      let valA: string | number = a[sortField] ?? "";
+      let valB: string | number = b[sortField] ?? "";
 
       if (sortField === "created_at") {
         valA = new Date(valA).getTime();
@@ -64,11 +69,6 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
       setSortField(field);
       setSortOrder("desc");
     }
-  };
-
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown size={14} className="ml-1 opacity-20" />;
-    return <ArrowUpDown size={14} className={`ml-1 ${sortOrder === "asc" ? "rotate-180" : ""} transition-transform`} />;
   };
 
   return (
@@ -95,7 +95,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   onClick={() => toggleSort("username")}
                 >
                   <div className="flex items-center">
-                    Username <SortIcon field="username" />
+                    Username {renderSortIcon("username", sortField, sortOrder)}
                   </div>
                 </th>
                 <th 
@@ -103,7 +103,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   onClick={() => toggleSort("organizationName")}
                 >
                   <div className="flex items-center">
-                    Organization <SortIcon field="organizationName" />
+                    Organization {renderSortIcon("organizationName", sortField, sortOrder)}
                   </div>
                 </th>
                 <th 
@@ -111,7 +111,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   onClick={() => toggleSort("created_at")}
                 >
                   <div className="flex items-center">
-                    Joined At <SortIcon field="created_at" />
+                    Joined At {renderSortIcon("created_at", sortField, sortOrder)}
                   </div>
                 </th>
                 <th 
@@ -119,7 +119,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   onClick={() => toggleSort("eventCount")}
                 >
                   <div className="flex items-center justify-center">
-                    Events Hosted <SortIcon field="eventCount" />
+                    Events Hosted {renderSortIcon("eventCount", sortField, sortOrder)}
                   </div>
                 </th>
                 <th 
@@ -127,7 +127,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   onClick={() => toggleSort("attendeeCount")}
                 >
                   <div className="flex items-center justify-center">
-                    Total Attendees <SortIcon field="attendeeCount" />
+                    Total Attendees {renderSortIcon("attendeeCount", sortField, sortOrder)}
                   </div>
                 </th>
                 <th className="py-4 px-6"></th>

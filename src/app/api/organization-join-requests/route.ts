@@ -1,32 +1,14 @@
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { autoRefreshToken: false, persistSession: false } },
-);
+import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getAdminUserEmailById } from "@/lib/admin";
 
 async function getCurrentUserId() {
   const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll() {},
-      },
-    },
-  );
-  const { data: authData } = await supabase.auth.getUser();
-  return authData.user?.id || null;
+  return getServerUserIdFromCookies(cookieStore);
 }
 
 export async function POST(req: Request) {
@@ -44,31 +26,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "organizationName is invalid." }, { status: 400 });
     }
 
-    const { data: alreadyMember } = await supabaseAdmin
-      .from("organization_members")
-      .select("id")
-      .eq("member_user_id", userId)
-      .eq("status", "active")
-      .maybeSingle();
+    const alreadyMember = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.organization_members
+       WHERE member_user_id = $1
+         AND status = 'active'
+       LIMIT 1`,
+      [userId],
+    );
     if (alreadyMember?.id) {
       return NextResponse.json({ data: { status: "already_member" } }, { status: 200 });
     }
 
-    const [{ data: selfOwnedEvents }, { data: selfOwnedMembers }] = await Promise.all([
-      supabaseAdmin.from("events").select("id").eq("user_id", userId).limit(1),
-      supabaseAdmin.from("organization_members").select("id").eq("org_owner_user_id", userId).limit(1),
+    const [selfOwnedEvents, selfOwnedMembers] = await Promise.all([
+      queryNeon<{ id: string }>(`SELECT id FROM public.events WHERE user_id = $1 LIMIT 1`, [userId]),
+      queryNeon<{ id: string }>(
+        `SELECT id FROM public.organization_members WHERE org_owner_user_id = $1 LIMIT 1`,
+        [userId],
+      ),
     ]);
     if ((selfOwnedEvents || []).length > 0 || (selfOwnedMembers || []).length > 0) {
       return NextResponse.json({ data: { status: "owner_context" } }, { status: 200 });
     }
 
     let selectedOwnerId = "";
-    const { data: existingOrg, error: orgLookupErr } = await supabaseAdmin
-      .from("organizations")
-      .select("owner_user_id, organization_name")
-      .eq("organization_name_key", requestedOrgKey)
-      .maybeSingle();
-    if (orgLookupErr) return NextResponse.json({ error: orgLookupErr.message }, { status: 400 });
+    const existingOrg = await queryNeonOne<{ owner_user_id: string; organization_name: string }>(
+      `SELECT owner_user_id, organization_name
+       FROM public.organizations
+       WHERE organization_name_key = $1
+       LIMIT 1`,
+      [requestedOrgKey],
+    );
 
     if (existingOrg?.owner_user_id) {
       selectedOwnerId = existingOrg.owner_user_id;
@@ -84,13 +72,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ data: { status: "owner_context" } }, { status: 200 });
     }
 
-    const { data: existingPending } = await supabaseAdmin
-      .from("organization_join_requests")
-      .select("id, owner_user_id")
-      .eq("requester_user_id", userId)
-      .eq("status", "pending")
-      .limit(1)
-      .maybeSingle();
+    const existingPending = await queryNeonOne<{ id: string; owner_user_id: string }>(
+      `SELECT id, owner_user_id
+       FROM public.organization_join_requests
+       WHERE requester_user_id = $1
+         AND status = 'pending'
+       LIMIT 1`,
+      [userId],
+    );
     if (existingPending?.id) {
       return NextResponse.json(
         {
@@ -104,17 +93,18 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data: cooldownRequest } = await supabaseAdmin
-      .from("organization_join_requests")
-      .select("id, reapply_after")
-      .eq("requester_user_id", userId)
-      .eq("owner_user_id", selectedOwnerId)
-      .eq("status", "rejected")
-      .not("reapply_after", "is", null)
-      .gt("reapply_after", new Date().toISOString())
-      .order("reapply_after", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const cooldownRequest = await queryNeonOne<{ id: string; reapply_after: string }>(
+      `SELECT id, reapply_after
+       FROM public.organization_join_requests
+       WHERE requester_user_id = $1
+         AND owner_user_id = $2
+         AND status = 'rejected'
+         AND reapply_after IS NOT NULL
+         AND reapply_after > $3
+       ORDER BY reapply_after DESC
+       LIMIT 1`,
+      [userId, selectedOwnerId, new Date().toISOString()],
+    );
     if (cooldownRequest?.id) {
       return NextResponse.json(
         {
@@ -128,40 +118,40 @@ export async function POST(req: Request) {
       );
     }
 
-    const { data, error } = await supabaseAdmin
-      .from("organization_join_requests")
-      .insert({
+    const data = await insertRow(
+      "organization_join_requests",
+      {
         requester_user_id: userId,
         owner_user_id: selectedOwnerId,
         requested_org_name: requestedOrgName,
         status: "pending",
         reapply_after: null,
         rejection_reason: null,
-      })
-      .select("id, status")
-      .single();
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+      },
+      "id, status",
+    );
+    if (!data?.id) return NextResponse.json({ error: "Failed to create join request." }, { status: 400 });
 
-    const [{ data: ownerUserData }, { data: requesterUserData }] = await Promise.all([
-      supabaseAdmin.auth.admin.getUserById(selectedOwnerId),
-      supabaseAdmin.auth.admin.getUserById(userId),
+    const [ownerEmail, requesterEmail] = await Promise.all([
+      getAdminUserEmailById(selectedOwnerId),
+      getAdminUserEmailById(userId),
     ]);
 
-    const ownerEmail = ownerUserData?.user?.email;
     if (ownerEmail) {
       await sendTransactionalEmail({
         to: ownerEmail,
         subject: `Organization verification request (${requestedOrgName})`,
         text:
           `A user requested to join your organization: ${requestedOrgName}.\n\n` +
-          `Requester email: ${requesterUserData?.user?.email || "unknown"}\n` +
-          `Join request ID: ${data.id}\n\n` +
+          `Requester email: ${requesterEmail || "unknown"}\n` +
+          `Join request ID: ${String(data.id)}\n\n` +
           `Please review this request in your dashboard inbox.`,
       });
     }
 
-    return NextResponse.json({ data: { status: "created", requestId: data.id } }, { status: 201 });
-  } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to create join request." }, { status: 500 });
+    return NextResponse.json({ data: { status: "created", requestId: String(data.id) } }, { status: 201 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to create join request.";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
