@@ -33,15 +33,36 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
     logo_url: string | null;
     sponsors: unknown;
   }>(`SELECT * FROM public.events WHERE id = $1`, [eventId]);
-  if (!eventRow) return { eventRow: null, isOwner: false, permissions: [] as string[] };
+  if (!eventRow) return { eventRow: null, isOwner: false, permissions: [] as string[], isOrgMemberViewer: false };
 
   const isOwner = eventRow.user_id === viewerId;
   if (isOwner) {
-    return { eventRow, isOwner: true, permissions: ["manage_event", "edit_cards", "delete_cards"] };
+    return {
+      eventRow,
+      isOwner: true,
+      permissions: ["manage_event", "edit_cards", "delete_cards", "delete_event"],
+      isOrgMemberViewer: false,
+    };
   }
   if (canAdminRead) {
-    return { eventRow, isOwner: false, permissions: ["manage_event", "edit_cards", "delete_cards"] };
+    return {
+      eventRow,
+      isOwner: false,
+      permissions: ["manage_event", "edit_cards", "delete_cards", "delete_event"],
+      isOrgMemberViewer: false,
+    };
   }
+
+  const membership = await queryNeonOne<{ id: string }>(
+    `SELECT id
+     FROM public.organization_members
+     WHERE member_user_id = $1
+       AND org_owner_user_id = $2
+       AND status = 'active'
+     LIMIT 1`,
+    [viewerId, eventRow.user_id],
+  );
+  const isOrgMemberViewer = Boolean(membership?.id);
 
   const grants = await queryNeon<{ permission: string }>(
     `SELECT permission
@@ -51,7 +72,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
        AND status = 'active'`,
     [eventId, viewerId],
   );
-  return { eventRow, isOwner: false, permissions: grants.map((g) => g.permission) };
+  return { eventRow, isOwner: false, permissions: grants.map((g) => g.permission), isOrgMemberViewer };
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -62,9 +83,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
 
-    const { eventRow, isOwner, permissions } = await getEventAccess(id, viewerId, isSessionAdmin(session));
-    if (!eventRow) return NextResponse.json({ error: "Event not found." }, { status: 404 });
-    if (!isOwner && permissions.length === 0) {
+    const access = await getEventAccess(id, viewerId, isSessionAdmin(session));
+    if (!access.eventRow) return NextResponse.json({ error: "Event not found." }, { status: 404 });
+    const { eventRow, isOwner, permissions, isOrgMemberViewer } = access;
+    if (!isOwner && !isOrgMemberViewer && permissions.length === 0) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
@@ -137,9 +159,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
 
-    const { eventRow } = await getEventAccess(id, viewerId, isSessionAdmin(session));
+    const { eventRow, isOwner, permissions } = await getEventAccess(id, viewerId, isSessionAdmin(session));
     if (!eventRow) return NextResponse.json({ error: "Event not found." }, { status: 404 });
-    if (eventRow.user_id !== viewerId) {
+    const canDeleteEvent = isOwner || permissions.includes("manage_event") || permissions.includes("delete_event");
+    if (!canDeleteEvent) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 

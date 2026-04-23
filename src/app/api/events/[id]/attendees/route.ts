@@ -41,7 +41,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     );
 
     let isOrgTeamViewer = false;
-    let hasPrivilegedAttendeeRead = false;
     if (event?.user_id) {
       const membership = await queryNeonOne<{ id: string }>(
         `SELECT id
@@ -53,24 +52,11 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         [viewerUserId, event.user_id],
       );
       isOrgTeamViewer = Boolean(membership?.id);
-      if (isOrgTeamViewer) {
-        const grants = await queryNeon<{ permission: string }>(
-          `SELECT permission
-           FROM public.access_grants
-           WHERE event_id = $1
-             AND grantee_user_id = $2
-             AND status = 'active'`,
-          [id, viewerUserId],
-        );
-        const permissions = new Set(grants.map((g) => String(g.permission || "")));
-        hasPrivilegedAttendeeRead =
-          permissions.has("manage_event") ||
-          permissions.has("edit_cards") ||
-          permissions.has("delete_cards");
-      }
     }
 
-    if (!event || (!ownsEvent && !canPreviewAsOrg && !(isOrgTeamViewer && hasPrivilegedAttendeeRead))) {
+    // Active organization team members can view attendees by default.
+    // Edit/delete remains separately permission-gated in UI and other APIs.
+    if (!event || (!ownsEvent && !canPreviewAsOrg && !isOrgTeamViewer)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

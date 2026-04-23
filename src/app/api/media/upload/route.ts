@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
-import { queryNeonOne } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 
 async function canUploadToFolder(userId: string, folder: string): Promise<boolean> {
   const normalized = folder.trim().replace(/^\/+|\/+$/g, "");
@@ -21,7 +21,30 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
       `SELECT user_id FROM public.events WHERE id = $1 LIMIT 1`,
       [eventId],
     );
-    return event?.user_id === userId;
+    if (event?.user_id === userId) return true;
+
+    // Active team members with edit/manage access can upload attendee assets and card previews.
+    const membership = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.organization_members
+       WHERE member_user_id = $1
+         AND org_owner_user_id = $2
+         AND status = 'active'
+       LIMIT 1`,
+      [userId, String(event?.user_id || "")],
+    );
+    if (!membership?.id) return false;
+
+    const grants = await queryNeon<{ permission: string }>(
+      `SELECT permission
+       FROM public.access_grants
+       WHERE event_id = $1
+         AND grantee_user_id = $2
+         AND status = 'active'`,
+      [eventId, userId],
+    );
+    const permissionSet = new Set(grants.map((row) => String(row.permission || "")));
+    return permissionSet.has("manage_event") || permissionSet.has("edit_cards");
   }
   if (parts.length >= 3 && parts[1] === "sponsors") {
     return parts[0] === userId;

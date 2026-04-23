@@ -250,7 +250,11 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             const previewRes = await fetch("/api/media/upload", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ dataUrl, folder: `card-previews/${eventId || "general"}` }),
+              body: JSON.stringify({
+                dataUrl,
+                folder: `card-previews/${eventId || "general"}`,
+                publicId: String(id),
+              }),
             });
             const previewPayload = await previewRes.json();
             if (!previewRes.ok || !previewPayload?.data?.url) {
@@ -300,32 +304,42 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       toast.success("Card updated successfully.");
       try {
         const { toPng } = await import("html-to-image");
+        if (!eventId) {
+          // Vertical preview upload requires event-scoped folder authorization.
+          router.refresh();
+          router.push(`/cards/${id}`);
+          return;
+        }
         const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
           if (!node) return;
-          const png = await toPng(node, {
-            quality: 1,
-            pixelRatio: 2,
-            backgroundColor: "#ffffff",
-          });
-          if (!png || png.length <= 100) return;
-          const uploadRes = await fetch("/api/media/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              dataUrl: png,
-              folder: `card-previews/${eventId || "general"}`,
-              publicId: `${id}-${suffix}`,
-            }),
-          });
-          const uploadPayload = await uploadRes.json();
-          if (!uploadRes.ok || !uploadPayload?.data?.url) {
-            throw new Error(uploadPayload?.error || `Failed to upload ${suffix} preview.`);
+          try {
+            const png = await toPng(node, {
+              quality: 1,
+              pixelRatio: 2,
+              backgroundColor: "#ffffff",
+            });
+            if (!png || png.length <= 100) return;
+            const uploadRes = await fetch("/api/media/upload", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                dataUrl: png,
+                folder: `card-previews/${eventId}`,
+                publicId: `${id}-${suffix}`,
+              }),
+            });
+            const uploadPayload = await uploadRes.json();
+            if (!uploadRes.ok || !uploadPayload?.data?.url) {
+              console.warn(`Vertical preview upload skipped (${suffix}):`, uploadPayload?.error || uploadRes.statusText);
+            }
+          } catch (verticalCaptureErr) {
+            console.warn(`Vertical preview generation skipped (${suffix}):`, verticalCaptureErr);
           }
         };
         await uploadVertical(verticalFrontRef.current, "vertical-front");
         await uploadVertical(verticalBackRef.current, "vertical-back");
       } catch (verticalErr) {
-        console.error("Vertical preview upload failed:", verticalErr);
+        console.warn("Vertical preview upload skipped:", verticalErr);
       }
       router.refresh();
       if (eventId) {

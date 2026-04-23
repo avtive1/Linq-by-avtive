@@ -191,13 +191,20 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         ]);
         setIsOrgAdminReviewer(memberResult);
 
+        let attendeeRecords: Array<Record<string, unknown>> = [];
         if (!attendeeRes.ok) {
           const errPayload = await attendeeRes.json().catch(() => null);
           const errMsg = typeof errPayload?.error === "string" ? errPayload.error : attendeeRes.statusText;
-          throw new Error(errMsg || "Failed to fetch decrypted attendees");
+          if (attendeeRes.status === 403) {
+            // Team members without card-read grants can still access event shell.
+            attendeeRecords = [];
+          } else {
+            throw new Error(errMsg || "Failed to fetch decrypted attendees");
+          }
+        } else {
+          const attendeePayload = await attendeeRes.json();
+          attendeeRecords = attendeePayload.data || [];
         }
-        const attendeePayload = await attendeeRes.json();
-        const attendeeRecords = attendeePayload.data || [];
         if (!isMounted) return;
 
         const mappedCards = (attendeeRecords || []).map((secure: Record<string, unknown>) => {
@@ -255,6 +262,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
   const canReviewAccessRequests = isEventOwner || isOrgAdminReviewer;
   const canManageEvent = isEventOwner || grantedPermissions.includes("manage_event");
+  const canDeleteEvent = canManageEvent || grantedPermissions.includes("delete_event");
   const canEditCards = canManageEvent || grantedPermissions.includes("edit_cards");
   const canDeleteCards = canManageEvent || grantedPermissions.includes("delete_cards");
   const canExport = canManageEvent;
@@ -921,19 +929,25 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <Button
                     variant="secondary"
                     onClick={() => {
-                      if (!canManageEvent) return;
+                      if (!canDeleteEvent) return;
                       setDeleteConfirm("");
                       setIsDeleteOpen(true);
                     }}
-                    disabled={cards.length > 0 || !canManageEvent}
+                    disabled={cards.length > 0 || !canDeleteEvent}
                     icon={<Trash2 size={16} />}
-                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 || !canManageEvent ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 || !canDeleteEvent ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
                   >
                     Delete
                   </Button>
                 </div>
-                {!canManageEvent && (
-                  <Button variant="secondary" onClick={() => setIsAccessRequestOpen(true)}>
+                {!canManageEvent && !canDeleteEvent && (
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setAccessRequestAction("delete_event");
+                      setIsAccessRequestOpen(true);
+                    }}
+                  >
                     Take Access
                   </Button>
                 )}
@@ -1156,6 +1170,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 className="w-full rounded-md border border-border/60 bg-white px-3 py-2 text-sm text-heading outline-none focus:border-primary/70"
               >
                 <option value="manage_event">Manage event settings</option>
+                <option value="delete_event">Delete event (only when attendees = 0)</option>
                 <option value="edit_cards">Edit attendee cards</option>
                 <option value="delete_cards">Delete attendee cards</option>
               </select>

@@ -144,19 +144,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // Upsert the membership based on org_owner_user_id and member_email
-    await queryNeon(
-      `INSERT INTO public.organization_members
-       (org_owner_user_id, member_email, member_user_id, role_label, status, updated_at)
-       VALUES ($1, $2, $3, $4, 'active', $5)
-       ON CONFLICT (org_owner_user_id, member_email)
-       DO UPDATE SET
-         member_user_id = EXCLUDED.member_user_id,
-         role_label = EXCLUDED.role_label,
-         status = 'active',
-         updated_at = EXCLUDED.updated_at`,
-      [ownerId, normalizedEmail, target?.id || null, nextRoleLabel, new Date().toISOString()],
+    const timestamp = new Date().toISOString();
+    const existingMemberRow = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.organization_members
+       WHERE org_owner_user_id = $1
+         AND lower(member_email) = lower($2)
+       LIMIT 1`,
+      [ownerId, normalizedEmail],
     );
+    if (existingMemberRow?.id) {
+      await queryNeon(
+        `UPDATE public.organization_members
+         SET member_user_id = $1,
+             role_label = $2,
+             status = 'active',
+             updated_at = $3
+         WHERE id = $4`,
+        [target?.id || null, nextRoleLabel, timestamp, existingMemberRow.id],
+      );
+    } else {
+      await queryNeon(
+        `INSERT INTO public.organization_members
+         (org_owner_user_id, member_email, member_user_id, role_label, status, updated_at)
+         VALUES ($1, $2, $3, $4, 'active', $5)`,
+        [ownerId, normalizedEmail, target?.id || null, nextRoleLabel, timestamp],
+      );
+    }
 
     // If user exists, seed default view grants
     if (target?.id) {
@@ -168,16 +182,30 @@ export async function POST(req: Request) {
       }
     }
 
-    await queryNeon(
-      `INSERT INTO public.organization_role_permission_templates
-       (org_owner_user_id, role_label, permissions, updated_at)
-       VALUES ($1, $2, $3::text[], $4)
-       ON CONFLICT (org_owner_user_id, role_label)
-       DO UPDATE SET
-         permissions = EXCLUDED.permissions,
-         updated_at = EXCLUDED.updated_at`,
-      [ownerId, nextRoleLabel, normalizedPermissions, new Date().toISOString()],
+    const existingTemplateRow = await queryNeonOne<{ id: string }>(
+      `SELECT id
+       FROM public.organization_role_permission_templates
+       WHERE org_owner_user_id = $1
+         AND role_label = $2
+       LIMIT 1`,
+      [ownerId, nextRoleLabel],
     );
+    if (existingTemplateRow?.id) {
+      await queryNeon(
+        `UPDATE public.organization_role_permission_templates
+         SET permissions = $1::text[],
+             updated_at = $2
+         WHERE id = $3`,
+        [normalizedPermissions, timestamp, existingTemplateRow.id],
+      );
+    } else {
+      await queryNeon(
+        `INSERT INTO public.organization_role_permission_templates
+         (org_owner_user_id, role_label, permissions, updated_at)
+         VALUES ($1, $2, $3::text[], $4)`,
+        [ownerId, nextRoleLabel, normalizedPermissions, timestamp],
+      );
+    }
 
     if (normalizedPermissions.length > 0 && target?.id) {
       const ownerEvents = await queryNeon<{ id: string }>(

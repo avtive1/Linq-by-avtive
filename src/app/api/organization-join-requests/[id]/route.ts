@@ -84,26 +84,42 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (decision === "approve") {
       // Fetch email to satisfy the unique constraint (org_owner_user_id, member_email)
       requesterEmail = (await getAdminUserEmailById(requestRow.requester_user_id)) || "";
-
-      await queryNeonOne(
-        `INSERT INTO public.organization_members
-         (org_owner_user_id, member_user_id, member_email, role_label, status, updated_at)
-         VALUES ($1, $2, $3, $4, 'active', $5)
-         ON CONFLICT (org_owner_user_id, member_email)
-         DO UPDATE SET
-           member_user_id = EXCLUDED.member_user_id,
-           role_label = EXCLUDED.role_label,
-           status = 'active',
-           updated_at = EXCLUDED.updated_at
-         RETURNING id`,
-        [
-          requestRow.owner_user_id,
-          requestRow.requester_user_id,
-          requesterEmail.toLowerCase(),
-          nextRoleLabel,
-          new Date().toISOString(),
-        ],
+      const timestamp = new Date().toISOString();
+      const normalizedRequesterEmail = requesterEmail.toLowerCase();
+      const existingMemberRow = await queryNeonOne<{ id: string }>(
+        `SELECT id
+         FROM public.organization_members
+         WHERE org_owner_user_id = $1
+           AND lower(member_email) = lower($2)
+         LIMIT 1`,
+        [requestRow.owner_user_id, normalizedRequesterEmail],
       );
+      if (existingMemberRow?.id) {
+        await queryNeonOne(
+          `UPDATE public.organization_members
+           SET member_user_id = $1,
+               role_label = $2,
+               status = 'active',
+               updated_at = $3
+           WHERE id = $4
+           RETURNING id`,
+          [requestRow.requester_user_id, nextRoleLabel, timestamp, existingMemberRow.id],
+        );
+      } else {
+        await queryNeonOne(
+          `INSERT INTO public.organization_members
+           (org_owner_user_id, member_user_id, member_email, role_label, status, updated_at)
+           VALUES ($1, $2, $3, $4, 'active', $5)
+           RETURNING id`,
+          [
+            requestRow.owner_user_id,
+            requestRow.requester_user_id,
+            normalizedRequesterEmail,
+            nextRoleLabel,
+            timestamp,
+          ],
+        );
+      }
 
       try {
         await seedViewEventGrantsForOrgMember(requestRow.owner_user_id, requestRow.requester_user_id);
