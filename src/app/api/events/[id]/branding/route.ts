@@ -76,10 +76,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       (typeof userData?.publicMetadata?.organization_name === "string"
         ? String(userData.publicMetadata.organization_name)
         : "");
-    const organizationLogoUrl =
-      typeof userData?.publicMetadata?.organization_logo_url === "string"
-        ? String(userData.publicMetadata.organization_logo_url)
-        : "";
+    const organizationLogoUrl = "";
 
     return NextResponse.json(
       {
