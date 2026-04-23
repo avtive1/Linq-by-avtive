@@ -5,9 +5,11 @@ import { getAdminUserById } from "@/lib/admin";
 import { queryNeonOne } from "@/lib/neon-db";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { ensureAuthSchema } from "@/lib/auth-db";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureAuthSchema();
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
     const { id } = await params;

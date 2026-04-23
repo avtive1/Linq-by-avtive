@@ -184,7 +184,7 @@ function OrganizationBrand({
     <>
       <div className={`overflow-hidden rounded-md bg-white/95 ${iconClassName}`}>
         {logoUrl ? (
-          <img src={logoUrl} alt={name || "Organization logo"} className="h-full w-full object-contain p-2" />
+          <img src={logoUrl} alt={name || "Organization logo"} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs font-bold text-heading/70">
             {name?.trim()?.slice(0, 2).toUpperCase() || "OR"}
@@ -423,20 +423,13 @@ export function CardPreview({
         {/* Central Element (Photo or QR) */}
         {verticalSide === 1 ? (
           /* SIDE 1: QR Code / placeholder (replaces profile image on vertical as requested) */
-          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4">
+          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4 overflow-hidden">
              {qrUrl ? (
-               <>
-                  <img 
-                    src={qrUrl} 
-                    className="absolute left-[25.28px] top-[25.28px] w-[193.3px] h-[193.3px]" 
-                    alt="QR Code" 
+                  <img
+                    src={qrUrl}
+                    className="h-full w-full object-contain"
+                    alt="QR Code"
                   />
-                  <img 
-                    src="https://www.figma.com/api/mcp/asset/7aa825de-d504-49de-b966-373e13e071b6" 
-                    className="absolute left-[95.53px] top-[97.7px] w-[52.24px] h-[48.88px]" 
-                    alt=""
-                  />
-               </>
              ) : (
                <div className="w-full h-full bg-linear-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
                  <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">
@@ -460,20 +453,13 @@ export function CardPreview({
           </div>
         ) : (
           /* SIDE 2: QR Code - Exactly matching qr-wrap and internal qr-image/qr-center */
-          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4">
+          <div className="absolute left-[166px] top-[541px] w-[244px] h-[244px] rounded-sm bg-white z-4 overflow-hidden">
              {qrUrl ? (
-               <>
-                  <img 
-                    src={qrUrl} 
-                    className="absolute left-[25.28px] top-[25.28px] w-[193.3px] h-[193.3px]" 
-                    alt="QR Code" 
+                  <img
+                    src={qrUrl}
+                    className="h-full w-full object-contain"
+                    alt="QR Code"
                   />
-                  <img 
-                    src="https://www.figma.com/api/mcp/asset/7aa825de-d504-49de-b966-373e13e071b6" 
-                    className="absolute left-[95.53px] top-[97.7px] w-[52.24px] h-[48.88px]" 
-                    alt=""
-                  />
-               </>
              ) : (
                <div className="w-full h-full bg-linear-to-br from-[#eceff3] to-[#dbe3ec] border-2 border-dashed border-[#94a3b8] flex flex-col items-center justify-center gap-4">
                  <div className="relative w-[142px] h-[142px] rounded-sm border border-slate-400/80 bg-[#f1f5f9] shadow-inner overflow-hidden">

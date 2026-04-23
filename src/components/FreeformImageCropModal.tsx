@@ -81,7 +81,7 @@ export function FreeformImageCropModal({
   const canApply = Boolean(crop && crop.width >= 2 && crop.height >= 2);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-cropper-overlay flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative flex h-[min(92dvh,900px)] w-full max-w-[min(560px,calc(100%-1.5rem))] flex-col overflow-hidden glass-panel !bg-white/95 animate-in zoom-in-95 duration-200 rounded-lg shadow-2xl">
         <div className="shrink-0 px-5 py-4 sm:px-6 sm:py-5 border-b border-border/50 flex items-center justify-between bg-white/50">
           <div className="flex flex-col">

@@ -311,9 +311,8 @@ export default function SignupPage() {
                 onChange={update("organizationLogo")}
                 onError={(msg) => toast.error(msg)}
                 error={errors.organizationLogo}
-                cropAspect={1}
                 cropTitle="Crop organization logo"
-                cropSubtitle="Use a square crop for best card branding."
+                cropSubtitle="Drag the corners or edges to adjust the crop."
                 cropApplyLabel="Apply logo"
               />
               <TextInput

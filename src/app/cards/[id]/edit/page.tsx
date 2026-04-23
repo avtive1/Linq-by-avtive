@@ -486,6 +486,9 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               onChange={update("photo")}
               onError={(msg) => toast.error(msg)}
               error={errors.photo}
+              cropTitle="Crop photo"
+              cropSubtitle="Drag the corners or edges to adjust the crop."
+              cropApplyLabel="Apply photo"
             />
           </div>
         </form>

@@ -68,9 +68,8 @@ export function EventSponsorsForm({ rows, onChange, onFileError, disabled }: Pro
               value={row.logo}
               onChange={(v) => setRow(index, { logo: v })}
               onError={onFileError}
-              freeFormCrop
               cropTitle="Crop sponsor logo"
-              cropSubtitle="Resize the box to any shape—drag corners or edges, then move the selection."
+              cropSubtitle="Drag the corners or edges to adjust the crop."
               cropApplyLabel="Apply logo"
             />
           </div>

@@ -57,14 +57,6 @@ type ActiveGrant = {
   created_at: string;
 };
 
-function LinkedInIcon({ size = 16 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
-      <path d="M6.94 8.5A1.56 1.56 0 1 1 6.94 5.38 1.56 1.56 0 0 1 6.94 8.5ZM5.5 9.75h2.88V18H5.5V9.75Zm4.63 0H12.9v1.13h.04c.39-.74 1.34-1.52 2.75-1.52 2.94 0 3.48 1.94 3.48 4.46V18h-2.88v-3.74c0-.89-.02-2.03-1.24-2.03-1.24 0-1.43.97-1.43 1.97V18h-2.88V9.75Z" />
-    </svg>
-  );
-}
-
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const EVENT_NAME_MAX_CHARS = 18;
   const router = useRouter();
@@ -139,9 +131,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const userId = session?.user?.id || "";
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick } = useAutoRefresh(Boolean(userId));
+  /** When only `refreshTick` changes (focus / interval), refetch without full-page skeleton so modals and file pickers are not unmounted mid-interaction. */
+  const eventPageLoadKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+    const loadKey = `${id}|${userId}|${String(impersonateId ?? "")}|${isPreviewMode}`;
+    const loadKeyChanged = eventPageLoadKeyRef.current !== loadKey;
+    const silentPoll = !loadKeyChanged && refreshTick > 0;
+    if (loadKeyChanged) {
+      eventPageLoadKeyRef.current = loadKey;
+    }
+
     const checkUser = async () => {
       if (!isMounted) return;
       if (!userId) {
@@ -162,7 +163,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         return;
       }
 
-      setIsLoading(true);
+      if (!silentPoll) {
+        setIsLoading(true);
+      }
       try {
         const eventRes = await fetch(
           `/api/events/${id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
@@ -255,9 +258,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
         console.error("Event Fetch Error:", message);
-        toast.error("Failed to load event data.");
+        if (!silentPoll) {
+          toast.error("Failed to load event data.");
+        }
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted && !silentPoll) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -1945,6 +1952,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   value={renewForm.logo}
                   onChange={(v) => setRenewForm({ ...renewForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
+                  cropTitle="Crop event logo"
+                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropApplyLabel="Apply logo"
                 />
               </div>
 

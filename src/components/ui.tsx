@@ -265,7 +265,7 @@ export function FilePicker({
   onError?: (message: string) => void;
   required?: boolean;
   error?: string;
-  /** Free resize (any aspect). Uses react-image-crop; when set, cropAspect / zoom options are ignored. */
+  /** When false, uses fixed-aspect pan/zoom cropper. Default true (corner handles, any aspect). */
   freeFormCrop?: boolean;
   /** Passed to the fixed-aspect cropper (width ÷ height). Default 1 (square). */
   cropAspect?: number;
@@ -349,7 +349,7 @@ export function FilePicker({
       {error && <p className="text-[14px] font-medium leading-[1.55] text-red-500">{error}</p>}
 
       {cropperOpen && tempImage && (
-        freeFormCrop ? (
+        freeFormCrop !== false ? (
           <FreeformImageCropModal
             image={tempImage}
             onCropComplete={handleCropComplete}
@@ -357,9 +357,9 @@ export function FilePicker({
               setCropperOpen(false);
               setTempImage(null);
             }}
-            title={cropTitle}
-            subtitle={cropSubtitle}
-            applyLabel={cropApplyLabel}
+            title={cropTitle ?? "Crop image"}
+            subtitle={cropSubtitle ?? "Drag the corners or edges to adjust the crop."}
+            applyLabel={cropApplyLabel ?? "Apply"}
           />
         ) : (
           <ImageCropperModal
@@ -372,9 +372,9 @@ export function FilePicker({
             aspect={cropAspect ?? 1}
             minZoom={cropMinZoom ?? 1}
             maxZoom={cropMaxZoom ?? 3}
-            title={cropTitle}
-            subtitle={cropSubtitle}
-            applyLabel={cropApplyLabel}
+            title={cropTitle ?? "Crop image"}
+            subtitle={cropSubtitle ?? "Use a square crop for best card branding."}
+            applyLabel={cropApplyLabel ?? "Apply logo"}
           />
         )
       )}

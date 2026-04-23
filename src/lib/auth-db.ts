@@ -32,6 +32,13 @@ export async function ensureAuthSchema() {
     `CREATE INDEX IF NOT EXISTS auth_users_email_idx
      ON public.auth_users (email)`,
   );
+  // Older Neon DBs may lack these columns; signup + cards expect them.
+  await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS organization_logo_url text`,
+  );
+  await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`,
+  );
   schemaEnsured = true;
 }
 
@@ -225,7 +232,14 @@ export async function registerUser(input: {
         [organizationLogoUrl, userId],
       );
     } catch {
-      // Ignore when older schemas do not yet have organization_logo_url.
+      try {
+        await queryNeon(
+          `UPDATE public.profiles SET organization_logo_url = $1 WHERE id = $2`,
+          [organizationLogoUrl, userId],
+        );
+      } catch {
+        console.warn("[registerUser] organization_logo_url not persisted; check profiles schema/columns.");
+      }
     }
   }
 

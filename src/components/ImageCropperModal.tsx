@@ -65,9 +65,9 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   aspect = 1,
   minZoom = 1,
   maxZoom = 3,
-  title = "Crop Your Photo",
-  subtitle = "Adjust to fit the card perfectly",
-  applyLabel = "Apply Photo",
+  title = "Crop image",
+  subtitle = "Use a square crop for best card branding.",
+  applyLabel = "Apply logo",
 }) => {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -101,7 +101,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-cropper-overlay flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-[500px] glass-panel bg-white/95! overflow-hidden animate-in zoom-in-95 duration-200 rounded-lg shadow-2xl flex flex-col">
         {/* Header */}
         <div className="px-6 py-5 border-b border-border/50 flex items-center justify-between bg-white/50">
@@ -130,6 +130,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             onCropComplete={onCropCompleteCallback}
             onZoomChange={onZoomChange}
             objectFit="contain"
+            showGrid
           />
         </div>
 

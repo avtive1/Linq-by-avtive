@@ -12,6 +12,10 @@ import { queryNeonOne } from "@/lib/neon-db";
 import { getServerAuthSession } from "@/auth";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { ensureAuthSchema } from "@/lib/auth-db";
+
+/** Card branding comes from DB; avoid stale HTML after org logo updates. */
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   return {
@@ -46,6 +50,7 @@ export default async function CardViewPage(props: {
   let card: CardData | null = null;
 
   try {
+    await ensureAuthSchema();
     const session = await getServerAuthSession();
     const authedUserId = String(session?.user?.id || "").trim();
     let hasSignedAccess = false;
@@ -100,22 +105,34 @@ export default async function CardViewPage(props: {
           sponsors = parseEventSponsors(ev.sponsors);
           if (ev.user_id) {
             try {
-              const [userData, profileData] = await Promise.all([
-                getAdminUserById(ev.user_id).catch(() => null),
-                queryNeonOne<{ organization_name: string | null }>(
-                  `SELECT organization_name FROM public.profiles WHERE id = $1`,
-                  [ev.user_id],
-                ),
-              ]);
+              const ownerId = String(ev.user_id).trim();
+              const profileData = await queryNeonOne<{
+                organization_name: string | null;
+                organization_logo_url: string | null;
+              }>(
+                `SELECT
+                   organization_name,
+                   to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url
+                 FROM public.profiles p
+                 WHERE id = $1::uuid`,
+                [ownerId],
+              );
+              let userData: Awaited<ReturnType<typeof getAdminUserById>> | null = null;
+              try {
+                userData = await getAdminUserById(ownerId);
+              } catch {
+                userData = null;
+              }
               organizationName =
-                profileData?.organization_name ||
+                String(profileData?.organization_name || "").trim() ||
                 (typeof userData?.publicMetadata?.organization_name === "string"
-                  ? String(userData.publicMetadata.organization_name)
+                  ? String(userData.publicMetadata.organization_name).trim()
                   : "");
               organizationLogoUrl =
-                typeof userData?.publicMetadata?.organization_logo_url === "string"
-                  ? String(userData.publicMetadata.organization_logo_url)
-                  : "";
+                String(profileData?.organization_logo_url || "").trim() ||
+                (typeof userData?.publicMetadata?.organization_logo_url === "string"
+                  ? String(userData.publicMetadata.organization_logo_url).trim()
+                  : "");
             } catch (brandingErr) {
               console.error("Branding fetch failed:", brandingErr);
             }

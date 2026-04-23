@@ -1580,6 +1580,9 @@ function DashboardContent() {
                   value={eventForm.logo}
                   onChange={(v) => setEventForm({ ...eventForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
+                  cropTitle="Crop campaign logo"
+                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropApplyLabel="Apply logo"
                 />
               </div>
 

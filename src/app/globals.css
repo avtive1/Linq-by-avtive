@@ -135,6 +135,11 @@ small,
   border-radius: var(--radius-md);
 }
 
+/* Above in-app modals (z-100) so file crop never sits under dialogs. */
+@utility z-cropper-overlay {
+  z-index: 200;
+}
+
 @utility bg-radial-glow {
   background: radial-gradient(circle at center, #F9FAFB 0%, #EBF5FF 100%);
 }
