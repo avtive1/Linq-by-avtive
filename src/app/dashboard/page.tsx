@@ -9,6 +9,8 @@ import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLe
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 
 import { useSearchParams } from "next/navigation";
 
@@ -131,6 +133,8 @@ function DashboardContent() {
   const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user?.id || "";
+  const { fadeUp, staggerItem } = useDashboardMotion();
+  const { refreshTick } = useAutoRefresh(Boolean(userId));
 
   useEffect(() => {
     let isMounted = true;
@@ -359,7 +363,7 @@ function DashboardContent() {
     };
     checkUser();
     return () => { isMounted = false; };
-  }, [router, impersonateId, session, userId]);
+  }, [router, impersonateId, session, userId, refreshTick]);
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
@@ -410,6 +414,7 @@ function DashboardContent() {
     [isOrgOwner, myOrgJoinRequests],
   );
   const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
+  const isTeamMemberMode = !isPreviewMode && isOrgTeamMember;
   const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
   const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
   const previewEventsPct = Math.max(8, Math.round((stats.totalEvents / previewMaxMetric) * 100));
@@ -787,7 +792,10 @@ function DashboardContent() {
           </div>
         ) : null}
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12">
+        <motion.div
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12"
+          {...fadeUp(0.02)}
+        >
           <div className="flex flex-col gap-1 sm:gap-2">
             <Link 
               href={isPreviewMode ? "/admin" : "/"} 
@@ -803,7 +811,7 @@ function DashboardContent() {
               className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
             >
-              {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Organization Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
+              {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Team Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
             </h1>
             {userName && (
               <div className="text-lg font-normal text-muted flex items-center gap-2 mt-1 leading-[1.6]">
@@ -844,7 +852,7 @@ function DashboardContent() {
             )}
             {!isPreviewMode && isOrgTeamMember && (
               <p className="text-sm font-normal text-heading/70 mt-1 leading-[1.6]">
-                Team role: {orgRoleLabel || "Member"} (organization-level access)
+                You are operating in team mode. Role: {orgRoleLabel || "Member"}.
               </p>
             )}
             {!isPreviewMode && !isOrgTeamMember && isOrgOwner && (
@@ -892,7 +900,7 @@ function DashboardContent() {
                 <span>New Campaign</span>
               </Button>
             )}
-            {!isPreviewMode && !hasPendingOrgJoin && (
+            {!isPreviewMode && !hasPendingOrgJoin && !isOrgTeamMember && (
               <Button
                 variant="secondary"
                 onClick={async () => {
@@ -905,9 +913,7 @@ function DashboardContent() {
                   setTeamError("");
                   await loadteamMembers();
                 }}
-                className={`min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 ${
-                  isOrgTeamMember ? "opacity-50" : "shadow-sm hover:shadow-md"
-                }`}
+                className="min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
                 icon={<Users size={18} />}
               >
                 Team Access
@@ -922,14 +928,40 @@ function DashboardContent() {
               <span className="hidden sm:inline">{isLoggingOut ? "..." : "Logout"}</span>
             </Button>
           </div>
-        </div>
+        </motion.div>
+        {isTeamMemberMode && (
+          <div className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
+                Team Dashboard
+              </span>
+              <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
+                Role: {orgRoleLabel || "Member"}
+              </span>
+              <span
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  hasCreateCampaignPermission
+                    ? "border-primary/25 bg-primary/10 text-primary-strong"
+                    : "border-amber-300/70 bg-amber-50 text-amber-700"
+                }`}
+              >
+                {hasCreateCampaignPermission ? "Can create campaigns" : "Campaign creation restricted"}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              This workspace prioritizes assigned campaigns and permission visibility for day-to-day execution.
+            </p>
+          </div>
+        )}
         {/* Bento Grid Statistics Section */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100">
+        <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100" {...fadeUp(0.06)}>
           {/* Main Stat - Large Tile */}
           <div
             className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 ${
               isPreviewMode
                 ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
+                : isTeamMemberMode
+                  ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                 : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
             }`}
           >
@@ -937,7 +969,7 @@ function DashboardContent() {
               <Users size={32} />
             </div>
             <div className="flex flex-col gap-1">
-              <span className="ui-eyebrow">Live Presence</span>
+              <span className="ui-eyebrow">{isTeamMemberMode ? "Assigned Reach" : "Live Presence"}</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalAttendees} />
@@ -952,6 +984,8 @@ function DashboardContent() {
             className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 ${
               isPreviewMode
                 ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
+                : isTeamMemberMode
+                  ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                 : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
             }`}
           >
@@ -959,7 +993,7 @@ function DashboardContent() {
               <BarChart3 size={28} />
             </div>
             <div className="flex flex-col">
-              <span className="ui-eyebrow mb-1">Activity Tracking</span>
+              <span className="ui-eyebrow mb-1">{isTeamMemberMode ? "Assigned Workload" : "Activity Tracking"}</span>
               <div className="flex items-baseline gap-2">
                 <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">
                   <AnimatedCounter value={stats.totalEvents} />
@@ -968,7 +1002,7 @@ function DashboardContent() {
               </div>
             </div>
           </div>
-        </div>
+        </motion.div>
         {isPreviewMode && (
           <div className="motion-token-enter mb-8 rounded-md border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
             <div className="rounded-md border border-heading/15 bg-heading/3 p-3">
@@ -998,12 +1032,12 @@ function DashboardContent() {
         )}
 
         {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200">
+        <motion.div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200" {...fadeUp(0.1)}>
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
-              placeholder="Search campaigns..."
+              placeholder={isTeamMemberMode ? "Search assigned campaigns..." : "Search campaigns..."}
               className={`w-full h-12 pl-20 pr-6 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
                 isPreviewMode
                   ? "bg-white/90 border border-heading/20 focus:bg-white"
@@ -1013,10 +1047,10 @@ function DashboardContent() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        </div>
+        </motion.div>
 
         {isOrgTeamMember && (
-          <div className="glass-panel p-4 rounded-md mb-6 border border-primary/20 bg-primary/5">
+          <div className="p-4 rounded-md mb-6 border border-primary/25 bg-linear-to-r from-primary/8 to-white shadow-sm">
             <div className="flex items-center justify-between gap-3 mb-3">
               <p className="text-sm font-medium text-heading inline-flex items-center gap-2">
                 <Lock size={14} className="text-primary-strong" />
@@ -1047,11 +1081,11 @@ function DashboardContent() {
         )}
 
         {isOrgTeamMember && myAccessRequests.length > 0 && (
-          <div className="glass-panel p-4 rounded-md mb-6">
-            <p className="text-sm font-medium text-heading mb-2">My Access Requests</p>
+          <div className="p-4 rounded-md mb-6 border border-border/60 bg-white/92 shadow-sm">
+            <p className="text-sm font-medium text-heading mb-2">My Pending Access Workflow</p>
             <div className="flex flex-col gap-2">
               {myAccessRequests.slice(0, 4).map((req) => (
-                <div key={req.id} className="flex items-center justify-between text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
+                <div key={req.id} className="flex items-center justify-between text-[13px] leading-tight bg-white border border-primary/15 rounded-md px-3 py-2">
                   <span className="text-heading">{req.event_name} • {req.requested_action}</span>
                   <span className={`font-medium ${
                     req.status === "approved" ? "text-green-600" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
@@ -1194,14 +1228,16 @@ function DashboardContent() {
               filteredEvents.map((evt, idx) => {
                 const status = getEventStatus(evt.date);
                 return (
-                <div
+                <motion.div
                   key={evt.id}
                   className={`group motion-token-enter motion-token-hover flex flex-col justify-between p-6 rounded-md hover:-translate-y-2 ${
                     isPreviewMode
                       ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
+                      : isTeamMemberMode
+                        ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/40"
                       : "glass-panel hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40"
                   } ${status.label === "Past" ? "opacity-75 grayscale-[0.3]" : ""}`}
-                  style={{ animationDelay: `${Math.min(idx * 60, 300)}ms` }}
+                  {...staggerItem(idx, 0.05, 0.28, 16, 0.3)}
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
@@ -1246,7 +1282,7 @@ function DashboardContent() {
                     View Campaign
                     <ChevronRight size={20} className="transition-transform duration-200 group-hover:translate-x-1.5 group-hover:scale-110" />
                   </Link>
-                </div>
+                </motion.div>
                 );
               })
             ) : (

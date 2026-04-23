@@ -32,6 +32,8 @@ import {
 import { CardData, EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -132,6 +134,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
   const { data: session } = useSession();
   const userId = session?.user?.id || "";
+  const { fadeUp, staggerItem } = useDashboardMotion();
+  const { refreshTick } = useAutoRefresh(Boolean(userId));
 
   useEffect(() => {
     let isMounted = true;
@@ -256,7 +260,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode, userId]);
+  }, [id, router, impersonateId, isPreviewMode, userId, refreshTick]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
@@ -266,6 +270,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const canEditCards = canManageEvent || grantedPermissions.includes("edit_cards");
   const canDeleteCards = canManageEvent || grantedPermissions.includes("delete_cards");
   const canExport = canManageEvent;
+  const isTeamMemberEventMode = !isPreviewMode && !isEventOwner && isOrgAdminReviewer;
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -772,7 +777,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
         {/* Header row */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 animate-slide-up relative z-30">
+        <motion.div
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 relative z-30"
+          {...fadeUp(0.02)}
+        >
           <div className="flex flex-col gap-2 sm:gap-3">
             <button
               onClick={() => {
@@ -806,6 +814,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 {eventData.location}
               </span>
             </div>
+            {isTeamMemberEventMode && (
+              <p className="mt-2 text-sm text-heading/75">
+                Team execution mode: you can work inside granted permissions for this campaign.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap gap-3 items-center relative z-20">
@@ -978,7 +991,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </>
             )}
           </div>
-        </div>
+        </motion.div>
 
         {isPreviewMode && (
           <div className="motion-token-enter mb-8 rounded-sm border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
@@ -1021,14 +1034,41 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
         )}
+        {isTeamMemberEventMode && (
+          <div className="mb-8 rounded-sm border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
+                Team Member View
+              </span>
+              <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
+                Campaign Access
+              </span>
+              <span
+                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                  canManageEvent
+                    ? "border-primary/25 bg-primary/10 text-primary-strong"
+                    : "border-amber-300/70 bg-amber-50 text-amber-700"
+                }`}
+              >
+                {canManageEvent ? "Manage enabled" : "Restricted mode"}
+              </span>
+            </div>
+            <p className="mt-2 text-sm text-muted">
+              Card operations and campaign actions are shown based on your granted permissions.
+            </p>
+          </div>
+        )}
 
         {/* Stats Section */}
-        <div
+        <motion.div
           className={`p-6 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm mb-10 group transition-all duration-200 animate-slide-up delay-100 ${
             isPreviewMode
               ? "bg-white/85 border border-heading/20 shadow-md hover:shadow-lg"
+              : isTeamMemberEventMode
+                ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
               : "glass-panel hover:shadow-2xl hover:shadow-primary/5"
           }`}
+          {...fadeUp(0.06)}
         >
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 rounded-sm bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
@@ -1057,10 +1097,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               Export CSV
             </Button>
           )}
-        </div>
+        </motion.div>
 
         {/* Search Bar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6 animate-slide-up delay-200">
+        <motion.div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200" {...fadeUp(0.1)}>
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
@@ -1069,13 +1109,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               className={`w-full h-12 pl-20 pr-8 py-0 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/60 ${
                 isPreviewMode
                   ? "bg-white/90 border border-heading/20 focus:bg-white"
+                  : isTeamMemberEventMode
+                    ? "bg-white/92 border border-primary/20 focus:bg-white"
                   : "bg-white/70 backdrop-blur-md border border-white/50 focus:bg-white"
               }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* Cards list */}
         {cards.length === 0 ? (
@@ -1089,14 +1131,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="grid gap-4 animate-slide-up delay-300">
             {filteredCards.length > 0 ? (
               filteredCards.map((card, idx) => (
-                <div
+                <motion.div
                   key={card.id}
                 className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 sm:p-3 rounded-sm hover:-translate-y-0.5 ${
                   isPreviewMode
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
+                    : isTeamMemberEventMode
+                      ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                     : "glass-panel hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
                 }`}
-                style={{ animationDelay: `${Math.min(idx * 45, 280)}ms` }}
+                {...staggerItem(idx, 0.04, 0.24, 14, 0.28)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative">
@@ -1203,7 +1247,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       </span>
                     )}
                   </div>
-                </div>
+                </motion.div>
               ))
             ) : (
               <div className="text-center py-16 glass-panel rounded-xl border-dashed">
