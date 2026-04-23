@@ -11,10 +11,11 @@ export default function HomePage() {
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-[1100px] text-center">
         {/* Hero Section */}
         <div className="flex flex-col gap-6 animate-slide-up delay-100">
-          <h1 className="text-4xl sm:text-5xl lg:text-[3.25rem] font-[800] tracking-[-0.03em] text-heading leading-[1.05] text-balance max-w-[760px] mx-auto">
-            Run events. Share a link.
-            <br />
-            <span className="font-[800] bg-gradient-to-r from-heading to-primary bg-clip-text text-transparent drop-shadow-sm">Done.</span>
+          <h1
+            className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black tracking-[-0.03em] text-heading leading-[1.05] text-balance max-w-[760px] mx-auto"
+            style={{ fontWeight: 900, WebkitTextStroke: "0.2px currentColor", textShadow: "0 0 0.2px currentColor" }}
+          >
+            Plan less, Linq faster.
           </h1>
           <p className="text-lg sm:text-xl text-heading/75 leading-[1.6] max-w-[980px] mx-auto text-balance font-normal">
             Create your event, share a single registration link, and let attendees
