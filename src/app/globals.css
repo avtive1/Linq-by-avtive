@@ -129,7 +129,6 @@ small,
   letter-spacing: 0.01em;
   line-height: 1.25;
   color: color-mix(in oklab, var(--color-muted) 85%, black 15%);
-  text-transform: uppercase;
 }
 
 .ui-card {
