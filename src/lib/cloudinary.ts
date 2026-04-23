@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "";
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
@@ -20,9 +22,13 @@ function getDestroyEndpoint() {
   return `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/destroy`;
 }
 
-function getAuthHeader() {
-  const token = Buffer.from(`${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}`).toString("base64");
-  return `Basic ${token}`;
+function signCloudinaryParams(params: Record<string, string>) {
+  const payload = Object.entries(params)
+    .filter(([, value]) => value !== "")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${k}=${v}`)
+    .join("&");
+  return crypto.createHash("sha1").update(`${payload}${CLOUDINARY_API_SECRET}`).digest("hex");
 }
 
 export function extractCloudinaryPublicId(url: string): string | null {
@@ -46,16 +52,24 @@ export async function uploadImageToCloudinary(input: {
   folder?: string;
   publicId?: string;
 }): Promise<{ secureUrl: string; publicId: string }> {
+  const timestamp = `${Math.floor(Date.now() / 1000)}`;
+  const signParams: Record<string, string> = {
+    timestamp,
+    folder: input.folder || "",
+    public_id: input.publicId || "",
+  };
+  const signature = signCloudinaryParams(signParams);
+
   const formData = new FormData();
   formData.append("file", input.file);
+  formData.append("api_key", CLOUDINARY_API_KEY);
+  formData.append("timestamp", timestamp);
+  formData.append("signature", signature);
   if (input.folder) formData.append("folder", input.folder);
   if (input.publicId) formData.append("public_id", input.publicId);
 
   const response = await fetch(getUploadEndpoint(), {
     method: "POST",
-    headers: {
-      Authorization: getAuthHeader(),
-    },
     body: formData,
   });
   const payload = (await response.json()) as { secure_url?: string; public_id?: string; error?: { message?: string } };
@@ -67,13 +81,18 @@ export async function uploadImageToCloudinary(input: {
 
 export async function deleteImageFromCloudinary(publicId: string): Promise<"ok" | "not found"> {
   if (!publicId) return "not found";
+  const timestamp = `${Math.floor(Date.now() / 1000)}`;
+  const signature = signCloudinaryParams({
+    public_id: publicId,
+    timestamp,
+  });
   const formData = new FormData();
   formData.append("public_id", publicId);
+  formData.append("api_key", CLOUDINARY_API_KEY);
+  formData.append("timestamp", timestamp);
+  formData.append("signature", signature);
   const response = await fetch(getDestroyEndpoint(), {
     method: "POST",
-    headers: {
-      Authorization: getAuthHeader(),
-    },
     body: formData,
   });
   const payload = (await response.json()) as { result?: string; error?: { message?: string } };
