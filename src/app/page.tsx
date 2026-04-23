@@ -12,10 +12,10 @@ export default function HomePage() {
         {/* Hero Section */}
         <div className="flex flex-col gap-6 animate-slide-up delay-100">
           <h1
-            className="text-4xl sm:text-5xl lg:text-[3.25rem] font-black tracking-[-0.03em] text-heading leading-[1.05] text-balance max-w-[760px] mx-auto"
+            className="text-5xl sm:text-6xl lg:text-[4.75rem] xl:text-[5.75rem] font-black tracking-[-0.04em] text-heading leading-[0.95] text-balance max-w-[1000px] mx-auto"
             style={{ fontWeight: 900, WebkitTextStroke: "0.2px currentColor", textShadow: "0 0 0.2px currentColor" }}
           >
-            Plan less, Linq faster.
+            Plan less <span className="bg-gradient-to-r from-[#23468C] via-[#3b82f6] to-[#79D980] bg-clip-text text-transparent py-2">Linq faster</span>
           </h1>
           <p className="text-lg sm:text-xl text-heading/75 leading-[1.6] max-w-[980px] mx-auto text-balance font-normal">
             Create your event, share a single registration link, and let attendees
