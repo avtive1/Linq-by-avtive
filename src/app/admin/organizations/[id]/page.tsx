@@ -1,6 +1,6 @@
 import { getAdminUserById } from "@/lib/admin";
 import { queryNeon } from "@/lib/neon-db";
-import { Users, Calendar, ArrowLeft, Mail, Sparkles } from "lucide-react";
+import { Users, Calendar, ArrowLeft, Mail, Sparkles, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { getEventStatus } from "@/lib/utils";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -189,46 +189,45 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             {chartRows.map((row, idx) => {
               const width = Math.max(12, Math.round((row.attendees / chartMax) * 100));
               return (
-                <div 
+                <Link
                   key={row.id} 
-                  className="group relative bg-white/40 hover:bg-white border border-border/50 hover:border-primary/30 rounded-xl p-5 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 animate-slide-up"
-                  style={{ animationDelay: `${idx * 50}ms` }}
+                  href={`/dashboard/events/${row.id}?impersonate=${user.id}`}
+                  className="group relative bg-white/50 hover:bg-white border border-border/40 hover:border-primary/40 rounded-2xl p-6 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1.5 block"
                 >
-                  <div className="flex flex-col gap-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex flex-col gap-1 overflow-hidden">
-                        <span className="text-[11px] font-bold text-primary-strong uppercase tracking-[0.08em] opacity-80">
-                          {row.date}
-                        </span>
-                        <h3 className="text-lg font-bold text-heading leading-[1.2] truncate group-hover:text-primary-strong transition-colors">
-                          {row.name}
-                        </h3>
-                      </div>
-                      <div className="shrink-0 w-10 h-10 rounded-sm bg-surface flex items-center justify-center text-muted group-hover:bg-primary/10 group-hover:text-primary-strong transition-all">
-                        <ArrowLeft className="rotate-135" size={18} />
-                      </div>
+                  <div className="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary-strong shadow-sm border border-primary/20">
+                      <ExternalLink size={16} strokeWidth={2.5} />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col h-full justify-between">
+                    <div className="flex flex-col gap-1 mb-6">
+                      <span className="text-[10px] font-black text-primary-strong uppercase tracking-[0.2em] leading-none mb-1">
+                        {new Date(row.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                      <h3 className="text-xl font-black text-heading leading-tight line-clamp-2 min-h-[3rem] group-hover:text-primary-strong transition-colors">
+                        {row.name}
+                      </h3>
                     </div>
 
-                    <div className="flex items-end justify-between">
+                    <div className="flex items-end justify-between gap-4 mt-auto">
                       <div className="flex flex-col">
-                        <span className="text-4xl font-black text-heading tracking-[-0.03em] leading-none mb-1">
+                        <span className="text-4xl font-black text-heading tracking-tight leading-none">
                           {row.attendees}
                         </span>
-                        <span className="text-[12px] font-bold text-muted/60 uppercase tracking-wider">
+                        <span className="text-[11px] font-bold text-muted/60 uppercase tracking-widest mt-1.5">
                           Attendees
                         </span>
                       </div>
-                      <div className="flex-1 max-w-[100px] mb-2 px-3">
-                         <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-linear-to-r from-primary via-primary-strong to-primary rounded-full transition-all duration-1000 ease-out shadow-sm"
-                              style={{ width: `${width}%` }}
-                            />
-                         </div>
+                      <div className="w-24 h-1.5 bg-heading/5 rounded-full overflow-hidden shadow-inner shrink-0 mb-1">
+                        <div 
+                          className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full shadow-[0_0_8px_rgba(var(--primary),0.3)]" 
+                          style={{ width: `${width}%` }} 
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

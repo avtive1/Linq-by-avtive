@@ -1191,44 +1191,66 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
         {/* Stats Section */}
         <motion.div
-          className={`p-6 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-5 shadow-sm mb-10 group transition-all duration-200 animate-slide-up delay-100 motion-token-enter motion-token-hover ${
+          className={`relative overflow-hidden p-8 rounded-2xl mb-12 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
             isPreviewMode
-              ? "bg-white/85 border border-heading/20 shadow-md hover:shadow-lg"
+              ? "bg-linear-to-br from-white via-white/95 to-info/5 border border-primary/20 shadow-2xl"
               : isTeamMemberEventMode || isOrgAdminEventMode
-                ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
-              : "glass-panel hover:shadow-2xl hover:shadow-primary/5"
+                ? "bg-linear-to-br from-white to-primary/5 border border-primary/20 shadow-xl"
+              : "bg-linear-to-br from-heading to-[#1e293b] border border-white/10 shadow-2xl"
           }`}
           viewport={presets.viewport}
           {...fadeUp(0.06)}
-          {...(isTeamMemberEventMode || isOrgAdminEventMode ? hoverLift(-3, 1.008) : {})}
         >
-          <div className="flex items-center gap-6">
-            <div className="w-16 h-16 rounded-sm bg-primary flex items-center justify-center text-primary-foreground shadow-lg shadow-primary/30 shrink-0 group-hover:scale-105 transition-transform">
-              <Users size={32} />
+          {/* Animated Background Decorative Elements */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-info/5 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" />
+          
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
+            <div className={`p-5 rounded-2xl shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
+              isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode 
+                ? "bg-primary text-white shadow-primary/25" 
+                : "bg-white/10 text-primary backdrop-blur-md shadow-black/20"
+            }`}>
+              <Users size={40} strokeWidth={2} />
             </div>
-            <div className="flex flex-col gap-0">
-              <span className="text-sm font-normal tracking-[0.01em] text-muted/80 leading-tight">Live Attendees</span>
-              <div className="flex items-baseline gap-2">
-                <span className="text-[3.25rem] font-semibold text-heading tracking-[-0.03em] leading-[1.02]">
+            
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/80"
+                }`}>Live Engagement</span>
+              </div>
+              <div className="flex items-baseline gap-4">
+                <span className={`text-6xl font-black tracking-[-0.04em] leading-none ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-heading" : "text-white"
+                }`}>
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className="text-base font-medium text-primary-strong leading-tight">Attendees</span>
+                <span className={`text-lg font-bold uppercase tracking-widest ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-muted" : "text-white/30"
+                }`}>Attendees</span>
               </div>
             </div>
           </div>
-          {cards.length > 0 && (
-            <Button
-              variant="secondary"
-              onClick={handleExport}
-              disabled={status.label === "Past" || !canExport}
-              icon={<Download size={18} />}
-              className={`bg-white/80 hover:bg-white hover:border-primary/35 shadow-sm border-white/60 ${
-                status.label === "Past" || !canExport ? "opacity-50 cursor-not-allowed grayscale" : ""
-              }`}
-            >
-              Export CSV
-            </Button>
-          )}
+
+          <div className="relative z-10 flex flex-wrap justify-center md:justify-end items-center gap-4">
+            {cards.length > 0 && (
+              <Button
+                variant={isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "secondary" : "primary"}
+                onClick={handleExport}
+                disabled={status.label === "Past" || !canExport}
+                icon={<Download size={20} />}
+                className={`h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl transition-all duration-300 ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode
+                    ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
+                    : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
+                } ${status.label === "Past" || !canExport ? "opacity-50 grayscale" : "hover:-translate-y-1 active:scale-95"}`}
+              >
+                Export Registry
+              </Button>
+            )}
+          </div>
         </motion.div>
 
         {/* Search Bar */}
