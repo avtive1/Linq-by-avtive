@@ -97,25 +97,25 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col gap-2 mb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-                  <h1 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
-                    {profile?.organization_name || "Organization Overview"}
-                  </h1>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="text-[12px] font-black uppercase tracking-[0.1em] text-primary-strong bg-primary/10 px-3 py-1 rounded-sm border border-primary/20">
-                      @{profile?.username || user?.username || "unknown"}
-                    </span>
-                    <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
-                      <Calendar size={14} /> {events.length} Campaigns
-                    </span>
-                    <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
-                      <Users size={14} /> {attendees.length} Members
-                    </span>
-                    <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
-                    <p className="text-[13px] text-muted font-medium flex items-center gap-2">
-                      <Mail size={16} /> {user?.email || "unknown"}
-                    </p>
-                  </div>
-                </div>
+            <h1 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
+              {profile?.organization_name || "Organization Overview"}
+            </h1>
+            <div className="flex flex-wrap items-center gap-2 mt-2">
+              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-primary-strong bg-primary/10 px-3 py-1 rounded-sm border border-primary/20">
+                @{profile?.username || user?.username || "unknown"}
+              </span>
+              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
+                <Calendar size={14} /> {events.length} Campaigns
+              </span>
+              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
+                <Users size={14} /> {attendees.length} Members
+              </span>
+              <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+              <p className="text-[13px] text-muted font-medium flex items-center gap-2">
+                <Mail size={16} /> {user?.emailAddresses?.[0]?.emailAddress || "unknown"}
+              </p>
+            </div>
+          </div>
           <Link 
             href={`/dashboard?impersonate=${user.id}`}
             className="flex items-center justify-center gap-2 bg-primary-strong/10 text-primary-strong border border-primary/30 px-5 py-2 rounded-md text-sm leading-tight font-medium tracking-[0.01em] hover:bg-primary/20 transition-all active:scale-[0.97]"
