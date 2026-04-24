@@ -84,7 +84,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-white/70 px-3 py-2 text-xs text-muted">
+        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-white/70 px-4 py-3 text-sm text-muted">
           Showing <span className="font-semibold text-heading">{filteredAndSortedOrgs.length}</span> of{" "}
           <span className="font-semibold text-heading">{initialOrganizations.length}</span>
         </div>
@@ -140,35 +140,35 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
             </thead>
             <tbody className="divide-y divide-border/30">
               {filteredAndSortedOrgs.map((org) => (
-                <tr key={org.id} className="group cursor-default hover:bg-white/85">
-                  <td className="py-3.5 px-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-xs font-semibold uppercase text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-300">
+                <tr key={org.id} className="group cursor-default hover:bg-white/85 transition-colors">
+                  <td className="py-5 px-6">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-sm font-semibold uppercase text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-300">
                         {(org.username || org.email || "u").slice(0, 2)}
                       </div>
-                      <div className="flex min-w-0 flex-col">
+                      <div className="flex min-w-0 flex-col gap-0.5">
                         <span className="truncate text-sm font-semibold text-heading group-hover:text-primary-strong transition-colors">@{org.username || "unknown"}</span>
-                        <span className="truncate text-[12px] text-muted opacity-70">{org.email}</span>
+                        <span className="ui-meta truncate">{org.email}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-5 text-sm text-heading font-medium">
+                  <td className="py-5 px-6 text-sm text-heading font-medium">
                     {org.organizationName || <span className="font-normal text-muted/60">—</span>}
                   </td>
-                  <td className="py-3.5 px-5 text-sm text-muted font-medium">{new Date(org.created_at).toLocaleDateString()}</td>
-                  <td className="py-3.5 px-5 text-center">
-                    <span className="inline-flex items-center justify-center rounded-md bg-info/10 px-3 py-1 text-[12px] font-bold leading-tight text-info border border-info/20">
+                  <td className="py-5 px-6 text-sm text-muted font-normal">{new Date(org.created_at).toLocaleDateString()}</td>
+                  <td className="py-5 px-6 text-center">
+                    <span className="inline-flex items-center justify-center rounded-md bg-info/10 px-3 py-1.5 text-sm font-semibold leading-tight text-info border border-info/20">
                       {org.eventCount}
                     </span>
                   </td>
-                  <td className="py-3.5 px-5 text-center">
-                    <span className="inline-flex items-center justify-center rounded-md bg-heading/10 px-3 py-1 text-[12px] font-bold leading-tight text-heading border border-heading/20">
+                  <td className="py-5 px-6 text-center">
+                    <span className="inline-flex items-center justify-center rounded-md bg-heading/10 px-3 py-1.5 text-sm font-semibold leading-tight text-heading border border-heading/20">
                       {org.attendeeCount}
                     </span>
                   </td>
-                  <td className="py-3.5 px-5 text-right">
+                  <td className="py-5 px-6 text-right">
                     <Link href={`/admin/organizations/${org.id}`}>
-                      <button className="ml-auto inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95] uppercase tracking-wide">
+                      <button className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-5 py-2.5 text-xs font-bold leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95] uppercase tracking-wide">
                         Deep Dive <ChevronRight size={14} />
                       </button>
                     </Link>

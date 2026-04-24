@@ -148,14 +148,14 @@ export default async function AdminDashboardPage() {
               A centralized operational view for governance, organization growth, and recent activity across the platform.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-md border border-border/60 bg-white/75 px-4 py-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="card-primary px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Avg events/org</p>
-              <p className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgEventsPerOrg}</p>
+              <p className="mt-1.5 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgEventsPerOrg}</p>
             </div>
-            <div className="rounded-md border border-border/60 bg-white/75 px-4 py-3">
+            <div className="card-primary px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Avg attendees/event</p>
-              <p className="mt-1 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgAttendeesPerEvent}</p>
+              <p className="mt-1.5 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgAttendeesPerEvent}</p>
             </div>
           </div>
         </div>

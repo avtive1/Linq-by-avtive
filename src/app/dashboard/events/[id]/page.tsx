@@ -1288,7 +1288,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               filteredCards.map((card, idx) => (
                 <motion.div
                   key={card.id}
-                className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-2 sm:p-3 rounded-sm hover:-translate-y-0.5 ${
+                className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-md hover:-translate-y-0.5 ${
                   isPreviewMode
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
                     : isTeamMemberEventMode || isOrgAdminEventMode
@@ -1301,27 +1301,27 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative shrink-0">
-                      <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20 overflow-hidden ring-offset-2 ring-primary/10 group-hover:ring-2 transition-all duration-500 transform group-hover:scale-110">
+                      <div className="w-14 h-14 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20 overflow-hidden ring-offset-2 ring-primary/10 group-hover:ring-2 transition-all duration-500 transform group-hover:scale-105">
                         {card.photo ? (
                           <Image
                             src={card.photo}
                             alt={card.name}
-                            width={48}
-                            height={48}
-                            sizes="48px"
+                            width={56}
+                            height={56}
+                            sizes="56px"
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <User size={20} strokeWidth={1.5} className="text-primary-strong/40" />
+                          <User size={24} strokeWidth={1.5} className="text-primary-strong/40" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[13px] text-primary-foreground font-semibold border-2 border-white leading-[1.02] shadow-sm">
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[11px] text-primary-foreground font-semibold border-2 border-white leading-[1.02] shadow-sm">
                         {card.name.charAt(0)}
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-medium text-sm sm:text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-tight">
+                        <h3 className="font-semibold text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-tight">
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
@@ -1335,13 +1335,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 text-[13px] leading-tight text-muted font-normal tracking-[0.01em]">
-                        <span className="flex items-center gap-1">
-                          <BarChart3 size={10} className="text-primary-strong/70" />
+                      <div className="flex flex-wrap items-center gap-2 ui-meta mt-0.5">
+                        <span className="flex items-center gap-1.5">
+                          <BarChart3 size={12} className="text-primary-strong/60" />
                           {card.role}
                         </span>
                         {card.email && (
-                          <span className="hidden sm:inline-flex items-center gap-1 lowercase font-medium tracking-normal opacity-60">
+                          <span className="hidden sm:inline-flex items-center gap-1 opacity-70">
                             • {card.email}
                           </span>
                         )}
@@ -1349,17 +1349,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <Link href={`/cards/${card.id}`} className="shrink-0">
                       <Button
                         variant="secondary"
-                        size="sm"
                         icon={
                           <motion.span {...hoverIconNudge(2)} className="inline-flex">
-                            <ExternalLink size={12} />
+                            <ExternalLink size={14} />
                           </motion.span>
                         }
-                        className="rounded-sm bg-white/50 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
+                        className="rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
                       >
                         View
                       </Button>

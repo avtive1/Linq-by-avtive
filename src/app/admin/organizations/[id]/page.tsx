@@ -221,11 +221,11 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
               <tr className="bg-surface border-b border-border text-xs font-semibold uppercase tracking-wide leading-tight text-muted">
-                <th className="py-3.5 px-6 font-medium">Event Name</th>
-                <th className="py-3.5 px-6 font-medium">Date</th>
-                <th className="py-3.5 px-6 font-medium">Location</th>
-                <th className="py-3.5 px-6 font-medium">Status</th>
-                <th className="py-3.5 px-6 font-medium text-center">Attendees</th>
+                <th className="py-4 px-6 font-medium">Event Name</th>
+                <th className="py-4 px-6 font-medium">Date</th>
+                <th className="py-4 px-6 font-medium">Location</th>
+                <th className="py-4 px-6 font-medium">Status</th>
+                <th className="py-4 px-6 font-medium text-center">Attendees</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
@@ -235,16 +235,16 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                 
                 return (
                   <tr key={evt.id} className={`hover:bg-white transition-colors cursor-default ${status.label === 'Past' ? 'opacity-70' : ''}`}>
-                    <td className="py-4 px-6 font-medium text-heading text-sm">{evt.name}</td>
-                    <td className="py-4 px-6 text-muted text-sm font-normal">{evt.date}</td>
-                    <td className="py-4 px-6 text-muted text-sm font-normal truncate max-w-[200px]">{evt.location}</td>
-                    <td className="py-4 px-6">
-                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-2 py-1 rounded-md border ${status.classes}`}>
+                    <td className="py-5 px-6 font-medium text-heading text-sm">{evt.name}</td>
+                    <td className="py-5 px-6 text-muted text-sm font-normal">{evt.date}</td>
+                    <td className="py-5 px-6 text-muted text-sm font-normal truncate max-w-[200px]">{evt.location}</td>
+                    <td className="py-5 px-6">
+                      <span className={`text-xs font-semibold tracking-wide leading-tight px-2.5 py-1 rounded-md border ${status.classes}`}>
                         {status.label}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-center">
-                      <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-medium px-3 py-1 rounded-md text-sm leading-tight">
+                    <td className="py-5 px-6 text-center">
+                      <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-semibold px-3 py-1.5 rounded-md text-sm leading-tight">
                         {aCount}
                       </span>
                     </td>
