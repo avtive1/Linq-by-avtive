@@ -49,10 +49,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </div>
           </Link>
 
-          <div className="hidden animate-slide-up items-center gap-2 rounded-md border border-white/20 bg-white/10 px-3 py-2 text-xs font-medium text-white/90 md:flex">
-            <Sparkles size={14} className="text-primary" />
-            Elevated authority mode
-          </div>
+
 
           <div className="flex items-center gap-3 animate-slide-up">
             <ExitAdminButton />

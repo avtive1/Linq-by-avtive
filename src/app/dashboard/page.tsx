@@ -1172,29 +1172,61 @@ function DashboardContent() {
           </motion.div>
         </motion.div>
         {isPreviewMode && (
-          <div className="motion-token-enter mb-8 rounded-md border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
-            <div className="rounded-md border border-heading/15 bg-heading/3 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-heading/80">Inspection Snapshot</p>
-              <div className="mt-3 space-y-2">
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
-                    <span>Attendee volume</span>
-                    <span className="font-semibold text-heading">{stats.totalAttendees}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-heading/10 overflow-hidden">
-                    <div className="h-full rounded-full bg-primary motion-token-hover" style={{ width: `${previewAttendeesPct}%` }} />
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
-                    <span>Campaign volume</span>
-                    <span className="font-semibold text-heading">{stats.totalEvents}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-heading/10 overflow-hidden">
-                    <div className="h-full rounded-full bg-heading/70 motion-token-hover" style={{ width: `${previewEventsPct}%` }} />
-                  </div>
-                </div>
+          <div className="motion-token-enter mb-10 p-6 rounded-xl border border-heading/10 bg-linear-to-br from-white/95 to-primary/5 shadow-xl backdrop-blur-xl ring-1 ring-white/20">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 rounded-sm bg-heading/5 flex items-center justify-center text-heading shrink-0">
+                <ShieldCheck size={20} />
               </div>
+              <div className="flex flex-col">
+                <p className="text-[12px] font-black uppercase tracking-[0.12em] text-heading/70 leading-none mb-1">Administrative Intelligence</p>
+                <p className="text-xs text-muted font-medium">Real-time organizational footprint & visibility snapshot.</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               {/* Attendee Metric */}
+               <div className="bg-white/90 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <Users size={14} className="text-primary-strong" />
+                        <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Attendee Volume</span>
+                     </div>
+                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-sm bg-primary/10 text-primary-strong">Verified</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                     <span className="text-4xl font-black text-heading tracking-tight leading-none">
+                        <AnimatedCounter value={stats.totalAttendees} />
+                     </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden mt-auto">
+                     <div 
+                        className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${previewAttendeesPct}%` }} 
+                     />
+                  </div>
+               </div>
+
+               {/* Campaign Metric */}
+               <div className="bg-white/90 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <Layers3 size={14} className="text-heading/60" />
+                        <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Campaign Load</span>
+                     </div>
+                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-sm bg-heading/10 text-heading/70">Active</span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                     <span className="text-4xl font-black text-heading tracking-tight leading-none">
+                        <AnimatedCounter value={stats.totalEvents} />
+                     </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden mt-auto">
+                     <div 
+                        className="h-full bg-linear-to-r from-heading/40 to-heading/70 rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${previewEventsPct}%` }} 
+                     />
+                  </div>
+               </div>
             </div>
           </div>
         )}

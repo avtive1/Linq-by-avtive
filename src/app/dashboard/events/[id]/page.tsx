@@ -30,6 +30,8 @@ import {
   Activity,
   TrendingUp,
   Layers3,
+  ShieldCheck,
+  Lock,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -788,12 +790,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between text-sm font-medium text-white">
             <div className="flex items-center gap-2">
               <Sparkles size={18} className="text-primary" />
-              <span>Super Admin Inspection Mode &mdash; Event View (Read Only)</span>
+              <span>Super Admin Inspection Mode &mdash; Event View</span>
             </div>
             <Link
               href="/admin"
-              className="no-link-underline rounded-sm border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium text-white hover:no-link-underline hover:bg-white/20"
+              className="flex items-center gap-2 rounded-sm border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-white/20 hover:border-white/40 active:scale-95"
             >
+              <ArrowLeft size={14} />
               Exit Preview
             </Link>
           </div>
@@ -1023,40 +1026,71 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </motion.div>
 
         {isPreviewMode && (
-          <div className="motion-token-enter mb-8 rounded-sm border border-heading/20 bg-white/80 px-5 py-4 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-heading/20 bg-heading/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading">
-                Super Admin
-              </span>
-              <span className="inline-flex items-center rounded-full border border-amber-300/70 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700">
-                View Only
-              </span>
-              <span className="inline-flex items-center rounded-full border border-danger/25 bg-danger/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-danger">
-                Edit/Delete Disabled
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-muted">
-              This campaign is opened in inspection mode for platform-level oversight. You can review data and access posture, but cannot mutate records.
-            </p>
-            <div className="mt-4 rounded-sm border border-heading/15 bg-heading/3 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-heading/80">Event Snapshot</p>
-              <div className="mt-3 space-y-2">
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
-                    <span>Total attendees</span>
-                    <span className="font-semibold text-heading">{cards.length}</span>
+          <div className="motion-token-enter mb-10 p-6 rounded-xl border border-primary/20 bg-linear-to-br from-white/95 to-info/5 shadow-2xl backdrop-blur-xl relative overflow-hidden ring-1 ring-white/20">
+            {/* Background decorative elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-info/5 rounded-full -ml-12 -mb-12 blur-xl pointer-events-none" />
+            
+            <div className="relative z-10 flex flex-col gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-strong leading-none">Security Oversight Active</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-heading/10">
-                    <div className="h-full rounded-full bg-primary motion-token-hover" style={{ width: `${previewTotalPct}%` }} />
+                  <h2 className="text-2xl font-black text-heading tracking-tight leading-none">Platform Audit Layer</h2>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-primary-strong shadow-sm">
+                    <ShieldCheck size={12} /> Super Admin
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-300/40 bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 shadow-sm">
+                    <Activity size={12} /> View Only
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-danger/20 bg-danger/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-danger shadow-sm">
+                    <Lock size={12} /> Immutable Mode
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-lg bg-white/60 border border-white/60 text-[13px] font-medium text-muted/90 leading-relaxed shadow-sm">
+                This campaign is currently locked for <span className="text-heading font-black underline underline-offset-4 decoration-primary/30">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-white/80 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Users size={14} className="text-primary-strong" />
+                      <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Total Engagement</span>
+                    </div>
+                    <span className="text-lg font-black text-heading leading-none">
+                      <AnimatedCounter value={cards.length} />
+                    </span>
+                  </div>
+                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-linear-to-r from-primary via-primary-strong to-primary rounded-full transition-all duration-1000 ease-out" 
+                      style={{ width: `${previewTotalPct}%` }} 
+                    />
                   </div>
                 </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between text-xs text-muted">
-                    <span>Visible in current filter</span>
-                    <span className="font-semibold text-heading">{filteredCards.length}</span>
+
+                <div className="bg-white/80 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Search size={14} className="text-heading/60" />
+                      <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Filter Visibility</span>
+                    </div>
+                    <span className="text-lg font-black text-heading leading-none">
+                      <AnimatedCounter value={filteredCards.length} />
+                    </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-heading/10">
-                    <div className="h-full rounded-full bg-heading/70 motion-token-hover" style={{ width: `${previewVisiblePct}%` }} />
+                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-linear-to-r from-heading/40 to-heading/70 rounded-full transition-all duration-1000 ease-out" 
+                      style={{ width: `${previewVisiblePct}%` }} 
+                    />
                   </div>
                 </div>
               </div>
@@ -1383,11 +1417,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <Trash2 size={16} />
                       </Button>
                     )}
-                    {isPreviewMode && (
-                      <span className="inline-flex items-center rounded-full border border-heading/20 bg-heading/5 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading">
-                        Read only
-                      </span>
-                    )}
+
                   </div>
                 </motion.div>
               ))

@@ -160,38 +160,74 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         </div>
       </div>
 
-      {/* Lightweight performance chart without dependencies */}
-      <div className="glass-panel p-6 rounded-lg mb-12">
-        <div className="flex items-center justify-between gap-3 mb-5">
-          <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
-            Event Performance Snapshot
-          </h2>
-          <span className="text-xs px-3 py-1 rounded-full border border-border/60 bg-white text-muted">
-            Last {chartRows.length} events
-          </span>
+      {/* Premium Event Performance Grid */}
+      <div className="glass-panel p-8 rounded-xl mb-12 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
+        
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-3xl font-bold text-heading tracking-[-0.04em] leading-[1.1] flex items-center gap-3">
+              <Sparkles className="text-primary-strong" size={24} />
+              Event Performance Snapshot
+            </h2>
+            <p className="text-sm text-muted font-medium">Detailed breakdown of recent event engagement levels.</p>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-[12px] font-bold uppercase tracking-[0.05em] px-3 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong">
+              Last {chartRows.length} events
+            </span>
+          </div>
         </div>
 
         {chartRows.length === 0 ? (
-          <p className="text-sm text-muted">No events available yet for chart insights.</p>
+          <div className="py-12 flex flex-col items-center justify-center text-center gap-3 bg-surface/50 rounded-lg border border-dashed border-border">
+            <Calendar className="text-muted/30" size={48} />
+            <p className="text-sm text-muted font-medium">No events hosted yet. Performance insights will appear here.</p>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {chartRows.map((row) => {
-              const width = Math.max(8, Math.round((row.attendees / chartMax) * 100));
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {chartRows.map((row, idx) => {
+              const width = Math.max(12, Math.round((row.attendees / chartMax) * 100));
               return (
-                <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_70px] items-center gap-3">
-                  <div>
-                    <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="truncate text-heading font-medium">{row.name}</span>
-                      <span className="text-muted text-xs ml-3">{row.date}</span>
+                <div 
+                  key={row.id} 
+                  className="group relative bg-white/40 hover:bg-white border border-border/50 hover:border-primary/30 rounded-xl p-5 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 animate-slide-up"
+                  style={{ animationDelay: `${idx * 50}ms` }}
+                >
+                  <div className="flex flex-col gap-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex flex-col gap-1 overflow-hidden">
+                        <span className="text-[11px] font-bold text-primary-strong uppercase tracking-[0.08em] opacity-80">
+                          {row.date}
+                        </span>
+                        <h3 className="text-lg font-bold text-heading leading-[1.2] truncate group-hover:text-primary-strong transition-colors">
+                          {row.name}
+                        </h3>
+                      </div>
+                      <div className="shrink-0 w-10 h-10 rounded-sm bg-surface flex items-center justify-center text-muted group-hover:bg-primary/10 group-hover:text-primary-strong transition-all">
+                        <ArrowLeft className="rotate-135" size={18} />
+                      </div>
                     </div>
-                    <div className="h-2.5 rounded-full bg-heading/10 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-linear-to-r from-primary to-primary-strong motion-token-hover"
-                        style={{ width: `${width}%` }}
-                      />
+
+                    <div className="flex items-end justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-4xl font-black text-heading tracking-[-0.03em] leading-none mb-1">
+                          {row.attendees}
+                        </span>
+                        <span className="text-[12px] font-bold text-muted/60 uppercase tracking-wider">
+                          Attendees
+                        </span>
+                      </div>
+                      <div className="flex-1 max-w-[100px] mb-2 px-3">
+                         <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-linear-to-r from-primary via-primary-strong to-primary rounded-full transition-all duration-1000 ease-out shadow-sm"
+                              style={{ width: `${width}%` }}
+                            />
+                         </div>
+                      </div>
                     </div>
                   </div>
-                  <div className="text-right text-sm font-semibold text-heading">{row.attendees}</div>
                 </div>
               );
             })}
