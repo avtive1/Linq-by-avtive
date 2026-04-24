@@ -1022,7 +1022,6 @@ function DashboardContent() {
                         viewport={presets.viewport}
                         {...staggerItem(idx, 0.04, 0.18, 8, 0.24)}
                       >
-                        <div className={`w-2 h-2 rounded-full ${item.dot}`} />
                         <span className="text-2xl font-semibold text-heading tracking-[-0.02em] leading-none">
                           {item.value}
                         </span>
@@ -1169,12 +1168,12 @@ function DashboardContent() {
             </motion.div>
           </motion.div>
         ) : (
-          <div className="motion-token-enter mb-10 p-7 rounded-2xl border border-heading/10 bg-linear-to-br from-white via-white/40 to-primary/5 shadow-2xl backdrop-blur-xl ring-1 ring-white/20 relative overflow-hidden">
+          <div className="motion-token-enter mb-10 p-7 rounded-2xl border border-heading/10 bg-linear-to-br from-white via-white/40 to-primary/5 shadow-md backdrop-blur-xl ring-1 ring-white/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
             
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-xl bg-heading/5 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
-                <ShieldCheck size={28} strokeWidth={2.5} />
+              <div className="w-14 h-14 rounded-xl bg-heading/5 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                <ShieldCheck size={32} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
                 <p className="text-lg font-semibold uppercase tracking-wide text-primary-strong leading-none mb-1.5">Administrative Intelligence</p>
