@@ -7,6 +7,8 @@ import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserByEmail } from "@/lib/admin";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 
+const EDITABLE_ORG_PERMISSIONS = ["create_event", "manage_event", "edit_cards", "delete_cards"] as const;
+
 async function getCurrentUserId() {
   const cookieStore = await cookies();
   return getServerUserIdFromCookies(cookieStore);
@@ -65,6 +67,7 @@ export async function GET(req: Request) {
       : [];
     const permissionsByUserId = new Map<string, string[]>();
     for (const row of grantRows) {
+      if (!EDITABLE_ORG_PERMISSIONS.includes(row.permission as (typeof EDITABLE_ORG_PERMISSIONS)[number])) continue;
       const list = permissionsByUserId.get(row.grantee_user_id) || [];
       if (!list.includes(row.permission)) list.push(row.permission);
       permissionsByUserId.set(row.grantee_user_id, list);
@@ -113,8 +116,9 @@ export async function POST(req: Request) {
     if (!normalizedEmail || !nextRoleLabel) {
       return NextResponse.json({ error: "email and roleLabel are required." }, { status: 400 });
     }
-    const allowedPermissions = ["create_event", "manage_event", "edit_cards", "delete_cards"];
-    const normalizedPermissions = (permissions || []).filter((p) => allowedPermissions.includes(p));
+    const normalizedPermissions = (permissions || []).filter((p) =>
+      EDITABLE_ORG_PERMISSIONS.includes(p as (typeof EDITABLE_ORG_PERMISSIONS)[number]),
+    );
 
     const target = await getAdminUserByEmail(normalizedEmail);
     if (target?.id === ownerId) {
@@ -207,13 +211,33 @@ export async function POST(req: Request) {
       );
     }
 
-    if (normalizedPermissions.length > 0 && target?.id) {
+    if (target?.id) {
       const ownerEvents = await queryNeon<{ id: string }>(
         `SELECT id FROM public.events WHERE user_id = $1`,
         [ownerId],
       );
       const eventIds = ownerEvents.map((e) => e.id);
       if (eventIds.length > 0) {
+        // Remove editable permissions that are no longer selected.
+        if (normalizedPermissions.length > 0) {
+          await queryNeon(
+            `DELETE FROM public.access_grants
+             WHERE event_id = ANY($1::uuid[])
+               AND grantee_user_id = $2
+               AND permission = ANY($3::text[])
+               AND permission <> ALL($4::text[])`,
+            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions],
+          );
+        } else {
+          await queryNeon(
+            `DELETE FROM public.access_grants
+             WHERE event_id = ANY($1::uuid[])
+               AND grantee_user_id = $2
+               AND permission = ANY($3::text[])`,
+            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS],
+          );
+        }
+
         const existing = await queryNeon<{ event_id: string; permission: string }>(
           `SELECT event_id, permission
            FROM public.access_grants

@@ -587,6 +587,38 @@ function DashboardContent() {
     }
   };
 
+  const openTeamMemberEdit = async (member: OrgMemberRow) => {
+    setTeamError("");
+    setSelectedMemberToEdit(member);
+    try {
+      const res = await fetch("/api/organization-members", { cache: "no-store" });
+      if (res.ok) {
+        const payload = await res.json();
+        const latestRows: OrgMemberRow[] = Array.isArray(payload?.data) ? payload.data : [];
+        if (latestRows.length > 0) {
+          setTeamMembers(latestRows);
+        }
+        const latestMember =
+          latestRows.find((row) => row.id === member.id) ||
+          latestRows.find((row) => String(row.member_email || "").toLowerCase() === member.member_email.toLowerCase());
+        const source = latestMember || member;
+        setTeamInviteEmail(source.member_email);
+        setTeamInviteRoleLabel(source.role_label);
+        setTeamPermissionDraft(source.permissions || []);
+      } else {
+        setTeamInviteEmail(member.member_email);
+        setTeamInviteRoleLabel(member.role_label);
+        setTeamPermissionDraft(member.permissions || []);
+      }
+    } catch {
+      setTeamInviteEmail(member.member_email);
+      setTeamInviteRoleLabel(member.role_label);
+      setTeamPermissionDraft(member.permissions || []);
+    } finally {
+      setTeamModalView("edit");
+    }
+  };
+
   const handleAddOrgMemberRow = async (e: React.FormEvent) => {
     e.preventDefault();
     setTeamError("");
@@ -610,11 +642,12 @@ function DashboardContent() {
         setTeamError(payload?.error || "Could not add team member.");
         return;
       }
+      toast.success("Team member access updated.");
+      await loadteamMembers();
+      setTeamModalView("list");
       setTeamInviteEmail("");
       setTeamInviteRoleLabel("");
       setTeamPermissionDraft([]);
-      toast.success("Team member access updated.");
-      await loadteamMembers();
     } catch {
       setTeamError("Could not add team member.");
     } finally {
@@ -1725,16 +1758,12 @@ function DashboardContent() {
                 </p>
               </div>
               <button
-                onClick={() => {
-                  if (teamModalView !== "list") {
-                    setTeamModalView("list");
-                  } else {
-                    setIsTeamModalOpen(false);
-                  }
-                }}
+                type="button"
+                onClick={() => setIsTeamModalOpen(false)}
                 className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                aria-label="Close modal"
               >
-                {teamModalView === "list" ? <X size={20} /> : <ArrowLeft size={20} />}
+                <X size={20} />
               </button>
             </div>
 
@@ -1786,11 +1815,7 @@ function DashboardContent() {
                               size="sm"
                               icon={<Pencil size={14} />}
                               onClick={() => {
-                                setTeamInviteEmail(m.member_email);
-                                setTeamInviteRoleLabel(m.role_label);
-                                setTeamPermissionDraft(m.permissions || []);
-                                setTeamError("");
-                                setTeamModalView("edit");
+                                void openTeamMemberEdit(m);
                               }}
                               className="transition-all shadow-sm border-primary/20 text-primary-strong"
                             >
@@ -1846,9 +1871,12 @@ function DashboardContent() {
                       type="button" 
                       variant="secondary" 
                       fullWidth 
-                      onClick={() => setTeamModalView("list")}
+                      onClick={() => {
+                        setTeamModalView("list");
+                        setIsTeamModalOpen(false);
+                      }}
                     >
-                      Cancel
+                      Back
                     </Button>
                     <Button 
                       type="submit" 
