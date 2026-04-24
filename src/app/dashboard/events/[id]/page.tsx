@@ -829,8 +829,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
               <h1
-                className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-heading tracking-tight leading-[1.1]"
-                style={{ fontWeight: 800 }}
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold text-heading tracking-tight leading-[1.1]"
+                style={{ fontWeight: 700 }}
               >
                 {eventData.name}
               </h1>
