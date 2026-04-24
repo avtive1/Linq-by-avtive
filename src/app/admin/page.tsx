@@ -143,7 +143,7 @@ export default async function AdminDashboardPage() {
               <ShieldCheck size={14} />
               Super Admin Command Center
             </div>
-            <h1 className="text-3xl font-semibold tracking-[-0.03em] leading-[1.1] text-heading">Platform Overview</h1>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-heading" style={{ fontWeight: 700 }}>Platform Overview</h1>
             <p className="max-w-2xl text-sm font-normal leading-[1.6] text-muted">
               A centralized operational view for governance, organization growth, and recent activity across the platform.
             </p>

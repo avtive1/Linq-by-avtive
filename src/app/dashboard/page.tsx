@@ -832,7 +832,7 @@ function DashboardContent() {
               {organizationName?.trim() || "Organization"}
             </span>
             <h1
-              className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
+              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-heading tracking-tight leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
             >
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Team Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}

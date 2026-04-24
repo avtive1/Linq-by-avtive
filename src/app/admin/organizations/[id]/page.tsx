@@ -97,7 +97,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col gap-2 mb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="text-3xl font-semibold text-heading tracking-tight leading-[1.1] flex items-center gap-3">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-heading tracking-tight leading-[1.1] flex items-center gap-3" style={{ fontWeight: 700 }}>
               {profile?.organization_name || "Organization Overview"}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
