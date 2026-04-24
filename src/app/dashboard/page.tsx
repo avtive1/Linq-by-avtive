@@ -1516,7 +1516,9 @@ function DashboardContent() {
             )}
           </div>
         )}
-      </div>
+      </>
+    )}
+  </div>
 
       {/* Event Creation Modal */}
       {isEventModalOpen && !isPreviewMode && (
