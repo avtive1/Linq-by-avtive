@@ -1107,122 +1107,133 @@ function DashboardContent() {
         )}
         {/* Bento Grid Statistics Section */}
         <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100" viewport={presets.viewport} {...fadeUp(0.06)}>
-          {/* Main Stat - Large Tile */}
+        {!isPreviewMode && (
           <motion.div
-            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 motion-token-enter motion-token-hover ${
-              isPreviewMode
-                ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
-                : isTeamMemberMode || isOrgAdminMode
-                  ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
-                : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
-            }`}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
             viewport={presets.viewport}
-            {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
+            active-tokens="motion-token-enter"
           >
-            <div className={`w-16 h-16 rounded-md flex items-center justify-center shadow-lg shrink-0 group-hover:scale-105 transition-transform ${
-              isOrgAdminMode || isTeamMemberMode
-                ? "bg-primary/12 text-primary-strong border border-primary/25"
-                : "bg-primary text-primary-foreground shadow-primary/30"
-            }`}>
-              <Users size={32} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <span className={isOrgAdminMode ? "text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow"}>
-                {isTeamMemberMode ? "Assigned Reach" : isOrgAdminMode ? "Organization Reach" : "Live Presence"}
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
-                  <AnimatedCounter value={stats.totalAttendees} />
-                </span>
-                <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Attendees</span>
-              </div>
-            </div>
-          </motion.div>
-          
-          {/* Secondary Stat - Active Events */}
-          <motion.div
-            className={`p-6 rounded-md md:col-span-2 flex items-center gap-6 group transition-all duration-200 motion-token-enter motion-token-hover ${
-              isPreviewMode
-                ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg"
-                : isTeamMemberMode || isOrgAdminMode
-                  ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
-                : "glass-panel hover:bg-white hover:shadow-2xl hover:shadow-primary/5"
-            }`}
-            viewport={presets.viewport}
-            {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
-          >
-            <div className={`w-14 h-14 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-              isOrgAdminMode || isTeamMemberMode
-                ? "bg-primary/12 text-primary-strong border border-primary/25"
-                : "bg-primary/15 text-primary-strong hover:bg-primary/25"
-            }`}>
-              <BarChart3 size={28} />
-            </div>
-            <div className="flex flex-col">
-              <span className={isOrgAdminMode ? "mb-1 text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow mb-1"}>
-                {isTeamMemberMode ? "Assigned Workload" : isOrgAdminMode ? "Campaign Command" : "Activity Tracking"}
-              </span>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
-                  <AnimatedCounter value={stats.totalEvents} />
-                </span>
-                <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Total Campaigns</span>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-        {isPreviewMode && (
-          <div className="motion-token-enter mb-10 p-6 rounded-xl border border-heading/10 bg-linear-to-br from-white/95 to-primary/5 shadow-xl backdrop-blur-xl ring-1 ring-white/20">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-sm bg-heading/5 flex items-center justify-center text-heading shrink-0">
-                <ShieldCheck size={20} />
+            {/* Live Presence Metric */}
+            <motion.div
+              className={`flex items-center gap-6 p-8 rounded-md group transition-all duration-300 ${
+                isOrgAdminMode || isTeamMemberMode
+                  ? "bg-white/95 border border-primary/20 shadow-md ring-1 ring-primary/5 shadow-primary/5"
+                  : "glass-panel hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/40"
+              }`}
+              viewport={presets.viewport}
+              {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
+            >
+              <div className={`w-14 h-14 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                isOrgAdminMode || isTeamMemberMode
+                  ? "bg-primary/12 text-primary-strong border border-primary/25"
+                  : "bg-primary/15 text-primary-strong hover:bg-primary/25"
+              }`}>
+                <Users size={28} />
               </div>
               <div className="flex flex-col">
-                <p className="text-[12px] font-black uppercase tracking-[0.12em] text-heading/70 leading-none mb-1">Administrative Intelligence</p>
-                <p className="text-xs text-muted font-medium">Real-time organizational footprint & visibility snapshot.</p>
+                <span className={isOrgAdminMode ? "mb-1 text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow mb-1"}>Live Presence</span>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
+                    <AnimatedCounter value={stats.totalAttendees} />
+                  </span>
+                  <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Attendees</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Total Events Metric */}
+            <motion.div
+              className={`flex items-center gap-6 p-8 rounded-md group transition-all duration-300 ${
+                isOrgAdminMode || isTeamMemberMode
+                  ? "bg-white/95 border border-primary/20 shadow-md ring-1 ring-primary/5 shadow-primary/5"
+                  : "glass-panel hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/40"
+              }`}
+              viewport={presets.viewport}
+              {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
+            >
+              <div className={`w-14 h-14 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
+                isOrgAdminMode || isTeamMemberMode
+                  ? "bg-primary/12 text-primary-strong border border-primary/25"
+                  : "bg-primary/15 text-primary-strong hover:bg-primary/25"
+              }`}>
+                <BarChart3 size={28} />
+              </div>
+              <div className="flex flex-col">
+                <span className={isOrgAdminMode ? "mb-1 text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow mb-1"}>
+                  {isTeamMemberMode ? "Assigned Workload" : isOrgAdminMode ? "Campaign Command" : "Activity Tracking"}
+                </span>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
+                    <AnimatedCounter value={stats.totalEvents} />
+                  </span>
+                  <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Total Campaigns</span>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        {isPreviewMode && (
+          <div className="motion-token-enter mb-10 p-7 rounded-2xl border border-heading/10 bg-linear-to-br from-white via-white/40 to-primary/5 shadow-2xl backdrop-blur-xl ring-1 ring-white/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
+            
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-xl bg-heading/5 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
+                <ShieldCheck size={28} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col">
+                <p className="text-[12px] font-black uppercase tracking-[0.15em] text-primary-strong leading-none mb-1.5">Administrative Intelligence</p>
+                <p className="text-[13px] text-muted font-medium opacity-80">Real-time organizational footprint & visibility snapshot.</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
                {/* Attendee Metric */}
-               <div className="bg-white/90 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                        <Users size={14} className="text-primary-strong" />
-                        <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Attendee Volume</span>
+               <div className="group relative overflow-hidden bg-white/95 p-8 rounded-2xl border border-border/40 flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
+                  <div className="flex items-center justify-between relative z-10">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-500">
+                           <Users size={22} strokeWidth={2.5} />
+                        </div>
+                        <span className="text-[11px] font-black text-muted uppercase tracking-[0.2em] leading-none">Attendee Volume</span>
                      </div>
-                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-sm bg-primary/10 text-primary-strong">Verified</span>
+                     <span className="text-[11px] font-black px-2.5 py-1 rounded-sm bg-primary/10 text-primary-strong border border-primary/20 shadow-xs uppercase tracking-widest">Verified</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-black text-heading tracking-tight leading-none">
+                  <div className="flex items-baseline gap-3 relative z-10">
+                     <span className="text-6xl font-black text-heading tracking-tighter leading-none group-hover:text-primary-strong transition-colors">
                         <AnimatedCounter value={stats.totalAttendees} />
                      </span>
+                     <span className="text-sm font-black text-muted/40 uppercase tracking-widest mb-1">Total Reach</span>
                   </div>
-                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden mt-auto">
+                  <div className="h-2 w-full bg-heading/5 rounded-full overflow-hidden mt-2 relative z-10 shadow-inner">
                      <div 
-                        className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full transition-all duration-1000 ease-out" 
+                        className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] shadow-[0_0_8px_rgba(var(--primary),0.3)]" 
                         style={{ width: `${previewAttendeesPct}%` }} 
                      />
                   </div>
                </div>
 
                {/* Campaign Metric */}
-               <div className="bg-white/90 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-2">
-                        <Layers3 size={14} className="text-heading/60" />
-                        <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Campaign Load</span>
+               <div className="group relative overflow-hidden bg-white/95 p-8 rounded-2xl border border-border/40 flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-heading/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
+                  <div className="flex items-center justify-between relative z-10">
+                     <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-110 transition-transform duration-500">
+                           <Layers3 size={22} strokeWidth={2.5} />
+                        </div>
+                        <span className="text-[11px] font-black text-muted uppercase tracking-[0.2em] leading-none">Campaign Load</span>
                      </div>
-                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-sm bg-heading/10 text-heading/70">Active</span>
+                     <span className="text-[11px] font-black px-2.5 py-1 rounded-sm bg-heading/10 text-heading/70 border border-heading/10 shadow-xs uppercase tracking-widest">Active</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                     <span className="text-4xl font-black text-heading tracking-tight leading-none">
+                  <div className="flex items-baseline gap-3 relative z-10">
+                     <span className="text-6xl font-black text-heading tracking-tighter leading-none group-hover:text-heading/80 transition-colors">
                         <AnimatedCounter value={stats.totalEvents} />
                      </span>
+                     <span className="text-sm font-black text-muted/40 uppercase tracking-widest mb-1">Total Impact</span>
                   </div>
-                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden mt-auto">
+                  <div className="h-2 w-full bg-heading/5 rounded-full overflow-hidden mt-2 relative z-10 shadow-inner">
                      <div 
-                        className="h-full bg-linear-to-r from-heading/40 to-heading/70 rounded-full transition-all duration-1000 ease-out" 
+                        className="h-full bg-linear-to-r from-heading/40 to-heading/70 rounded-full transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] shadow-[0_0_8px_rgba(0,0,0,0.1)]" 
                         style={{ width: `${previewEventsPct}%` }} 
                      />
                   </div>
