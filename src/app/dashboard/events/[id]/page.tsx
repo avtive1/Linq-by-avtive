@@ -1227,7 +1227,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }`}>
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className={`text-lg font-bold uppercase tracking-wide ${
+                <span className={`text-lg font-black uppercase tracking-wide ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-muted" : "text-white/40"
                 }`}>Attendees</span>
               </div>
