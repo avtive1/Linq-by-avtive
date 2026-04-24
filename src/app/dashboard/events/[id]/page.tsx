@@ -829,8 +829,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
               <h1
-                className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
-                style={{ fontWeight: 700 }}
+                className="text-3xl sm:text-[42px] font-bold text-heading tracking-tight leading-[1.1]"
+                style={{ fontWeight: 800 }}
               >
                 {eventData.name}
               </h1>
@@ -1189,68 +1189,68 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
 
         {/* Stats Section */}
-        <motion.div
-          className={`relative overflow-hidden p-6 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
-            isPreviewMode
-              ? "bg-linear-to-br from-white via-white/95 to-info/5 border border-primary/20 shadow-md"
-              : isTeamMemberEventMode || isOrgAdminEventMode
+        {!isOrgAdminEventMode && !isPreviewMode && (
+          <motion.div
+            className={`relative overflow-hidden p-6 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
+              isTeamMemberEventMode
                 ? "bg-linear-to-br from-white to-primary/5 border border-primary/20 shadow-sm"
-              : "bg-linear-to-br from-heading to-[#1e293b] border border-white/10 shadow-md"
-          }`}
-          viewport={presets.viewport}
-          {...fadeUp(0.06)}
-        >
-          {/* Animated Background Decorative Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-info/5 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" />
-          
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-            <div className={`w-14 h-14 flex items-center justify-center shrink-0 rounded-md shadow-sm transition-all duration-500 group-hover:scale-105 ${
-              isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode 
-                ? "bg-primary text-white shadow-primary/20" 
-                : "bg-white/10 text-primary backdrop-blur-md shadow-black/10"
-            }`}>
-              <Users size={28} />
-            </div>
+                : "bg-linear-to-br from-heading to-[#1e293b] border border-white/10 shadow-md"
+            }`}
+            viewport={presets.viewport}
+            {...fadeUp(0.06)}
+          >
+            {/* Animated Background Decorative Elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-info/5 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" />
             
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className={`ui-meta ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/80"
-                }`}>Live Engagement</span>
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+              <div className={`w-14 h-14 flex items-center justify-center shrink-0 rounded-md shadow-sm transition-all duration-500 group-hover:scale-105 ${
+                isTeamMemberEventMode
+                  ? "bg-primary text-white shadow-primary/20" 
+                  : "bg-white/10 text-primary backdrop-blur-md shadow-black/10"
+              }`}>
+                <Users size={28} />
               </div>
-              <div className="flex items-baseline gap-2">
-                <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-heading" : "text-white"
-                }`}>
-                  <AnimatedCounter value={cards.length} />
-                </span>
-                <span className={`text-lg font-black uppercase tracking-wide ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-white/40"
-                }`}>Attendees</span>
+              
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className={`ui-meta ${
+                    isTeamMemberEventMode ? "text-primary-strong" : "text-primary/80"
+                  }`}>Live Engagement</span>
+                </div>
+                <div className="flex items-baseline gap-2">
+                  <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${
+                    isTeamMemberEventMode ? "text-heading" : "text-white"
+                  }`}>
+                    <AnimatedCounter value={cards.length} />
+                  </span>
+                  <span className={`text-lg font-black uppercase tracking-wide ${
+                    isTeamMemberEventMode ? "text-primary-strong" : "text-white/40"
+                  }`}>Attendees</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="relative z-10 flex flex-wrap justify-center md:justify-end items-center gap-4">
-            {cards.length > 0 && (
-              <Button
-                variant={isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "secondary" : "primary"}
-                onClick={handleExport}
-                disabled={status.label === "Past" || !canExport}
-                icon={<Download size={20} />}
-                className={`h-12 px-6 rounded-md font-semibold text-xs shadow-sm transition-all duration-300 ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode
-                    ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
-                    : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
-                } ${status.label === "Past" || !canExport ? "opacity-50 grayscale" : "hover:-translate-y-1 active:scale-95"}`}
-              >
-                Export Registry
-              </Button>
-            )}
-          </div>
-        </motion.div>
+            <div className="relative z-10 flex flex-wrap justify-center md:justify-end items-center gap-4">
+              {cards.length > 0 && (
+                <Button
+                  variant={isTeamMemberEventMode ? "secondary" : "primary"}
+                  onClick={handleExport}
+                  disabled={status.label === "Past" || !canExport}
+                  icon={<Download size={20} />}
+                  className={`h-12 px-6 rounded-md font-semibold text-xs shadow-sm transition-all duration-300 ${
+                    isTeamMemberEventMode
+                      ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
+                      : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
+                  } ${status.label === "Past" || !canExport ? "opacity-50 grayscale" : "hover:-translate-y-1 active:scale-95"}`}
+                >
+                  Export Registry
+                </Button>
+              )}
+            </div>
+          </motion.div>
+        )}
 
         {/* Search Bar */}
         <motion.div className="flex flex-col sm:flex-row gap-3 mb-4 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
