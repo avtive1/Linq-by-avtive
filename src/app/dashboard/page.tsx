@@ -1106,8 +1106,7 @@ function DashboardContent() {
           </motion.div>
         )}
         {/* Bento Grid Statistics Section */}
-        <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-12 delay-100" viewport={presets.viewport} {...fadeUp(0.06)}>
-        {!isPreviewMode && (
+        {!isPreviewMode ? (
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
             viewport={presets.viewport}
@@ -1171,8 +1170,7 @@ function DashboardContent() {
               </div>
             </motion.div>
           </motion.div>
-        )}
-        {isPreviewMode && (
+        ) : (
           <div className="motion-token-enter mb-10 p-7 rounded-2xl border border-heading/10 bg-linear-to-br from-white via-white/40 to-primary/5 shadow-2xl backdrop-blur-xl ring-1 ring-white/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
             
@@ -1517,8 +1515,6 @@ function DashboardContent() {
               </div>
             )}
           </div>
-        )}
-          </>
         )}
       </div>
 
