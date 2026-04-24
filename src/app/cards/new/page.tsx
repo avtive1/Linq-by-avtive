@@ -185,11 +185,16 @@ function NewCardForm() {
             if (previewRes.ok && previewPayload?.data?.url) {
               card_preview_url = String(previewPayload.data.url);
             } else {
-              console.error("Preview upload failed:", previewPayload?.error);
+              const reason = String(previewPayload?.error || "Preview upload failed.");
+              if (previewRes.status === 403) {
+                console.warn("Preview upload skipped due to folder permission:", reason);
+              } else {
+                console.warn("Preview upload skipped:", reason);
+              }
             }
           }
         } catch (previewErr) {
-          console.error("Failed to generate preview image:", previewErr);
+          console.warn("Preview generation skipped:", previewErr);
         }
       }
 

@@ -173,6 +173,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           `/api/events/${id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
         );
         const eventPayload = await eventRes.json();
+        if (eventRes.status === 404) {
+          if (!silentPoll) {
+            toast.error("This campaign no longer exists.");
+          }
+          router.replace(isPreviewMode ? "/admin" : "/dashboard");
+          return;
+        }
         if (!eventRes.ok) throw new Error(eventPayload?.error || "Failed to load event.");
         const eventRecord = eventPayload.data;
         if (!isMounted) return;

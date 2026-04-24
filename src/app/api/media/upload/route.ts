@@ -24,8 +24,9 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
     if (event?.user_id === userId) return true;
 
     // Active team members with edit/manage access can upload attendee assets and card previews.
-    const membership = await queryNeonOne<{ id: string }>(
+    const membership = await queryNeonOne<{ id: string; role_label: string }>(
       `SELECT id
+              , role_label
        FROM public.organization_members
        WHERE member_user_id = $1
          AND org_owner_user_id = $2
@@ -44,7 +45,19 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
       [eventId, userId],
     );
     const permissionSet = new Set(grants.map((row) => String(row.permission || "")));
-    return permissionSet.has("manage_event") || permissionSet.has("edit_cards");
+    if (permissionSet.has("manage_event") || permissionSet.has("edit_cards")) return true;
+
+    // Fallback for recently approved members where event grants are not yet synced.
+    const roleTemplate = await queryNeonOne<{ permissions: string[] | null }>(
+      `SELECT permissions
+       FROM public.organization_role_permission_templates
+       WHERE org_owner_user_id = $1
+         AND role_label = $2
+       LIMIT 1`,
+      [String(event?.user_id || ""), String(membership.role_label || "")],
+    );
+    const templatePermissions = new Set(Array.isArray(roleTemplate?.permissions) ? roleTemplate.permissions : []);
+    return templatePermissions.has("manage_event") || templatePermissions.has("edit_cards");
   }
   if (parts.length >= 3 && parts[1] === "sponsors") {
     return parts[0] === userId;

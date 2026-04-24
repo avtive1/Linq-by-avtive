@@ -263,7 +263,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             card_preview_url = String(previewPayload.data.url);
           }
         } catch (previewErr) {
-          console.error("Failed to generate preview image:", previewErr);
+          console.warn("Preview generation skipped:", previewErr);
         }
       }
 
@@ -342,11 +342,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         console.warn("Vertical preview upload skipped:", verticalErr);
       }
       router.refresh();
-      if (eventId) {
-        router.push(`/dashboard/events/${eventId}`);
-      } else {
-        router.push(`/cards/${id}`);
-      }
+      router.push(`/cards/${id}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save changes.";
       toast.error(message);
