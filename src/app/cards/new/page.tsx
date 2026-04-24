@@ -448,14 +448,6 @@ function NewCardForm() {
                         <CardPreview data={form} preview />
                       </div>
                    </div>
-                   <Button
-                      variant="secondary"
-                      onClick={() => handleSubmit()}
-                      disabled={loading}
-                      className="rounded-md h-11 bg-white text-heading border border-border/60 shadow-xl hover:bg-white/95 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
-                   >
-                      {loading ? "Saving..." : "Save & View"}
-                   </Button>
                 </div>
 
                 <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
@@ -465,15 +457,17 @@ function NewCardForm() {
                       <CardPreview data={form} preview isVertical verticalSide={1} />
                     </div>
                   </div>
-                  <Button
-                    variant="secondary"
-                    onClick={() => handleSubmit()}
-                    disabled={loading}
-                    className="rounded-md h-11 bg-white text-heading border border-border/60 shadow-xl hover:bg-white/95 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
-                  >
-                    {loading ? "Saving..." : "Save & View"}
-                  </Button>
                 </div>
+             </div>
+             <div className="mt-8 flex justify-center">
+               <Button
+                 variant="secondary"
+                 onClick={() => handleSubmit()}
+                 disabled={loading}
+                 className="rounded-md h-12 min-w-[160px] px-7 bg-white text-heading border border-border/60 shadow-xl hover:bg-white/95 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
+               >
+                 {loading ? "Saving..." : "Save"}
+               </Button>
              </div>
           </div>
         <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">

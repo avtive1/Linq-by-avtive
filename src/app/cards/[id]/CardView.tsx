@@ -117,15 +117,17 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
           </div>
 
           <div className="flex items-center gap-3">
-            <Button
-              onClick={handleShareLinkedIn}
-              disabled={isDownloading}
-              variant="blue"
-              icon={<Share2 size={16} />}
-              className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
-            >
-              Share
-            </Button>
+            {viewMode === "horizontal" && (
+              <Button
+                onClick={handleShareLinkedIn}
+                disabled={isDownloading}
+                variant="blue"
+                icon={<Share2 size={16} />}
+                className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
+              >
+                Share
+              </Button>
+            )}
             {viewMode === "vertical" ? (
                <Button
                   onClick={handlePrint}

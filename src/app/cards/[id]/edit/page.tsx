@@ -529,13 +529,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       <CardPreview data={form} preview />
                     </div>
                   </div>
-                    <Button 
-                    onClick={() => handleSubmit()} 
-                    disabled={saving}
-                    className="rounded-md h-11 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
-                  >
-                    {saving ? "Saving Changes..." : "Save & View"}
-                  </Button>
               </div>
 
               <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
@@ -545,14 +538,16 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                     <CardPreview data={form} preview isVertical verticalSide={2} />
                   </div>
                 </div>
-                <Button 
-                  variant="secondary"
-                  onClick={() => setShowPrintPreview(true)} 
-                  className="rounded-md h-11 shadow-xl hover:bg-surface hover:-translate-y-1 active:translate-y-0 transition-all text-sm font-normal tracking-[0.01em] border-white/20"
-                >
-                  Save & View
-                </Button>
               </div>
+            </div>
+            <div className="mt-8 flex justify-center">
+              <Button 
+                onClick={() => handleSubmit()} 
+                disabled={saving}
+                className="rounded-md h-12 min-w-[160px] px-7 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
+              >
+                {saving ? "Saving Changes..." : "Save"}
+              </Button>
             </div>
         </div>
 

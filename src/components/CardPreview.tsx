@@ -165,6 +165,45 @@ function DefaultAvatarPlaceholder({ className = "w-20 h-20" }: { className?: str
   );
 }
 
+function getLocalTimeZoneLabel() {
+  try {
+    const offsetParts = new Intl.DateTimeFormat(undefined, { timeZoneName: "shortOffset" }).formatToParts(new Date());
+    const gmtOffset = offsetParts.find((part) => part.type === "timeZoneName")?.value?.trim();
+    if (gmtOffset) return gmtOffset;
+
+    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(new Date());
+    const fallbackTz = parts.find((part) => part.type === "timeZoneName")?.value?.trim();
+    return fallbackTz || "";
+  } catch {
+    return "";
+  }
+}
+
+function formatSessionTimeWithZone(rawTime?: string) {
+  const fallback = "05:00 PM";
+  const input = String(rawTime || "").trim();
+  const timeValue = input || fallback;
+  const tz = getLocalTimeZoneLabel();
+
+  const hasAmPm = /\b(am|pm)\b/i.test(timeValue);
+  const hasTzToken = /\b(?:gmt|utc|[a-z]{2,5})[+\-]?\d*:?\d*\b/i.test(timeValue);
+  const hhmmMatch = timeValue.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
+
+  let display = timeValue;
+  if (!hasAmPm && hhmmMatch) {
+    const hour24 = Number(hhmmMatch[1]);
+    const minute = hhmmMatch[2];
+    const meridiem = hour24 >= 12 ? "PM" : "AM";
+    const hour12 = hour24 % 12 || 12;
+    display = `${String(hour12).padStart(2, "0")}:${minute} ${meridiem}`;
+  }
+
+  if (tz && !hasTzToken) {
+    return `${display} (${tz})`;
+  }
+  return display;
+}
+
 function OrganizationBrand({
   name,
   logoUrl,
@@ -260,6 +299,7 @@ export function CardPreview({
   const isWebinarLocation = (data.location || "").trim().toLowerCase() === "webinar";
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
   const hasSponsors = filterSponsors(data.sponsors).length > 0;
+  const sessionTimeLabel = formatSessionTimeWithZone(data.sessionTime);
 
   const theme = COLOR_THEMES[data.color || "purple"] || COLOR_THEMES.purple;
   
@@ -406,7 +446,7 @@ export function CardPreview({
           <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z" />
           </svg>
-          {data.sessionTime || "05:00 PM"}
+          {sessionTimeLabel}
         </p>
         <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
           {isWebinarLocation ? (
@@ -516,7 +556,7 @@ export function CardPreview({
           </div>
           <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
             <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
-            <span>{data.sessionTime || "05:00 PM"}</span>
+            <span>{sessionTimeLabel}</span>
           </div>
         </div>
 
@@ -609,7 +649,7 @@ export function CardPreview({
         </div>
         <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
           <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
-          <span>{data.sessionTime || "05:00 PM"}</span>
+          <span>{sessionTimeLabel}</span>
         </div>
       </div>
 
