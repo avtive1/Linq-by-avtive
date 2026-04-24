@@ -1177,8 +1177,8 @@ function DashboardContent() {
                 <ShieldCheck size={28} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
-                <p className="text-lg font-bold uppercase tracking-wide text-primary-strong leading-none mb-1.5">Administrative Intelligence</p>
-                <p className="text-base text-muted font-normal leading-snug">Real-time organizational footprint & visibility snapshot.</p>
+                <p className="text-base font-semibold uppercase tracking-wide text-primary-strong leading-none mb-1.5">Administrative Intelligence</p>
+                <p className="text-sm text-muted">Real-time organizational footprint & visibility snapshot.</p>
               </div>
             </div>
             
