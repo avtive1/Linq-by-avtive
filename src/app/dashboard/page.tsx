@@ -1201,12 +1201,6 @@ function DashboardContent() {
                         <AnimatedCounter value={stats.totalAttendees} />
                      </span>
                   </div>
-                  <div className="h-2 w-full bg-heading/5 rounded-full overflow-hidden mt-2 relative z-10 shadow-inner">
-                     <div 
-                        className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] shadow-[0_0_8px_rgba(var(--primary),0.3)]" 
-                        style={{ width: `${previewAttendeesPct}%` }} 
-                     />
-                  </div>
                </div>
 
                {/* Campaign Metric */}
@@ -1224,12 +1218,6 @@ function DashboardContent() {
                      <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-heading/80 transition-colors">
                         <AnimatedCounter value={stats.totalEvents} />
                      </span>
-                  </div>
-                  <div className="h-2 w-full bg-heading/5 rounded-full overflow-hidden mt-2 relative z-10 shadow-inner">
-                     <div 
-                        className="h-full bg-linear-to-r from-heading/40 to-heading/70 rounded-full transition-all duration-1000 ease-[cubic-bezier(0.2,0,0,1)] shadow-[0_0_8px_rgba(0,0,0,0.1)]" 
-                        style={{ width: `${previewEventsPct}%` }} 
-                     />
                   </div>
                </div>
             </div>
