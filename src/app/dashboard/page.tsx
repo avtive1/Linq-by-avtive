@@ -103,6 +103,7 @@ function DashboardContent() {
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
   const [teamInviteRoleLabel, setTeamInviteRoleLabel] = useState("");
   const [teamMembers, setTeamMembers] = useState<OrgMemberRow[]>([]);
+  const [orgMemberCount, setOrgMemberCount] = useState(0);
   const [isSubmittingTeamInvite, setIsSubmittingTeamInvite] = useState(false);
   const [teamError, setTeamError] = useState("");
   const [teamPermissionDraft, setTeamPermissionDraft] = useState<string[]>([]);
@@ -592,11 +593,37 @@ function DashboardContent() {
         setTeamError(payload?.error || "Could not load team.");
         return;
       }
-      setTeamMembers(payload.data || []);
+      const rows = Array.isArray(payload?.data) ? payload.data : [];
+      setTeamMembers(rows);
+      setOrgMemberCount(rows.length);
     } catch {
       setTeamError("Could not load team.");
     }
   };
+
+  useEffect(() => {
+    if (!isOrgAdminMode) {
+      setOrgMemberCount(0);
+      return;
+    }
+    let isMounted = true;
+    const loadOrgMemberCount = async () => {
+      try {
+        const res = await fetch("/api/organization-members", { cache: "no-store" });
+        const payload = await res.json().catch(() => null);
+        if (!isMounted) return;
+        if (!res.ok) return;
+        const rows = Array.isArray(payload?.data) ? payload.data : [];
+        setOrgMemberCount(rows.length);
+      } catch {
+        if (!isMounted) return;
+      }
+    };
+    void loadOrgMemberCount();
+    return () => {
+      isMounted = false;
+    };
+  }, [isOrgAdminMode, refreshTick]);
 
   const openTeamMemberEdit = async (member: OrgMemberRow) => {
     setTeamError("");
@@ -1019,10 +1046,11 @@ function DashboardContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 {[
                   { label: "Total Campaigns", value: stats.totalEvents },
                   { label: "Total Attendees", value: stats.totalAttendees },
+                  { label: "Organization Members", value: orgMemberCount },
                   { label: "Avg / Campaign", value: ownerAvgAttendees },
                   { label: "Highest Campaign Reach", value: ownerTopCampaigns[0]?.attendeeCount || 0 },
                 ].map((kpi, kpiIdx) => (
