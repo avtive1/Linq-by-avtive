@@ -1,6 +1,6 @@
 import { getAdminUserById } from "@/lib/admin";
 import { queryNeon } from "@/lib/neon-db";
-import { Users, Calendar, ArrowLeft, Mail, Sparkles, ExternalLink } from "lucide-react";
+import { Users, Calendar, ArrowLeft, Mail, Sparkles, Rocket, TrendingUp, Target } from "lucide-react";
 import Link from "next/link";
 import { getEventStatus } from "@/lib/utils";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -65,8 +65,8 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
   // 3. Fetch Attendees for these Events
   let attendees: Array<{ id: string; event_id: string }> = [];
   if (eventIds.length > 0) {
-    attendees = await queryNeon<{ id: string; event_id: string }>(
-      `SELECT id, event_id
+    attendees = await queryNeon<{ id: string; event_id: string; created_at: string }>(
+      `SELECT id, event_id, created_at
        FROM public.attendees
        WHERE event_id = ANY($1::uuid[])`,
       [eventIds],
@@ -79,20 +79,13 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
     attendeeCountsByEvent.set(a.event_id, (attendeeCountsByEvent.get(a.event_id) || 0) + 1);
   });
 
-  const totalEvents = events.length;
-  const totalAttendees = attendees.length;
-  const avgAttendeesPerEvent = totalEvents > 0 ? (totalAttendees / totalEvents).toFixed(1) : "0.0";
-  const maxAttendeesOnEvent = events.reduce(
-    (max, evt) => Math.max(max, Number(attendeeCountsByEvent.get(evt.id) || 0)),
-    0,
-  );
-  const chartRows = events.slice(0, 6).map((evt) => ({
-    id: evt.id,
-    name: evt.name,
-    attendees: Number(attendeeCountsByEvent.get(evt.id) || 0),
-    date: evt.date,
-  }));
-  const chartMax = Math.max(...chartRows.map((r) => r.attendees), 1);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  const recentEventsCount = events.filter(e => new Date(e.created_at) >= thirtyDaysAgo).length;
+  const newAttendeesCount = attendees.filter(a => new Date(a.created_at) >= thirtyDaysAgo).length;
+  
+  const avgGrowthRate = recentEventsCount > 0 ? (newAttendeesCount / recentEventsCount).toFixed(1) : "0";
 
   return (
     <div className="px-2 sm:px-4 lg:px-6 py-12 sm:py-16">
@@ -104,18 +97,25 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col gap-2 mb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="text-4xl font-semibold text-heading tracking-[-0.03em] leading-[1.1] flex items-center gap-3">
-              {profile?.organization_name || "Organization Details"}
-            </h1>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium">
-              <span className="text-[12px] leading-[1.2] text-primary-strong bg-primary/10 px-2.5 py-0.5 rounded-sm">
-                @{profile?.username || user?.emailAddresses?.[0]?.emailAddress?.split("@")[0] || "unknown"}
-              </span>
-              <p className="text-muted flex items-center gap-2">
-                <Mail size={16} /> {user?.emailAddresses?.[0]?.emailAddress || "unknown"}
-              </p>
-            </div>
-          </div>
+                  <h1 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
+                    {profile?.organization_name || "Organization Overview"}
+                  </h1>
+                  <div className="flex flex-wrap items-center gap-2 mt-2">
+                    <span className="text-[12px] font-black uppercase tracking-[0.1em] text-primary-strong bg-primary/10 px-3 py-1 rounded-sm border border-primary/20">
+                      @{profile?.username || user?.username || "unknown"}
+                    </span>
+                    <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
+                      <Calendar size={14} /> {events.length} Campaigns
+                    </span>
+                    <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
+                      <Users size={14} /> {attendees.length} Members
+                    </span>
+                    <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+                    <p className="text-[13px] text-muted font-medium flex items-center gap-2">
+                      <Mail size={16} /> {user?.email || "unknown"}
+                    </p>
+                  </div>
+                </div>
           <Link 
             href={`/dashboard?impersonate=${user.id}`}
             className="flex items-center justify-center gap-2 bg-primary-strong/10 text-primary-strong border border-primary/30 px-5 py-2 rounded-md text-sm leading-tight font-medium tracking-[0.01em] hover:bg-primary/20 transition-all active:scale-[0.97]"
@@ -126,41 +126,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         </div>
       </div>
 
-      {/* Organization Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-info/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-          <div className="relative z-10 w-16 h-16 rounded-xl bg-info/15 flex items-center justify-center text-info shrink-0 shadow-inner group-hover:scale-110 transition-transform">
-            <Calendar size={32} strokeWidth={2} />
-          </div>
-          <div className="relative z-10 flex flex-col">
-            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Events Hosted</span>
-            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalEvents}</span>
-          </div>
-        </div>
 
-        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-primary/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-          <div className="relative z-10 w-16 h-16 rounded-xl bg-heading/10 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-110 transition-transform">
-            <Users size={32} strokeWidth={2} />
-          </div>
-          <div className="relative z-10 flex flex-col">
-            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Attendees</span>
-            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalAttendees}</span>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-primary/10 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-          <div className="relative z-10 w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 shadow-inner group-hover:scale-110 transition-transform">
-            <Users size={32} strokeWidth={2} />
-          </div>
-          <div className="relative z-10 flex flex-col">
-            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Avg Attendees</span>
-            <span className="text-6xl font-black text-heading tracking-tight leading-none">{avgAttendeesPerEvent}</span>
-          </div>
-        </div>
-      </div>
 
       {/* Premium Event Performance Grid */}
       <div className="glass-panel p-6 rounded-2xl mb-10 relative overflow-hidden shadow-md">
@@ -169,71 +135,85 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
           <div className="flex flex-col gap-1">
             <h2 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
-              <Sparkles className="text-primary-strong" size={28} />
-              Event Performance Snapshot
+              <TrendingUp className="text-primary-strong" size={28} />
+              Operational Scorecard
             </h2>
             <p className="text-[14px] text-muted font-medium mt-1">Detailed breakdown of recent event engagement levels.</p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <span className="text-[12px] font-black uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong shadow-xs">
-              Last {chartRows.length} events
+              Last 30 Days
             </span>
           </div>
         </div>
 
-        {chartRows.length === 0 ? (
-          <div className="py-12 flex flex-col items-center justify-center text-center gap-3 bg-surface/50 rounded-lg border border-dashed border-border">
-            <Calendar className="text-muted/30" size={48} />
-            <p className="text-sm text-muted font-medium">No events hosted yet. Performance insights will appear here.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="group relative overflow-hidden bg-linear-to-br from-white to-primary/5 border border-border/40 p-10 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between relative z-10">
+              <div className="w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <Rocket size={32} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-primary-strong leading-none px-3 py-1.5 rounded-sm bg-primary/10 border border-primary/20">Active Velocity</span>
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-col gap-2">
+              <span className="text-7xl font-black text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">{recentEventsCount}</span>
+              <div className="flex flex-col gap-1">
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-muted">Recent Campaigns</span>
+                <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">New events successfully launched within the last 30 days.</span>
+              </div>
+            </div>
+            <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
+              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-2/3 shadow-[0_0_8px_rgba(var(--primary),0.4)] animate-pulse" />
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {chartRows.map((row, idx) => {
-              const width = Math.max(12, Math.round((row.attendees / chartMax) * 100));
-              return (
-                <Link
-                  key={row.id} 
-                  href={`/dashboard/events/${row.id}?impersonate=${user.id}`}
-                  className="group relative bg-white border border-border/40 hover:border-primary/40 rounded-2xl p-6 transition-all duration-500 hover:shadow-md hover:-translate-y-1 block overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 z-20">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary-strong shadow-sm border border-primary/20">
-                      <ExternalLink size={18} strokeWidth={2.5} />
-                    </div>
-                  </div>
 
-                  <div className="flex flex-col h-full justify-between relative z-10">
-                    <div className="flex flex-col gap-1 mb-6">
-                      <span className="text-[12px] font-black text-primary-strong uppercase tracking-[0.15em] leading-none mb-1.5">
-                        {new Date(row.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                      <h3 className="text-xl font-black text-heading leading-tight line-clamp-2 min-h-[3rem] group-hover:text-primary-strong transition-colors">
-                        {row.name}
-                      </h3>
-                    </div>
-
-                    <div className="flex items-end justify-between gap-4 mt-auto">
-                      <div className="flex flex-col">
-                        <span className="text-5xl font-black text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">
-                          {row.attendees}
-                        </span>
-                        <span className="text-[12px] font-black text-muted/50 uppercase tracking-[0.15em] mt-2">
-                          Attendees
-                        </span>
-                      </div>
-                      <div className="w-24 h-2 bg-heading/5 rounded-full overflow-hidden shadow-inner shrink-0 mb-1">
-                        <div 
-                          className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full shadow-[0_0_8px_rgba(var(--primary),0.3)]" 
-                          style={{ width: `${width}%` }} 
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="group relative overflow-hidden bg-linear-to-br from-white to-info/5 border border-border/40 p-10 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-info/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between relative z-10">
+              <div className="w-16 h-16 rounded-xl bg-info/15 flex items-center justify-center text-info shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <TrendingUp size={32} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-info leading-none px-3 py-1.5 rounded-sm bg-info/10 border border-info/20">Network Impact</span>
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-col gap-2">
+              <span className="text-7xl font-black text-heading tracking-tight leading-none group-hover:text-info transition-colors">{newAttendeesCount}</span>
+              <div className="flex flex-col gap-1">
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-muted">New Connections</span>
+                <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Newly registered attendees engaged across recent campaigns (30d).</span>
+              </div>
+            </div>
+            <div className="h-1.5 w-full bg-info/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
+              <div className="h-full bg-linear-to-r from-info to-[#0ea5e9] rounded-full w-3/4 shadow-[0_0_8px_rgba(14,165,233,0.4)] animate-pulse" />
+            </div>
           </div>
-        )}
+
+          <div className="group relative overflow-hidden bg-linear-to-br from-white to-heading/5 border border-border/40 p-10 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-heading/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+            <div className="flex items-center justify-between relative z-10">
+              <div className="w-16 h-16 rounded-xl bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <Target size={32} strokeWidth={2.5} />
+              </div>
+              <div className="flex flex-col items-end">
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-heading leading-none px-3 py-1.5 rounded-sm bg-heading/10 border border-heading/20">Engagement Core</span>
+              </div>
+            </div>
+            <div className="relative z-10 flex flex-col gap-2">
+              <span className="text-7xl font-black text-heading tracking-tight leading-none">{avgGrowthRate}</span>
+              <div className="flex flex-col gap-1">
+                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-muted">Avg / Recent Campaign</span>
+                <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Average attendee acquisition rate per recently launched campaign.</span>
+              </div>
+            </div>
+            <div className="h-1.5 w-full bg-heading/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
+              <div className="h-full bg-linear-to-r from-heading to-[#1e293b] rounded-full w-1/2 shadow-[0_0_8px_rgba(0,0,0,0.2)] animate-pulse" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
