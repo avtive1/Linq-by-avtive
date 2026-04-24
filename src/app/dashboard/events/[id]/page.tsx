@@ -1039,19 +1039,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
-                    <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong">Security Oversight Active</span>
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-primary-strong">Security Oversight Active</span>
                   </div>
                   <h2 className="text-lg font-semibold text-heading tracking-[-0.02em] leading-tight">Platform Audit Layer</h2>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong shadow-sm">
-                    <ShieldCheck size={14} /> Super Admin
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary-strong">
+                    <ShieldCheck size={11} /> Super Admin
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-300/40 bg-amber-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 shadow-sm">
-                    <Activity size={14} /> View Only
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-amber-300/40 bg-amber-50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-amber-700">
+                    <Activity size={11} /> View Only
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-danger/20 bg-danger/5 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-danger shadow-sm">
-                    <Lock size={14} /> Immutable Mode
+                  <span className="inline-flex items-center gap-1 rounded-sm border border-danger/20 bg-danger/5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-danger">
+                    <Lock size={11} /> Immutable Mode
                   </span>
                 </div>
               </div>
