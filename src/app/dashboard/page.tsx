@@ -1186,38 +1186,34 @@ function DashboardContent() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
                {/* Attendee Metric */}
-               <div className="group relative overflow-hidden bg-white/95 p-8 rounded-2xl border border-border/40 flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+               <div className="group relative overflow-hidden bg-white/95 p-6 rounded-2xl border border-border/40 flex items-center justify-between shadow-sm transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
-                  <div className="flex items-center justify-between relative z-10">
-                     <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
-                           <Users size={28} />
-                        </div>
+                  <div className="flex items-center gap-5 relative z-10 w-full">
+                     <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
+                        <Users size={28} />
+                     </div>
+                     <div className="flex flex-col gap-1">
+                        <span className="text-4xl font-semibold text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">
+                           <AnimatedCounter value={stats.totalAttendees} />
+                        </span>
                         <span className="text-xs font-semibold text-muted uppercase tracking-wide">Total Attendees</span>
                      </div>
-                  </div>
-                  <div className="flex items-baseline gap-2 relative z-10">
-                     <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">
-                        <AnimatedCounter value={stats.totalAttendees} />
-                     </span>
                   </div>
                </div>
 
                {/* Campaign Metric */}
-               <div className="group relative overflow-hidden bg-white/95 p-8 rounded-2xl border border-border/40 flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+               <div className="group relative overflow-hidden bg-white/95 p-6 rounded-2xl border border-border/40 flex items-center justify-between shadow-sm transition-all duration-500 hover:shadow-md hover:-translate-y-1">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-heading/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
-                  <div className="flex items-center justify-between relative z-10">
-                     <div className="flex items-center gap-3">
-                        <div className="w-14 h-14 rounded-md bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
-                           <Layers3 size={28} />
-                        </div>
+                  <div className="flex items-center gap-5 relative z-10 w-full">
+                     <div className="w-14 h-14 rounded-md bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
+                        <Layers3 size={28} />
+                     </div>
+                     <div className="flex flex-col gap-1">
+                        <span className="text-4xl font-semibold text-heading tracking-tight leading-none group-hover:text-heading/80 transition-colors">
+                           <AnimatedCounter value={stats.totalEvents} />
+                        </span>
                         <span className="text-xs font-semibold text-muted uppercase tracking-wide">Total Campaigns</span>
                      </div>
-                  </div>
-                  <div className="flex items-baseline gap-2 relative z-10">
-                     <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-heading/80 transition-colors">
-                        <AnimatedCounter value={stats.totalEvents} />
-                     </span>
                   </div>
                </div>
             </div>
