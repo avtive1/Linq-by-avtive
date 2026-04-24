@@ -119,6 +119,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         let sponsors: SponsorEntry[] = [];
         let organizationName = "";
         let organizationLogoUrl = "";
+        let resolvedEventName = String(record.event_name || "");
+        let resolvedSessionDate = String(record.session_date || "");
+        let resolvedSessionTime = String(record.session_time || "");
+        let resolvedLocation = String(record.location || "");
         if (record.event_id) {
           try {
             const brandingRes = await fetch(`/api/events/${record.event_id}/branding`);
@@ -128,6 +132,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               sponsors = parseEventSponsors(brandingPayload.data.sponsors);
               organizationName = String(brandingPayload.data.organizationName || "");
               organizationLogoUrl = String(brandingPayload.data.organizationLogoUrl || "");
+              resolvedEventName = String(brandingPayload.data.eventName || resolvedEventName);
+              resolvedSessionDate = String(brandingPayload.data.eventDate || resolvedSessionDate);
+              resolvedSessionTime = String(brandingPayload.data.eventTime || resolvedSessionTime);
+              resolvedLocation = String(brandingPayload.data.eventLocation || resolvedLocation);
             }
           } catch (brandingErr) {
           }
@@ -138,10 +146,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           role: record.role || "",
           company: record.company || "",
           email: record.card_email || "",
-          eventName: record.event_name || "",
-          sessionDate: record.session_date || "",
-          sessionTime: record.session_time || "",
-          location: record.location || "",
+          eventName: resolvedEventName,
+          sessionDate: resolvedSessionDate,
+          sessionTime: resolvedSessionTime,
+          location: resolvedLocation,
           track: record.track || "",
           photo: record.photo_url || "",
           year: record.year || new Date().getFullYear().toString(),

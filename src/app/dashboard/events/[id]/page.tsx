@@ -822,14 +822,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <button
               onClick={() => {
                 router.refresh();
-                router.push(isPreviewMode ? "/admin" : "/dashboard");
+                if (isPreviewMode) {
+                  const target = eventData?.user ? `/dashboard?impersonate=${encodeURIComponent(eventData.user)}` : "/admin";
+                  router.push(target);
+                  return;
+                }
+                router.push("/dashboard");
               }}
             className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
             >
               <motion.span {...hoverIconNudge(-2)} className="inline-flex">
                 <ArrowLeft size={12} className="transition-transform" />
               </motion.span>
-              {isPreviewMode ? "Back to Admin" : "Back to Dashboard"}
+              {isPreviewMode ? "Back to Organization View" : "Back to Dashboard"}
             </button>
             <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mt-1">
               Campaign details

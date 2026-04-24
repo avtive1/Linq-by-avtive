@@ -118,7 +118,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           </div>
           <Link 
             href={`/dashboard?impersonate=${user.id}`}
-            className="inline-flex items-center justify-center gap-2 bg-white border border-border text-heading hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 bg-white border border-border text-heading !no-underline hover:!no-underline hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
             <Sparkles size={16} />
             <span>View as Organization</span>
