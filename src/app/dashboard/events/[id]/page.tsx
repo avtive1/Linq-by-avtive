@@ -1036,25 +1036,25 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 mb-1.5">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
-                    <span className="text-[12px] font-black uppercase tracking-[0.2em] text-primary-strong leading-none">Security Oversight Active</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong">Security Oversight Active</span>
                   </div>
-                  <h2 className="text-4xl font-black text-heading tracking-tight leading-none">Platform Audit Layer</h2>
+                  <h2 className="text-3xl font-black text-heading tracking-tight leading-none">Platform Audit Layer</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-primary-strong shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong shadow-sm">
                     <ShieldCheck size={14} /> Super Admin
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-300/40 bg-amber-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-700 shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-300/40 bg-amber-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-amber-700 shadow-sm">
                     <Activity size={14} /> View Only
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-danger/20 bg-danger/5 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-danger shadow-sm">
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-danger/20 bg-danger/5 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-danger shadow-sm">
                     <Lock size={14} /> Immutable Mode
                   </span>
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-white/60 border border-white/60 text-[13px] font-medium text-muted/90 leading-relaxed shadow-sm">
-                This campaign is currently locked for <span className="text-heading font-black underline underline-offset-4 decoration-primary/30">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
+              <div className="p-4 rounded-lg bg-white/60 border border-white/60 text-sm font-medium text-muted/90 leading-relaxed shadow-sm">
+                This campaign is currently locked for <span className="text-heading font-bold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
               </div>
 
 
@@ -1205,29 +1205,29 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-info/5 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" />
           
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
-            <div className={`p-5 rounded-2xl shadow-sm transition-all duration-500 group-hover:scale-110 ${
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+            <div className={`w-14 h-14 flex items-center justify-center shrink-0 rounded-md shadow-sm transition-all duration-500 group-hover:scale-105 ${
               isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode 
                 ? "bg-primary text-white shadow-primary/20" 
                 : "bg-white/10 text-primary backdrop-blur-md shadow-black/10"
             }`}>
-              <Users size={40} strokeWidth={2} />
+              <Users size={28} />
             </div>
             
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className={`text-[12px] font-black uppercase tracking-[0.2em] ${
+                <span className={`text-xs font-semibold uppercase tracking-wide ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/90"
                 }`}>Live Engagement</span>
               </div>
-              <div className="flex items-baseline gap-4">
-                <span className={`text-7xl font-black tracking-[-0.04em] leading-none ${
+              <div className="flex items-baseline gap-2">
+                <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-heading" : "text-white"
                 }`}>
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className={`text-xl font-bold uppercase tracking-widest ${
+                <span className={`text-lg font-bold uppercase tracking-wide ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-muted" : "text-white/40"
                 }`}>Attendees</span>
               </div>
@@ -1241,7 +1241,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={handleExport}
                 disabled={status.label === "Past" || !canExport}
                 icon={<Download size={20} />}
-                className={`h-14 px-8 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl transition-all duration-300 ${
+                className={`h-12 px-6 rounded-md font-bold uppercase tracking-wide text-xs shadow-sm transition-all duration-300 ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode
                     ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
                     : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"

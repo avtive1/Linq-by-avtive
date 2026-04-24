@@ -1190,18 +1190,18 @@ function DashboardContent() {
                   <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
                   <div className="flex items-center justify-between relative z-10">
                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-500">
-                           <Users size={22} strokeWidth={2.5} />
+                        <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
+                           <Users size={28} />
                         </div>
-                        <span className="text-[11px] font-black text-muted uppercase tracking-[0.2em] leading-none">Attendee Volume</span>
+                        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Attendee Volume</span>
                      </div>
-                     <span className="text-[11px] font-black px-2.5 py-1 rounded-sm bg-primary/10 text-primary-strong border border-primary/20 shadow-xs uppercase tracking-widest">Verified</span>
+                     <span className="text-xs font-semibold px-2.5 py-1 rounded-sm bg-primary/10 text-primary-strong border border-primary/20 shadow-xs uppercase tracking-wide">Verified</span>
                   </div>
-                  <div className="flex items-baseline gap-3 relative z-10">
-                     <span className="text-6xl font-black text-heading tracking-tighter leading-none group-hover:text-primary-strong transition-colors">
+                  <div className="flex items-baseline gap-2 relative z-10">
+                     <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">
                         <AnimatedCounter value={stats.totalAttendees} />
                      </span>
-                     <span className="text-sm font-black text-muted/40 uppercase tracking-widest mb-1">Total Reach</span>
+                     <span className="text-lg font-bold text-primary-strong">Total Reach</span>
                   </div>
                   <div className="h-2 w-full bg-heading/5 rounded-full overflow-hidden mt-2 relative z-10 shadow-inner">
                      <div 
@@ -1216,18 +1216,18 @@ function DashboardContent() {
                   <div className="absolute top-0 right-0 w-24 h-24 bg-heading/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
                   <div className="flex items-center justify-between relative z-10">
                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-110 transition-transform duration-500">
-                           <Layers3 size={22} strokeWidth={2.5} />
+                        <div className="w-14 h-14 rounded-md bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
+                           <Layers3 size={28} />
                         </div>
-                        <span className="text-[11px] font-black text-muted uppercase tracking-[0.2em] leading-none">Campaign Load</span>
+                        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Campaign Load</span>
                      </div>
-                     <span className="text-[11px] font-black px-2.5 py-1 rounded-sm bg-heading/10 text-heading/70 border border-heading/10 shadow-xs uppercase tracking-widest">Active</span>
+                     <span className="text-xs font-semibold px-2.5 py-1 rounded-sm bg-heading/10 text-heading/70 border border-heading/10 shadow-xs uppercase tracking-wide">Active</span>
                   </div>
-                  <div className="flex items-baseline gap-3 relative z-10">
-                     <span className="text-6xl font-black text-heading tracking-tighter leading-none group-hover:text-heading/80 transition-colors">
+                  <div className="flex items-baseline gap-2 relative z-10">
+                     <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-heading/80 transition-colors">
                         <AnimatedCounter value={stats.totalEvents} />
                      </span>
-                     <span className="text-sm font-black text-muted/40 uppercase tracking-widest mb-1">Total Impact</span>
+                     <span className="text-lg font-bold text-heading/70">Total Impact</span>
                   </div>
                   <div className="h-2 w-full bg-heading/5 rounded-full overflow-hidden mt-2 relative z-10 shadow-inner">
                      <div 

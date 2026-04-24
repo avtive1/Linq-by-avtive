@@ -101,17 +101,17 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               {profile?.organization_name || "Organization Overview"}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-primary-strong bg-primary/10 px-3 py-1 rounded-sm border border-primary/20">
+              <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong bg-primary/10 px-2.5 py-1 rounded-sm border border-primary/20">
                 @{profile?.username || user?.username || "unknown"}
               </span>
-              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-slate-100 px-2.5 py-1 rounded-sm border border-border flex items-center gap-1.5">
                 <Calendar size={14} /> {events.length} Campaigns
               </span>
-              <span className="text-[12px] font-black uppercase tracking-[0.1em] text-muted-foreground bg-slate-100 px-3 py-1 rounded-sm border border-border flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-slate-100 px-2.5 py-1 rounded-sm border border-border flex items-center gap-1.5">
                 <Users size={14} /> {attendees.length} Members
               </span>
               <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
-              <p className="text-[13px] text-muted font-medium flex items-center gap-2">
+              <p className="text-sm text-muted font-medium flex items-center gap-2">
                 <Mail size={16} /> {user?.emailAddresses?.[0]?.emailAddress || "unknown"}
               </p>
             </div>
@@ -148,20 +148,20 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="group relative overflow-hidden bg-linear-to-br from-white to-primary/5 border border-border/40 p-10 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+          <div className="group relative overflow-hidden bg-linear-to-br from-white to-primary/5 border border-border/40 p-8 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
-              <div className="w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-500">
-                <Rocket size={32} strokeWidth={2.5} />
+              <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-105 transition-transform duration-500">
+                <Rocket size={28} />
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-primary-strong leading-none px-3 py-1.5 rounded-sm bg-primary/10 border border-primary/20">Active Velocity</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/20">Active Velocity</span>
               </div>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-7xl font-black text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">{recentEventsCount}</span>
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">{recentEventsCount}</span>
               <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-muted">Recent Campaigns</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted">Recent Campaigns</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">New events successfully launched within the last 30 days.</span>
               </div>
             </div>
@@ -170,20 +170,20 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             </div>
           </div>
 
-          <div className="group relative overflow-hidden bg-linear-to-br from-white to-info/5 border border-border/40 p-10 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+          <div className="group relative overflow-hidden bg-linear-to-br from-white to-info/5 border border-border/40 p-8 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-info/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
-              <div className="w-16 h-16 rounded-xl bg-info/15 flex items-center justify-center text-info shadow-inner group-hover:scale-110 transition-transform duration-500">
-                <TrendingUp size={32} strokeWidth={2.5} />
+              <div className="w-14 h-14 rounded-md bg-info/15 flex items-center justify-center text-info shadow-inner group-hover:scale-105 transition-transform duration-500">
+                <TrendingUp size={28} />
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-info leading-none px-3 py-1.5 rounded-sm bg-info/10 border border-info/20">Network Impact</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-info px-2.5 py-1 rounded-sm bg-info/10 border border-info/20">Network Impact</span>
               </div>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-7xl font-black text-heading tracking-tight leading-none group-hover:text-info transition-colors">{newAttendeesCount}</span>
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-info transition-colors">{newAttendeesCount}</span>
               <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-muted">New Connections</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted">New Connections</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Newly registered attendees engaged across recent campaigns (30d).</span>
               </div>
             </div>
@@ -192,20 +192,20 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             </div>
           </div>
 
-          <div className="group relative overflow-hidden bg-linear-to-br from-white to-heading/5 border border-border/40 p-10 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+          <div className="group relative overflow-hidden bg-linear-to-br from-white to-heading/5 border border-border/40 p-8 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
             <div className="absolute top-0 right-0 w-32 h-32 bg-heading/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
-              <div className="w-16 h-16 rounded-xl bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-110 transition-transform duration-500">
-                <Target size={32} strokeWidth={2.5} />
+              <div className="w-14 h-14 rounded-md bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-105 transition-transform duration-500">
+                <Target size={28} />
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-heading leading-none px-3 py-1.5 rounded-sm bg-heading/10 border border-heading/20">Engagement Core</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-heading px-2.5 py-1 rounded-sm bg-heading/10 border border-heading/20">Engagement Core</span>
               </div>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-7xl font-black text-heading tracking-tight leading-none">{avgGrowthRate}</span>
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{avgGrowthRate}</span>
               <div className="flex flex-col gap-1">
-                <span className="text-[12px] font-black uppercase tracking-[0.2em] text-muted">Avg / Recent Campaign</span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted">Avg / Recent Campaign</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Average attendee acquisition rate per recently launched campaign.</span>
               </div>
             </div>
