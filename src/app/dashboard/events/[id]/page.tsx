@@ -1095,27 +1095,24 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <Layers3 size={13} className="text-primary-strong" />
                     Attendee Composition
                   </p>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { label: "Guests", value: ownerGuestCount, color: "bg-primary" },
-                      { label: "Visitors", value: ownerVisitorCount, color: "bg-info" },
-                      { label: "Complete Profiles", value: ownerProfileCompleteCount, color: "bg-heading/45" },
-                    ].map((row, rowIdx) => (
+                      { label: "Guests",   value: ownerGuestCount,           bg: "bg-primary/10", border: "border-primary/20", text: "text-primary-strong" },
+                      { label: "Visitors", value: ownerVisitorCount,         bg: "bg-info/10",    border: "border-info/20",    text: "text-info" },
+                      { label: "Profiles", value: ownerProfileCompleteCount, bg: "bg-heading/8",  border: "border-heading/15", text: "text-heading/55" },
+                    ].map((item, idx) => (
                       <motion.div
-                        key={row.label}
+                        key={item.label}
+                        className={`flex flex-col items-center justify-center gap-1 rounded-md border py-3 px-2 ${item.bg} ${item.border}`}
                         viewport={presets.viewport}
-                        {...staggerItem(rowIdx, 0.05, 0.18, 10, 0.26)}
+                        {...staggerItem(idx, 0.04, 0.18, 8, 0.24)}
                       >
-                        <div className="mb-1 flex items-center justify-between text-xs text-muted">
-                          <span>{row.label}</span>
-                          <span className="font-semibold text-heading">{row.value}</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-heading/10">
-                          <div
-                            className={`h-full rounded-full ${row.color}`}
-                            style={{ width: `${Math.max(8, Math.round((row.value / attendeeMax) * 100))}%` }}
-                          />
-                        </div>
+                        <span className="text-2xl font-semibold text-heading tracking-[-0.02em] leading-none">
+                          {item.value}
+                        </span>
+                        <span className={`text-[10px] font-semibold uppercase tracking-wider ${item.text} text-center leading-tight mt-1`}>
+                          {item.label}
+                        </span>
                       </motion.div>
                     ))}
                   </div>
@@ -1135,26 +1132,26 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     {ownerTopRoles.length === 0 ? (
                       <p className="text-sm text-muted">No attendee roles yet.</p>
                     ) : (
-                      ownerTopRoles.map((entry, roleIdx) => {
-                        const maxRole = Math.max(ownerTopRoles[0]?.count || 1, 1);
-                        const widthPct = Math.max(8, Math.round((entry.count / maxRole) * 100));
-                        return (
-                          <motion.div
-                            key={entry.role}
-                            className="rounded-sm border border-primary/15 bg-white/75 px-3 py-2"
-                            viewport={presets.viewport}
-                            {...staggerItem(roleIdx, 0.04, 0.2, 8, 0.24)}
-                          >
-                            <div className="mb-1 flex items-center justify-between text-xs">
-                              <span className="truncate text-heading">{entry.role}</span>
-                              <span className="font-semibold text-heading">{entry.count}</span>
-                            </div>
-                            <div className="h-1.5 overflow-hidden rounded-full bg-heading/10">
-                              <div className="h-full rounded-full bg-primary" style={{ width: `${widthPct}%` }} />
-                            </div>
-                          </motion.div>
-                        );
-                      })
+                      ownerTopRoles.map((entry, roleIdx) => (
+                        <motion.div
+                          key={entry.role}
+                          className="flex items-center justify-between rounded-md border border-border/60 bg-white/60 p-2.5 transition-colors hover:bg-white"
+                          viewport={presets.viewport}
+                          {...staggerItem(roleIdx, 0.04, 0.2, 8, 0.24)}
+                        >
+                          <div className="flex items-center gap-3 overflow-hidden">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary-strong">
+                              {roleIdx + 1}
+                            </span>
+                            <span className="truncate text-sm font-medium text-heading">
+                              {entry.role}
+                            </span>
+                          </div>
+                          <div className="rounded-full bg-heading/5 px-2.5 py-0.5 text-xs font-semibold text-heading/80">
+                            {entry.count}
+                          </div>
+                        </motion.div>
+                      ))
                     )}
                   </div>
                 </motion.div>
