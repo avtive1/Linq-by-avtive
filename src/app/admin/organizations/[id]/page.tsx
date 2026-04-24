@@ -63,7 +63,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
   const eventIds = events.map(e => e.id);
 
   // 3. Fetch Attendees for these Events
-  let attendees: Array<{ id: string; event_id: string }> = [];
+  let attendees: Array<{ id: string; event_id: string; created_at: string }> = [];
   if (eventIds.length > 0) {
     attendees = await queryNeon<{ id: string; event_id: string; created_at: string }>(
       `SELECT id, event_id, created_at
