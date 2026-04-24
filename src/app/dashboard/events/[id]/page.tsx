@@ -1095,11 +1095,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <Layers3 size={13} className="text-primary-strong" />
                     Attendee Composition
                   </p>
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
                     {[
                       { label: "Guests",   value: ownerGuestCount,           bg: "bg-primary/10", border: "border-primary/20", text: "text-primary-strong" },
                       { label: "Visitors", value: ownerVisitorCount,         bg: "bg-info/10",    border: "border-info/20",    text: "text-info" },
-                      { label: "Profiles", value: ownerProfileCompleteCount, bg: "bg-heading/8",  border: "border-heading/15", text: "text-heading/55" },
                     ].map((item, idx) => (
                       <motion.div
                         key={item.label}
