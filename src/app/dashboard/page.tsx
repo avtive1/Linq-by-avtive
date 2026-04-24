@@ -966,8 +966,8 @@ function DashboardContent() {
                     <ShieldCheck size={20} />
                   </span>
                   <div className="flex flex-col">
-                    <p className="text-lg font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">Organization Admin Console</p>
-                    <p className="text-[15px] text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
+                    <p className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">Organization Admin Console</p>
+                    <p className="text-sm text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-heading/70">

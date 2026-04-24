@@ -1078,10 +1078,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <Activity size={20} />
                   </span>
                   <div className="flex flex-col">
-                    <span className="text-lg font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
+                    <span className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
                       Organization Admin Event Console
                     </span>
-                    <span className="text-[15px] text-muted">Live attendee and composition insight</span>
+                    <span className="text-sm text-muted">Live attendee and composition insight</span>
                   </div>
                 </div>
               </div>
