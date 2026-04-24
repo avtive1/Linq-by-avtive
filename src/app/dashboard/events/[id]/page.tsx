@@ -1073,15 +1073,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           >
             <div className="flex flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-sm border border-primary/25 bg-primary/12 text-primary-strong">
-                    <Activity size={15} />
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-primary/25 bg-primary/12 text-primary-strong">
+                    <Activity size={20} />
                   </span>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-heading/80">
-                    Organization Admin Event Console
-                  </span>
+                  <div className="flex flex-col">
+                    <span className="text-lg font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
+                      Organization Admin Event Console
+                    </span>
+                    <span className="text-[15px] text-muted">Live attendee and composition insight</span>
+                  </div>
                 </div>
-                <span className="text-xs text-muted">Live attendee and composition insight</span>
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
