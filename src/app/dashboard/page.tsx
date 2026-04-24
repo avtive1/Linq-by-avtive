@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3 } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -80,6 +80,9 @@ function DashboardContent() {
   const [userName, setUserName] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isEventFilterOpen, setIsEventFilterOpen] = useState(false);
+  const [eventStatusFilter, setEventStatusFilter] = useState<"all" | "upcoming" | "ongoing" | "past">("all");
+  const [eventLocationFilter, setEventLocationFilter] = useState<"all" | "onsite" | "webinar">("all");
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [bootstrapError, setBootstrapError] = useState("");
@@ -397,9 +400,17 @@ function DashboardContent() {
 
   const filteredEvents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return events;
-    
     return events.filter(evt => {
+      const statusLabel = getEventStatus(evt.date).label.toLowerCase();
+      const normalizedStatus = statusLabel === "today" ? "ongoing" : statusLabel;
+      const statusMatch = eventStatusFilter === "all" || normalizedStatus === eventStatusFilter;
+
+      const locationLabel = (evt.location || "").trim().toLowerCase() === "webinar" ? "webinar" : "onsite";
+      const locationMatch = eventLocationFilter === "all" || locationLabel === eventLocationFilter;
+
+      if (!statusMatch || !locationMatch) return false;
+      if (!query) return true;
+
       const name = (evt.name || "").toLowerCase();
       const location = (evt.location || "").toLowerCase();
       const date = (evt.date || "").toLowerCase();
@@ -407,7 +418,7 @@ function DashboardContent() {
       const searchBlob = `${name} ${location} ${date}`;
       return searchBlob.includes(query);
     });
-  }, [searchQuery, events]);
+  }, [searchQuery, events, eventStatusFilter, eventLocationFilter]);
 
   const hasPendingOrgJoin = useMemo(
     () => !isOrgOwner && myOrgJoinRequests.some((req) => String(req.status || "").toLowerCase() === "pending"),
@@ -424,7 +435,7 @@ function DashboardContent() {
     for (const evt of events) {
       const status = getEventStatus(evt.date).label.toLowerCase();
       if (status === "upcoming") counts.upcoming += 1;
-      else if (status === "ongoing") counts.ongoing += 1;
+      else if (status === "today" || status === "ongoing") counts.ongoing += 1;
       else counts.past += 1;
     }
     const max = Math.max(counts.upcoming, counts.ongoing, counts.past, 1);
@@ -1249,7 +1260,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Search Bar */}
+        {/* Search Bar + Filters */}
         <motion.div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
           <div className="relative flex-1">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
@@ -1266,6 +1277,85 @@ function DashboardContent() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+          </div>
+          <div className="relative self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setIsEventFilterOpen((prev) => !prev)}
+              className={`h-12 px-5 rounded-md border shadow-sm inline-flex items-center gap-2 text-sm font-medium transition-all duration-150 ${
+                isEventFilterOpen
+                  ? "bg-primary/10 border-primary/30 text-primary-strong"
+                  : "bg-white/92 border-primary/20 text-heading hover:bg-white hover:border-primary/30"
+              }`}
+            >
+              <SlidersHorizontal size={16} />
+              Filter
+            </button>
+            {isEventFilterOpen && (
+              <div className="absolute right-0 mt-2 w-[280px] rounded-md border border-border/70 bg-white/95 p-4 shadow-xl z-30">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Campaign status</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: "all", label: "All" },
+                        { id: "upcoming", label: "Upcoming" },
+                        { id: "ongoing", label: "Ongoing" },
+                        { id: "past", label: "Past" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setEventStatusFilter(opt.id as "all" | "upcoming" | "ongoing" | "past")}
+                          className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
+                            eventStatusFilter === opt.id
+                              ? "bg-primary/10 border-primary/30 text-primary-strong"
+                              : "bg-white border-border/70 text-heading hover:border-primary/30"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Campaign mode</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: "all", label: "All" },
+                        { id: "onsite", label: "Onsite" },
+                        { id: "webinar", label: "Webinar" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setEventLocationFilter(opt.id as "all" | "onsite" | "webinar")}
+                          className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
+                            eventLocationFilter === opt.id
+                              ? "bg-primary/10 border-primary/30 text-primary-strong"
+                              : "bg-white border-border/70 text-heading hover:border-primary/30"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEventStatusFilter("all");
+                        setEventLocationFilter("all");
+                      }}
+                      className="text-xs font-medium text-muted hover:text-heading underline-offset-4 hover:underline"
+                    >
+                      Reset filters
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -1520,7 +1610,7 @@ function DashboardContent() {
               })
             ) : (
               <div className="col-span-full text-center py-12 glass-panel rounded-xl border-dashed">
-                <p className="text-muted text-sm">No events found matching your search.</p>
+                <p className="text-muted text-sm">No campaigns match your search/filter criteria.</p>
               </div>
             )}
           </div>
