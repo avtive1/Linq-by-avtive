@@ -97,7 +97,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       <div className="flex flex-col gap-2 mb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex flex-col gap-1">
-            <h1 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
+            <h1 className="text-3xl font-semibold text-heading tracking-tight leading-[1.1] flex items-center gap-3">
               {profile?.organization_name || "Organization Overview"}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -134,14 +134,14 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
           <div className="flex flex-col gap-1">
-            <h2 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
+            <h2 className="text-2xl font-semibold text-heading tracking-tight leading-[1.1] flex items-center gap-3">
               <TrendingUp className="text-primary-strong" size={28} />
               Operational Scorecard
             </h2>
             <p className="text-[14px] text-muted font-medium mt-1">Detailed breakdown of recent event engagement levels.</p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-[12px] font-black uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong shadow-xs">
+            <span className="text-xs font-semibold uppercase tracking-wide px-2.5 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong shadow-xs">
               Last 30 Days
             </span>
           </div>
@@ -217,7 +217,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-3xl font-black text-heading tracking-tight leading-none pl-2 flex items-center gap-3">
+        <h2 className="text-2xl font-semibold text-heading tracking-tight leading-[1.1] pl-2 flex items-center gap-3">
           <Calendar size={28} className="text-primary" />
           Hosted Events
         </h2>
@@ -226,7 +226,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
-              <tr className="bg-surface border-b border-border text-[12px] font-black uppercase tracking-[0.08em] leading-tight text-muted">
+              <tr className="bg-surface border-b border-border text-xs font-semibold uppercase tracking-wide leading-tight text-muted">
                 <th className="py-3.5 px-6 font-medium">Event Name</th>
                 <th className="py-3.5 px-6 font-medium">Date</th>
                 <th className="py-3.5 px-6 font-medium">Location</th>

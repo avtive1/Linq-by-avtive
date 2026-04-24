@@ -737,7 +737,7 @@ function DashboardContent() {
         <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
           <div className="mx-auto max-w-[760px] glass-panel rounded-md p-8 sm:p-12 flex flex-col gap-6 text-center">
             <h1
-              className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]"
+              className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
             >
               {joinGateStatus === "pending" ? "Organization access pending approval" : "Organization setup pending"}
@@ -832,7 +832,7 @@ function DashboardContent() {
               {organizationName?.trim() || "Organization"}
             </span>
             <h1
-              className="text-3xl sm:text-4xl font-black text-heading tracking-[0em] leading-[1.1]"
+              className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
             >
               {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Team Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
@@ -1179,7 +1179,7 @@ function DashboardContent() {
                 <ShieldCheck size={28} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
-                <p className="text-[12px] font-black uppercase tracking-[0.15em] text-primary-strong leading-none mb-1.5">Administrative Intelligence</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary-strong leading-none mb-1.5">Administrative Intelligence</p>
                 <p className="text-[13px] text-muted font-medium opacity-80">Real-time organizational footprint & visibility snapshot.</p>
               </div>
             </div>

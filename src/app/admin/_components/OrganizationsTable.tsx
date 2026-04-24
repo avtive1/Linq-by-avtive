@@ -94,7 +94,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
         <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-border bg-surface text-[12px] font-black uppercase tracking-[0.08em] text-muted">
+              <tr className="border-b border-border bg-surface text-xs font-semibold uppercase tracking-wide text-muted">
                 <th
                   className="cursor-pointer py-3.5 px-5 font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("username")}
@@ -143,7 +143,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                 <tr key={org.id} className="group cursor-default hover:bg-white/85">
                   <td className="py-3.5 px-5">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-[12px] font-black uppercase text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-300">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-xs font-semibold uppercase text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-300">
                         {(org.username || org.email || "u").slice(0, 2)}
                       </div>
                       <div className="flex min-w-0 flex-col">
@@ -168,7 +168,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </td>
                   <td className="py-3.5 px-5 text-right">
                     <Link href={`/admin/organizations/${org.id}`}>
-                      <button className="ml-auto inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-[12px] font-black leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95] uppercase tracking-wider">
+                      <button className="ml-auto inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-bold leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95] uppercase tracking-wide">
                         Deep Dive <ChevronRight size={14} />
                       </button>
                     </Link>

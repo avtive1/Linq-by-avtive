@@ -169,8 +169,8 @@ export default async function AdminDashboardPage() {
             <Building2 size={32} strokeWidth={2} />
           </div>
           <div className="relative z-10 flex flex-col">
-            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Organizations</span>
-            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalOrgs}</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted leading-tight mb-1">Total Organizations</span>
+            <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-none">{totalOrgs}</span>
           </div>
         </div>
 
@@ -180,8 +180,8 @@ export default async function AdminDashboardPage() {
             <BarChart3 size={32} strokeWidth={2} />
           </div>
           <div className="relative z-10 flex flex-col">
-            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Campaigns</span>
-            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalEvents}</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted leading-tight mb-1">Total Campaigns</span>
+            <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-none">{totalEvents}</span>
           </div>
         </div>
 
@@ -191,8 +191,8 @@ export default async function AdminDashboardPage() {
             <Users size={32} strokeWidth={2} />
           </div>
           <div className="relative z-10 flex flex-col">
-            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Attendees</span>
-            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalAttendees}</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted leading-tight mb-1">Total Attendees</span>
+            <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-none">{totalAttendees}</span>
           </div>
         </div>
       </div>
