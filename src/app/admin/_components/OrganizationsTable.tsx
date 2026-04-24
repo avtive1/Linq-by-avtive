@@ -74,12 +74,12 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="relative max-w-md flex-1">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted/60" size={20} />
+        <div className="relative max-w-xl flex-1 group">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted/40 group-focus-within:text-primary transition-colors" size={20} />
           <input
             type="text"
             placeholder="Search by username, email or organization..."
-            className="h-12 w-full rounded-md border border-border/50 bg-white/70 py-0 pl-14 pr-6 text-base leading-[1.6] text-heading shadow-sm transition-all placeholder:text-muted/55 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+            className="h-14 w-full rounded-xl border border-border/40 bg-white/80 py-0 pl-14 pr-6 text-base font-medium leading-[1.6] text-heading shadow-sm transition-all placeholder:text-muted/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -90,13 +90,13 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-white/60 shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-border/40 bg-white/60 shadow-md">
         <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
-              <tr className="border-b border-border bg-surface text-[12px] font-semibold uppercase tracking-[0.04em] text-muted">
+              <tr className="border-b border-border bg-surface text-[12px] font-black uppercase tracking-[0.08em] text-muted">
                 <th
-                  className="cursor-pointer py-4 px-6 font-medium transition-colors hover:text-heading"
+                  className="cursor-pointer py-3.5 px-5 font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("username")}
                 >
                   <div className="flex items-center">
@@ -104,7 +104,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th
-                  className="cursor-pointer py-4 px-6 font-medium transition-colors hover:text-heading"
+                  className="cursor-pointer py-3.5 px-5 font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("organizationName")}
                 >
                   <div className="flex items-center">
@@ -112,7 +112,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th
-                  className="cursor-pointer py-4 px-6 font-medium transition-colors hover:text-heading"
+                  className="cursor-pointer py-3.5 px-5 font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("created_at")}
                 >
                   <div className="flex items-center">
@@ -120,7 +120,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th
-                  className="cursor-pointer py-4 px-6 text-center font-medium transition-colors hover:text-heading"
+                  className="cursor-pointer py-3.5 px-5 text-center font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("eventCount")}
                 >
                   <div className="flex items-center justify-center">
@@ -128,47 +128,47 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </div>
                 </th>
                 <th
-                  className="cursor-pointer py-4 px-6 text-center font-medium transition-colors hover:text-heading"
+                  className="cursor-pointer py-3.5 px-5 text-center font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("attendeeCount")}
                 >
                   <div className="flex items-center justify-center">
                     Attendees {renderSortIcon("attendeeCount", sortField, sortOrder)}
                   </div>
                 </th>
-                <th className="py-4 px-6 text-right font-medium">Action</th>
+                <th className="py-3.5 px-5 text-right font-medium">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
               {filteredAndSortedOrgs.map((org) => (
                 <tr key={org.id} className="group cursor-default hover:bg-white/85">
-                  <td className="py-4 px-6">
+                  <td className="py-3.5 px-5">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold uppercase text-primary-strong">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-[12px] font-black uppercase text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-300">
                         {(org.username || org.email || "u").slice(0, 2)}
                       </div>
                       <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-semibold text-heading">@{org.username || "unknown"}</span>
-                        <span className="truncate text-[13px] text-muted">{org.email}</span>
+                        <span className="truncate text-sm font-semibold text-heading group-hover:text-primary-strong transition-colors">@{org.username || "unknown"}</span>
+                        <span className="truncate text-[12px] text-muted opacity-70">{org.email}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-6 text-sm text-heading">
+                  <td className="py-3.5 px-5 text-sm text-heading font-medium">
                     {org.organizationName || <span className="font-normal text-muted/60">—</span>}
                   </td>
-                  <td className="py-4 px-6 text-sm text-muted">{new Date(org.created_at).toLocaleDateString()}</td>
-                  <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center rounded-md bg-info/10 px-3 py-1 text-sm font-medium leading-tight text-info">
+                  <td className="py-3.5 px-5 text-sm text-muted font-medium">{new Date(org.created_at).toLocaleDateString()}</td>
+                  <td className="py-3.5 px-5 text-center">
+                    <span className="inline-flex items-center justify-center rounded-md bg-info/10 px-3 py-1 text-[12px] font-bold leading-tight text-info border border-info/20">
                       {org.eventCount}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-center">
-                    <span className="inline-flex items-center justify-center rounded-md bg-heading/10 px-3 py-1 text-sm font-medium leading-tight text-heading">
+                  <td className="py-3.5 px-5 text-center">
+                    <span className="inline-flex items-center justify-center rounded-md bg-heading/10 px-3 py-1 text-[12px] font-bold leading-tight text-heading border border-heading/20">
                       {org.attendeeCount}
                     </span>
                   </td>
-                  <td className="py-4 px-6 text-right">
+                  <td className="py-3.5 px-5 text-right">
                     <Link href={`/admin/organizations/${org.id}`}>
-                      <button className="ml-auto inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-[13px] font-medium leading-tight text-primary-strong transition-all duration-150 hover:bg-primary/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97]">
+                      <button className="ml-auto inline-flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-[12px] font-black leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95] uppercase tracking-wider">
                         Deep Dive <ChevronRight size={14} />
                       </button>
                     </Link>

@@ -127,53 +127,55 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
       </div>
 
       {/* Organization Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-sm bg-info/15 flex items-center justify-center text-info shrink-0">
-            <Calendar size={28} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-info/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-xl bg-info/15 flex items-center justify-center text-info shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <Calendar size={32} strokeWidth={2} />
           </div>
-          <div className="flex flex-col">
-            <span className="ui-eyebrow mb-1">Events Hosted</span>
-            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalEvents}</span>
-          </div>
-        </div>
-
-        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-sm bg-heading/15 flex items-center justify-center text-heading shrink-0">
-            <Users size={28} />
-          </div>
-          <div className="flex flex-col">
-            <span className="ui-eyebrow mb-1">Total Attendees</span>
-            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{totalAttendees}</span>
+          <div className="relative z-10 flex flex-col">
+            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Events Hosted</span>
+            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalEvents}</span>
           </div>
         </div>
 
-        <div className="glass-panel p-6 rounded-lg flex items-center gap-6 group hover:bg-white transition-all shadow-sm">
-          <div className="w-16 h-16 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong shrink-0">
-            <Users size={28} />
+        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-primary/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-xl bg-heading/10 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <Users size={32} strokeWidth={2} />
           </div>
-          <div className="flex flex-col">
-            <span className="ui-eyebrow mb-1">Avg Attendees / Event</span>
-            <span className="text-5xl font-semibold text-heading tracking-[-0.03em] leading-[1.02]">{avgAttendeesPerEvent}</span>
-            <span className="text-xs text-muted mt-1">Peak on one event: {maxAttendeesOnEvent}</span>
+          <div className="relative z-10 flex flex-col">
+            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Attendees</span>
+            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalAttendees}</span>
+          </div>
+        </div>
+
+        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-primary/10 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <Users size={32} strokeWidth={2} />
+          </div>
+          <div className="relative z-10 flex flex-col">
+            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Avg Attendees</span>
+            <span className="text-6xl font-black text-heading tracking-tight leading-none">{avgAttendeesPerEvent}</span>
           </div>
         </div>
       </div>
 
       {/* Premium Event Performance Grid */}
-      <div className="glass-panel p-8 rounded-xl mb-12 relative overflow-hidden">
+      <div className="glass-panel p-6 rounded-2xl mb-10 relative overflow-hidden shadow-md">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
           <div className="flex flex-col gap-1">
-            <h2 className="text-3xl font-bold text-heading tracking-[-0.04em] leading-[1.1] flex items-center gap-3">
-              <Sparkles className="text-primary-strong" size={24} />
+            <h2 className="text-4xl font-black text-heading tracking-tight leading-none flex items-center gap-3">
+              <Sparkles className="text-primary-strong" size={28} />
               Event Performance Snapshot
             </h2>
-            <p className="text-sm text-muted font-medium">Detailed breakdown of recent event engagement levels.</p>
+            <p className="text-[14px] text-muted font-medium mt-1">Detailed breakdown of recent event engagement levels.</p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-[12px] font-bold uppercase tracking-[0.05em] px-3 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong">
+            <span className="text-[12px] font-black uppercase tracking-[0.1em] px-3 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong shadow-xs">
               Last {chartRows.length} events
             </span>
           </div>
@@ -192,17 +194,17 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                 <Link
                   key={row.id} 
                   href={`/dashboard/events/${row.id}?impersonate=${user.id}`}
-                  className="group relative bg-white/50 hover:bg-white border border-border/40 hover:border-primary/40 rounded-2xl p-6 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5 hover:-translate-y-1.5 block"
+                  className="group relative bg-white border border-border/40 hover:border-primary/40 rounded-2xl p-6 transition-all duration-500 hover:shadow-md hover:-translate-y-1 block overflow-hidden"
                 >
-                  <div className="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0">
-                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary-strong shadow-sm border border-primary/20">
-                      <ExternalLink size={16} strokeWidth={2.5} />
+                  <div className="absolute top-0 right-0 p-5 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0 z-20">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary-strong shadow-sm border border-primary/20">
+                      <ExternalLink size={18} strokeWidth={2.5} />
                     </div>
                   </div>
 
-                  <div className="flex flex-col h-full justify-between">
+                  <div className="flex flex-col h-full justify-between relative z-10">
                     <div className="flex flex-col gap-1 mb-6">
-                      <span className="text-[10px] font-black text-primary-strong uppercase tracking-[0.2em] leading-none mb-1">
+                      <span className="text-[12px] font-black text-primary-strong uppercase tracking-[0.15em] leading-none mb-1.5">
                         {new Date(row.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </span>
                       <h3 className="text-xl font-black text-heading leading-tight line-clamp-2 min-h-[3rem] group-hover:text-primary-strong transition-colors">
@@ -212,14 +214,14 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
                     <div className="flex items-end justify-between gap-4 mt-auto">
                       <div className="flex flex-col">
-                        <span className="text-4xl font-black text-heading tracking-tight leading-none">
+                        <span className="text-5xl font-black text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">
                           {row.attendees}
                         </span>
-                        <span className="text-[11px] font-bold text-muted/60 uppercase tracking-widest mt-1.5">
+                        <span className="text-[12px] font-black text-muted/50 uppercase tracking-[0.15em] mt-2">
                           Attendees
                         </span>
                       </div>
-                      <div className="w-24 h-1.5 bg-heading/5 rounded-full overflow-hidden shadow-inner shrink-0 mb-1">
+                      <div className="w-24 h-2 bg-heading/5 rounded-full overflow-hidden shadow-inner shrink-0 mb-1">
                         <div 
                           className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full shadow-[0_0_8px_rgba(var(--primary),0.3)]" 
                           style={{ width: `${width}%` }} 
@@ -234,20 +236,22 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         )}
       </div>
 
-      {/* Events Table */}
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2">Hosted Events</h2>
+        <h2 className="text-3xl font-black text-heading tracking-tight leading-none pl-2 flex items-center gap-3">
+          <Calendar size={28} className="text-primary" />
+          Hosted Events
+        </h2>
         
-        <div className="bg-white/50 backdrop-blur-md rounded-xl border border-border/50 overflow-hidden shadow-sm">
+        <div className="bg-white/60 backdrop-blur-md rounded-2xl border border-border/40 overflow-hidden shadow-md">
           <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
-              <tr className="bg-surface border-b border-border text-[13px] font-normal tracking-[0.01em] leading-tight text-muted">
-                <th className="py-4 px-6 font-medium">Event Name</th>
-                <th className="py-4 px-6 font-medium">Date</th>
-                <th className="py-4 px-6 font-medium">Location</th>
-                <th className="py-4 px-6 font-medium">Status</th>
-                <th className="py-4 px-6 font-medium text-center">Attendees</th>
+              <tr className="bg-surface border-b border-border text-[12px] font-black uppercase tracking-[0.08em] leading-tight text-muted">
+                <th className="py-3.5 px-6 font-medium">Event Name</th>
+                <th className="py-3.5 px-6 font-medium">Date</th>
+                <th className="py-3.5 px-6 font-medium">Location</th>
+                <th className="py-3.5 px-6 font-medium">Status</th>
+                <th className="py-3.5 px-6 font-medium text-center">Attendees</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">

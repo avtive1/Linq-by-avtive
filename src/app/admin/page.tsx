@@ -162,40 +162,37 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
-        <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-white/80 p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-primary/15 text-primary-strong">
-            <Building2 size={28} />
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-primary/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1 animate-slide-up">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-xl bg-primary/15 flex items-center justify-center text-primary-strong shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <Building2 size={32} strokeWidth={2} />
           </div>
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex flex-col">
-              <span className="ui-eyebrow mb-1">Total Organizations</span>
-              <span className="text-5xl font-semibold tracking-[-0.03em] leading-[1.02] text-heading">{totalOrgs}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-white/80 p-6 shadow-sm transition-all delay-100 hover:-translate-y-0.5 hover:shadow-md animate-slide-up">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-info/15 text-info">
-            <BarChart3 size={28} />
-          </div>
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex flex-col">
-              <span className="ui-eyebrow mb-1">Total Campaigns</span>
-              <span className="text-5xl font-semibold tracking-[-0.03em] leading-[1.02] text-heading">{totalEvents}</span>
-            </div>
+          <div className="relative z-10 flex flex-col">
+            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Organizations</span>
+            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalOrgs}</span>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden rounded-xl border border-border/60 bg-white/80 p-6 shadow-sm transition-all delay-200 hover:-translate-y-0.5 hover:shadow-md animate-slide-up">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-md bg-heading/15 text-heading">
-            <Users size={28} />
+        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-info/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1 animate-slide-up delay-75">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-info/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-xl bg-info/15 flex items-center justify-center text-info shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <BarChart3 size={32} strokeWidth={2} />
           </div>
-          <div className="flex items-end justify-between gap-4">
-            <div className="flex flex-col">
-              <span className="ui-eyebrow mb-1">Total Attendees</span>
-              <span className="text-5xl font-semibold tracking-[-0.03em] leading-[1.02] text-heading">{totalAttendees}</span>
-            </div>
+          <div className="relative z-10 flex flex-col">
+            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Campaigns</span>
+            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalEvents}</span>
+          </div>
+        </div>
+
+        <div className="group relative overflow-hidden bg-linear-to-br from-white via-white/95 to-heading/5 border border-border/40 p-6 rounded-2xl flex items-center gap-6 transition-all duration-300 shadow-md hover:shadow-xl hover:-translate-y-1 animate-slide-up delay-150">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-heading/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
+          <div className="relative z-10 w-16 h-16 rounded-xl bg-heading/10 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-110 transition-transform">
+            <Users size={32} strokeWidth={2} />
+          </div>
+          <div className="relative z-10 flex flex-col">
+            <span className="text-[12px] font-black uppercase tracking-[0.15em] text-muted leading-tight mb-1">Total Attendees</span>
+            <span className="text-6xl font-black text-heading tracking-tight leading-none">{totalAttendees}</span>
           </div>
         </div>
       </div>

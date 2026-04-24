@@ -1026,29 +1026,29 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </motion.div>
 
         {isPreviewMode && (
-          <div className="motion-token-enter mb-10 p-6 rounded-xl border border-primary/20 bg-linear-to-br from-white/95 to-info/5 shadow-2xl backdrop-blur-xl relative overflow-hidden ring-1 ring-white/20">
+          <div className="motion-token-enter mb-8 p-5 rounded-xl border border-primary/20 bg-linear-to-br from-white/95 to-info/5 shadow-xl backdrop-blur-xl relative overflow-hidden ring-1 ring-white/20">
             {/* Background decorative elements */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-24 h-24 bg-info/5 rounded-full -ml-12 -mb-12 blur-xl pointer-events-none" />
             
-            <div className="relative z-10 flex flex-col gap-6">
+            <div className="relative z-10 flex flex-col gap-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-1.5">
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-strong leading-none">Security Oversight Active</span>
+                    <span className="text-[12px] font-black uppercase tracking-[0.2em] text-primary-strong leading-none">Security Oversight Active</span>
                   </div>
-                  <h2 className="text-2xl font-black text-heading tracking-tight leading-none">Platform Audit Layer</h2>
+                  <h2 className="text-4xl font-black text-heading tracking-tight leading-none">Platform Audit Layer</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-primary-strong shadow-sm">
-                    <ShieldCheck size={12} /> Super Admin
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-primary-strong shadow-sm">
+                    <ShieldCheck size={14} /> Super Admin
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-300/40 bg-amber-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-amber-700 shadow-sm">
-                    <Activity size={12} /> View Only
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-amber-300/40 bg-amber-50 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-amber-700 shadow-sm">
+                    <Activity size={14} /> View Only
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-danger/20 bg-danger/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-danger shadow-sm">
-                    <Lock size={12} /> Immutable Mode
+                  <span className="inline-flex items-center gap-1.5 rounded-sm border border-danger/20 bg-danger/5 px-3 py-1.5 text-[11px] font-black uppercase tracking-wider text-danger shadow-sm">
+                    <Lock size={14} /> Immutable Mode
                   </span>
                 </div>
               </div>
@@ -1191,44 +1191,44 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
         {/* Stats Section */}
         <motion.div
-          className={`relative overflow-hidden p-8 rounded-2xl mb-12 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
+          className={`relative overflow-hidden p-6 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
             isPreviewMode
-              ? "bg-linear-to-br from-white via-white/95 to-info/5 border border-primary/20 shadow-2xl"
+              ? "bg-linear-to-br from-white via-white/95 to-info/5 border border-primary/20 shadow-md"
               : isTeamMemberEventMode || isOrgAdminEventMode
-                ? "bg-linear-to-br from-white to-primary/5 border border-primary/20 shadow-xl"
-              : "bg-linear-to-br from-heading to-[#1e293b] border border-white/10 shadow-2xl"
+                ? "bg-linear-to-br from-white to-primary/5 border border-primary/20 shadow-sm"
+              : "bg-linear-to-br from-heading to-[#1e293b] border border-white/10 shadow-md"
           }`}
           viewport={presets.viewport}
           {...fadeUp(0.06)}
         >
           {/* Animated Background Decorative Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-info/5 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" />
           
           <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 text-center md:text-left">
-            <div className={`p-5 rounded-2xl shadow-xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${
+            <div className={`p-5 rounded-2xl shadow-sm transition-all duration-500 group-hover:scale-110 ${
               isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode 
-                ? "bg-primary text-white shadow-primary/25" 
-                : "bg-white/10 text-primary backdrop-blur-md shadow-black/20"
+                ? "bg-primary text-white shadow-primary/20" 
+                : "bg-white/10 text-primary backdrop-blur-md shadow-black/10"
             }`}>
               <Users size={40} strokeWidth={2} />
             </div>
             
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                <span className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/80"
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className={`text-[12px] font-black uppercase tracking-[0.2em] ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/90"
                 }`}>Live Engagement</span>
               </div>
               <div className="flex items-baseline gap-4">
-                <span className={`text-6xl font-black tracking-[-0.04em] leading-none ${
+                <span className={`text-7xl font-black tracking-[-0.04em] leading-none ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-heading" : "text-white"
                 }`}>
                   <AnimatedCounter value={cards.length} />
                 </span>
-                <span className={`text-lg font-bold uppercase tracking-widest ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-muted" : "text-white/30"
+                <span className={`text-xl font-bold uppercase tracking-widest ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-muted" : "text-white/40"
                 }`}>Attendees</span>
               </div>
             </div>
@@ -1254,20 +1254,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </motion.div>
 
         {/* Search Bar */}
-        <motion.div className="flex flex-col sm:flex-row gap-3 mb-6 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
-          <div className="relative flex-1">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
+        <motion.div className="flex flex-col sm:flex-row gap-3 mb-4 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
+          <div className="relative flex-1 group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted/30 group-focus-within:text-primary transition-colors z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
               placeholder="Search attendees in this campaign..."
-              className={`w-full h-12 pl-20 pr-8 py-0 rounded-sm focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/60 ${
+              className={`w-full h-14 pl-16 pr-8 py-0 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-base font-medium leading-[1.6] text-heading shadow-md placeholder:text-muted/30 ${
                 isPreviewMode
-                  ? "bg-white/90 border border-heading/20 focus:bg-white"
-                  : isTeamMemberEventMode
-                    ? "bg-white/92 border border-primary/20 focus:bg-white"
-                  : isOrgAdminEventMode
-                    ? "bg-white/92 border border-primary/20 focus:bg-white"
-                  : "bg-white/70 backdrop-blur-md border border-white/50 focus:bg-white"
+                  ? "bg-white/90 border border-primary/20 focus:bg-white"
+                  : "bg-white/70 backdrop-blur-md border border-white/40 focus:bg-white"
               }`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -1301,8 +1297,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 {...hoverLift(-2, 1.004)}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-inline bg-white border border-border overflow-hidden shrink-0 flex items-center justify-center text-slate-300 shadow-sm group-hover:scale-105 transition-transform duration-200">
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20 overflow-hidden ring-offset-2 ring-primary/10 group-hover:ring-2 transition-all duration-500 transform group-hover:scale-110">
                         {card.photo ? (
                           <Image
                             src={card.photo}
@@ -1316,7 +1312,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <User size={20} strokeWidth={1.5} className="text-primary-strong/40" />
                         )}
                       </div>
-                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[13px] text-primary-foreground font-medium border-2 border-white leading-[1.02]">
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[13px] text-primary-foreground font-semibold border-2 border-white leading-[1.02] shadow-sm">
                         {card.name.charAt(0)}
                       </div>
                     </div>
