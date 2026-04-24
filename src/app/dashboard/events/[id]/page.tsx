@@ -1057,43 +1057,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 This campaign is currently locked for <span className="text-heading font-black underline underline-offset-4 decoration-primary/30">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="bg-white/80 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Users size={14} className="text-primary-strong" />
-                      <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Total Engagement</span>
-                    </div>
-                    <span className="text-lg font-black text-heading leading-none">
-                      <AnimatedCounter value={cards.length} />
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-linear-to-r from-primary via-primary-strong to-primary rounded-full transition-all duration-1000 ease-out" 
-                      style={{ width: `${previewTotalPct}%` }} 
-                    />
-                  </div>
-                </div>
 
-                <div className="bg-white/80 p-5 rounded-lg border border-border/40 flex flex-col gap-4 group hover:border-primary/50 transition-all duration-300">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Search size={14} className="text-heading/60" />
-                      <span className="text-[11px] font-bold text-muted uppercase tracking-widest">Filter Visibility</span>
-                    </div>
-                    <span className="text-lg font-black text-heading leading-none">
-                      <AnimatedCounter value={filteredCards.length} />
-                    </span>
-                  </div>
-                  <div className="h-1.5 w-full bg-heading/5 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-linear-to-r from-heading/40 to-heading/70 rounded-full transition-all duration-1000 ease-out" 
-                      style={{ width: `${previewVisiblePct}%` }} 
-                    />
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         )}
