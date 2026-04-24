@@ -1038,7 +1038,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
                     <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong">Security Oversight Active</span>
                   </div>
-                  <h2 className="text-3xl font-black text-heading tracking-tight leading-none">Platform Audit Layer</h2>
+                  <h2 className="text-2xl font-bold text-heading tracking-tight leading-none">Platform Audit Layer</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong shadow-sm">
@@ -1053,7 +1053,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-white/60 border border-white/60 text-sm font-medium text-muted/90 leading-relaxed shadow-sm">
+              <div className="p-4 rounded-lg bg-white/60 border border-white/60 text-base font-medium text-muted/90 leading-relaxed shadow-sm">
                 This campaign is currently locked for <span className="text-heading font-bold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
               </div>
 
