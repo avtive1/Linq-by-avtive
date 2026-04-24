@@ -1041,7 +1041,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
                     <span className="text-[11px] font-medium uppercase tracking-wide text-primary-strong">Security Oversight Active</span>
                   </div>
-                  <h2 className="text-xl font-semibold text-heading tracking-[-0.02em] leading-tight">Platform Audit Layer</h2>
+                  <h2 className="text-2xl font-bold text-heading tracking-[-0.02em] leading-tight">Platform Audit Layer</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="inline-flex items-center gap-1 rounded-sm border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary-strong">
