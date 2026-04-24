@@ -168,8 +168,8 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                   </td>
                   <td className="py-5 px-6 text-right">
                     <Link href={`/admin/organizations/${org.id}`}>
-                      <button className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-5 py-2.5 text-xs font-bold leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95] uppercase tracking-wide">
-                        Deep Dive <ChevronRight size={14} />
+                      <button className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-xs font-semibold leading-tight text-primary-strong transition-all duration-300 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95]">
+                        Deep Dive <ChevronRight size={13} />
                       </button>
                     </Link>
                   </td>

@@ -999,76 +999,74 @@ function DashboardContent() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {/* Campaign Status — 3-tile visual */}
                 <motion.div
                   className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.08)}
                   {...hoverLift(-2, 1.005)}
                 >
-                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                  <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <Layers3 size={14} className="text-primary-strong" />
-                    Campaign Status Mix
+                    Campaign Status
                   </p>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { label: "Upcoming", value: ownerStatusMetrics.upcoming, color: "bg-primary" },
-                      { label: "Ongoing", value: ownerStatusMetrics.ongoing, color: "bg-info" },
-                      { label: "Past", value: ownerStatusMetrics.past, color: "bg-heading/45" },
-                    ].map((row, rowIdx) => (
+                      { label: "Upcoming", value: ownerStatusMetrics.upcoming, bg: "bg-primary/10", border: "border-primary/20", dot: "bg-primary", text: "text-primary-strong" },
+                      { label: "Ongoing",  value: ownerStatusMetrics.ongoing,  bg: "bg-info/10",    border: "border-info/20",    dot: "bg-info",    text: "text-info" },
+                      { label: "Past",     value: ownerStatusMetrics.past,     bg: "bg-heading/8",  border: "border-heading/15", dot: "bg-heading/40", text: "text-heading/55" },
+                    ].map((item, idx) => (
                       <motion.div
-                        key={row.label}
+                        key={item.label}
+                        className={`flex flex-col items-center gap-2 rounded-md border py-4 px-2 ${item.bg} ${item.border}`}
                         viewport={presets.viewport}
-                        {...staggerItem(rowIdx, 0.05, 0.18, 10, 0.26)}
+                        {...staggerItem(idx, 0.04, 0.18, 8, 0.24)}
                       >
-                        <div className="mb-1 flex items-center justify-between text-xs text-muted">
-                          <span>{row.label}</span>
-                          <span className="font-semibold text-heading">{row.value}</span>
-                        </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-heading/10">
-                          <div
-                            className={`h-full rounded-full ${row.color}`}
-                            style={{ width: `${Math.max(8, Math.round((row.value / ownerStatusMetrics.max) * 100))}%` }}
-                          />
-                        </div>
+                        <div className={`w-2 h-2 rounded-full ${item.dot}`} />
+                        <span className="text-2xl font-semibold text-heading tracking-[-0.02em] leading-none">
+                          {item.value}
+                        </span>
+                        <span className={`text-[11px] font-semibold uppercase tracking-wider ${item.text} text-center leading-tight`}>
+                          {item.label}
+                        </span>
                       </motion.div>
                     ))}
                   </div>
                 </motion.div>
 
+                {/* Top Campaigns — ranked list */}
                 <motion.div
                   className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.1)}
                   {...hoverLift(-2, 1.005)}
                 >
-                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                  <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <TrendingUp size={14} className="text-primary-strong" />
-                    Top Campaigns by Attendees
+                    Top Campaigns
                   </p>
-                  <div className="space-y-2">
+                  <div className="flex flex-col">
                     {ownerTopCampaigns.length === 0 ? (
                       <p className="text-sm text-muted">No campaigns yet.</p>
                     ) : (
-                      ownerTopCampaigns.map((evt, topIdx) => {
-                        const maxAttendees = Math.max(ownerTopCampaigns[0]?.attendeeCount || 1, 1);
-                        const widthPct = Math.max(8, Math.round(((evt.attendeeCount || 0) / maxAttendees) * 100));
-                        return (
-                          <motion.div
-                            key={evt.id}
-                            className="rounded-md border border-primary/15 bg-white/75 px-3 py-2"
-                            viewport={presets.viewport}
-                            {...staggerItem(topIdx, 0.04, 0.2, 8, 0.24)}
-                          >
-                            <div className="mb-1 flex items-center justify-between gap-2 text-xs">
-                              <span className="truncate text-heading">{evt.name}</span>
-                              <span className="shrink-0 font-semibold text-heading">{evt.attendeeCount || 0}</span>
-                            </div>
-                            <div className="h-1.5 overflow-hidden rounded-full bg-heading/10">
-                              <div className="h-full rounded-full bg-primary" style={{ width: `${widthPct}%` }} />
-                            </div>
-                          </motion.div>
-                        );
-                      })
+                      ownerTopCampaigns.map((evt, topIdx) => (
+                        <motion.div
+                          key={evt.id}
+                          className="flex items-center gap-3 py-2.5 border-b border-border/25 last:border-0 last:pb-0 first:pt-0"
+                          viewport={presets.viewport}
+                          {...staggerItem(topIdx, 0.04, 0.2, 8, 0.24)}
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-[11px] font-bold text-primary-strong">
+                            {topIdx + 1}
+                          </span>
+                          <span className="flex-1 truncate text-sm font-medium text-heading leading-tight">
+                            {evt.name}
+                          </span>
+                          <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
+                            {evt.attendeeCount || 0}
+                          </span>
+                        </motion.div>
+                      ))
                     )}
                   </div>
                 </motion.div>

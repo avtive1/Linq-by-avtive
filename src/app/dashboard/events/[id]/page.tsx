@@ -1244,7 +1244,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={handleExport}
                 disabled={status.label === "Past" || !canExport}
                 icon={<Download size={20} />}
-                className={`h-12 px-6 rounded-md font-bold uppercase tracking-wide text-xs shadow-sm transition-all duration-300 ${
+                className={`h-12 px-6 rounded-md font-semibold text-xs shadow-sm transition-all duration-300 ${
                   isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode
                     ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
                     : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
