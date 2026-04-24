@@ -1697,13 +1697,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Sponsors modal */}
       {isSponsorsOpen && eventData && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto p-4 pt-6 sm:p-8">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
           />
-          <div className="relative max-h-[90vh] w-full max-w-[520px] overflow-hidden rounded-xl border border-border/70 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel">
-            <div className="flex items-center justify-between border-b border-border/50 px-6 py-5">
+          <div className="relative my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[520px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel sm:max-h-[calc(100dvh-4rem)]">
+            <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-6 py-5">
               <div className="flex flex-col gap-1 pr-4">
                 <h2 className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</h2>
                 <p className="text-sm text-muted">
@@ -1718,8 +1718,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSaveSponsors} className="flex max-h-[calc(90vh-88px)] flex-col">
-              <div className="flex-1 overflow-y-auto px-6 py-5">
+            <form onSubmit={handleSaveSponsors} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
                 <EventSponsorsForm
                   rows={sponsorRows}
                   onChange={setSponsorRows}
@@ -1727,7 +1727,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   disabled={isSavingSponsors || isPreviewMode}
                 />
               </div>
-              <div className="flex flex-col gap-3 border-t border-border/50 bg-white/80 px-6 py-4 sm:flex-row">
+              <div className="flex shrink-0 flex-col gap-3 border-t border-border/50 bg-white/80 px-6 py-4 sm:flex-row">
                 <Button
                   type="button"
                   variant="secondary"

@@ -35,7 +35,7 @@ export function EventSponsorsForm({ rows, onChange, onFileError, disabled }: Pro
         </p>
       </div>
 
-      <div className="flex flex-col gap-6 max-h-[min(60vh,520px)] overflow-y-auto pr-2">
+      <div className="flex flex-col gap-6 pr-2">
         {rows.length === 0 && (
           <p className="text-sm text-muted/80 italic py-3">No sponsor slots yet. Use &quot;Add sponsor&quot; to start.</p>
         )}
