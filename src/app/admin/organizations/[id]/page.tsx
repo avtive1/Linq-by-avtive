@@ -101,27 +101,27 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               {profile?.organization_name || "Organization Overview"}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong bg-primary/10 px-2.5 py-1 rounded-sm border border-primary/20">
+              <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
                 @{profile?.username || user?.username || "unknown"}
               </span>
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-slate-100 px-2.5 py-1 rounded-sm border border-border flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted bg-surface px-2.5 py-1 rounded-md border border-border flex items-center gap-1.5">
                 <Calendar size={14} /> {events.length} Campaigns
               </span>
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-slate-100 px-2.5 py-1 rounded-sm border border-border flex items-center gap-1.5">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted bg-surface px-2.5 py-1 rounded-md border border-border flex items-center gap-1.5">
                 <Users size={14} /> {attendees.length} Members
               </span>
               <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
-              <p className="text-sm text-muted font-medium flex items-center gap-2">
+              <p className="text-sm text-muted font-normal flex items-center gap-2">
                 <Mail size={16} /> {user?.emailAddresses?.[0]?.emailAddress || "unknown"}
               </p>
             </div>
           </div>
           <Link 
             href={`/dashboard?impersonate=${user.id}`}
-            className="flex items-center justify-center gap-2 bg-primary-strong/10 text-primary-strong border border-primary/30 px-5 py-2 rounded-md text-sm leading-tight font-medium tracking-[0.01em] hover:bg-primary/20 transition-all active:scale-[0.97]"
+            className="inline-flex items-center justify-center gap-2 bg-white border border-border text-heading hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
-            <Sparkles size={18} />
-            View as Organization
+            <Sparkles size={16} />
+            <span>View as Organization</span>
           </Link>
         </div>
       </div>
@@ -129,16 +129,16 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
 
       {/* Premium Event Performance Grid */}
-      <div className="glass-panel p-6 rounded-2xl mb-10 relative overflow-hidden shadow-md">
+      <div className="glass-panel p-6 rounded-2xl mb-10 relative overflow-hidden shadow-lg ring-1 ring-primary/10 ring-inset">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
           <div className="flex flex-col gap-1">
-            <h2 className="text-2xl font-semibold text-heading tracking-tight leading-[1.1] flex items-center gap-3">
+            <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] flex items-center gap-3">
               <TrendingUp className="text-primary-strong" size={28} />
               Operational Scorecard
             </h2>
-            <p className="text-[14px] text-muted font-medium mt-1">Detailed breakdown of recent event engagement levels.</p>
+            <p className="text-sm text-muted font-normal mt-1">Detailed breakdown of recent event engagement levels.</p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <span className="text-xs font-semibold uppercase tracking-wide px-2.5 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong shadow-xs">
@@ -148,15 +148,13 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="group relative overflow-hidden bg-linear-to-br from-white to-primary/5 border border-border/40 p-8 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+          <div className="card-primary group flex flex-col gap-6 p-8">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
-              <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-105 transition-transform duration-500">
-                <Rocket size={28} />
+              <div className="w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong group-hover:scale-105 transition-transform duration-300">
+                <Rocket size={26} />
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong px-2.5 py-1 rounded-sm bg-primary/10 border border-primary/20">Active Velocity</span>
-              </div>
+              <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Active Velocity</span>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">{recentEventsCount}</span>
@@ -166,41 +164,37 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               </div>
             </div>
             <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
-              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-2/3 shadow-[0_0_8px_rgba(var(--primary),0.4)] animate-pulse" />
+              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-2/3 animate-pulse" />
             </div>
           </div>
 
-          <div className="group relative overflow-hidden bg-linear-to-br from-white to-info/5 border border-border/40 p-8 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+          <div className="card-primary group flex flex-col gap-6 p-8">
             <div className="absolute top-0 right-0 w-32 h-32 bg-info/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
-              <div className="w-14 h-14 rounded-md bg-info/15 flex items-center justify-center text-info shadow-inner group-hover:scale-105 transition-transform duration-500">
-                <TrendingUp size={28} />
+              <div className="w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong group-hover:scale-105 transition-transform duration-300">
+                <TrendingUp size={26} />
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-semibold uppercase tracking-wide text-info px-2.5 py-1 rounded-sm bg-info/10 border border-info/20">Network Impact</span>
-              </div>
+              <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Network Impact</span>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-info transition-colors">{newAttendeesCount}</span>
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">{newAttendeesCount}</span>
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">New Connections</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Newly registered attendees engaged across recent campaigns (30d).</span>
               </div>
             </div>
-            <div className="h-1.5 w-full bg-info/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
-              <div className="h-full bg-linear-to-r from-info to-[#0ea5e9] rounded-full w-3/4 shadow-[0_0_8px_rgba(14,165,233,0.4)] animate-pulse" />
+            <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
+              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-3/4 animate-pulse" />
             </div>
           </div>
 
-          <div className="group relative overflow-hidden bg-linear-to-br from-white to-heading/5 border border-border/40 p-8 rounded-2xl flex flex-col gap-6 shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1">
+          <div className="card-primary group flex flex-col gap-6 p-8">
             <div className="absolute top-0 right-0 w-32 h-32 bg-heading/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
             <div className="flex items-center justify-between relative z-10">
-              <div className="w-14 h-14 rounded-md bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-105 transition-transform duration-500">
-                <Target size={28} />
+              <div className="w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong group-hover:scale-105 transition-transform duration-300">
+                <Target size={26} />
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-xs font-semibold uppercase tracking-wide text-heading px-2.5 py-1 rounded-sm bg-heading/10 border border-heading/20">Engagement Core</span>
-              </div>
+              <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Engagement Core</span>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{avgGrowthRate}</span>
@@ -209,15 +203,15 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Average attendee acquisition rate per recently launched campaign.</span>
               </div>
             </div>
-            <div className="h-1.5 w-full bg-heading/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
-              <div className="h-full bg-linear-to-r from-heading to-[#1e293b] rounded-full w-1/2 shadow-[0_0_8px_rgba(0,0,0,0.2)] animate-pulse" />
+            <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
+              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-1/2 animate-pulse" />
             </div>
           </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold text-heading tracking-tight leading-[1.1] pl-2 flex items-center gap-3">
+        <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2 flex items-center gap-3">
           <Calendar size={28} className="text-primary" />
           Hosted Events
         </h2>
@@ -241,9 +235,9 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                 
                 return (
                   <tr key={evt.id} className={`hover:bg-white transition-colors cursor-default ${status.label === 'Past' ? 'opacity-70' : ''}`}>
-                    <td className="py-4 px-6 font-normal text-heading text-sm">{evt.name}</td>
-                    <td className="py-4 px-6 text-muted text-sm">{evt.date}</td>
-                    <td className="py-4 px-6 text-muted text-sm truncate max-w-[200px]">{evt.location}</td>
+                    <td className="py-4 px-6 font-medium text-heading text-sm">{evt.name}</td>
+                    <td className="py-4 px-6 text-muted text-sm font-normal">{evt.date}</td>
+                    <td className="py-4 px-6 text-muted text-sm font-normal truncate max-w-[200px]">{evt.location}</td>
                     <td className="py-4 px-6">
                       <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-2 py-1 rounded-md border ${status.classes}`}>
                         {status.label}
