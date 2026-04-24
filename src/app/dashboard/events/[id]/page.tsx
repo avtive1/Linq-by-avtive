@@ -828,7 +828,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               Campaign details
             </span>
             <div className="flex flex-wrap items-center gap-3 mt-1">
-              <h1 className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]">
+              <h1
+                className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
+                style={{ fontWeight: 700 }}
+              >
                 {eventData.name}
               </h1>
               <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
@@ -1038,7 +1041,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <div className="w-2 h-2 rounded-full bg-primary animate-pulse shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
                     <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong">Security Oversight Active</span>
                   </div>
-                  <h2 className="text-2xl font-bold text-heading tracking-tight leading-none">Platform Audit Layer</h2>
+                  <h2 className="text-lg font-semibold text-heading tracking-[-0.02em] leading-tight">Platform Audit Layer</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/25 bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong shadow-sm">
@@ -1053,8 +1056,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
 
-              <div className="p-4 rounded-lg bg-white/60 border border-white/60 text-base font-medium text-muted/90 leading-relaxed shadow-sm">
-                This campaign is currently locked for <span className="text-heading font-bold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
+              <div className="p-3 rounded-md bg-white/60 border border-white/60 text-sm font-normal text-muted/90 leading-relaxed shadow-sm">
+                This campaign is currently locked for <span className="text-heading font-semibold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
               </div>
 
 
@@ -1217,8 +1220,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
                 <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className={`text-xs font-semibold uppercase tracking-wide ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/90"
+                <span className={`ui-meta ${
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-primary/80"
                 }`}>Live Engagement</span>
               </div>
               <div className="flex items-baseline gap-2">
@@ -1228,7 +1231,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <AnimatedCounter value={cards.length} />
                 </span>
                 <span className={`text-lg font-black uppercase tracking-wide ${
-                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-muted" : "text-white/40"
+                  isPreviewMode || isTeamMemberEventMode || isOrgAdminEventMode ? "text-primary-strong" : "text-white/40"
                 }`}>Attendees</span>
               </div>
             </div>
