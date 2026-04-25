@@ -69,6 +69,15 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
   return false;
 }
 
+async function canPublicRegistrationUploadToFolder(folder: string): Promise<boolean> {
+  const normalized = folder.trim().replace(/^\/+|\/+$/g, "");
+  const parts = normalized.split("/").filter(Boolean);
+  if (!(parts[0] === "attendees" || parts[0] === "card-previews")) return false;
+  const eventId = String(parts[1] || "").trim();
+  if (!eventId || eventId === "general") return false;
+  return true;
+}
+
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as {
@@ -92,7 +101,10 @@ export async function POST(req: Request) {
     if (!isSignupOrgLogoUpload) {
       const cookieStore = await cookies();
       userId = await getServerUserIdFromCookies(cookieStore);
-      if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      if (!userId) {
+        const publicAllowed = await canPublicRegistrationUploadToFolder(folder);
+        if (!publicAllowed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     if (userId) {

@@ -4,10 +4,12 @@ import { encryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitiv
 import { logSecurityEvent } from "@/lib/security/telemetry";
 import { insertRow } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { issueAttendeeCardToken } from "@/lib/security/tokens";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 
 export async function POST(req: Request) {
   try {
+    const payload = (await req.json()) as Record<string, unknown>;
     const cookieStore = await cookies();
     const authUserId = await getServerUserIdFromCookies(cookieStore);
     let tokenUserId: string | null = null;
@@ -23,12 +25,19 @@ export async function POST(req: Request) {
         }
       }
     }
-    if (!authUserId && !tokenUserId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
 
-    const payload = (await req.json()) as Record<string, unknown>;
+    let isPublicEventRegistration = false;
+    if (!authUserId && !tokenUserId) {
+      const eventId = String(payload.event_id || "").trim();
+      if (!eventId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      isPublicEventRegistration = true;
+    }
     const securePayload = encryptAttendeeSensitiveFields(payload) as Record<string, unknown>;
+    if (isPublicEventRegistration && !securePayload.user_id) {
+      securePayload.user_id = null;
+    }
 
     let data: Record<string, unknown> | null = null;
     let error: { message: string } | null = null;
@@ -62,7 +71,25 @@ export async function POST(req: Request) {
       });
       return NextResponse.json({ error: error?.message || "Insert failed" }, { status: 400 });
     }
-    return NextResponse.json({ data });
+    const createdCardId = String(data.id || "").trim();
+    let shareToken: string | null = null;
+    if (createdCardId) {
+      try {
+        const tokenSubject =
+          authUserId ||
+          tokenUserId ||
+          (isPublicEventRegistration ? "public-registration" : "") ||
+          "anonymous";
+        shareToken = await issueAttendeeCardToken({
+          sub: tokenSubject,
+          cardId: createdCardId,
+          scope: "card:read",
+        });
+      } catch {
+        shareToken = null;
+      }
+    }
+    return NextResponse.json({ data, shareToken });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });

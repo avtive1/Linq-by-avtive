@@ -251,37 +251,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         photo_url = String(uploadPayload.data.url);
       }
 
-      // Generate Social Preview Image for Card updates
-      let card_preview_url = "";
-      if (cardRef.current) {
-        try {
-          const { toPng } = await import("html-to-image");
-          const dataUrl = await toPng(cardRef.current, {
-            quality: 1,
-            pixelRatio: 2,
-            backgroundColor: "#ffffff",
-          });
-          if (dataUrl && dataUrl.length > 100) {
-            const previewRes = await fetch("/api/media/upload", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                dataUrl,
-                folder: `card-previews/${eventId || "general"}`,
-                publicId: String(id),
-              }),
-            });
-            const previewPayload = await previewRes.json();
-            if (!previewRes.ok || !previewPayload?.data?.url) {
-              throw new Error(previewPayload?.error || "Preview upload failed.");
-            }
-            card_preview_url = String(previewPayload.data.url);
-          }
-        } catch (previewErr) {
-          console.warn("Preview generation skipped:", previewErr);
-        }
-      }
-
       const updatePayload: Record<string, unknown> = {
         name: form.name,
         role: form.role,
@@ -293,10 +262,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         design_type: "design1",
         card_color: form.color,
       };
-
-      if (card_preview_url) {
-        updatePayload.card_preview_url = card_preview_url;
-      }
 
       const res = await fetch(`/api/cards/${id}`, {
         method: "PATCH",
@@ -325,7 +290,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           router.push(`/cards/${id}`);
           return;
         }
-        const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
+        const uploadPreview = async (
+          node: HTMLDivElement | null,
+          suffix: "horizontal" | "vertical-front" | "vertical-back",
+        ) => {
           if (!node) return;
           try {
             const png = await toPng(node, {
@@ -345,16 +313,25 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             });
             const uploadPayload = await uploadRes.json();
             if (!uploadRes.ok || !uploadPayload?.data?.url) {
-              console.warn(`Vertical preview upload skipped (${suffix}):`, uploadPayload?.error || uploadRes.statusText);
+              throw new Error(uploadPayload?.error || uploadRes.statusText);
             }
+            return String(uploadPayload.data.url);
           } catch (verticalCaptureErr) {
-            console.warn(`Vertical preview generation skipped (${suffix}):`, verticalCaptureErr);
+            console.warn(`Preview generation/upload skipped (${suffix}):`, verticalCaptureErr);
           }
         };
-        await uploadVertical(verticalFrontRef.current, "vertical-front");
-        await uploadVertical(verticalBackRef.current, "vertical-back");
+        const horizontalUrl = await uploadPreview(cardRef.current, "horizontal");
+        await uploadPreview(verticalFrontRef.current, "vertical-front");
+        await uploadPreview(verticalBackRef.current, "vertical-back");
+        if (horizontalUrl) {
+          await fetch(`/api/cards/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ card_preview_url: horizontalUrl }),
+          });
+        }
       } catch (verticalErr) {
-        console.warn("Vertical preview upload skipped:", verticalErr);
+        console.warn("Preview upload skipped:", verticalErr);
       }
       router.refresh();
       router.push(`/cards/${id}`);

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
@@ -20,7 +20,22 @@ export default function CardView({
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
+  const [horizontalPreviewFailed, setHorizontalPreviewFailed] = useState(false);
+  const [verticalFrontPreviewFailed, setVerticalFrontPreviewFailed] = useState(false);
+  const [verticalBackPreviewFailed, setVerticalBackPreviewFailed] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const horizontalPreviewUrl = useMemo(
+    () => String(card.cardPreviewUrl || "").trim(),
+    [card.cardPreviewUrl],
+  );
+  const verticalFrontPreviewUrl = useMemo(
+    () => String(card.verticalFrontUrl || "").trim(),
+    [card.verticalFrontUrl],
+  );
+  const verticalBackPreviewUrl = useMemo(
+    () => String(card.verticalBackUrl || "").trim(),
+    [card.verticalBackUrl],
+  );
 
   useEffect(() => {
     try {
@@ -40,6 +55,12 @@ export default function CardView({
     } catch {
     }
   };
+
+  useEffect(() => {
+    setHorizontalPreviewFailed(false);
+    setVerticalFrontPreviewFailed(false);
+    setVerticalBackPreviewFailed(false);
+  }, [card.id, horizontalPreviewUrl, verticalFrontPreviewUrl, verticalBackPreviewUrl]);
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -192,19 +213,49 @@ export default function CardView({
           {viewMode === "horizontal" ? (
             <div className="card-scale-wrapper w-full">
               <div className="card-capture" style={{ width: "1200px", height: "628px" }}>
-                <CardPreview data={card} isVertical={false} />
+                {horizontalPreviewUrl && !horizontalPreviewFailed ? (
+                  <img
+                    src={horizontalPreviewUrl}
+                    alt="Horizontal card preview"
+                    className="h-full w-full object-contain"
+                    loading="eager"
+                    onError={() => setHorizontalPreviewFailed(true)}
+                  />
+                ) : (
+                  <CardPreview data={card} isVertical={false} />
+                )}
               </div>
             </div>
           ) : (
             <div className="vertical-pair-wrapper">
               <div className="vertical-card-frame">
                 <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  <CardPreview data={card} isVertical verticalSide={1} />
+                  {verticalFrontPreviewUrl && !verticalFrontPreviewFailed ? (
+                    <img
+                      src={verticalFrontPreviewUrl}
+                      alt="Vertical front card preview"
+                      className="h-full w-full object-contain"
+                      loading="eager"
+                      onError={() => setVerticalFrontPreviewFailed(true)}
+                    />
+                  ) : (
+                    <CardPreview data={card} isVertical verticalSide={1} />
+                  )}
                 </div>
               </div>
               <div className="vertical-card-frame">
                 <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  <CardPreview data={card} isVertical verticalSide={2} />
+                  {verticalBackPreviewUrl && !verticalBackPreviewFailed ? (
+                    <img
+                      src={verticalBackPreviewUrl}
+                      alt="Vertical back card preview"
+                      className="h-full w-full object-contain"
+                      loading="eager"
+                      onError={() => setVerticalBackPreviewFailed(true)}
+                    />
+                  ) : (
+                    <CardPreview data={card} isVertical verticalSide={2} />
+                  )}
                 </div>
               </div>
             </div>

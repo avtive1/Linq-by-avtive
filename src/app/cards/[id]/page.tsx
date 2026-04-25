@@ -168,7 +168,11 @@ export default async function CardViewPage(props: {
         sponsors,
         organizationName,
         organizationLogoUrl,
-          cardPreviewUrl: readString(secureRecord.card_preview_url) || undefined,
+        cardPreviewUrl:
+          readString(secureRecord.card_preview_url) ||
+          (process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
+            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-horizontal`
+            : undefined),
         verticalFrontUrl:
           process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
             ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-front`

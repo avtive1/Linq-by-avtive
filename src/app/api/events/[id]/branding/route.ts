@@ -48,12 +48,20 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     }
 
     if (!userId) {
-      // Public callers may only see event-level presentation metadata.
+      // Public share links should resolve organization branding for attendee registration.
+      const publicProfile = await queryNeonOne<{ organization_name: string | null; organization_logo_url: string | null }>(
+        `SELECT
+           organization_name,
+           to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url
+         FROM public.profiles p
+         WHERE id = $1`,
+        [eventRow.user_id],
+      );
       return NextResponse.json(
         {
           data: {
-            organizationName: "",
-            organizationLogoUrl: "",
+            organizationName: String(publicProfile?.organization_name || ""),
+            organizationLogoUrl: String(publicProfile?.organization_logo_url || ""),
             eventName: String(eventRow.name || ""),
             eventLocation: String(eventRow.location || ""),
             eventDate: String(eventRow.date || ""),

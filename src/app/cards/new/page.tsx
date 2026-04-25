@@ -268,7 +268,10 @@ function NewCardForm() {
         } catch (verticalErr) {
           console.warn("Vertical preview upload skipped:", verticalErr);
         }
-        router.push(`/cards/${body.data.id}?share=true`);
+        const nextUrl = body.shareToken
+          ? `/cards/${body.data.id}?share=true&token=${encodeURIComponent(String(body.shareToken))}`
+          : `/cards/${body.data.id}?share=true`;
+        router.push(nextUrl);
       }
     } catch (err: unknown) {
        const message = err instanceof Error ? err.message : "An unexpected error occurred.";
