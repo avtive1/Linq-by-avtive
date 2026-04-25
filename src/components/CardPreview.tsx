@@ -6,8 +6,6 @@ import { CardData, SponsorEntry } from "@/types/card";
 /** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
 const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
 const SPONSOR_STRIP_MAX_W_H1_PX = 1120;
-const SPONSOR_LOGO_HEIGHT_H2_PX = 72;
-const SPONSOR_STRIP_MAX_W_H2_PX = 861;
 const SPONSOR_LOGO_HEIGHT_V_PX = 56;
 const SPONSOR_STRIP_MAX_W_V_PX = 528;
 
@@ -118,20 +116,6 @@ function HorizontalSponsorsDesign1({ sponsors }: { sponsors?: SponsorEntry[] }) 
   );
 }
 
-function HorizontalSponsorsDesign2({ sponsors }: { sponsors?: SponsorEntry[] }) {
-  const list = filterSponsors(sponsors);
-  if (!list.length) return null;
-  return (
-    <div className="absolute left-[276px] top-[28px] flex h-[78px] w-[861px] items-center justify-center">
-      <SponsorStripRow
-        sponsors={list}
-        logoHeightPx={SPONSOR_LOGO_HEIGHT_H2_PX}
-        maxStripWidthPx={SPONSOR_STRIP_MAX_W_H2_PX}
-      />
-    </div>
-  );
-}
-
 function VerticalSponsorsStrip({ sponsors }: { sponsors?: SponsorEntry[] }) {
   const list = filterSponsors(sponsors);
   /** Pin to card bottom — avoids `top:auto` static-position bug when all siblings are `absolute` */
@@ -237,18 +221,17 @@ function OrganizationBrand({
   );
 }
 
-const COLOR_THEMES: Record<
-  string,
-  {
-    start: string;
-    end: string;
-    accent: string;
-    textColor?: string;
-    titleColor?: string;
-    /** Event title on vertical card white panel (horizontal posters still use `titleColor` on the gradient). */
-    verticalEventTitleColor?: string;
-  }
-> = {
+type ColorTheme = {
+  start: string;
+  end: string;
+  accent: string;
+  textColor?: string;
+  titleColor?: string;
+  /** Event title on vertical card white panel (horizontal posters still use `titleColor` on the gradient). */
+  verticalEventTitleColor?: string;
+};
+
+const COLOR_THEMES: Record<string, ColorTheme> = {
   purple: {
     start: "#41295a",
     end: "#2f0743",
@@ -282,6 +265,22 @@ const COLOR_THEMES: Record<
   },
 };
 
+function resolveTheme(color?: string): ColorTheme {
+  const raw = String(color || "").trim();
+  if (!raw) return COLOR_THEMES.purple;
+  if (COLOR_THEMES[raw]) return COLOR_THEMES[raw];
+
+  // Custom user-picked color variant: preserve layout, force dark typography.
+  return {
+    start: raw,
+    end: raw,
+    accent: "#0B0B0B",
+    textColor: "#0B0B0B",
+    titleColor: "#0B0B0B",
+    verticalEventTitleColor: "#0B0B0B",
+  };
+}
+
 export function CardPreview({
   data,
   preview,
@@ -300,8 +299,9 @@ export function CardPreview({
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
   const hasSponsors = filterSponsors(data.sponsors).length > 0;
   const sessionTimeLabel = formatSessionTimeWithZone(data.sessionTime);
+  const isCustomTheme = !COLOR_THEMES[String(data.color || "").trim()];
 
-  const theme = COLOR_THEMES[data.color || "purple"] || COLOR_THEMES.purple;
+  const theme = resolveTheme(data.color);
   
   // Font Mapping
   const fontMap: Record<string, string> = {
@@ -349,7 +349,6 @@ export function CardPreview({
   }, [finalQrUrl]);
 
   if (isVertical) {
-    const isDesign1 = data.designType === "design1";
     return (
       <div 
         className="relative overflow-hidden shadow-2xl bg-[#141414] animate-fade-in"
@@ -377,13 +376,6 @@ export function CardPreview({
             className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] max-w-none" 
             alt="" 
           />
-          {!isDesign1 && (
-            <img 
-              src="https://www.figma.com/api/mcp/asset/25c34327-5732-42c0-bf51-b701006d1883" 
-              className="absolute left-[-11px] -top-px w-[590px] h-[543px] max-w-none" 
-              alt="" 
-            />
-          )}
         </div>
 
 
@@ -391,10 +383,8 @@ export function CardPreview({
         <div 
           className="absolute left-0 top-0 w-[576px] bg-white pointer-events-none z-10"
           style={{ 
-            height: isDesign1 ? "447px" : "542px",
-            clipPath: isDesign1 
-              ? "none" 
-              : "polygon(0 0, 100% 0, 100% 447px, 486px 447px, 486px 542px, 336px 447px, 0 447px)"
+            height: "447px",
+            clipPath: "none",
           }}
         />
 
@@ -409,7 +399,7 @@ export function CardPreview({
               iconClassName="h-[63px] w-[63px]"
               nameBoxClassName="h-[66.81px] w-[236.56px]"
               nameTextClassName="text-[44px] leading-none"
-              textColorClassName="text-black"
+              textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : "text-black"}
             />
           </div>
         ) : (
@@ -497,13 +487,22 @@ export function CardPreview({
         )}
 
         {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
-        <p className="absolute left-0 top-[820px] w-full text-center text-white z-4 m-0 text-[35px] font-bold leading-none">
+        <p
+          className="absolute left-0 top-[820px] w-full text-center z-4 m-0 text-[35px] font-bold leading-none"
+          style={{ color: theme.textColor || "#FFFFFF" }}
+        >
           {data.name || "Full Name"}
         </p>
-        <p className="absolute left-0 top-[869px] w-full text-center text-white z-4 m-0 text-[21px] font-medium leading-none">
+        <p
+          className="absolute left-0 top-[869px] w-full text-center z-4 m-0 text-[21px] font-medium leading-none"
+          style={{ color: theme.textColor || "#FFFFFF" }}
+        >
           {data.role || "Role/Title"}
         </p>
-        <p className="absolute left-0 top-[900px] w-full text-center text-white z-4 m-0 text-[21px] font-medium leading-none">
+        <p
+          className="absolute left-0 top-[900px] w-full text-center z-4 m-0 text-[21px] font-medium leading-none"
+          style={{ color: theme.textColor || "#FFFFFF" }}
+        >
           {data.company || "Organization"}
         </p>
 
@@ -535,99 +534,6 @@ export function CardPreview({
   };
 
   const metaTextColor = { color: theme.textColor || "white" };
-
-  if (data.designType === "design2") {
-    return (
-      <div 
-        id={id} 
-        key={data.designType}
-        className="relative overflow-hidden shadow-2xl poster animate-fade-in will-change-transform" 
-        style={posterStyle}
-      >
-        <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none" src="https://www.figma.com/api/mcp/asset/1e6c3590-a66a-4bc5-b575-adfb66dc1bb8" alt="" />
-        
-        <p className="absolute left-[58px] top-[81px] m-0 font-medium text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
-          {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
-        </p>
-        
-        <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
-          {data.eventName ? (
-            data.eventName.split("<br />").map((text, i) => <span key={i} className="block">{text}</span>)
-          ) : (
-            <>
-              <span className="block">Pakistan Tech</span>
-              <span className="block">Summit</span>
-            </>
-          )}
-        </h1>
-
-        <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
-          <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
-            <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z"/></svg>
-            <span>{data.sessionDate || "Friday, 11th April, 2026"}</span>
-          </div>
-          <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
-            <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
-            <span>{sessionTimeLabel}</span>
-          </div>
-        </div>
-
-        <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-medium whitespace-nowrap" style={metaTextColor}>
-          {isWebinarLocation ? (
-            <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z"/></svg>
-          ) : (
-            <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
-          )}
-          <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
-        </div>
-
-        <div className="absolute right-[80px] top-[70px] flex items-center gap-2">
-          {hasOrganizationBranding ? (
-            <OrganizationBrand
-              name={data.organizationName || "Organization"}
-              logoUrl={data.organizationLogoUrl}
-              iconClassName="h-[63px] w-[67px]"
-              nameBoxClassName="h-[56px] w-[191px]"
-              nameTextClassName="text-[34px] leading-none"
-            />
-          ) : (
-            <>
-              <img src="https://www.figma.com/api/mcp/asset/56b614de-2622-49f5-ac7b-a0ed09ebaeac" className="h-[59px] w-[63px] object-contain" alt="" />
-              <img src="https://www.figma.com/api/mcp/asset/22c9e87c-f736-4755-b4a7-402c9070d2b3" className="h-[56px] w-[191px] object-contain" alt="" />
-            </>
-          )}
-        </div>
-
-        <section className="absolute right-[26px] top-[172px] w-[340px] text-left" style={metaTextColor}>
-          <div className="mb-[20px] flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/10">
-            {data.photo ? (
-              <img src={data.photo} className="w-full h-full object-cover" />
-            ) : (
-              <DefaultAvatarPlaceholder className="w-full h-full" />
-            )}
-          </div>
-          <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap mb-[4px]" style={metaTextColor}>
-            {data.name || "Full Name"}
-          </h2>
-          <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
-          <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
-        </section>
-
-        {hasSponsors && (
-          <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
-            <div
-              className="absolute -top-px left-[154px] h-[36px] w-[52px]"
-              style={{
-                backgroundColor: theme.end,
-                clipPath: "polygon(0 0, 100% 0, 100% 100%)",
-              }}
-            />
-            <HorizontalSponsorsDesign2 sponsors={data.sponsors} />
-          </footer>
-        )}
-      </div>
-    );
-  }
 
   // Horizontal Card (Design 1 - Default)
   return (
@@ -693,6 +599,7 @@ export function CardPreview({
             iconClassName="h-[63px] w-[63px]"
             nameBoxClassName="h-[48px] w-[165px]"
             nameTextClassName="text-[31px] leading-none"
+            textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : undefined}
           />
         ) : (
           <>

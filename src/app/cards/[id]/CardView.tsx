@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
@@ -9,25 +9,36 @@ import { toPng } from "html-to-image";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
 
-export default function CardView({ card, isShareMode = false }: { card: CardData; isShareMode?: boolean }) {
+export default function CardView({
+  card,
+  isShareMode = false,
+  initialViewMode = "horizontal",
+}: {
+  card: CardData;
+  isShareMode?: boolean;
+  initialViewMode?: "horizontal" | "vertical";
+}) {
   const [isDownloading, setIsDownloading] = useState(false);
-  const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
+  const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("cardViewMode");
-      if (saved === "horizontal" || saved === "vertical") {
+      const saved = window.localStorage.getItem("cardViewMode");
+      if ((saved === "horizontal" || saved === "vertical") && saved !== viewMode) {
         setViewMode(saved);
       }
-    } catch (e) {}
-  }, []);
+    } catch {
+    }
+  }, [viewMode]);
 
   const changeViewMode = (mode: "horizontal" | "vertical") => {
     setViewMode(mode);
     try {
-      localStorage.setItem("cardViewMode", mode);
-    } catch (e) {}
+      window.localStorage.setItem("cardViewMode", mode);
+      document.cookie = `cardViewMode=${mode}; Path=/; Max-Age=31536000; SameSite=Lax`;
+    } catch {
+    }
   };
 
   const handleDownload = async () => {

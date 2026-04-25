@@ -64,11 +64,17 @@ export async function GET() {
     if (data?.org_owner_user_id) {
       // Member capabilities are sourced from actual active grants, not role template defaults.
       const grants = await queryNeon<{ permission: string }>(
-        `SELECT permission
-         FROM public.access_grants
-         WHERE grantee_user_id = $1
-           AND status = 'active'`,
-        [userId],
+        `SELECT g.permission
+         FROM public.access_grants g
+         LEFT JOIN public.events e
+           ON e.id = g.event_id
+         WHERE g.grantee_user_id = $1
+           AND g.status = 'active'
+           AND (
+             e.user_id = $2
+             OR g.granted_by_user_id = $2
+           )`,
+        [userId, data.org_owner_user_id],
       );
       const permissions = Array.from(
         new Set(grants.map((row) => row.permission)),

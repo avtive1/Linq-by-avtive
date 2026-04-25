@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui";
+import { CustomColorPicker } from "@/components/CustomColorPicker";
 
 import { Lock } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
@@ -35,7 +36,7 @@ function NewCardForm() {
     photo: "",
     year: new Date().getFullYear().toString(),
     linkedin: "",
-    designType: "design1" as "design1" | "design2",
+    designType: "design1" as "design1",
     color: "purple",
     fontFamily: "inter",
     cardRole: initialRole,
@@ -49,6 +50,9 @@ function NewCardForm() {
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
   const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
+  const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
+  const [draftCustomColor, setDraftCustomColor] = useState("#2563EB");
+  const [customColorAnchorRect, setCustomColorAnchorRect] = useState<DOMRect | null>(null);
 
 
   // Fetch event details for the locked header / preview.
@@ -214,7 +218,7 @@ function NewCardForm() {
         photo_url: photo_url,
         card_preview_url: card_preview_url,
         event_id: eventId,
-        design_type: form.designType,
+        design_type: "design1",
         card_color: form.color,
         track: form.cardRole,
         guest_category: form.cardRole === "guest" ? (form.guestCategory || null) : null,
@@ -324,6 +328,9 @@ function NewCardForm() {
     { name: "pink",   start: "#EE0979", end: "#FF6A00" },
     { name: "blue",   start: "#D3CCE3", end: "#E9E4F0" },
   ];
+  const presetColorNames = new Set(colors.map((c) => c.name));
+  const isCustomColorSelected = !presetColorNames.has(form.color);
+  const isCustomPickerActive = showCustomColorPicker || isCustomColorSelected;
 
   return (
     <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-x-hidden">
@@ -476,48 +483,21 @@ function NewCardForm() {
              </div>
           </div>
         <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
-           {/* Item 1: Layout Selection */}
-           <div className="flex-1 flex flex-col gap-3">
-              <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Layout style</span>
-              <div className="flex gap-2 h-10">
-                 <button
-                    type="button"
-                    onClick={() => update("designType")("design1")}
-                    className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
-                       form.designType === "design1" 
-                          ? "bg-primary text-white border-primary shadow-md" 
-                          : "bg-white/70 border-border/80 text-heading hover:bg-white hover:border-primary/50"
-                    }`}
-                 >
-                    Design 1
-                 </button>
-                 <button
-                    type="button"
-                    onClick={() => update("designType")("design2")}
-                    className={`flex-1 rounded-sm border text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${
-                       form.designType === "design2" 
-                          ? "bg-primary text-white border-primary shadow-md" 
-                          : "bg-white/70 border-border/80 text-heading hover:bg-white hover:border-primary/50"
-                    }`}
-                 >
-                    Design 2
-                 </button>
-              </div>
-           </div>
-
-           <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
            {/* Item 2: Theme Selection */}
-           <div className="flex flex-col gap-3 items-center lg:items-start shrink-0">
+           <div className="relative flex-1 flex flex-col gap-3 items-center lg:items-start">
               <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Theme color</span>
               <div className="flex gap-2 h-10 items-center">
                  {colors.map((c) => (
                     <button
                        key={c.name}
                        type="button"
-                       onClick={() => update("color")(c.name)}
+                      onClick={() => {
+                        setShowCustomColorPicker(false);
+                        update("color")(c.name);
+                      }}
                        className={`w-8 h-8 rounded-full transition-all duration-150 relative overflow-hidden flex items-center justify-center p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-95 ${
-                          form.color === c.name 
+                          !showCustomColorPicker && form.color === c.name 
                              ? "ring-2 ring-primary ring-offset-2 scale-110 shadow-md" 
                              : "hover:scale-110 border border-white/40"
                        }`}
@@ -529,7 +509,49 @@ function NewCardForm() {
                        <span className="absolute inset-0 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),inset_0_-1px_2px_rgba(0,0,0,0.2)] pointer-events-none" />
                     </button>
                  ))}
+                 <button
+                    type="button"
+                    onClick={(e) => {
+                      setCustomColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                      setDraftCustomColor(isCustomColorSelected ? form.color : "#2563EB");
+                      setShowCustomColorPicker(true);
+                    }}
+                    className={`w-8 h-8 rounded-full transition-all duration-150 relative overflow-hidden flex items-center justify-center p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-95 ${
+                      isCustomPickerActive
+                        ? "ring-2 ring-primary ring-offset-2 scale-110 shadow-md"
+                        : "hover:scale-110 border border-white/40"
+                    }`}
+                    style={{
+                      background:
+                        "conic-gradient(from 0deg, #ff4d4f, #ffa940, #fadb14, #73d13d, #36cfc9, #4096ff, #9254de, #f759ab, #ff4d4f)",
+                    }}
+                    aria-label="Choose custom color"
+                    title="Choose custom color"
+                 >
+                    <span
+                      className="absolute inset-[3px] rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.35),inset_0_-1px_2px_rgba(0,0,0,0.18)]"
+                      style={{ background: isCustomColorSelected ? form.color : "#ffffff" }}
+                    />
+                    <span
+                      className="relative z-10 text-[14px] font-bold leading-none"
+                      style={{ color: isCustomColorSelected ? "#ffffff" : "#2563EB" }}
+                    >
+                      +
+                    </span>
+                 </button>
               </div>
+              {showCustomColorPicker && (
+                <CustomColorPicker
+                  value={draftCustomColor}
+                  anchorRect={customColorAnchorRect}
+                  onChange={(next) => setDraftCustomColor(next)}
+                  onCancel={() => setShowCustomColorPicker(false)}
+                  onConfirm={() => {
+                    update("color")(draftCustomColor);
+                    setShowCustomColorPicker(false);
+                  }}
+                />
+              )}
            </div>
 
            <div className="w-px bg-white/25 hidden lg:block mx-1" />

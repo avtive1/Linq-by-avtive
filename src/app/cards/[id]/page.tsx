@@ -13,6 +13,7 @@ import { getServerAuthSession } from "@/auth";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
+import { cookies } from "next/headers";
 
 /** Card branding comes from DB; avoid stale HTML after org logo updates. */
 export const dynamic = "force-dynamic";
@@ -46,6 +47,10 @@ export default async function CardViewPage(props: {
     );
   }
   const isShareMode = searchParams?.share === "true";
+  const cookieStore = await cookies();
+  const savedViewMode = cookieStore.get("cardViewMode")?.value;
+  const initialViewMode: "horizontal" | "vertical" =
+    savedViewMode === "vertical" ? "vertical" : "horizontal";
   const token = String(searchParams?.token || "");
   let card: CardData | null = null;
 
@@ -203,5 +208,5 @@ export default async function CardViewPage(props: {
     );
   }
 
-  return <CardView card={card} isShareMode={isShareMode} />;
+  return <CardView card={card} isShareMode={isShareMode} initialViewMode={initialViewMode} />;
 }

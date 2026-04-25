@@ -143,13 +143,19 @@ export async function POST(req: Request) {
       );
       if (member?.id) {
         const grant = await queryNeonOne<{ id: string }>(
-          `SELECT id
-           FROM public.access_grants
-           WHERE grantee_user_id = $1
-             AND status = 'active'
-             AND permission = 'create_event'
+          `SELECT g.id
+           FROM public.access_grants g
+           LEFT JOIN public.events e
+             ON e.id = g.event_id
+           WHERE g.grantee_user_id = $1
+             AND g.status = 'active'
+             AND g.permission = 'create_event'
+             AND (
+               e.user_id = $2
+               OR g.granted_by_user_id = $2
+             )
            LIMIT 1`,
-          [viewerId],
+          [viewerId, ownerId],
         );
         canCreate = Boolean(grant?.id);
       }

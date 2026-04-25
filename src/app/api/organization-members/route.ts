@@ -58,11 +58,17 @@ export async function GET(req: Request) {
     const emailByUserId = new Map(emailRows.map((r) => [r.user_id, r.email]));
     const grantRows = userIds.length
       ? await queryNeon<{ grantee_user_id: string; permission: string }>(
-          `SELECT grantee_user_id, permission
-           FROM public.access_grants
-           WHERE grantee_user_id = ANY($1::uuid[])
-             AND status = 'active'`,
-          [userIds],
+          `SELECT g.grantee_user_id, g.permission
+           FROM public.access_grants g
+           LEFT JOIN public.events e
+             ON e.id = g.event_id
+           WHERE g.grantee_user_id = ANY($1::uuid[])
+             AND g.status = 'active'
+             AND (
+               e.user_id = $2
+               OR g.granted_by_user_id = $2
+             )`,
+          [userIds, ownerId],
         )
       : [];
     const permissionsByUserId = new Map<string, string[]>();
@@ -219,22 +225,29 @@ export async function POST(req: Request) {
       const eventIds = ownerEvents.map((e) => e.id);
       if (eventIds.length > 0) {
         // Remove editable permissions that are no longer selected.
+        // This must include both event-scoped grants and org-level grants (event_id IS NULL).
         if (normalizedPermissions.length > 0) {
           await queryNeon(
             `DELETE FROM public.access_grants
-             WHERE event_id = ANY($1::uuid[])
+             WHERE (
+                 event_id = ANY($1::uuid[])
+                 OR (event_id IS NULL AND granted_by_user_id = $5)
+               )
                AND grantee_user_id = $2
                AND permission = ANY($3::text[])
                AND permission <> ALL($4::text[])`,
-            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions],
+            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions, ownerId],
           );
         } else {
           await queryNeon(
             `DELETE FROM public.access_grants
-             WHERE event_id = ANY($1::uuid[])
+             WHERE (
+                 event_id = ANY($1::uuid[])
+                 OR (event_id IS NULL AND granted_by_user_id = $4)
+               )
                AND grantee_user_id = $2
                AND permission = ANY($3::text[])`,
-            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS],
+            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, ownerId],
           );
         }
 
