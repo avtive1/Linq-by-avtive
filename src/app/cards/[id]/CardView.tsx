@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
@@ -13,6 +13,22 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("cardViewMode");
+      if (saved === "horizontal" || saved === "vertical") {
+        setViewMode(saved);
+      }
+    } catch (e) {}
+  }, []);
+
+  const changeViewMode = (mode: "horizontal" | "vertical") => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem("cardViewMode", mode);
+    } catch (e) {}
+  };
 
   const handleDownload = async () => {
     if (!cardRef.current) return;
@@ -41,7 +57,7 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
   };
 
   const handlePrint = () => {
-    setViewMode("vertical");
+    changeViewMode("vertical");
     // Print uses `.print-only` (not on-screen preview); wait for layout flush before dialog
     requestAnimationFrame(() => {
       requestAnimationFrame(() => window.print());
@@ -94,14 +110,14 @@ export default function CardView({ card, isShareMode = false }: { card: CardData
              <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20">
                 <button
                   type="button"
-                  onClick={() => setViewMode("horizontal")}
+                  onClick={() => changeViewMode("horizontal")}
                   className={`px-4 py-2 rounded-md text-[13px] leading-tight font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode("vertical")}
+                  onClick={() => changeViewMode("vertical")}
                   className={`px-4 py-2 rounded-md text-[13px] leading-tight font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View

@@ -10,9 +10,10 @@ const ORG_CHANGE_COOLDOWN_DAYS = 90;
 
 export async function PATCH(req: Request) {
   try {
-    const body = (await req.json()) as { username?: string; organizationName?: string };
+    const body = (await req.json()) as { username?: string; organizationName?: string; organizationLogoUrl?: string };
     const nextUsername = String(body?.username || "").trim().toLowerCase();
     const nextOrganizationName = normalizeOrganizationName(String(body?.organizationName || ""));
+    const nextOrganizationLogoUrl = String(body?.organizationLogoUrl || "").trim();
 
     if (!nextUsername) {
       return NextResponse.json({ error: "Username is required." }, { status: 400 });
@@ -130,6 +131,9 @@ export async function PATCH(req: Request) {
       organization_name: nextOrganizationName,
       organization_name_key: toOrganizationKey(nextOrganizationName),
     };
+    if (nextOrganizationLogoUrl) {
+      updatePayload.organization_logo_url = nextOrganizationLogoUrl;
+    }
     if (usernameChanged) updatePayload.username_changed_at = new Date().toISOString();
     if (organizationChanged) updatePayload.organization_name_changed_at = new Date().toISOString();
 

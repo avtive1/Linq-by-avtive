@@ -129,7 +129,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isLoadingGrants, setIsLoadingGrants] = useState(false);
   const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id || "";
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick } = useAutoRefresh(Boolean(userId));
@@ -138,6 +138,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let isMounted = true;
+    if (sessionStatus === "loading") return;
+
     const loadKey = `${id}|${userId}|${String(impersonateId ?? "")}|${isPreviewMode}`;
     const loadKeyChanged = eventPageLoadKeyRef.current !== loadKey;
     const silentPoll = !loadKeyChanged && refreshTick > 0;
@@ -279,11 +281,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode, userId, refreshTick]);
+  }, [id, router, impersonateId, isPreviewMode, userId, refreshTick, sessionStatus]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
-  const canReviewAccessRequests = isEventOwner || isOrgAdminReviewer;
+  const canReviewAccessRequests = isEventOwner;
   const canManageEvent = isEventOwner || grantedPermissions.includes("manage_event");
   const canDeleteEvent = canManageEvent || grantedPermissions.includes("delete_event");
   const canEditCards = canManageEvent || grantedPermissions.includes("edit_cards");
@@ -1562,15 +1564,25 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               ) : activeGrants.length === 0 ? (
                 <p className="text-sm text-muted py-6 text-center">No active grants.</p>
               ) : (
-                activeGrants.map((grant) => (
-                  <div key={grant.id} className="rounded-md border border-border/50 bg-white/80 p-3 flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-heading truncate">{grant.grantee_email}</p>
-                      <p className="text-xs text-muted mt-1">Permission: {grant.permission}</p>
+                Object.values(
+                  activeGrants.reduce((acc, grant) => {
+                    if (!acc[grant.grantee_email]) acc[grant.grantee_email] = { email: grant.grantee_email, grants: [] };
+                    acc[grant.grantee_email].grants.push(grant);
+                    return acc;
+                  }, {} as Record<string, { email: string; grants: typeof activeGrants }>)
+                ).map((group) => (
+                  <div key={group.email} className="rounded-md border border-border/50 bg-white/80 p-4 flex flex-col gap-3">
+                    <p className="text-sm font-semibold text-heading truncate">{group.email}</p>
+                    <div className="flex flex-col gap-2">
+                      {group.grants.map(grant => (
+                        <div key={grant.id} className="flex items-center justify-between gap-2 p-2 rounded-sm bg-surface/50 border border-border/30">
+                          <p className="text-xs text-muted font-medium">Permission: <span className="text-heading">{grant.permission}</span></p>
+                          <Button size="sm" variant="secondary" onClick={() => revokeGrant(grant.id)} className="h-7 text-xs px-3">
+                            Revoke
+                          </Button>
+                        </div>
+                      ))}
                     </div>
-                    <Button size="sm" variant="secondary" onClick={() => revokeGrant(grant.id)}>
-                      Revoke
-                    </Button>
                   </div>
                 ))
               )}

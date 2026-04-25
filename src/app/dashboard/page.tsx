@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -131,6 +131,12 @@ function DashboardContent() {
     totalEvents: 0,
     totalAttendees: 0,
   });
+  const [userEmail, setUserEmail] = useState("");
+  const [currentPasswordDraft, setCurrentPasswordDraft] = useState("");
+  const [newPasswordDraft, setNewPasswordDraft] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [organizationLogoDraft, setOrganizationLogoDraft] = useState("");
 
   const [isRequestPermissionModalOpen, setIsRequestPermissionModalOpen] = useState(false);
   const [permissionRequestReason, setPermissionRequestReason] = useState("");
@@ -445,7 +451,7 @@ function DashboardContent() {
   const ownerTopCampaigns = useMemo(() => {
     return [...events]
       .sort((a, b) => (b.attendeeCount || 0) - (a.attendeeCount || 0))
-      .slice(0, 5);
+      .slice(0, 3);
   }, [events]);
   const ownerAvgAttendees = useMemo(() => {
     if (stats.totalEvents <= 0) return 0;
@@ -563,10 +569,31 @@ function DashboardContent() {
     setIsSavingUsername(true);
     setUsernameError("");
     try {
+      let logoUrl = "";
+      if (organizationLogoDraft && isOrgOwner) {
+        try {
+          const uploadRes = await fetch("/api/media/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ dataUrl: organizationLogoDraft, folder: `organizations/${userId}` }),
+          });
+          const uploadPayload = await uploadRes.json();
+          if (uploadRes.ok && uploadPayload?.data?.url) {
+            logoUrl = String(uploadPayload.data.url);
+          }
+        } catch (uploadErr) {
+          console.error("Logo upload failed:", uploadErr);
+        }
+      }
+
       const res = await fetch("/api/profile/username", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: cleaned, organizationName: orgCleaned }),
+        body: JSON.stringify({ 
+          username: cleaned, 
+          organizationName: orgCleaned,
+          ...(logoUrl ? { organizationLogoUrl: logoUrl } : {})
+        }),
       });
       const payload = await res.json();
       if (!res.ok) {
@@ -582,6 +609,35 @@ function DashboardContent() {
       setUsernameError("Could not update username.");
     } finally {
       setIsSavingUsername(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPasswordDraft || !newPasswordDraft) {
+      setPasswordError("Both password fields are required.");
+      return;
+    }
+    setIsSavingPassword(true);
+    setPasswordError("");
+    try {
+      const res = await fetch("/api/profile/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword: currentPasswordDraft, newPassword: newPasswordDraft }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        setPasswordError(payload?.error || "Could not update password.");
+        return;
+      }
+      toast.success("Password updated successfully.");
+      setCurrentPasswordDraft("");
+      setNewPasswordDraft("");
+    } catch (err) {
+      setPasswordError("Could not update password.");
+    } finally {
+      setIsSavingPassword(false);
     }
   };
 
@@ -923,22 +979,6 @@ function DashboardContent() {
                     {isOrgOwner ? "Organization Admin" : "Team Member"}
                   </span>
                 )}
-                {!isPreviewMode && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setUsernameDraft(userName);
-                      setOrganizationDraft(organizationName);
-                      setUsernameError("");
-                      setIsUsernameModalOpen(true);
-                    }}
-                    className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 text-muted hover:text-heading hover:bg-white/60 transition-all"
-                    aria-label="Edit username"
-                    title="Edit username"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                )}
               </div>
             )}
             {isPreviewMode && (
@@ -1011,6 +1051,26 @@ function DashboardContent() {
                 icon={<Users size={18} />}
               >
                 Team Access
+              </Button>
+            )}
+            {!isPreviewMode && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setUsernameDraft(userName);
+                  setOrganizationDraft(organizationName);
+                  setUserEmail(session?.user?.email || "");
+                  setCurrentPasswordDraft("");
+                  setNewPasswordDraft("");
+                  setPasswordError("");
+                  setUsernameError("");
+                  setOrganizationLogoDraft("");
+                  setIsUsernameModalOpen(true);
+                }}
+                className="whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                icon={<Settings size={18} />}
+              >
+                <span className="hidden sm:inline">Settings</span>
               </Button>
             )}
             <Button
@@ -1511,7 +1571,7 @@ function DashboardContent() {
           </div>
         )}
 
-        {!isOrgTeamMember && inboxRequests.length > 0 && (
+        {!isOrgTeamMember && isOrgOwner && inboxRequests.length > 0 && (
           <div className="glass-panel p-4 rounded-md mb-6">
             <p className="text-sm font-medium text-heading mb-2">Pending Access Inbox</p>
             <div className="flex flex-col gap-2">
@@ -1785,71 +1845,113 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
           />
-          <div className="relative w-full max-w-[420px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[480px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Profile</h2>
-                <p className="text-sm text-muted">This updates your profile everywhere in the app.</p>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Account Settings</h2>
+                <p className="text-sm text-muted">Manage your profile, organization, and security preferences.</p>
               </div>
               <button
-                onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
+                onClick={() => {
+                  if (!isSavingUsername && !isSavingPassword) setIsUsernameModalOpen(false);
+                }}
                 className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSaveUsername} className="p-8 pt-4 flex flex-col gap-4">
-              <TextInput
-                label="Username"
-                required
-                placeholder="choose_a_username"
-                value={usernameDraft}
-                onChange={(v) => {
-                  setUsernameDraft(v);
-                  if (usernameError) setUsernameError("");
-                }}
-              />
-              <p className="text-[13px] text-muted -mt-1">Allowed: letters, numbers, underscore, dot.</p>
-              <p className="text-[13px] text-muted -mt-1">Username can be changed once every 24 days.</p>
-              <TextInput
-                label="Organization Name"
-                required
-                placeholder="Your organization"
-                value={organizationDraft}
-                maxLength={120}
-                onChange={(v) => {
-                  setOrganizationDraft(v);
-                  if (usernameError) setUsernameError("");
-                }}
-                disabled={isOrgTeamMember || hasPendingOrgJoin}
-                readOnly={isOrgTeamMember || hasPendingOrgJoin}
-              />
-              <p className="text-[13px] text-muted -mt-1">
-                {isOrgTeamMember || hasPendingOrgJoin
-                  ? "Organization name is read-only for team members. Ask your organization admin to update it."
-                  : "Organization name can be changed once every 90 days."}
-              </p>
-              {usernameError && <p className="text-sm font-normal leading-[1.6] text-red-500">{usernameError}</p>}
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => setIsUsernameModalOpen(false)}
-                  disabled={isSavingUsername}
-                  className="order-2 sm:order-1"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  fullWidth
-                  disabled={isSavingUsername}
-                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
-                >
-                  {isSavingUsername ? "Saving..." : "Save Profile"}
-                </Button>
-              </div>
-            </form>
+            <div className="p-8 pt-4 flex flex-col gap-8 max-h-[75vh] overflow-y-auto">
+              <form onSubmit={handleSaveUsername} className="flex flex-col gap-4">
+                <h3 className="font-semibold text-heading text-lg leading-none mb-1">Profile & Organization</h3>
+                <TextInput
+                  label="Email"
+                  value={userEmail}
+                  onChange={() => {}}
+                  disabled
+                  readOnly
+                />
+                <TextInput
+                  label="Username"
+                  required
+                  placeholder="choose_a_username"
+                  value={usernameDraft}
+                  onChange={(v) => {
+                    setUsernameDraft(v);
+                    if (usernameError) setUsernameError("");
+                  }}
+                />
+                <p className="text-[13px] text-muted -mt-1">Allowed: letters, numbers, underscore, dot. Can be changed once every 24 days.</p>
+                <TextInput
+                  label="Organization Name"
+                  required
+                  placeholder="Your organization"
+                  value={organizationDraft}
+                  maxLength={120}
+                  onChange={(v) => {
+                    setOrganizationDraft(v);
+                    if (usernameError) setUsernameError("");
+                  }}
+                  disabled={isOrgTeamMember || hasPendingOrgJoin}
+                  readOnly={isOrgTeamMember || hasPendingOrgJoin}
+                />
+                <p className="text-[13px] text-muted -mt-1">
+                  {isOrgTeamMember || hasPendingOrgJoin
+                    ? "Organization name is read-only for team members."
+                    : "Organization name can be changed once every 90 days."}
+                </p>
+                {isOrgOwner && (
+                  <FilePicker
+                    label="Organization Logo"
+                    value={organizationLogoDraft}
+                    onChange={(v) => setOrganizationLogoDraft(v)}
+                    onError={(msg) => toast.error(msg)}
+                    cropTitle="Crop organization logo"
+                    cropSubtitle="Drag the corners or edges to adjust the crop."
+                    cropApplyLabel="Apply logo"
+                  />
+                )}
+                {usernameError && <p className="text-sm font-normal leading-[1.6] text-red-500">{usernameError}</p>}
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    fullWidth
+                    disabled={isSavingUsername}
+                    className="shadow-md shadow-primary/10"
+                  >
+                    {isSavingUsername ? "Saving Profile..." : "Save Profile Settings"}
+                  </Button>
+                </div>
+              </form>
+              
+              <hr className="border-border/40" />
+              
+              <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+                <h3 className="font-semibold text-heading text-lg leading-none mb-1">Security</h3>
+                <TextInput
+                  type="password"
+                  label="Current Password"
+                  value={currentPasswordDraft}
+                  onChange={setCurrentPasswordDraft}
+                />
+                <TextInput
+                  type="password"
+                  label="New Password"
+                  value={newPasswordDraft}
+                  onChange={setNewPasswordDraft}
+                />
+                {passwordError && <p className="text-sm font-normal leading-[1.6] text-red-500">{passwordError}</p>}
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="secondary"
+                    disabled={isSavingPassword || !currentPasswordDraft || !newPasswordDraft}
+                  >
+                    {isSavingPassword ? "Updating Password..." : "Update Password"}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
