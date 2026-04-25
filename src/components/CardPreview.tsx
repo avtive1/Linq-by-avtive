@@ -370,24 +370,26 @@ export function CardPreview({
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} 
         />
 
-        {/* Background Overlays */}
-        <img 
-          src="https://www.figma.com/api/mcp/asset/cfa963ed-fe15-42b0-a98e-e2e901c4176a" 
-          className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] pointer-events-none max-w-none z-1" 
-          alt="" 
-        />
-        {!isDesign1 && (
+        {/* Background Overlays - masked by z-index */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
           <img 
-            src="https://www.figma.com/api/mcp/asset/25c34327-5732-42c0-bf51-b701006d1883" 
-            className="absolute left-[-11px] -top-px w-[590px] h-[543px] pointer-events-none max-w-none" 
+            src="https://www.figma.com/api/mcp/asset/cfa963ed-fe15-42b0-a98e-e2e901c4176a" 
+            className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] max-w-none" 
             alt="" 
           />
-        )}
+          {!isDesign1 && (
+            <img 
+              src="https://www.figma.com/api/mcp/asset/25c34327-5732-42c0-bf51-b701006d1883" 
+              className="absolute left-[-11px] -top-px w-[590px] h-[543px] max-w-none" 
+              alt="" 
+            />
+          )}
+        </div>
 
 
         {/* Top Panel (White portion) */}
         <div 
-          className="absolute left-0 top-0 w-[576px] bg-white pointer-events-none"
+          className="absolute left-0 top-0 w-[576px] bg-white pointer-events-none z-10"
           style={{ 
             height: isDesign1 ? "447px" : "542px",
             clipPath: isDesign1 
@@ -400,7 +402,7 @@ export function CardPreview({
 
         {/* Branding */}
         {hasOrganizationBranding ? (
-          <div className="absolute left-[31px] top-[40px] z-5 flex items-center gap-3">
+          <div className="absolute left-[31px] top-[40px] z-20 flex items-center gap-3">
             <OrganizationBrand
               name={data.organizationName || "Organization"}
               logoUrl={data.organizationLogoUrl}
@@ -411,7 +413,7 @@ export function CardPreview({
             />
           </div>
         ) : (
-          <>
+          <div className="z-20">
             <img
               src="https://www.figma.com/api/mcp/asset/7716a834-6d7b-4dbe-8553-370f4fddf5fc"
               className="absolute left-[86px] top-[40px] h-[44px] w-[154px] object-contain"
@@ -419,18 +421,18 @@ export function CardPreview({
             />
             <img
               src="https://www.figma.com/api/mcp/asset/be4bd848-b76e-4630-808c-cf77963ce6a7"
-              className="absolute left-[31px] top-[42px] z-5 h-[44px] w-[47px] object-contain"
+              className="absolute left-[31px] top-[42px] z-20 h-[44px] w-[47px] object-contain"
               alt=""
             />
-          </>
+          </div>
         )}
 
-        <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-medium tracking-[3px] uppercase leading-none">
+        <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-medium tracking-[3px] uppercase leading-none z-20">
           {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
         </p>
 
         <h1 
-          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]"
+          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px] z-20"
           style={{ 
             color: "#000000",
             fontFamily: selectedFont,
@@ -446,19 +448,19 @@ export function CardPreview({
 
 
         {/* Meta Info - Precisely positioned per provided CSS */}
-        <p className="absolute left-[30px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
+        <p className="absolute left-[30px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px] z-20">
           <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z" />
           </svg>
           {data.sessionDate || "Friday, 11th April, 2026"}
         </p>
-        <p className="absolute left-[261px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
+        <p className="absolute left-[261px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px] z-20">
           <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z" />
           </svg>
           {sessionTimeLabel}
         </p>
-        <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px]">
+        <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px] z-20">
           {isWebinarLocation ? (
             <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z" />

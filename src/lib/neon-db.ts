@@ -7,10 +7,17 @@ function qIdent(name: string): string {
 }
 
 function getConnectionString(): string {
-  const value = process.env.DATABASE_URL_DIRECT || process.env.DATABASE_URL;
+  let value = process.env.DATABASE_URL_DIRECT || process.env.DATABASE_URL;
   if (!value) {
     throw new Error("Missing DATABASE_URL/DATABASE_URL_DIRECT");
   }
+  
+  // Explicitly add sslmode=verify-full to satisfy security warnings if it's a connection URL
+  if (value.includes("postgresql://") && !value.includes("sslmode=")) {
+    const separator = value.includes("?") ? "&" : "?";
+    value = `${value}${separator}sslmode=verify-full`;
+  }
+  
   return value;
 }
 
@@ -19,6 +26,7 @@ export function getNeonPool(): Pool {
     pool = new Pool({
       connectionString: getConnectionString(),
       max: 10,
+      ssl: true, // Use default SSL handling, which will be governed by the sslmode in the URL
     });
   }
   return pool;
