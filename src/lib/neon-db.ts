@@ -12,10 +12,15 @@ function getConnectionString(): string {
     throw new Error("Missing DATABASE_URL/DATABASE_URL_DIRECT");
   }
   
-  // Explicitly add sslmode=verify-full to satisfy security warnings if it's a connection URL
-  if (value.includes("postgresql://") && !value.includes("sslmode=")) {
-    const separator = value.includes("?") ? "&" : "?";
-    value = `${value}${separator}sslmode=verify-full`;
+  // Explicitly set sslmode=verify-full to satisfy security warnings.
+  // We replace any existing weaker mode (like require or prefer) with verify-full.
+  if (value.includes("postgresql://")) {
+    if (value.includes("sslmode=")) {
+      value = value.replace(/sslmode=[^&]+/g, "sslmode=verify-full");
+    } else {
+      const separator = value.includes("?") ? "&" : "?";
+      value = `${value}${separator}sslmode=verify-full`;
+    }
   }
   
   return value;
