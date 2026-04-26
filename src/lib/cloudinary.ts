@@ -56,11 +56,13 @@ export async function uploadImageToCloudinary(input: {
   const signParams: Record<string, string> = {
     timestamp,
     folder: input.folder || "",
-    public_id: input.publicId || "",
     overwrite: "true",
     invalidate: "true",
-    unique_filename: input.publicId ? "false" : "true",
   };
+  if (input.publicId) {
+    signParams.public_id = input.publicId;
+    signParams.unique_filename = "false";
+  }
   const signature = signCloudinaryParams(signParams);
 
   const formData = new FormData();
