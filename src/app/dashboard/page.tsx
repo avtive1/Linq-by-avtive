@@ -547,6 +547,7 @@ function DashboardContent() {
   const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
   const isTeamMemberMode = !isPreviewMode && isOrgTeamMember;
   const isOrgAdminMode = !isPreviewMode && !isOrgTeamMember && isOrgOwner;
+  const orgDisplayName = organizationName?.trim() || "Organization";
   const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
   const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
   const previewEventsPct = Math.max(8, Math.round((stats.totalEvents / previewMaxMetric) * 100));
@@ -1074,7 +1075,13 @@ function DashboardContent() {
               className="text-4xl sm:text-5xl lg:text-6xl font-bold text-heading tracking-tight leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
             >
-              {isPreviewMode ? "Organization Preview" : isOrgTeamMember ? "Team Workspace" : isOrgOwner ? "Organization Dashboard" : "Dashboard"}
+              {isPreviewMode
+                ? "Organization Preview"
+                : isOrgTeamMember
+                  ? "Team Workspace"
+                  : isOrgOwner
+                    ? `${orgDisplayName} Dashboard`
+                    : "Dashboard"}
             </h1>
             {userName && (
               <div className="text-lg font-normal text-muted flex items-center gap-2 mt-1 leading-[1.6]">
@@ -1089,7 +1096,7 @@ function DashboardContent() {
                     }`}
                   >
                     {isOrgOwner ? <ShieldCheck size={12} /> : <UserCheck size={12} />}
-                    {isOrgOwner ? "Organization Admin" : "Team Member"}
+                    {isOrgOwner ? `${orgDisplayName} Admin` : "Team Member"}
                   </span>
                 )}
               </div>
@@ -1202,7 +1209,9 @@ function DashboardContent() {
                     <ShieldCheck size={20} />
                   </span>
                   <div className="flex flex-col">
-                    <p className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">Organization Admin Console</p>
+                    <p className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
+                      {orgDisplayName} Admin Console
+                    </p>
                     <p className="text-sm text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
                   </div>
                 </div>

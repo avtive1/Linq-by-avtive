@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 export default function NewOrganizationByAdminPage() {
   const router = useRouter();
+  const [organizationName, setOrganizationName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,8 +17,8 @@ export default function NewOrganizationByAdminPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) {
-      setError("Email and password are required.");
+    if (!organizationName.trim() || !email.trim() || !password) {
+      setError("Organization name, email, and password are required.");
       return;
     }
     setIsSubmitting(true);
@@ -26,7 +27,11 @@ export default function NewOrganizationByAdminPage() {
       const res = await fetch("/api/admin/organizations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+        body: JSON.stringify({
+          organizationName: organizationName.trim(),
+          email: email.trim().toLowerCase(),
+          password,
+        }),
       });
       const payload = await res.json().catch(() => null);
       if (!res.ok) {
@@ -44,16 +49,15 @@ export default function NewOrganizationByAdminPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 px-2 py-6 sm:px-4 sm:py-6 lg:px-6">
-      <Link
-        href="/admin"
-        className="inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong"
-      >
-        <ArrowLeft size={14} />
-        Back to Admin
-      </Link>
-
-      <div className="max-w-[560px] rounded-xl border border-primary/20 bg-white/90 p-6 shadow-md">
+    <div className="flex min-h-[calc(100vh-120px)] items-center justify-center px-2 py-6 sm:px-4 sm:py-8 lg:px-6">
+      <div className="w-full max-w-[620px] rounded-xl border border-primary/20 bg-white/90 p-6 shadow-md sm:p-8">
+        <Link
+          href="/admin"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong"
+        >
+          <ArrowLeft size={14} />
+          Back to Admin
+        </Link>
         <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
           Create Organization Account
         </h1>
@@ -63,6 +67,14 @@ export default function NewOrganizationByAdminPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+          <TextInput
+            label="Organization Name"
+            required
+            placeholder="Enter organization name"
+            value={organizationName}
+            onChange={setOrganizationName}
+            error={error ? "" : undefined}
+          />
           <TextInput
             label="Organization Owner Email"
             required

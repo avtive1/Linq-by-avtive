@@ -23,11 +23,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Forbidden." }, { status: 403 });
     }
 
-    const body = (await req.json()) as { email?: string; password?: string };
+    const body = (await req.json()) as { organizationName?: string; email?: string; password?: string };
+    const organizationName = String(body.organizationName || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+    if (!organizationName || !email || !password) {
+      return NextResponse.json({ error: "Organization name, email, and password are required." }, { status: 400 });
+    }
+    if (organizationName.length > 120) {
+      return NextResponse.json({ error: "Organization name is too long." }, { status: 400 });
     }
     if (!/\S+@\S+\.\S+/.test(email)) {
       return NextResponse.json({ error: "Invalid email format." }, { status: 400 });
@@ -37,7 +41,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: passwordIssues[0] }, { status: 400 });
     }
 
-    const data = await createOrganizationOwnerByAdmin({ email, password });
+    const data = await createOrganizationOwnerByAdmin({ organizationName, email, password });
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to create organization.";

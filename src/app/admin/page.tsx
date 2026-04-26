@@ -205,7 +205,13 @@ export default async function AdminDashboardPage() {
               Organizations Directory
             </h2>
             <Link href="/admin/organizations/new">
-              <Button size="sm">Create Organization</Button>
+              <Button
+                variant="secondary"
+                size="md"
+                className="min-w-[168px] justify-center border-primary/20 bg-white/92 text-heading shadow-sm hover:bg-primary/10 hover:border-primary/40 hover:text-primary-strong"
+              >
+                Create Organization
+              </Button>
             </Link>
           </div>
           <OrganizationsTable initialOrganizations={organizations} />

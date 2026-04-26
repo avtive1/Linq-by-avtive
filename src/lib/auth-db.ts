@@ -55,17 +55,6 @@ export async function ensureAuthSchema() {
   schemaEnsured = true;
 }
 
-function organizationNameFromEmail(email: string) {
-  const domain = email.split("@")[1] || "";
-  const firstLabel = domain.split(".")[0] || email.split("@")[0] || "Organization";
-  const cleaned = firstLabel.replace(/[^a-zA-Z0-9 ]+/g, " ").trim();
-  if (!cleaned) return "Organization";
-  return cleaned
-    .split(/\s+/)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-}
-
 function normalizeBootstrapUsername(email: string) {
   const base = email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_]/g, "") || "superadmin";
   return base.slice(0, 30) || "superadmin";
@@ -284,6 +273,7 @@ export async function registerUser(input: {
 }
 
 export async function createOrganizationOwnerByAdmin(input: {
+  organizationName: string;
   email: string;
   password: string;
 }): Promise<{ userId: string; email: string; organizationName: string }> {
@@ -298,24 +288,22 @@ export async function createOrganizationOwnerByAdmin(input: {
     throw new Error("An account with this email already exists.");
   }
 
-  const baseOrganizationName = normalizeOrganizationName(organizationNameFromEmail(email));
-  let organizationName = baseOrganizationName;
+  let organizationName = normalizeOrganizationName(input.organizationName);
+  if (!organizationName) {
+    throw new Error("Organization name is required.");
+  }
   let organizationKey = toOrganizationKey(organizationName);
   if (!organizationKey) {
-    organizationName = `Organization ${Date.now()}`;
-    organizationKey = toOrganizationKey(organizationName);
+    throw new Error("Invalid organization name.");
   }
-  if (!organizationKey) throw new Error("Failed to generate organization key.");
 
   const existingOrg = await queryNeonOne<{ id: string }>(
     `SELECT id FROM public.organizations WHERE organization_name_key = $1 LIMIT 1`,
     [organizationKey],
   );
   if (existingOrg?.id) {
-    organizationName = `${organizationName} ${Math.floor(Math.random() * 900 + 100)}`;
-    organizationKey = toOrganizationKey(organizationName);
+    throw new Error("Organization name is already in use.");
   }
-  if (!organizationKey) throw new Error("Failed to generate organization key.");
 
   const userId = crypto.randomUUID();
   const argon2 = await getArgon2();
