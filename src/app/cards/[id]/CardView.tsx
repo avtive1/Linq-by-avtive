@@ -4,7 +4,7 @@ import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
-import { ArrowLeft, Download, Share2, Printer } from "lucide-react";
+import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
@@ -23,7 +23,11 @@ export default function CardView({
   const [horizontalPreviewFailed, setHorizontalPreviewFailed] = useState(false);
   const [verticalFrontPreviewFailed, setVerticalFrontPreviewFailed] = useState(false);
   const [verticalBackPreviewFailed, setVerticalBackPreviewFailed] = useState(false);
+  const [showBadgeDownloadMenu, setShowBadgeDownloadMenu] = useState(false);
+  const [showPostDownloadMenu, setShowPostDownloadMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const verticalFrontExportRef = useRef<HTMLDivElement>(null);
+  const verticalBackExportRef = useRef<HTMLDivElement>(null);
   const horizontalPreviewUrl = useMemo(
     () => String(card.cardPreviewUrl || "").trim(),
     [card.cardPreviewUrl],
@@ -88,12 +92,127 @@ export default function CardView({
     }
   };
 
-  const handlePrint = () => {
-    changeViewMode("vertical");
-    // Print uses `.print-only` (not on-screen preview); wait for layout flush before dialog
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => window.print());
-    });
+  const handleDownloadPostPdf = async () => {
+    if (!cardRef.current) return;
+    setIsDownloading(true);
+    setShowPostDownloadMenu(false);
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        skipFonts: false,
+      });
+      const [{ jsPDF }] = await Promise.all([import("jspdf")]);
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 8;
+      const cardAspect = 628 / 1200;
+      let renderWidth = pageWidth - margin * 2;
+      let renderHeight = renderWidth * cardAspect;
+      if (renderHeight > pageHeight - margin * 2) {
+        renderHeight = pageHeight - margin * 2;
+        renderWidth = renderHeight / cardAspect;
+      }
+      const x = (pageWidth - renderWidth) / 2;
+      const y = (pageHeight - renderHeight) / 2;
+      doc.addImage(dataUrl, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST");
+      const filename = `avtive-post-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
+      doc.save(filename);
+      toast.success("Post PDF downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to download post PDF:", err);
+      toast.error("Failed to generate post PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const getVerticalExports = async () => {
+    if (!verticalFrontExportRef.current || !verticalBackExportRef.current) {
+      throw new Error("Badge previews are not ready yet.");
+    }
+    const [frontDataUrl, backDataUrl] = await Promise.all([
+      toPng(verticalFrontExportRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        skipFonts: false,
+      }),
+      toPng(verticalBackExportRef.current, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        skipFonts: false,
+      }),
+    ]);
+    return { frontDataUrl, backDataUrl };
+  };
+
+  const handleDownloadBadgePdf = async () => {
+    setIsDownloading(true);
+    setShowBadgeDownloadMenu(false);
+    try {
+      const { frontDataUrl, backDataUrl } = await getVerticalExports();
+      const [{ jsPDF }] = await Promise.all([import("jspdf")]);
+      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const addCardPage = (dataUrl: string) => {
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 10;
+        const cardAspect = 1024 / 576;
+        let renderWidth = pageWidth - margin * 2;
+        let renderHeight = renderWidth * cardAspect;
+        if (renderHeight > pageHeight - margin * 2) {
+          renderHeight = pageHeight - margin * 2;
+          renderWidth = renderHeight / cardAspect;
+        }
+        const x = (pageWidth - renderWidth) / 2;
+        const y = (pageHeight - renderHeight) / 2;
+        doc.addImage(dataUrl, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST");
+      };
+      addCardPage(frontDataUrl);
+      doc.addPage("a4", "portrait");
+      addCardPage(backDataUrl);
+      const filename = `avtive-badge-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
+      doc.save(filename);
+      toast.success("Badge PDF downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to download badge PDF:", err);
+      toast.error("Failed to generate badge PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadBadgeZip = async () => {
+    setIsDownloading(true);
+    setShowBadgeDownloadMenu(false);
+    try {
+      const { frontDataUrl, backDataUrl } = await getVerticalExports();
+      const [{ default: JSZip }] = await Promise.all([import("jszip")]);
+      const zip = new JSZip();
+      const [frontBlob, backBlob] = await Promise.all([
+        fetch(frontDataUrl).then((res) => res.blob()),
+        fetch(backDataUrl).then((res) => res.blob()),
+      ]);
+      const base = card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee";
+      zip.file(`${base}-badge-front.png`, frontBlob);
+      zip.file(`${base}-badge-back.png`, backBlob);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `avtive-badge-${base}.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      toast.success("Badge ZIP downloaded successfully!");
+    } catch (err) {
+      console.error("Failed to download badge ZIP:", err);
+      toast.error("Failed to generate badge ZIP. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleShareLinkedIn = () => {
@@ -170,24 +289,67 @@ export default function CardView({
               </Button>
             )}
             {viewMode === "vertical" ? (
-               <Button
-                  onClick={handlePrint}
+              <div className="relative">
+                <Button
+                  onClick={() => setShowBadgeDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   variant="secondary"
-                  icon={<Printer size={18} />}
-                  className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
-               >
-                  Print Badge
-               </Button>
+                  icon={<Download size={18} />}
+                  className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[132px]"
+                >
+                  {isDownloading ? "Preparing…" : "Download"}
+                </Button>
+                {showBadgeDownloadMenu && (
+                  <div className="absolute right-0 mt-2 w-52 rounded-md border border-border/70 bg-white shadow-xl z-50 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={handleDownloadBadgePdf}
+                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors"
+                    >
+                      Download as PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDownloadBadgeZip}
+                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors border-t border-border/60"
+                    >
+                      Download as ZIP
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
-               <Button
-                  onClick={handleDownload}
+              <div className="relative">
+                <Button
+                  onClick={() => setShowPostDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   icon={<Download size={18} />}
-                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
-               >
+                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial h-10 px-4 min-w-[132px]"
+                >
                   {isDownloading ? "Preparing…" : "Download"}
-               </Button>
+                </Button>
+                {showPostDownloadMenu && (
+                  <div className="absolute right-0 mt-2 w-52 rounded-md border border-border/70 bg-white shadow-xl z-50 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={handleDownloadPostPdf}
+                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors"
+                    >
+                      Download as PDF
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPostDownloadMenu(false);
+                        void handleDownload();
+                      }}
+                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors border-t border-border/60"
+                    >
+                      Download as Image
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -206,6 +368,12 @@ export default function CardView({
                isVertical={viewMode === "vertical"} 
                verticalSide={1} 
             />
+          </div>
+          <div ref={verticalFrontExportRef} style={{ width: "576px", height: "1024px" }}>
+            <CardPreview data={card} isVertical verticalSide={1} />
+          </div>
+          <div ref={verticalBackExportRef} style={{ width: "576px", height: "1024px" }}>
+            <CardPreview data={card} isVertical verticalSide={2} />
           </div>
         </div>
 
