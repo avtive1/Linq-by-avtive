@@ -208,7 +208,7 @@ export default async function AdminDashboardPage() {
               <Button
                 variant="secondary"
                 size="md"
-                className="min-w-[168px] justify-center border-primary/20 bg-white/92 text-heading shadow-sm hover:bg-primary/10 hover:border-primary/40 hover:text-primary-strong"
+                className="h-10 min-w-[176px] rounded-lg justify-center border-primary/25 bg-white text-sm font-semibold text-primary-strong shadow-sm transition-all hover:bg-primary/8 hover:border-primary/45 hover:shadow-md"
               >
                 Create Organization
               </Button>

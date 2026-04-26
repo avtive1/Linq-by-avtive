@@ -26,6 +26,9 @@ async function ensureOwnerOnboardingColumns() {
   await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
   );
+  await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_profile_setup_completed_at timestamptz`,
+  );
 }
 
 export async function GET() {
@@ -54,12 +57,14 @@ export async function GET() {
       organization_logo_url: string | null;
       username: string | null;
       profile_photo_url: string | null;
+      owner_profile_setup_completed_at: string | null;
       owner_onboarding_team_step_completed_at: string | null;
     }>(
       `SELECT
         to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url,
         username,
         to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url,
+        to_jsonb(p.*)->>'owner_profile_setup_completed_at' AS owner_profile_setup_completed_at,
         to_jsonb(p.*)->>'owner_onboarding_team_step_completed_at' AS owner_onboarding_team_step_completed_at
        FROM public.profiles p
        WHERE p.id = $1
@@ -68,9 +73,9 @@ export async function GET() {
     );
 
     const hasOrganizationLogo = Boolean(String(profile?.organization_logo_url || "").trim());
-    const hasUsername = Boolean(String(profile?.username || "").trim());
     const hasProfilePhoto = Boolean(String(profile?.profile_photo_url || "").trim());
-    const needsProfileSetup = !hasUsername || !hasProfilePhoto;
+    const hasCompletedMandatorySetup = Boolean(profile?.owner_profile_setup_completed_at);
+    const needsProfileSetup = !hasCompletedMandatorySetup || !hasProfilePhoto;
     const teamStepCompleted = Boolean(profile?.owner_onboarding_team_step_completed_at);
     return NextResponse.json(
       {

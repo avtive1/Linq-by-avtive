@@ -84,7 +84,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-white/70 px-4 py-3 text-sm text-muted">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-border/45 bg-surface/70 px-3 py-1.5 text-xs font-medium text-muted">
           Showing <span className="font-semibold text-heading">{filteredAndSortedOrgs.length}</span> of{" "}
           <span className="font-semibold text-heading">{initialOrganizations.length}</span>
         </div>

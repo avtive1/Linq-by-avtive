@@ -64,9 +64,10 @@ export async function PATCH(req: Request) {
       organization_name: string | null;
       username_changed_at: string | null;
       organization_name_changed_at: string | null;
+      profile_photo_url: string | null;
     }>(
-      `SELECT username, organization_name, username_changed_at, organization_name_changed_at
-       FROM public.profiles
+      `SELECT username, organization_name, username_changed_at, organization_name_changed_at, to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url
+       FROM public.profiles p
        WHERE id = $1`,
       [userId],
     );
@@ -158,6 +159,10 @@ export async function PATCH(req: Request) {
     }
     if (nextProfilePhotoUrl) {
       updatePayload.profile_photo_url = nextProfilePhotoUrl;
+    }
+    const finalProfilePhotoUrl = nextProfilePhotoUrl || String(currentProfile.profile_photo_url || "").trim();
+    if (isOrganizationOwner && finalProfilePhotoUrl) {
+      updatePayload.owner_profile_setup_completed_at = new Date().toISOString();
     }
     if (usernameChanged) updatePayload.username_changed_at = new Date().toISOString();
     if (organizationChanged) updatePayload.organization_name_changed_at = new Date().toISOString();

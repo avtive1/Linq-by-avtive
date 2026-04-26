@@ -47,6 +47,9 @@ export async function ensureAuthSchema() {
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
   );
   await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_profile_setup_completed_at timestamptz`,
+  );
+  await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
   );
   await queryNeon(
@@ -308,11 +311,22 @@ export async function createOrganizationOwnerByAdmin(input: {
   const userId = crypto.randomUUID();
   const argon2 = await getArgon2();
   const hash = await argon2.hash(input.password);
+  const requestedBaseUsername =
+    (email.split("@")[0] || "user").toLowerCase().replace(/[^a-z0-9_.]/g, "").slice(0, 18) || "user";
+  let pendingUsername = `${requestedBaseUsername}_${userId.replace(/-/g, "").slice(0, 8)}`;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const existingUsername = await queryNeonOne<{ id: string }>(
+      `SELECT id FROM public.profiles WHERE username = $1 LIMIT 1`,
+      [pendingUsername],
+    );
+    if (!existingUsername?.id) break;
+    pendingUsername = `${requestedBaseUsername}_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+  }
 
   await queryNeon(
     `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
-     VALUES ($1, NULL, $2, $3, 'user', now())`,
-    [userId, organizationName, organizationKey],
+     VALUES ($1, $2, $3, $4, 'user', now())`,
+    [userId, pendingUsername, organizationName, organizationKey],
   );
 
   await queryNeon(
