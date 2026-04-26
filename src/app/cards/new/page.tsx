@@ -164,9 +164,6 @@ function NewCardForm() {
       if (field.inputType === "url" && !/^https?:\/\/|^[^.\s]+\.[^\s]+/.test(value.trim())) {
         newErrors[field.id] = "Enter a valid URL";
       }
-      if (field.inputType === "tel" && !/^[0-9+\-() ]{7,}$/.test(value.trim())) {
-        newErrors[field.id] = "Enter a valid phone number";
-      }
       if (field.inputType === "number" && Number.isNaN(Number(value))) {
         newErrors[field.id] = "Enter a valid number";
       }
@@ -419,12 +416,6 @@ function NewCardForm() {
           )}
 
           <div className="flex flex-col gap-8">
-            <div className="rounded-lg border border-border/60 bg-white/70 px-4 py-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Locked Event Details</p>
-              <p className="mt-1 text-sm text-heading">
-                Event date: <span className="font-medium">{form.sessionDate || "N/A"}</span>
-              </p>
-            </div>
             {enabledFields.map((field) => {
               if (field.id === "name") {
                 return (

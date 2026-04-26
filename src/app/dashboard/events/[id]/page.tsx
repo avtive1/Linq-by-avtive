@@ -134,7 +134,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isRegistrationPreviewOpen, setIsRegistrationPreviewOpen] = useState(false);
   const [previewRole, setPreviewRole] = useState<"guest" | "visitor">("visitor");
   const [newFieldLabel, setNewFieldLabel] = useState("");
-  const [newFieldType, setNewFieldType] = useState<"text" | "number" | "tel" | "url">("text");
+  const [newFieldType, setNewFieldType] = useState<"text" | "number" | "url">("text");
   const [isAccessRequestOpen, setIsAccessRequestOpen] = useState(false);
   const [accessRequestAction, setAccessRequestAction] = useState("manage_event");
   const [accessRequestNote, setAccessRequestNote] = useState("");
@@ -1770,12 +1770,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </button>
             </div>
             <div className="px-8 py-6 flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
-              <div className="rounded-md border border-border/60 bg-white px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted">Locked Event Details</p>
-                <p className="mt-1 text-sm text-heading">
-                  Event date: <span className="font-medium">{eventData?.date || "N/A"}</span>
-                </p>
-              </div>
               {getEnabledFieldsForRole(livePreviewConfig, previewRole).map((field) => (
                 <TextInput
                   key={`preview-${field.id}`}
@@ -1895,18 +1889,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextInput
                     label="Field Label"
-                    placeholder="e.g. Phone number"
+                    placeholder="e.g. Website"
                     value={newFieldLabel}
                     onChange={setNewFieldLabel}
                   />
                   <Select
                     label="Input Type"
                     value={newFieldType}
-                    onChange={(value) => setNewFieldType(value as "text" | "number" | "tel" | "url")}
+                    onChange={(value) => setNewFieldType(value as "text" | "number" | "url")}
                     options={[
                       { value: "text", label: "Text" },
                       { value: "number", label: "Number" },
-                      { value: "tel", label: "Phone number" },
                       { value: "url", label: "URL" },
                     ]}
                   />

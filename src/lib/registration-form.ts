@@ -1,4 +1,4 @@
-export type RegistrationFieldInputType = "text" | "number" | "tel" | "url" | "email";
+export type RegistrationFieldInputType = "text" | "number" | "url" | "email";
 
 export type RegistrationFieldDefinition = {
   id: string;
@@ -90,7 +90,7 @@ function normalizeField(raw: unknown): RegistrationFieldDefinition | null {
   const id = String(src.id || "").trim();
   const label = String(src.label || "").trim();
   const inputType = String(src.inputType || "").trim() as RegistrationFieldInputType;
-  const allowedTypes: RegistrationFieldInputType[] = ["text", "number", "tel", "url", "email"];
+  const allowedTypes: RegistrationFieldInputType[] = ["text", "number", "url", "email"];
   if (!id || !label || !allowedTypes.includes(inputType)) return null;
   return {
     id,
