@@ -32,7 +32,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   try {
     // Timeout-resistant query (or just standard fetch)
     const record = await queryNeonOne<Record<string, unknown>>(
-      `SELECT id, name, event_name, event_id, card_preview_url, photo_url, updated_at 
+      `SELECT id, name, event_name, event_id, card_preview_url, photo_url 
        FROM public.attendees 
        WHERE id = $1`,
       [id]
