@@ -15,7 +15,7 @@ export type RegistrationFormConfig = {
   visitor: RegistrationFieldDefinition[];
 };
 
-const LOCKED_FIELDS: RegistrationFieldDefinition[] = [
+const IMMUTABLE_FIELDS: RegistrationFieldDefinition[] = [
   {
     id: "name",
     label: "Full Name",
@@ -34,14 +34,12 @@ const LOCKED_FIELDS: RegistrationFieldDefinition[] = [
     enabled: true,
     placeholder: "Designation",
   },
-];
-
-const OPTIONAL_DEFAULTS: RegistrationFieldDefinition[] = [
   {
     id: "company",
     label: "Organization",
     inputType: "text",
     required: false,
+    locked: true,
     enabled: true,
     placeholder: "Organization",
   },
@@ -50,6 +48,7 @@ const OPTIONAL_DEFAULTS: RegistrationFieldDefinition[] = [
     label: "Email",
     inputType: "email",
     required: false,
+    locked: true,
     enabled: true,
     placeholder: "hello@example.com",
   },
@@ -58,6 +57,7 @@ const OPTIONAL_DEFAULTS: RegistrationFieldDefinition[] = [
     label: "QR Code Link",
     inputType: "url",
     required: false,
+    locked: true,
     enabled: true,
     placeholder: "linkedin.com/in/username or website",
   },
@@ -66,6 +66,7 @@ const OPTIONAL_DEFAULTS: RegistrationFieldDefinition[] = [
     label: "Photo",
     inputType: "text",
     required: false,
+    locked: true,
     enabled: true,
     placeholder: "Uploaded image",
   },
@@ -76,7 +77,7 @@ function cloneFields(fields: RegistrationFieldDefinition[]) {
 }
 
 export function getDefaultRegistrationFormConfig(): RegistrationFormConfig {
-  const defaults = [...cloneFields(LOCKED_FIELDS), ...cloneFields(OPTIONAL_DEFAULTS)];
+  const defaults = cloneFields(IMMUTABLE_FIELDS);
   return {
     guest: cloneFields(defaults),
     visitor: cloneFields(defaults),
@@ -107,23 +108,28 @@ function normalizeRoleFields(raw: unknown): RegistrationFieldDefinition[] {
   const parsed = Array.isArray(raw) ? raw.map(normalizeField).filter(Boolean) as RegistrationFieldDefinition[] : [];
   if (!parsed.length) return defaults;
 
-  const lockedById = new Map(LOCKED_FIELDS.map((f) => [f.id, f]));
+  const immutableById = new Map(IMMUTABLE_FIELDS.map((f) => [f.id, f]));
   const next: RegistrationFieldDefinition[] = [];
   const seen = new Set<string>();
 
   for (const field of parsed) {
     if (seen.has(field.id)) continue;
     seen.add(field.id);
-    const locked = lockedById.get(field.id);
-    if (locked) {
-      next.push({ ...locked, enabled: true, required: true, locked: true });
+    const immutable = immutableById.get(field.id);
+    if (immutable) {
+      next.push({
+        ...immutable,
+        enabled: true,
+        required: immutable.required,
+        locked: true,
+      });
       continue;
     }
     next.push({ ...field, locked: false });
   }
 
-  for (const locked of LOCKED_FIELDS) {
-    if (!seen.has(locked.id)) next.unshift({ ...locked });
+  for (const immutable of [...IMMUTABLE_FIELDS].reverse()) {
+    if (!seen.has(immutable.id)) next.unshift({ ...immutable });
   }
 
   return next;

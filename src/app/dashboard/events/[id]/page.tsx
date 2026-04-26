@@ -316,6 +316,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   );
   const previewGuestFields = getEnabledFieldsForRole(effectiveRegistrationConfig, "guest");
   const previewVisitorFields = getEnabledFieldsForRole(effectiveRegistrationConfig, "visitor");
+  const livePreviewConfig = isRegistrationFormOpen
+    ? normalizeRegistrationFormConfig(registrationFormDraft)
+    : effectiveRegistrationConfig;
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -1323,7 +1326,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Guest Form</p>
-                  <p className="text-xs text-muted mb-3">Preview of fields shared with guest links.</p>
+                  <p className="text-xs text-muted mb-3">Click preview to view exact attendee form.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1335,22 +1338,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   >
                     Preview Form
                   </Button>
-                  <div className="flex flex-col gap-2">
-                    {previewGuestFields.map((field) => (
-                      <div key={`guest-${field.id}`} className="rounded-md border border-border/50 px-3 py-2">
-                        <p className="text-sm text-heading">
-                          {field.label}
-                          {field.required ? " *" : ""}
-                          {field.locked ? " (locked)" : ""}
-                        </p>
-                        <p className="text-xs text-muted">Type: {field.inputType}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="mt-3 text-xs text-muted">{previewGuestFields.length} fields configured</p>
                 </div>
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Visitor Form</p>
-                  <p className="text-xs text-muted mb-3">Preview of fields shared with visitor links.</p>
+                  <p className="text-xs text-muted mb-3">Click preview to view exact attendee form.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1362,18 +1354,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   >
                     Preview Form
                   </Button>
-                  <div className="flex flex-col gap-2">
-                    {previewVisitorFields.map((field) => (
-                      <div key={`visitor-${field.id}`} className="rounded-md border border-border/50 px-3 py-2">
-                        <p className="text-sm text-heading">
-                          {field.label}
-                          {field.required ? " *" : ""}
-                          {field.locked ? " (locked)" : ""}
-                        </p>
-                        <p className="text-xs text-muted">Type: {field.inputType}</p>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="mt-3 text-xs text-muted">{previewVisitorFields.length} fields configured</p>
                 </div>
               </div>
             </div>
@@ -1795,7 +1776,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   Event date: <span className="font-medium">{eventData?.date || "N/A"}</span>
                 </p>
               </div>
-              {getEnabledFieldsForRole(effectiveRegistrationConfig, previewRole).map((field) => (
+              {getEnabledFieldsForRole(livePreviewConfig, previewRole).map((field) => (
                 <TextInput
                   key={`preview-${field.id}`}
                   label={field.label}
@@ -1873,21 +1854,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             type="button"
                             onClick={() =>
                               updateDraftFields(formBuilderRole, (fields) =>
-                                fields.map((f) => (f.id === field.id ? { ...f, enabled: !f.enabled } : f)),
-                              )
-                            }
-                            className={`px-3 py-1.5 text-xs rounded-md border font-semibold ${
-                              field.enabled
-                                ? "bg-primary/10 border-primary/30 text-primary-strong"
-                                : "bg-white border-border text-muted"
-                            }`}
-                          >
-                            {field.enabled ? "Enabled" : "Disabled"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateDraftFields(formBuilderRole, (fields) =>
                                 fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
                               )
                             }
@@ -1916,7 +1882,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       )}
                       {field.locked && (
                         <span className="px-3 py-1.5 text-xs rounded-md border border-border/60 text-muted bg-surface/50">
-                          Required
+                          Locked
                         </span>
                       )}
                     </div>
