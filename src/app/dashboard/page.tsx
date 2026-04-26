@@ -473,7 +473,7 @@ function DashboardContent() {
         const uploadRes = await fetch("/api/media/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dataUrl: profilePhotoUrl, folder: `organizations/${userId}/profile` }),
+          body: JSON.stringify({ dataUrl: profilePhotoUrl, folder: "organization-logos" }),
         });
         const uploadPayload = await uploadRes.json();
         if (!uploadRes.ok || !uploadPayload?.data?.url) {

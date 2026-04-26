@@ -383,15 +383,15 @@ function NewCardForm() {
       <GradientBackground />
 
       {/* Left Sidebar - Form */}
-      <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-8 md:p-12 overflow-y-auto lg:h-screen animate-slide-up">
-        <div className="flex items-center gap-4 mb-8">
+      <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-8 md:p-10 overflow-y-auto lg:h-screen animate-slide-up">
+        <div className="flex items-center gap-4 mb-5">
           <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/65">
             Avtive attendee portal
           </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-          <div className="flex flex-col gap-2">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-1.5">
             <h1 className="text-3xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
               Event Registration
             </h1>
