@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
+import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 
 function getViewerAdminAccess(params: {
   viewerId: string;
@@ -91,6 +92,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    await queryNeon(
+      `ALTER TABLE public.events
+       ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
+    );
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 
@@ -108,6 +113,7 @@ export async function POST(req: Request) {
       time?: string;
       logo_url?: string;
       ownerId?: string;
+      registration_form_config?: unknown;
     };
 
     const ownerId = String(body.ownerId || viewerId);
@@ -118,6 +124,9 @@ export async function POST(req: Request) {
       date: String(body.date || ""),
       time: String(body.time || ""),
       logo_url: String(body.logo_url || ""),
+      registration_form_config: normalizeRegistrationFormConfig(
+        body.registration_form_config || getDefaultRegistrationFormConfig(),
+      ),
     };
 
     if (!payload.name || !payload.location || !payload.date || !payload.time) {
@@ -167,6 +176,7 @@ export async function POST(req: Request) {
       {
         ...payload,
         user_id: ownerId,
+        registration_form_config: payload.registration_form_config,
       },
       "id",
     );

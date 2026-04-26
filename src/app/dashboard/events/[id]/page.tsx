@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
+import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker, Select } from "@/components/ui";
 
 import {
   Plus,
@@ -42,6 +42,13 @@ import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion"
 import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
+import {
+  type RegistrationFieldDefinition,
+  type RegistrationFormConfig,
+  getDefaultRegistrationFormConfig,
+  getEnabledFieldsForRole,
+  normalizeRegistrationFormConfig,
+} from "@/lib/registration-form";
 
 type AttendeeCard = CardData & { photo_path?: string };
 type PendingAccessRequest = {
@@ -118,6 +125,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isSponsorsOpen, setIsSponsorsOpen] = useState(false);
   const [sponsorRows, setSponsorRows] = useState<SponsorFormRow[]>([]);
   const [isSavingSponsors, setIsSavingSponsors] = useState(false);
+  const [isRegistrationFormOpen, setIsRegistrationFormOpen] = useState(false);
+  const [formBuilderRole, setFormBuilderRole] = useState<"guest" | "visitor">("visitor");
+  const [registrationFormDraft, setRegistrationFormDraft] = useState<RegistrationFormConfig>(
+    getDefaultRegistrationFormConfig(),
+  );
+  const [isSavingRegistrationForm, setIsSavingRegistrationForm] = useState(false);
+  const [isRegistrationPreviewOpen, setIsRegistrationPreviewOpen] = useState(false);
+  const [previewRole, setPreviewRole] = useState<"guest" | "visitor">("visitor");
+  const [newFieldLabel, setNewFieldLabel] = useState("");
+  const [newFieldType, setNewFieldType] = useState<"text" | "number" | "tel" | "url">("text");
   const [isAccessRequestOpen, setIsAccessRequestOpen] = useState(false);
   const [accessRequestAction, setAccessRequestAction] = useState("manage_event");
   const [accessRequestNote, setAccessRequestNote] = useState("");
@@ -196,6 +213,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           user: eventRecord.user_id,
           logo_url: eventRecord.logo_url || "",
           sponsors: parseEventSponsors(eventRecord.sponsors),
+          registration_form_config: normalizeRegistrationFormConfig(eventRecord.registration_form_config),
         });
 
         const [memberResult, attendeeRes] = await Promise.all([
@@ -293,6 +311,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const canExport = canManageEvent;
   const isTeamMemberEventMode = !isPreviewMode && !isEventOwner && isOrgAdminReviewer;
   const isOrgAdminEventMode = !isPreviewMode && isEventOwner;
+  const effectiveRegistrationConfig = normalizeRegistrationFormConfig(
+    eventData?.registration_form_config || getDefaultRegistrationFormConfig(),
+  );
+  const previewGuestFields = getEnabledFieldsForRole(effectiveRegistrationConfig, "guest");
+  const previewVisitorFields = getEnabledFieldsForRole(effectiveRegistrationConfig, "visitor");
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -471,6 +494,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         logo_url: logo_url,
         user_id: userId,
         sponsors: eventData?.sponsors?.length ? eventData.sponsors : [],
+        registration_form_config:
+          eventData?.registration_form_config || getDefaultRegistrationFormConfig(),
       };
       const createRes = await fetch("/api/events", {
         method: "POST",
@@ -526,6 +551,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           time: eventData.time || "",
           logo_url: eventData.logo_url || "",
           sponsors: eventData.sponsors?.length ? eventData.sponsors : [],
+          registration_form_config:
+            eventData.registration_form_config || getDefaultRegistrationFormConfig(),
           ownerId: userId,
         }),
       });
@@ -622,6 +649,72 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     } finally {
       setIsSavingSponsors(false);
     }
+  };
+
+  const openRegistrationFormModal = (role: "guest" | "visitor") => {
+    setFormBuilderRole(role);
+    setRegistrationFormDraft(
+      normalizeRegistrationFormConfig(
+        eventData?.registration_form_config || getDefaultRegistrationFormConfig(),
+      ),
+    );
+    setIsRegistrationFormOpen(true);
+  };
+
+  const updateDraftFields = (
+    role: "guest" | "visitor",
+    updater: (fields: RegistrationFieldDefinition[]) => RegistrationFieldDefinition[],
+  ) => {
+    setRegistrationFormDraft((prev) => ({ ...prev, [role]: updater(prev[role]) }));
+  };
+
+  const saveRegistrationFormConfig = async () => {
+    if (!eventData || isPreviewMode) return;
+    setIsSavingRegistrationForm(true);
+    try {
+      const normalized = normalizeRegistrationFormConfig(registrationFormDraft);
+      const res = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registration_form_config: normalized }),
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not save registration form.");
+        return;
+      }
+      setEventData((prev) => (prev ? { ...prev, registration_form_config: normalized } : prev));
+      toast.success("Registration form settings saved.");
+      setIsRegistrationFormOpen(false);
+      router.refresh();
+    } catch {
+      toast.error("Could not save registration form.");
+    } finally {
+      setIsSavingRegistrationForm(false);
+    }
+  };
+
+  const addCustomFieldToDraft = () => {
+    const label = newFieldLabel.trim();
+    if (!label) {
+      toast.error("Field label is required.");
+      return;
+    }
+    const idBase = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "field";
+    const fieldId = `${idBase}_${Date.now().toString().slice(-5)}`;
+    updateDraftFields(formBuilderRole, (fields) => [
+      ...fields,
+      {
+        id: fieldId,
+        label,
+        inputType: newFieldType,
+        required: false,
+        enabled: true,
+        placeholder: label,
+      },
+    ]);
+    setNewFieldLabel("");
+    setNewFieldType("text");
   };
 
   const handleExport = () => {
@@ -1204,6 +1297,89 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </motion.div>
         )}
 
+        {!isPreviewMode && (
+          <motion.div
+            className="mb-8 rounded-md border border-primary/20 bg-white/90 px-6 py-6 shadow-sm"
+            viewport={presets.viewport}
+            {...fadeUp(0.08)}
+          >
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-semibold text-heading tracking-[-0.02em]">Registration Form Preview</h3>
+                  <p className="text-sm text-muted mt-1">
+                    Preview the attendee form for guests and visitors, then customize optional fields.
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  disabled={!canManageEvent}
+                  onClick={() => openRegistrationFormModal("visitor")}
+                  className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                >
+                  Customize Form
+                </Button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-md border border-border/60 bg-white p-4">
+                  <p className="text-sm font-semibold text-heading">Guest Form</p>
+                  <p className="text-xs text-muted mb-3">Preview of fields shared with guest links.</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mb-3"
+                    onClick={() => {
+                      setPreviewRole("guest");
+                      setIsRegistrationPreviewOpen(true);
+                    }}
+                  >
+                    Preview Form
+                  </Button>
+                  <div className="flex flex-col gap-2">
+                    {previewGuestFields.map((field) => (
+                      <div key={`guest-${field.id}`} className="rounded-md border border-border/50 px-3 py-2">
+                        <p className="text-sm text-heading">
+                          {field.label}
+                          {field.required ? " *" : ""}
+                          {field.locked ? " (locked)" : ""}
+                        </p>
+                        <p className="text-xs text-muted">Type: {field.inputType}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-md border border-border/60 bg-white p-4">
+                  <p className="text-sm font-semibold text-heading">Visitor Form</p>
+                  <p className="text-xs text-muted mb-3">Preview of fields shared with visitor links.</p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mb-3"
+                    onClick={() => {
+                      setPreviewRole("visitor");
+                      setIsRegistrationPreviewOpen(true);
+                    }}
+                  >
+                    Preview Form
+                  </Button>
+                  <div className="flex flex-col gap-2">
+                    {previewVisitorFields.map((field) => (
+                      <div key={`visitor-${field.id}`} className="rounded-md border border-border/50 px-3 py-2">
+                        <p className="text-sm text-heading">
+                          {field.label}
+                          {field.required ? " *" : ""}
+                          {field.locked ? " (locked)" : ""}
+                        </p>
+                        <p className="text-xs text-muted">Type: {field.inputType}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         {/* Stats Section */}
         {!isOrgAdminEventMode && !isPreviewMode && (
           <motion.div
@@ -1586,6 +1762,209 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isRegistrationPreviewOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => setIsRegistrationPreviewOpen(false)}
+          />
+          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 border-b border-border/30 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                  {previewRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
+                </h2>
+                <p className="text-sm text-muted mt-1">This is the exact field structure attendees will see.</p>
+              </div>
+              <button
+                onClick={() => setIsRegistrationPreviewOpen(false)}
+                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <div className="px-8 py-6 flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
+              <div className="rounded-md border border-border/60 bg-white px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">Locked Event Details</p>
+                <p className="mt-1 text-sm text-heading">
+                  Event date: <span className="font-medium">{eventData?.date || "N/A"}</span>
+                </p>
+              </div>
+              {getEnabledFieldsForRole(effectiveRegistrationConfig, previewRole).map((field) => (
+                <TextInput
+                  key={`preview-${field.id}`}
+                  label={field.label}
+                  required={field.required}
+                  type={field.id === "email" ? "email" : field.inputType}
+                  placeholder={field.placeholder || field.label}
+                  value=""
+                  disabled
+                />
+              ))}
+            </div>
+            <div className="px-8 py-4 border-t border-border/30">
+              <Button fullWidth onClick={() => setIsRegistrationPreviewOpen(false)}>
+                Close Preview
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isRegistrationFormOpen && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSavingRegistrationForm && setIsRegistrationFormOpen(false)}
+          />
+          <div className="relative w-full max-w-[760px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-border/30">
+              <div>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Customize Registration Form</h2>
+                <p className="text-sm text-muted mt-1">
+                  Locked fields stay mandatory. Optional fields can be removed or marked required.
+                </p>
+              </div>
+              <button
+                onClick={() => setIsRegistrationFormOpen(false)}
+                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="px-8 py-6 flex flex-col gap-5 max-h-[68vh] overflow-y-auto">
+              <div className="flex gap-2">
+                {(["visitor", "guest"] as const).map((role) => (
+                  <button
+                    key={role}
+                    type="button"
+                    onClick={() => setFormBuilderRole(role)}
+                    className={`px-4 py-2 rounded-md border text-sm font-semibold transition-all ${
+                      formBuilderRole === role
+                        ? "bg-primary/10 border-primary/40 text-primary-strong"
+                        : "bg-white border-border/60 text-heading hover:border-primary/30"
+                    }`}
+                  >
+                    {role === "visitor" ? "Visitor Form" : "Guest Form"}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {registrationFormDraft[formBuilderRole].map((field) => (
+                  <div key={field.id} className="rounded-md border border-border/60 bg-white px-4 py-3 flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-heading truncate">
+                        {field.label}
+                        {field.locked ? " (locked)" : ""}
+                      </p>
+                      <p className="text-xs text-muted mt-1">Type: {field.inputType}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {!field.locked && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateDraftFields(formBuilderRole, (fields) =>
+                                fields.map((f) => (f.id === field.id ? { ...f, enabled: !f.enabled } : f)),
+                              )
+                            }
+                            className={`px-3 py-1.5 text-xs rounded-md border font-semibold ${
+                              field.enabled
+                                ? "bg-primary/10 border-primary/30 text-primary-strong"
+                                : "bg-white border-border text-muted"
+                            }`}
+                          >
+                            {field.enabled ? "Enabled" : "Disabled"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              updateDraftFields(formBuilderRole, (fields) =>
+                                fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
+                              )
+                            }
+                            className={`px-3 py-1.5 text-xs rounded-md border font-semibold ${
+                              field.required
+                                ? "bg-primary/10 border-primary/30 text-primary-strong"
+                                : "bg-white border-border text-muted"
+                            }`}
+                          >
+                            {field.required ? "Required" : "Optional"}
+                          </button>
+                          {!["company", "email", "linkedin", "photo"].includes(field.id) && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateDraftFields(formBuilderRole, (fields) =>
+                                  fields.filter((f) => f.id !== field.id),
+                                )
+                              }
+                              className="px-3 py-1.5 text-xs rounded-md border border-red-200 text-red-600 bg-red-50"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </>
+                      )}
+                      {field.locked && (
+                        <span className="px-3 py-1.5 text-xs rounded-md border border-border/60 text-muted bg-surface/50">
+                          Required
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-md border border-dashed border-border/70 bg-surface/30 p-4">
+                <p className="text-sm font-semibold text-heading mb-3">Add Custom Field</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <TextInput
+                    label="Field Label"
+                    placeholder="e.g. Phone number"
+                    value={newFieldLabel}
+                    onChange={setNewFieldLabel}
+                  />
+                  <Select
+                    label="Input Type"
+                    value={newFieldType}
+                    onChange={(value) => setNewFieldType(value as "text" | "number" | "tel" | "url")}
+                    options={[
+                      { value: "text", label: "Text" },
+                      { value: "number", label: "Number" },
+                      { value: "tel", label: "Phone number" },
+                      { value: "url", label: "URL" },
+                    ]}
+                  />
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <Button variant="secondary" onClick={addCustomFieldToDraft}>
+                    Add Field
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 py-4 border-t border-border/30 flex gap-3">
+              <Button
+                variant="secondary"
+                fullWidth
+                disabled={isSavingRegistrationForm}
+                onClick={() => setIsRegistrationFormOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button fullWidth disabled={isSavingRegistrationForm} onClick={saveRegistrationFormConfig}>
+                {isSavingRegistrationForm ? "Saving..." : "Save Form Settings"}
+              </Button>
             </div>
           </div>
         </div>

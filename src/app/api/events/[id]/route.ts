@@ -5,10 +5,18 @@ import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { normalizeRegistrationFormConfig } from "@/lib/registration-form";
 
 async function getCurrentUserId() {
   const cookieStore = await cookies();
   return getServerUserIdFromCookies(cookieStore);
+}
+
+async function ensureEventRegistrationFormColumn() {
+  await queryNeon(
+    `ALTER TABLE public.events
+     ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
+  );
 }
 
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>): boolean {
@@ -32,6 +40,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
     time: string | null;
     logo_url: string | null;
     sponsors: unknown;
+    registration_form_config: unknown;
   }>(`SELECT * FROM public.events WHERE id = $1`, [eventId]);
   if (!eventRow) return { eventRow: null, isOwner: false, permissions: [] as string[], isOrgMemberViewer: false };
 
@@ -77,6 +86,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureEventRegistrationFormColumn();
     const session = await getServerAuthSession();
     const viewerId = await getCurrentUserId();
     if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -99,6 +109,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    await ensureEventRegistrationFormColumn();
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 
@@ -123,6 +134,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       "time",
       "logo_url",
       "sponsors",
+      "registration_form_config",
     ] as const;
     const patch: Record<string, unknown> = {};
     for (const key of allowed) {
@@ -134,6 +146,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       } catch {
         return NextResponse.json({ error: "Invalid sponsors payload." }, { status: 400 });
       }
+    }
+    if ("registration_form_config" in patch) {
+      patch.registration_form_config = normalizeRegistrationFormConfig(patch.registration_form_config);
     }
     if (!Object.keys(patch).length) {
       return NextResponse.json({ error: "No valid fields provided." }, { status: 400 });

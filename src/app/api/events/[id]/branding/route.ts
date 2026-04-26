@@ -2,14 +2,19 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserById } from "@/lib/admin";
-import { queryNeonOne } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
+import { normalizeRegistrationFormConfig } from "@/lib/registration-form";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureAuthSchema();
+    await queryNeon(
+      `ALTER TABLE public.events
+       ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
+    );
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
     const { id } = await params;
@@ -22,8 +27,9 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       date: string | null;
       time: string | null;
       sponsors: unknown;
+      registration_form_config: unknown;
     }>(
-      `SELECT user_id, name, location, date, time, sponsors
+      `SELECT user_id, name, location, date, time, sponsors, registration_form_config
        FROM public.events
        WHERE id = $1`,
       [id],
@@ -41,6 +47,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             eventDate: "",
             eventTime: "",
             sponsors: [],
+            registrationFormConfig: normalizeRegistrationFormConfig(null),
           },
         },
         { status: 200 },
@@ -67,6 +74,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             eventDate: String(eventRow.date || ""),
             eventTime: String(eventRow.time || ""),
             sponsors: parseEventSponsors(eventRow.sponsors),
+            registrationFormConfig: normalizeRegistrationFormConfig(eventRow.registration_form_config),
           },
         },
         { status: 200 },
@@ -106,6 +114,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
           eventDate: String(eventRow.date || ""),
           eventTime: String(eventRow.time || ""),
           sponsors: parseEventSponsors(eventRow.sponsors),
+          registrationFormConfig: normalizeRegistrationFormConfig(eventRow.registration_form_config),
         },
       },
       { status: 200 },

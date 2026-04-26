@@ -12,6 +12,12 @@ import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { parseEventSponsors } from "@/lib/sponsors";
 import type { SponsorEntry } from "@/types/card";
+import {
+  type RegistrationFormConfig,
+  getDefaultRegistrationFormConfig,
+  getEnabledFieldsForRole,
+  normalizeRegistrationFormConfig,
+} from "@/lib/registration-form";
 
 function NewCardForm() {
   const router = useRouter();
@@ -45,6 +51,10 @@ function NewCardForm() {
     organizationName: "",
     organizationLogoUrl: "",
   });
+  const [registrationFormConfig, setRegistrationFormConfig] = useState<RegistrationFormConfig>(
+    getDefaultRegistrationFormConfig(),
+  );
+  const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
 
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
@@ -88,6 +98,9 @@ function NewCardForm() {
             organizationName: String(brandingPayload.data.organizationName || ""),
             organizationLogoUrl: String(brandingPayload.data.organizationLogoUrl || ""),
           }));
+          setRegistrationFormConfig(
+            normalizeRegistrationFormConfig(brandingPayload.data.registrationFormConfig),
+          );
         }
       } catch (brandingErr) {
         if (isMounted) setEventMissing(true);
@@ -112,24 +125,52 @@ function NewCardForm() {
     }
   };
 
+  const enabledFields = getEnabledFieldsForRole(
+    registrationFormConfig,
+    form.cardRole === "guest" ? "guest" : "visitor",
+  );
+  const knownFieldIds = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
+
+  const updateCustomField = (fieldId: string) => (value: string) => {
+    setCustomFieldValues((prev) => ({ ...prev, [fieldId]: value }));
+    if (errors[fieldId]) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[fieldId];
+        return next;
+      });
+    }
+  };
+
   const validate = () => {
     const newErrors: Record<string, string> = { ...errors };
-    const requiredFields = [
-      { key: "name", label: "Full Name" },
-      { key: "role", label: "Role/Title" },
-      { key: "company", label: "Organization" },
-      { key: "email", label: "Email" },
-    ];
-
-    requiredFields.forEach((field) => {
-      if (!form[field.key as keyof typeof form]) {
-        newErrors[field.key] = `${field.label} is required`;
+    enabledFields.forEach((field) => {
+      const value = knownFieldIds.has(field.id)
+        ? String(form[field.id as keyof typeof form] || "")
+        : String(customFieldValues[field.id] || "");
+      if (field.required && !value.trim()) {
+        newErrors[field.id] = `${field.label} is required`;
       }
     });
 
-    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) {
+    if (enabledFields.some((field) => field.id === "email") && form.email && !/\S+@\S+\.\S+/.test(form.email)) {
       newErrors.email = "Invalid email format";
     }
+    enabledFields.forEach((field) => {
+      const value = knownFieldIds.has(field.id)
+        ? String(form[field.id as keyof typeof form] || "")
+        : String(customFieldValues[field.id] || "");
+      if (!value.trim()) return;
+      if (field.inputType === "url" && !/^https?:\/\/|^[^.\s]+\.[^\s]+/.test(value.trim())) {
+        newErrors[field.id] = "Enter a valid URL";
+      }
+      if (field.inputType === "tel" && !/^[0-9+\-() ]{7,}$/.test(value.trim())) {
+        newErrors[field.id] = "Enter a valid phone number";
+      }
+      if (field.inputType === "number" && Number.isNaN(Number(value))) {
+        newErrors[field.id] = "Enter a valid number";
+      }
+    });
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -154,10 +195,11 @@ function NewCardForm() {
     setLoading(true);
 
     try {
+      const fieldEnabled = (id: string) => enabledFields.some((field) => field.id === id);
       let photo_url = "";
 
       // 1. Handle user photo upload (if any)
-      if (form.photo && form.photo.startsWith('data:')) {
+      if (fieldEnabled("photo") && form.photo && form.photo.startsWith('data:')) {
         const uploadRes = await fetch("/api/media/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -207,21 +249,26 @@ function NewCardForm() {
         user_id: null,
         name: form.name,
         role: form.role,
-        company: form.company,
-        card_email: form.email,
+        company: fieldEnabled("company") ? form.company : "",
+        card_email: fieldEnabled("email") ? form.email : "",
         event_name: form.eventName,
         session_date: form.sessionDate,
         session_time: form.sessionTime,
         location: form.location,
-        linkedin: formatQrLink(form.linkedin),
+        linkedin: fieldEnabled("linkedin") ? formatQrLink(form.linkedin) : "",
         year: form.year,
-        photo_url: photo_url,
+        photo_url: fieldEnabled("photo") ? photo_url : "",
         card_preview_url: card_preview_url,
         event_id: eventId,
         design_type: "design1",
         card_color: form.color,
         track: form.cardRole,
         guest_category: form.cardRole === "guest" ? (form.guestCategory || null) : null,
+        custom_fields: Object.fromEntries(
+          enabledFields
+            .filter((field) => !knownFieldIds.has(field.id))
+            .map((field) => [field.id, customFieldValues[field.id] || ""]),
+        ),
       };
 
       const res = await fetch("/api/cards", {
@@ -372,56 +419,110 @@ function NewCardForm() {
           )}
 
           <div className="flex flex-col gap-8">
-            <TextInput
-              label="Full Name"
-              required
-              placeholder="Full Name"
-              value={form.name}
-              error={errors.name}
-              onChange={update("name")}
-            />
-            <TextInput
-              label="Role/Title"
-              required
-              placeholder="Role/Title"
-              value={form.role}
-              error={errors.role}
-              onChange={update("role")}
-            />
-            <TextInput
-              label="Organization"
-              required
-              placeholder="Organization"
-              value={form.company}
-              error={errors.company}
-              onChange={update("company")}
-            />
-            <TextInput
-              label="Email"
-              required
-              icon="email"
-              placeholder="hello@example.com"
-              value={form.email}
-              error={errors.email}
-              onChange={update("email")}
-            />
-            <TextInput
-              label="QR Code Link (Optional)"
-              placeholder="e.g. yourwebsite.com or social link"
-              value={form.linkedin}
-              onChange={update("linkedin")}
-            />
-
-            <FilePicker
-              label="Photo (Optional)"
-              value={form.photo}
-              onChange={update("photo")}
-              onError={(msg) => toast.error(msg)}
-              error={errors.photo}
-              cropTitle="Crop photo"
-              cropSubtitle="Drag the corners or edges to adjust the crop."
-              cropApplyLabel="Apply photo"
-            />
+            <div className="rounded-lg border border-border/60 bg-white/70 px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted">Locked Event Details</p>
+              <p className="mt-1 text-sm text-heading">
+                Event date: <span className="font-medium">{form.sessionDate || "N/A"}</span>
+              </p>
+            </div>
+            {enabledFields.map((field) => {
+              if (field.id === "name") {
+                return (
+                  <TextInput
+                    key={field.id}
+                    label={field.label}
+                    required
+                    placeholder={field.placeholder || "Full Name"}
+                    value={form.name}
+                    error={errors.name}
+                    onChange={update("name")}
+                  />
+                );
+              }
+              if (field.id === "role") {
+                return (
+                  <TextInput
+                    key={field.id}
+                    label={field.label}
+                    required
+                    placeholder={field.placeholder || "Designation"}
+                    value={form.role}
+                    error={errors.role}
+                    onChange={update("role")}
+                  />
+                );
+              }
+              if (field.id === "company") {
+                return (
+                  <TextInput
+                    key={field.id}
+                    label={field.label}
+                    required={field.required}
+                    placeholder={field.placeholder || "Organization"}
+                    value={form.company}
+                    error={errors.company}
+                    onChange={update("company")}
+                  />
+                );
+              }
+              if (field.id === "email") {
+                return (
+                  <TextInput
+                    key={field.id}
+                    label={field.label}
+                    required={field.required}
+                    type="email"
+                    icon="email"
+                    placeholder={field.placeholder || "hello@example.com"}
+                    value={form.email}
+                    error={errors.email}
+                    onChange={update("email")}
+                  />
+                );
+              }
+              if (field.id === "linkedin") {
+                return (
+                  <TextInput
+                    key={field.id}
+                    label={field.label}
+                    required={field.required}
+                    type="url"
+                    placeholder={field.placeholder || "https://"}
+                    value={form.linkedin}
+                    error={errors.linkedin}
+                    onChange={update("linkedin")}
+                  />
+                );
+              }
+              if (field.id === "photo") {
+                return (
+                  <FilePicker
+                    key={field.id}
+                    label={field.label}
+                    required={field.required}
+                    value={form.photo}
+                    onChange={update("photo")}
+                    onError={(msg) => toast.error(msg)}
+                    error={errors.photo}
+                    cropTitle="Crop photo"
+                    cropSubtitle="Drag the corners or edges to adjust the crop."
+                    cropApplyLabel="Apply photo"
+                  />
+                );
+              }
+              return (
+                <TextInput
+                  key={field.id}
+                  label={field.label}
+                  required={field.required}
+                  type={field.inputType}
+                  placeholder={field.placeholder || field.label}
+                  value={customFieldValues[field.id] || ""}
+                  error={errors[field.id]}
+                  onChange={updateCustomField(field.id)}
+                />
+              );
+            })}
 
           </div>
 

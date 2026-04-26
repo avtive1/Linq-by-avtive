@@ -2,14 +2,26 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { encryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
-import { insertRow } from "@/lib/neon-db";
+import { insertRow, queryNeon } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { issueAttendeeCardToken } from "@/lib/security/tokens";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 
 export async function POST(req: Request) {
   try {
+    await queryNeon(
+      `ALTER TABLE public.attendees
+       ADD COLUMN IF NOT EXISTS custom_fields jsonb NOT NULL DEFAULT '{}'::jsonb`,
+    );
     const payload = (await req.json()) as Record<string, unknown>;
+    if (
+      "custom_fields" in payload &&
+      (payload.custom_fields === null ||
+        typeof payload.custom_fields !== "object" ||
+        Array.isArray(payload.custom_fields))
+    ) {
+      return NextResponse.json({ error: "custom_fields must be an object." }, { status: 400 });
+    }
     const cookieStore = await cookies();
     const authUserId = await getServerUserIdFromCookies(cookieStore);
     let tokenUserId: string | null = null;

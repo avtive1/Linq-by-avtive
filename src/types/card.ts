@@ -1,3 +1,4 @@
+import type { RegistrationFormConfig } from "@/lib/registration-form";
 /** Sponsor shown on attendee cards (from the parent event). Max 5 per event. */
 export type SponsorEntry = {
   name: string;
@@ -47,4 +48,5 @@ export type EventData = {
   created?: string;
   logo_url?: string;
   sponsors?: SponsorEntry[];
+  registration_form_config?: RegistrationFormConfig;
 };
