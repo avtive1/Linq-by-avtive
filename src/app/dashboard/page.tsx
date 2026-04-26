@@ -75,6 +75,7 @@ function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const impersonateId = searchParams.get("impersonate");
+  const onboardingIntent = searchParams.get("onboarding");
   
   const [events, setEvents] = useState<DashboardEventData[]>([]);
   const [userName, setUserName] = useState("");
@@ -118,6 +119,8 @@ function DashboardContent() {
   const [joinGateOrgName, setJoinGateOrgName] = useState("");
   const [teamModalView, setTeamModalView] = useState<"list" | "add" | "edit">("list");
   const [selectedMemberToEdit, setSelectedMemberToEdit] = useState<OrgMemberRow | null>(null);
+  const [isOwnerOnboardingModalOpen, setIsOwnerOnboardingModalOpen] = useState(false);
+  const [isSavingOwnerOnboarding, setIsSavingOwnerOnboarding] = useState(false);
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
@@ -287,6 +290,19 @@ function DashboardContent() {
               ownedEvents.length > 0 || ownedMembers.length > 0 || ownerByRegistry;
             setIsOrgOwner(userIsOrgOwner);
             userIsOrgOwnerLocal = userIsOrgOwner;
+            if (userIsOrgOwner) {
+              try {
+                const onboardingRes = await fetch("/api/onboarding/organization-owner", { cache: "no-store" });
+                const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
+                const shouldShowOnboarding = Boolean(onboardingPayload?.data?.shouldShowOnboarding);
+                const teamStepCompleted = Boolean(onboardingPayload?.data?.teamStepCompleted);
+                const shouldForceOwnerOnboarding = onboardingIntent === "owner" && !teamStepCompleted;
+                if (!isMounted) return;
+                setIsOwnerOnboardingModalOpen(shouldShowOnboarding || shouldForceOwnerOnboarding);
+              } catch {}
+            } else {
+              setIsOwnerOnboardingModalOpen(false);
+            }
             if (profileRow?.organizationName?.trim() && !userIsOrgOwner) {
               try {
                 const joinRes = await fetch("/api/organization-join-requests", {
@@ -373,7 +389,7 @@ function DashboardContent() {
     };
     checkUser();
     return () => { isMounted = false; };
-  }, [router, impersonateId, session, userId, refreshTick]);
+  }, [router, impersonateId, onboardingIntent, session, userId, refreshTick]);
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
@@ -403,6 +419,35 @@ function DashboardContent() {
       console.error("Error fetching dashboard data:", err);
       toast.error("Could not load data. Please refresh and try again.");
     }
+  };
+
+  const markOwnerOnboardingCompleted = async () => {
+    setIsSavingOwnerOnboarding(true);
+    try {
+      const res = await fetch("/api/onboarding/organization-owner", { method: "PATCH" });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not update onboarding state.");
+        return false;
+      }
+      return true;
+    } catch {
+      toast.error("Could not update onboarding state.");
+      return false;
+    } finally {
+      setIsSavingOwnerOnboarding(false);
+    }
+  };
+
+  const openTeamAccessModal = async (defaultView: "list" | "add" | "edit" = "list") => {
+    if (isOrgTeamMember) {
+      toast.error("Access management is restricted to organization owners.");
+      return;
+    }
+    setIsTeamModalOpen(true);
+    setTeamModalView(defaultView);
+    setTeamError("");
+    await loadteamMembers();
   };
 
   const filteredEvents = useMemo(() => {
@@ -1037,15 +1082,8 @@ function DashboardContent() {
             {!isPreviewMode && !hasPendingOrgJoin && !isOrgTeamMember && (
               <Button
                 variant="secondary"
-                onClick={async () => {
-                  if (isOrgTeamMember) {
-                    toast.error("Access management is restricted to organization owners.");
-                    return;
-                  }
-                  setIsTeamModalOpen(true);
-                  setTeamModalView("list");
-                  setTeamError("");
-                  await loadteamMembers();
+                onClick={() => {
+                  void openTeamAccessModal("list");
                 }}
                 className="min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
                 icon={<Users size={18} />}
@@ -1951,6 +1989,55 @@ function DashboardContent() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isOwnerOnboardingModalOpen && !isPreviewMode && isOrgOwner && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+          <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
+          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-10 pt-10 pb-7 border-b border-border/10">
+              <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                Invite your team
+              </h2>
+              <p className="mt-2 text-sm text-muted leading-[1.6]">
+                Your organization profile is ready. Add teammates now, or skip and manage access later from Team Access.
+              </p>
+            </div>
+            <div className="px-10 py-8 flex flex-col gap-3">
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={isSavingOwnerOnboarding}
+                onClick={async () => {
+                  const ok = await markOwnerOnboardingCompleted();
+                  if (!ok) return;
+                  setIsOwnerOnboardingModalOpen(false);
+                  router.replace("/dashboard");
+                  void openTeamAccessModal("add");
+                }}
+                icon={<Users size={18} />}
+              >
+                Add Team Members
+              </Button>
+              <Button
+                variant="secondary"
+                size="lg"
+                fullWidth
+                disabled={isSavingOwnerOnboarding}
+                onClick={async () => {
+                  const ok = await markOwnerOnboardingCompleted();
+                  if (!ok) return;
+                  setIsOwnerOnboardingModalOpen(false);
+                  router.replace("/dashboard");
+                  toast.success("You can add team members anytime from Team Access.");
+                }}
+              >
+                Skip for Now
+              </Button>
             </div>
           </div>
         </div>

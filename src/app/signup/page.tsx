@@ -12,6 +12,7 @@ import { normalizeOrganizationName } from "@/lib/organization/normalize";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -37,7 +38,7 @@ export default function SignupPage() {
       .split("/")[0]; // takeee first segment after /in/ if any
   };
 
-  const validate = () => {
+  const validate = (step: 1 | 2 = signupStep) => {
     const newErrors: Record<string, string> = {};
     
     // Email
@@ -63,7 +64,7 @@ export default function SignupPage() {
     
     // Organization
     if (!form.organization) newErrors.organization = "Organization Name is required";
-    if (!form.organizationLogo) newErrors.organizationLogo = "Organization logo is required";
+    if (step === 2 && !form.organizationLogo) newErrors.organizationLogo = "Organization logo is required";
     
     // LinkedIn (Optional)
     // Removed strict "/" check to allow full URLs
@@ -74,7 +75,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validate(2)) return;
     
     setIsSubmitting(true);
     const cleanHandle = extractLinkedInHandle(form.linkedin);
@@ -124,7 +125,7 @@ export default function SignupPage() {
       }
       toast.success("Account created successfully!");
       router.refresh();
-      router.push("/dashboard");
+      router.push("/dashboard?onboarding=owner");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to create account. Email may already exist.";
       setErrors({ email: message });
@@ -193,6 +194,11 @@ export default function SignupPage() {
     }
   };
 
+  const handleContinueToLogoStep = () => {
+    if (!validate(1)) return;
+    setSignupStep(2);
+  };
+
   return (
     <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-hidden bg-transparent">
       <GradientBackground />
@@ -220,7 +226,9 @@ export default function SignupPage() {
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create your profile</h1>
               <p className="text-base text-muted leading-[1.55]">
-                Set up once. Generate a card for every event you attend.
+                {signupStep === 1
+                  ? "Step 1 of 2: Set up your account and organization."
+                  : "Step 2 of 2: Upload your organization logo to continue."}
               </p>
             </div>
 
@@ -304,37 +312,64 @@ export default function SignupPage() {
                 error={errors.organization}
                 onChange={update("organization")}
               />
-              <FilePicker
-                label="Organization Logo"
-                required
-                value={form.organizationLogo}
-                onChange={update("organizationLogo")}
-                onError={(msg) => toast.error(msg)}
-                error={errors.organizationLogo}
-                cropTitle="Crop organization logo"
-                cropSubtitle="Drag the corners or edges to adjust the crop."
-                cropApplyLabel="Apply logo"
-              />
-              <TextInput
-                label="LinkedIn URL"
-                placeholder="linkedin.com/in/yourhandle"
-                prefix="https://"
-                value={form.linkedin}
-                error={errors.linkedin}
-                onChange={update("linkedin")}
-              />
+              {signupStep === 1 ? (
+                <TextInput
+                  label="LinkedIn URL"
+                  placeholder="linkedin.com/in/yourhandle"
+                  prefix="https://"
+                  value={form.linkedin}
+                  error={errors.linkedin}
+                  onChange={update("linkedin")}
+                />
+              ) : (
+                <FilePicker
+                  label="Organization Logo"
+                  required
+                  value={form.organizationLogo}
+                  onChange={update("organizationLogo")}
+                  onError={(msg) => toast.error(msg)}
+                  error={errors.organizationLogo}
+                  cropTitle="Crop organization logo"
+                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropApplyLabel="Apply logo"
+                />
+              )}
             </div>
-
-            <Button 
-              type="submit" 
-              variant="primary" 
-              fullWidth 
-              size="lg"
-              disabled={isSubmitting}
-              className="h-12 text-base shadow-lg shadow-primary/20"
-            >
-              {isSubmitting ? "Creating account..." : "Create account"}
-            </Button>
+            {signupStep === 1 ? (
+              <Button
+                type="button"
+                variant="primary"
+                fullWidth
+                size="lg"
+                onClick={handleContinueToLogoStep}
+                className="h-12 text-base shadow-lg shadow-primary/20"
+              >
+                Continue to Logo
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  size="lg"
+                  onClick={() => setSignupStep(1)}
+                  className="h-12 text-base"
+                >
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  fullWidth
+                  size="lg"
+                  disabled={isSubmitting}
+                  className="h-12 text-base shadow-lg shadow-primary/20"
+                >
+                  {isSubmitting ? "Creating account..." : "Create account"}
+                </Button>
+              </div>
+            )}
 
             <div className="flex items-center justify-center gap-1 text-sm text-muted">
               <span>Already have an account?</span>

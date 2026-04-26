@@ -1,4 +1,3 @@
-import argon2 from "argon2";
 import crypto from "node:crypto";
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
@@ -14,6 +13,14 @@ export type AuthUserRecord = {
 
 let schemaEnsured = false;
 let superAdminEnsured = false;
+let argon2ModulePromise: Promise<typeof import("argon2")> | null = null;
+
+function getArgon2() {
+  if (!argon2ModulePromise) {
+    argon2ModulePromise = import("argon2");
+  }
+  return argon2ModulePromise;
+}
 
 export async function ensureAuthSchema() {
   if (schemaEnsured) return;
@@ -35,6 +42,9 @@ export async function ensureAuthSchema() {
   // Older Neon DBs may lack these columns; signup + cards expect them.
   await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS organization_logo_url text`,
+  );
+  await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
   );
   await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`,
@@ -87,6 +97,7 @@ async function ensureBootstrapSuperAdmin() {
       ? `${requestedUsername}_${userId.replace(/-/g, "").slice(0, 8)}`
       : requestedUsername;
 
+    const argon2 = await getArgon2();
     const passwordHash = await argon2.hash(password);
 
     const existingProfile = await queryNeonOne<{ id: string }>(
@@ -161,6 +172,7 @@ export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord 
 export async function verifyPassword(email: string, password: string): Promise<AuthUserRecord | null> {
   const user = await getAuthUserByEmail(email);
   if (!user) return null;
+  const argon2 = await getArgon2();
   const ok = await argon2.verify(user.password_hash, password);
   return ok ? user : null;
 }
@@ -198,6 +210,7 @@ export async function registerUser(input: {
   }
 
   const userId = crypto.randomUUID();
+  const argon2 = await getArgon2();
   const hash = await argon2.hash(input.password);
 
   await queryNeon(
@@ -293,6 +306,7 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   );
   if (!row?.user_id) return false;
 
+  const argon2 = await getArgon2();
   const hash = await argon2.hash(newPassword);
   await queryNeon(
     `UPDATE public.auth_users
