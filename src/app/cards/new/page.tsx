@@ -384,18 +384,18 @@ function NewCardForm() {
 
       {/* Left Sidebar - Form */}
       <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-8 md:p-12 overflow-y-auto lg:h-screen animate-slide-up">
-        <div className="flex items-center gap-4 mb-12">
+        <div className="flex items-center gap-4 mb-8">
           <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/65">
             Avtive attendee portal
           </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-12">
-          <div className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
               Event Registration
             </h1>
-            <p className="text-base text-muted leading-[1.55]">
+            <p className="text-[15px] text-muted leading-[1.5]">
               {form.eventName
                 ? `Register for ${form.eventName} and get your attendee card.`
                 : "Register for the event to generate your attendee card."}
@@ -403,14 +403,14 @@ function NewCardForm() {
           </div>
 
           {eventLoading && (
-            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
               <Lock size={14} />
               Loading event details...
             </div>
           )}
           {!eventLoading && (
-            <div className="flex items-center gap-2 text-sm text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-4 py-3">
-              <Lock size={14} />
+            <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+              <Lock size={12} />
               Event details are pre-filled from the organizer.
             </div>
           )}

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeonOne, updateRows } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 
@@ -8,12 +8,34 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_.]+$/;
 const USERNAME_CHANGE_COOLDOWN_DAYS = 24;
 const ORG_CHANGE_COOLDOWN_DAYS = 90;
 
+async function ensureProfileColumns() {
+  await queryNeon(`ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`);
+}
+
+function fallbackUsernameFromEmail(email: string, userId: string) {
+  const base = email
+    .split("@")[0]
+    ?.trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_.]/g, "")
+    .slice(0, 24) || "user";
+  const suffix = userId.replace(/-/g, "").slice(0, 6);
+  return `${base}_${suffix}`;
+}
+
 export async function PATCH(req: Request) {
   try {
-    const body = (await req.json()) as { username?: string; organizationName?: string; organizationLogoUrl?: string };
+    await ensureProfileColumns();
+    const body = (await req.json()) as {
+      username?: string;
+      organizationName?: string;
+      organizationLogoUrl?: string;
+      profilePhotoUrl?: string;
+    };
     const nextUsername = String(body?.username || "").trim().toLowerCase();
     const nextOrganizationName = normalizeOrganizationName(String(body?.organizationName || ""));
     const nextOrganizationLogoUrl = String(body?.organizationLogoUrl || "").trim();
+    const nextProfilePhotoUrl = String(body?.profilePhotoUrl || "").trim();
 
     if (!nextUsername) {
       return NextResponse.json({ error: "Username is required." }, { status: 400 });
@@ -134,6 +156,9 @@ export async function PATCH(req: Request) {
     if (nextOrganizationLogoUrl) {
       updatePayload.organization_logo_url = nextOrganizationLogoUrl;
     }
+    if (nextProfilePhotoUrl) {
+      updatePayload.profile_photo_url = nextProfilePhotoUrl;
+    }
     if (usernameChanged) updatePayload.username_changed_at = new Date().toISOString();
     if (organizationChanged) updatePayload.organization_name_changed_at = new Date().toISOString();
 
@@ -195,23 +220,70 @@ export async function PATCH(req: Request) {
 
 export async function GET() {
   try {
+    await ensureProfileColumns();
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const profile = await queryNeonOne<{
+    let profile = await queryNeonOne<{
       username: string | null;
       organization_name: string | null;
+      profile_photo_url: string | null;
     }>(
-      `SELECT username, organization_name
-       FROM public.profiles
+      `SELECT username, organization_name, to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url
+       FROM public.profiles p
        WHERE id = $1`,
       [userId],
     );
+
+    // Self-heal legacy users who exist in auth_users but have no profiles row.
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found." }, { status: 404 });
+      const authRow = await queryNeonOne<{ email: string | null }>(
+        `SELECT email
+         FROM public.auth_users
+         WHERE user_id = $1
+         LIMIT 1`,
+        [userId],
+      );
+      const fallbackUsername = fallbackUsernameFromEmail(String(authRow?.email || ""), userId);
+      const inserted = await queryNeon<{
+        username: string | null;
+        organization_name: string | null;
+        profile_photo_url: string | null;
+      }>(
+        `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at, profile_photo_url)
+         VALUES ($1, $2, '', '', 'user', now(), '')
+         ON CONFLICT (id) DO NOTHING
+         RETURNING username, organization_name, profile_photo_url`,
+        [userId, fallbackUsername],
+      );
+      profile =
+        inserted[0] ||
+        (await queryNeonOne<{
+          username: string | null;
+          organization_name: string | null;
+          profile_photo_url: string | null;
+        }>(
+          `SELECT username, organization_name, to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url
+           FROM public.profiles p
+           WHERE id = $1`,
+          [userId],
+        ));
+    }
+
+    if (!profile) {
+      return NextResponse.json(
+        {
+          data: {
+            username: "",
+            organizationName: "",
+            profilePhotoUrl: "",
+          },
+        },
+        { status: 200 },
+      );
     }
 
     return NextResponse.json(
@@ -219,6 +291,7 @@ export async function GET() {
         data: {
           username: String(profile.username || ""),
           organizationName: String(profile.organization_name || ""),
+          profilePhotoUrl: String(profile.profile_photo_url || ""),
         },
       },
       { status: 200 },

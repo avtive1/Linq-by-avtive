@@ -44,12 +44,26 @@ export async function ensureAuthSchema() {
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS organization_logo_url text`,
   );
   await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
+  );
+  await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
   );
   await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`,
   );
   schemaEnsured = true;
+}
+
+function organizationNameFromEmail(email: string) {
+  const domain = email.split("@")[1] || "";
+  const firstLabel = domain.split(".")[0] || email.split("@")[0] || "Organization";
+  const cleaned = firstLabel.replace(/[^a-zA-Z0-9 ]+/g, " ").trim();
+  if (!cleaned) return "Organization";
+  return cleaned
+    .split(/\s+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function normalizeBootstrapUsername(email: string) {
@@ -226,13 +240,16 @@ export async function registerUser(input: {
   );
 
   if (organizationKey) {
-    await queryNeon(
-      `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
-       VALUES ($1, $2, $3, now(), now())
-       ON CONFLICT (organization_name_key)
-       DO UPDATE SET organization_name = EXCLUDED.organization_name, updated_at = now()`,
-      [organizationName, organizationKey, userId],
+    const existingOrg = await queryNeonOne<{ id: string; owner_user_id: string | null }>(
+      `SELECT id, owner_user_id
+       FROM public.organizations
+       WHERE organization_name_key = $1
+       LIMIT 1`,
+      [organizationKey],
     );
+    if (!existingOrg?.id || !existingOrg.owner_user_id) {
+      throw new Error("Organization is not available for self-registration.");
+    }
   }
 
   // Optional column support: persist uploaded organization logo if schema has organization_logo_url.
@@ -264,6 +281,65 @@ export async function registerUser(input: {
   }
 
   return { userId, email, role: "user" };
+}
+
+export async function createOrganizationOwnerByAdmin(input: {
+  email: string;
+  password: string;
+}): Promise<{ userId: string; email: string; organizationName: string }> {
+  await ensureAuthSchema();
+  const email = input.email.trim().toLowerCase();
+  if (!email) throw new Error("Email is required.");
+  const existingEmail = await queryNeonOne<{ user_id: string }>(
+    `SELECT user_id FROM public.auth_users WHERE lower(email) = lower($1) LIMIT 1`,
+    [email],
+  );
+  if (existingEmail?.user_id) {
+    throw new Error("An account with this email already exists.");
+  }
+
+  const baseOrganizationName = normalizeOrganizationName(organizationNameFromEmail(email));
+  let organizationName = baseOrganizationName;
+  let organizationKey = toOrganizationKey(organizationName);
+  if (!organizationKey) {
+    organizationName = `Organization ${Date.now()}`;
+    organizationKey = toOrganizationKey(organizationName);
+  }
+  if (!organizationKey) throw new Error("Failed to generate organization key.");
+
+  const existingOrg = await queryNeonOne<{ id: string }>(
+    `SELECT id FROM public.organizations WHERE organization_name_key = $1 LIMIT 1`,
+    [organizationKey],
+  );
+  if (existingOrg?.id) {
+    organizationName = `${organizationName} ${Math.floor(Math.random() * 900 + 100)}`;
+    organizationKey = toOrganizationKey(organizationName);
+  }
+  if (!organizationKey) throw new Error("Failed to generate organization key.");
+
+  const userId = crypto.randomUUID();
+  const argon2 = await getArgon2();
+  const hash = await argon2.hash(input.password);
+
+  await queryNeon(
+    `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
+     VALUES ($1, NULL, $2, $3, 'user', now())`,
+    [userId, organizationName, organizationKey],
+  );
+
+  await queryNeon(
+    `INSERT INTO public.auth_users (user_id, email, password_hash, created_at, updated_at)
+     VALUES ($1, $2, $3, now(), now())`,
+    [userId, email, hash],
+  );
+
+  await queryNeon(
+    `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
+     VALUES ($1, $2, $3, now(), now())`,
+    [organizationName, organizationKey, userId],
+  );
+
+  return { userId, email, organizationName };
 }
 
 function sha256(value: string) {

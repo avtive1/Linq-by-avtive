@@ -121,6 +121,10 @@ function DashboardContent() {
   const [selectedMemberToEdit, setSelectedMemberToEdit] = useState<OrgMemberRow | null>(null);
   const [isOwnerOnboardingModalOpen, setIsOwnerOnboardingModalOpen] = useState(false);
   const [isSavingOwnerOnboarding, setIsSavingOwnerOnboarding] = useState(false);
+  const [isOwnerProfileSetupModalOpen, setIsOwnerProfileSetupModalOpen] = useState(false);
+  const [ownerProfileUsernameDraft, setOwnerProfileUsernameDraft] = useState("");
+  const [ownerProfilePhotoDraft, setOwnerProfilePhotoDraft] = useState("");
+  const [ownerProfileSetupError, setOwnerProfileSetupError] = useState("");
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
@@ -296,11 +300,19 @@ function DashboardContent() {
                 const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
                 const shouldShowOnboarding = Boolean(onboardingPayload?.data?.shouldShowOnboarding);
                 const teamStepCompleted = Boolean(onboardingPayload?.data?.teamStepCompleted);
+                const needsProfileSetup = Boolean(onboardingPayload?.data?.needsProfileSetup);
                 const shouldForceOwnerOnboarding = onboardingIntent === "owner" && !teamStepCompleted;
                 if (!isMounted) return;
-                setIsOwnerOnboardingModalOpen(shouldShowOnboarding || shouldForceOwnerOnboarding);
+                if (needsProfileSetup) {
+                  setOwnerProfileUsernameDraft(effectiveName || "");
+                  setOwnerProfilePhotoDraft("");
+                  setOwnerProfileSetupError("");
+                }
+                setIsOwnerProfileSetupModalOpen(needsProfileSetup);
+                setIsOwnerOnboardingModalOpen(!needsProfileSetup && (shouldShowOnboarding || shouldForceOwnerOnboarding));
               } catch {}
             } else {
+              setIsOwnerProfileSetupModalOpen(false);
               setIsOwnerOnboardingModalOpen(false);
             }
             if (profileRow?.organizationName?.trim() && !userIsOrgOwner) {
@@ -436,6 +448,62 @@ function DashboardContent() {
       return false;
     } finally {
       setIsSavingOwnerOnboarding(false);
+    }
+  };
+
+  const saveMandatoryOwnerProfileSetup = async () => {
+    const cleaned = ownerProfileUsernameDraft.trim().toLowerCase();
+    if (!cleaned) {
+      setOwnerProfileSetupError("Username is required.");
+      return false;
+    }
+    if (cleaned.length < 3 || !/^[a-zA-Z0-9_.]+$/.test(cleaned)) {
+      setOwnerProfileSetupError("Use at least 3 characters: letters, numbers, underscore, or dot.");
+      return false;
+    }
+    if (!ownerProfilePhotoDraft) {
+      setOwnerProfileSetupError("Profile picture is required.");
+      return false;
+    }
+    setIsSavingUsername(true);
+    setOwnerProfileSetupError("");
+    try {
+      let profilePhotoUrl = ownerProfilePhotoDraft;
+      if (profilePhotoUrl.startsWith("data:")) {
+        const uploadRes = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ dataUrl: profilePhotoUrl, folder: `organizations/${userId}/profile` }),
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok || !uploadPayload?.data?.url) {
+          setOwnerProfileSetupError(uploadPayload?.error || "Profile image upload failed.");
+          return false;
+        }
+        profilePhotoUrl = String(uploadPayload.data.url);
+      }
+      const res = await fetch("/api/profile/username", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: cleaned,
+          organizationName: organizationName || organizationDraft || "Organization",
+          profilePhotoUrl,
+        }),
+      });
+      const payload = await res.json().catch(() => null);
+      if (!res.ok) {
+        setOwnerProfileSetupError(payload?.error || "Could not save profile setup.");
+        return false;
+      }
+      setUserName(cleaned);
+      setIsOwnerProfileSetupModalOpen(false);
+      return true;
+    } catch {
+      setOwnerProfileSetupError("Could not save profile setup.");
+      return false;
+    } finally {
+      setIsSavingUsername(false);
     }
   };
 
@@ -1989,6 +2057,66 @@ function DashboardContent() {
                   </Button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isOwnerProfileSetupModalOpen && !isPreviewMode && isOrgOwner && (
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+          <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
+          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-10 pt-10 pb-7 border-b border-border/10">
+              <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                Complete your profile
+              </h2>
+              <p className="mt-2 text-sm text-muted leading-[1.6]">
+                Username and profile picture are required before continuing.
+              </p>
+            </div>
+            <div className="px-10 py-8 flex flex-col gap-4">
+              <TextInput
+                label="Username"
+                required
+                placeholder="choose_a_username"
+                value={ownerProfileUsernameDraft}
+                onChange={setOwnerProfileUsernameDraft}
+                error={ownerProfileSetupError.toLowerCase().includes("username") ? ownerProfileSetupError : ""}
+              />
+              <FilePicker
+                label="Profile Picture"
+                required
+                value={ownerProfilePhotoDraft}
+                onChange={(val) => {
+                  setOwnerProfilePhotoDraft(val);
+                  if (ownerProfileSetupError.toLowerCase().includes("profile")) setOwnerProfileSetupError("");
+                }}
+                onError={(msg) => setOwnerProfileSetupError(msg)}
+                error={ownerProfileSetupError.toLowerCase().includes("profile") ? ownerProfileSetupError : ""}
+                cropTitle="Crop profile picture"
+                cropSubtitle="Drag the corners or edges to adjust the crop."
+                cropApplyLabel="Apply photo"
+              />
+              {ownerProfileSetupError &&
+                !ownerProfileSetupError.toLowerCase().includes("username") &&
+                !ownerProfileSetupError.toLowerCase().includes("profile") ? (
+                <p className="text-sm text-red-500">{ownerProfileSetupError}</p>
+              ) : null}
+              <Button
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={isSavingUsername}
+                onClick={async () => {
+                  const ok = await saveMandatoryOwnerProfileSetup();
+                  if (!ok) return;
+                  const onboardingRes = await fetch("/api/onboarding/organization-owner", { cache: "no-store" });
+                  const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
+                  setIsOwnerOnboardingModalOpen(Boolean(onboardingPayload?.data?.shouldShowOnboarding));
+                }}
+              >
+                {isSavingUsername ? "Saving..." : "Continue"}
+              </Button>
             </div>
           </div>
         </div>

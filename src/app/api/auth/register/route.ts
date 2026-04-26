@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const organizationLogoUrl = String(body.organizationLogoUrl || "").trim();
     const linkedin = String(body.linkedin || "").trim();
 
-    if (!email || !password || !username || !organizationName || !organizationLogoUrl) {
+    if (!email || !password || !username || !organizationName) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
     }
     if (!/\S+@\S+\.\S+/.test(email)) {

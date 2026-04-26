@@ -23,6 +23,9 @@ async function ensureOwnerOnboardingColumns() {
   await queryNeon(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
   );
+  await queryNeon(
+    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
+  );
 }
 
 export async function GET() {
@@ -34,17 +37,29 @@ export async function GET() {
     const owner = await isOrganizationOwner(userId);
     if (!owner) {
       return NextResponse.json(
-        { data: { isOwner: false, hasOrganizationLogo: false, teamStepCompleted: true, shouldShowOnboarding: false } },
+        {
+          data: {
+            isOwner: false,
+            hasOrganizationLogo: false,
+            needsProfileSetup: false,
+            teamStepCompleted: true,
+            shouldShowOnboarding: false,
+          },
+        },
         { status: 200 },
       );
     }
 
     const profile = await queryNeonOne<{
       organization_logo_url: string | null;
+      username: string | null;
+      profile_photo_url: string | null;
       owner_onboarding_team_step_completed_at: string | null;
     }>(
       `SELECT
         to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url,
+        username,
+        to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url,
         to_jsonb(p.*)->>'owner_onboarding_team_step_completed_at' AS owner_onboarding_team_step_completed_at
        FROM public.profiles p
        WHERE p.id = $1
@@ -53,14 +68,18 @@ export async function GET() {
     );
 
     const hasOrganizationLogo = Boolean(String(profile?.organization_logo_url || "").trim());
+    const hasUsername = Boolean(String(profile?.username || "").trim());
+    const hasProfilePhoto = Boolean(String(profile?.profile_photo_url || "").trim());
+    const needsProfileSetup = !hasUsername || !hasProfilePhoto;
     const teamStepCompleted = Boolean(profile?.owner_onboarding_team_step_completed_at);
     return NextResponse.json(
       {
         data: {
           isOwner: true,
           hasOrganizationLogo,
+          needsProfileSetup,
           teamStepCompleted,
-          shouldShowOnboarding: hasOrganizationLogo && !teamStepCompleted,
+          shouldShowOnboarding: !needsProfileSetup && !teamStepCompleted,
         },
       },
       { status: 200 },

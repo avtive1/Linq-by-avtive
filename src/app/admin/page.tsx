@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import OrganizationsTable from "./_components/OrganizationsTable";
+import { Button } from "@/components/ui";
 
 export const revalidate = 0; // Ensures this page is always fresh when loaded by admin
 
@@ -198,11 +199,14 @@ export default async function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 animate-slide-up delay-300">
         <div className="lg:col-span-2 flex flex-col gap-5">
-          <div className="flex items-center gap-3 px-1">
+          <div className="flex items-center justify-between gap-3 px-1">
             <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
               <UserRound size={22} className="text-primary-strong" />
               Organizations Directory
             </h2>
+            <Link href="/admin/organizations/new">
+              <Button size="sm">Create Organization</Button>
+            </Link>
           </div>
           <OrganizationsTable initialOrganizations={organizations} />
         </div>

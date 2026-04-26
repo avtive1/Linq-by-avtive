@@ -25,7 +25,7 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-4 animate-slide-up delay-200">
-          <Link href="/signup" className="w-full sm:w-auto">
+          <Link href="/login" className="w-full sm:w-auto">
             <Button variant="blue" size="lg" className="w-full whitespace-nowrap h-12 px-5 text-[19.5px]">
               Get started
             </Button>
