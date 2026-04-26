@@ -19,10 +19,82 @@ import { cookies } from "next/headers";
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  return {
-    title: "Attendee Card | AVTIVE",
-    description: "Secure attendee card access.",
-  };
+  const params = await props.params;
+  const id = params.id;
+  const defaultTitle = "Attendee Card | AVTIVE";
+  const defaultDesc = "Digital attendee badge for professional networking.";
+  const fallbackImage = "https://linq.avtive.app/logo-preview.png"; // Make sure this exists or use a real public logo
+
+  if (!isValidUuid(id)) {
+    return { title: defaultTitle, description: defaultDesc };
+  }
+
+  try {
+    // Timeout-resistant query (or just standard fetch)
+    const record = await queryNeonOne<Record<string, unknown>>(
+      `SELECT id, name, event_name, event_id, card_preview_url, photo_url, updated_at 
+       FROM public.attendees 
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (!record) {
+      return { title: defaultTitle, description: defaultDesc };
+    }
+
+    // Name and card_preview_url are Class C (public), no decryption needed
+    const attendeeName = String(record.name || "Attendee").trim();
+    const eventName = String(record.event_name || "Exclusive Event").trim();
+    
+    const cardTitle = `${attendeeName} Card | AVTIVE`;
+    const cardDesc = `Attendee badge for ${eventName}. Scan to connect and view profile.`;
+    
+    let imageUrl = String(record.card_preview_url || "").trim();
+    if (!imageUrl && process.env.CLOUDINARY_CLOUD_NAME && record.event_id) {
+      imageUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${record.event_id}/${id}-horizontal`;
+    }
+    
+    // Fallback if no image found
+    if (!imageUrl) imageUrl = fallbackImage;
+
+    const shareUrl = `https://linq.avtive.app/cards/${id}`;
+
+    return {
+      title: cardTitle,
+      description: cardDesc,
+      metadataBase: new URL("https://linq.avtive.app"),
+      openGraph: {
+        title: cardTitle,
+        description: cardDesc,
+        url: shareUrl,
+        siteName: "AVTIVE",
+        images: [
+          { 
+            url: imageUrl, 
+            width: 1200, 
+            height: 630,
+            alt: `${attendeeName}'s Badge Preview`,
+          }
+        ],
+        type: "website",
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: cardTitle,
+        description: cardDesc,
+        images: [imageUrl],
+      },
+    };
+  } catch (err) {
+    console.error("Metadata generation error:", err);
+    return { 
+      title: defaultTitle,
+      description: defaultDesc,
+      openGraph: {
+        images: [fallbackImage],
+      }
+    };
+  }
 }
 
 // This makes the page a Server Component
