@@ -10,6 +10,7 @@ const ORG_CHANGE_COOLDOWN_DAYS = 90;
 
 async function ensureProfileColumns() {
   await queryNeon(`ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`);
+  await queryNeon(`ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS organization_logo_url text`);
 }
 
 function fallbackUsernameFromEmail(email: string, userId: string) {
@@ -183,13 +184,18 @@ export async function PATCH(req: Request) {
     if (ownedOrganizationByUser?.id) {
       const nextOrgKey = toOrganizationKey(nextOrganizationName);
       try {
+        const orgUpdatePayload: Record<string, any> = {
+          organization_name: nextOrganizationName,
+          organization_name_key: nextOrgKey,
+          updated_at: new Date().toISOString(),
+        };
+        if (nextOrganizationLogoUrl) {
+          orgUpdatePayload.organization_logo_url = nextOrganizationLogoUrl;
+        }
+        
         const updatedOrganizations = await updateRows(
           "organizations",
-          {
-            organization_name: nextOrganizationName,
-            organization_name_key: nextOrgKey,
-            updated_at: new Date().toISOString(),
-          },
+          orgUpdatePayload,
           { id: ownedOrganizationByUser.id },
           "id",
         );

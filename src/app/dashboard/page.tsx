@@ -492,6 +492,7 @@ function DashboardContent() {
           username: cleaned,
           organizationName: organizationName || organizationDraft || "Organization",
           profilePhotoUrl,
+          organizationLogoUrl: profilePhotoUrl, // Save as organization logo as well
         }),
       });
       const payload = await res.json().catch(() => null);
@@ -2096,18 +2097,18 @@ function DashboardContent() {
                 error={ownerProfileSetupError.toLowerCase().includes("username") ? ownerProfileSetupError : ""}
               />
               <FilePicker
-                label="Profile Picture"
+                label="Organization Logo"
                 required
                 value={ownerProfilePhotoDraft}
                 onChange={(val) => {
                   setOwnerProfilePhotoDraft(val);
-                  if (ownerProfileSetupError.toLowerCase().includes("profile")) setOwnerProfileSetupError("");
+                  if (ownerProfileSetupError.toLowerCase().includes("logo") || ownerProfileSetupError.toLowerCase().includes("profile")) setOwnerProfileSetupError("");
                 }}
                 onError={(msg) => setOwnerProfileSetupError(msg)}
-                error={ownerProfileSetupError.toLowerCase().includes("profile") ? ownerProfileSetupError : ""}
-                cropTitle="Crop profile picture"
+                error={ownerProfileSetupError.toLowerCase().includes("logo") || ownerProfileSetupError.toLowerCase().includes("profile") ? ownerProfileSetupError : ""}
+                cropTitle="Crop organization logo"
                 cropSubtitle="Drag the corners or edges to adjust the crop."
-                cropApplyLabel="Apply photo"
+                cropApplyLabel="Apply logo"
               />
               {ownerProfileSetupError &&
                 !ownerProfileSetupError.toLowerCase().includes("username") &&

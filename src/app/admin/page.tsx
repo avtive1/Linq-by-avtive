@@ -21,13 +21,19 @@ type OrganizationRow = {
   email: string | undefined;
   username: string | undefined;
   organizationName: string | undefined;
+  organizationLogoUrl: string | undefined;
   created_at: string;
   eventCount: number;
   attendeeCount: number;
   eventIds: Set<string>;
 };
 
+async function ensureOrganizationsSchema() {
+  await queryNeon(`ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS organization_logo_url text`);
+}
+
 export default async function AdminDashboardPage() {
+  await ensureOrganizationsSchema();
   // 1. Fetch All Organizations (Users)
   const userData = await listAdminUsers();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
@@ -47,8 +53,9 @@ export default async function AdminDashboardPage() {
     created_at: string;
     date: string;
     location: string;
+    logo_url: string | null;
   }>(
-    `SELECT id, user_id, name, created_at, date, location
+    `SELECT id, user_id, name, created_at, date, location, logo_url
      FROM public.events
      ORDER BY created_at DESC`,
   );
@@ -58,14 +65,25 @@ export default async function AdminDashboardPage() {
     `SELECT id, event_id, created_at FROM public.attendees`,
   );
 
-  // 4. Fetch All Profiles (for usernames)
+  // 4. Fetch All Profiles (for usernames and branding)
   const profiles = await queryNeon<{
     id: string;
     username: string | null;
     organization_name: string | null;
-  }>(`SELECT id, username, organization_name FROM public.profiles`);
+    organization_logo_url: string | null;
+  }>(`SELECT id, username, organization_name, organization_logo_url FROM public.profiles`);
   const profileLookup = new Map();
   (profiles || []).forEach(p => profileLookup.set(p.id, p));
+
+  // 5. Fetch Official Organizations Data (for master logos)
+  const officialOrgs = await queryNeon<{
+    organization_name_key: string;
+    organization_logo_url: string | null;
+  }>(`SELECT organization_name_key, organization_logo_url FROM public.organizations`);
+  const orgLogoLookup = new Map();
+  (officialOrgs || []).forEach(o => {
+    if (o.organization_logo_url) orgLogoLookup.set(o.organization_name_key, o.organization_logo_url);
+  });
 
   // Aggregate Data
   const totalOrgs = rawUsers.length;
@@ -75,36 +93,52 @@ export default async function AdminDashboardPage() {
   const avgAttendeesPerEvent = totalEvents > 0 ? (totalAttendees / totalEvents).toFixed(1) : "0.0";
   const mostRecentEventAt = rawEvents[0]?.created_at || null;
 
-  // Map Users for quick lookup
-  const userLookup = new Map();
-  rawUsers.forEach(u => userLookup.set(u.id, u.email));
-
-  // Build the Organization Grid Data
+  // Build the Organization Grid Data - Grouping by Organization Name
   const orgMap = new Map();
   rawUsers.forEach(user => {
     const profile = profileLookup.get(user.id);
-    orgMap.set(user.id, {
-      id: user.id,
-      email: user.email,
-      username: profile?.username || user.email?.split("@")[0],
-      organizationName: profile?.organization_name || user.user_metadata?.organization_name,
-      created_at: user.created_at,
-      eventCount: 0,
-      attendeeCount: 0,
-      eventIds: new Set(),
-    });
-  });
+    const orgName = profile?.organization_name || user.user_metadata?.organization_name || "";
+    const orgNameKey = (profile?.organization_name_key) || (orgName.toLowerCase().trim().replace(/[^a-z0-9]/g, ""));
+    const effectiveName = orgName.trim() || `@${profile?.username || user.email?.split("@")[0] || "unknown"}`;
+    
+    const latestEventWithLogo = rawEvents.find(e => e.user_id === user.id && e.logo_url);
+    
+    // PRIORITY: 1. Master Organization Table -> 2. Profile Logo -> 3. Campaign Logo
+    const masterOrgLogo = orgLogoLookup.get(orgNameKey);
+    const logoUrl = (masterOrgLogo?.trim()) || (profile?.organization_logo_url?.trim()) || (latestEventWithLogo?.logo_url?.trim()) || (user.user_metadata?.organization_logo_url?.trim());
 
-  // Assign events
-  rawEvents.forEach(evt => {
-    if (orgMap.has(evt.user_id)) {
-      const org = orgMap.get(evt.user_id);
-      org.eventCount += 1;
-      org.eventIds.add(evt.id);
+    if (!orgMap.has(effectiveName)) {
+      orgMap.set(effectiveName, {
+        id: user.id, // Use the primary user's ID for drill-down
+        email: user.email,
+        username: profile?.username || user.email?.split("@")[0],
+        organizationName: orgName.trim() ? orgName : undefined,
+        organizationLogoUrl: logoUrl,
+        created_at: user.created_at,
+        eventCount: 0,
+        attendeeCount: 0,
+        eventIds: new Set(),
+      });
+    }
+
+    const org = orgMap.get(effectiveName);
+    
+    // Aggregate counts from all users in this "organization"
+    const userEvents = rawEvents.filter(e => e.user_id === user.id);
+    org.eventCount += userEvents.length;
+    userEvents.forEach(e => org.eventIds.add(e.id));
+    
+    // Update logo/username if this user has more campaigns (likely the primary owner) or has a real profile logo
+    const hasProfileLogo = profile?.organization_logo_url?.trim() || masterOrgLogo;
+    if (hasProfileLogo || (userEvents.length > 0 && userEvents.length >= (org.eventCount - userEvents.length))) {
+       org.id = user.id;
+       org.username = profile?.username || user.email?.split("@")[0];
+       org.email = user.email;
+       if (logoUrl) org.organizationLogoUrl = logoUrl;
     }
   });
 
-  // Assign attendees
+  // Second pass: count attendees for the aggregated event sets
   rawAttendees.forEach(att => {
     for (const org of orgMap.values()) {
       if (org.eventIds.has(att.event_id)) {
@@ -116,20 +150,15 @@ export default async function AdminDashboardPage() {
 
   const organizations: OrganizationRow[] = Array.from(orgMap.values()) as OrganizationRow[];
 
-  // Recent Activity Feed
-  const recentEvents = rawEvents.slice(0, 7).map(evt => {
-    const user = rawUsers.find(u => u.id === evt.user_id);
-    const profile = profileLookup.get(evt.user_id);
-    
-    const orgEmail = user?.email || "Unknown Organization";
-    const orgName = profile?.organization_name || user?.user_metadata?.organization_name;
-    const username = profile?.username;
-
+  // Recent Activity Feed - showing Organizations instead of Campaigns
+  const recentOrgs = rawUsers.slice(0, 7).map(user => {
+    const profile = profileLookup.get(user.id);
     return {
-      ...evt,
-      orgEmail,
-      orgName,
-      username
+      id: user.id,
+      email: user.email,
+      username: profile?.username || user.email?.split("@")[0],
+      organizationName: profile?.organization_name || user.user_metadata?.organization_name,
+      created_at: user.created_at,
     };
   });
 
@@ -234,26 +263,26 @@ export default async function AdminDashboardPage() {
               Live Feed
             </div>
             <div className="flex flex-col gap-3">
-              {recentEvents.map(evt => (
-                <div key={evt.id} className="card-secondary group p-3">
+              {recentOrgs.map(org => (
+                <div key={org.id} className="card-secondary group p-3">
                   <div className="flex items-start justify-between">
-                    <span className="rounded border border-border/40 bg-surface px-1.5 py-0.5 text-[11px] font-medium text-muted">
-                      New Campaign
+                    <span className="rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary-strong">
+                      New Organization
                     </span>
                     <span className="text-xs font-normal text-muted">
-                      {new Date(evt.created_at).toLocaleDateString()}
+                      {new Date(org.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <h3 className="mt-2 truncate text-sm font-semibold text-heading group-hover:text-primary-strong">
-                    {evt.name}
+                    {org.organizationName || "Unnamed Organization"}
                   </h3>
                   <p className="mt-1 truncate text-xs font-normal text-muted">
-                    {evt.orgName ? `${evt.orgName} (@${evt.username || "unknown"})` : evt.orgEmail}
+                    {`@${org.username}`}
                   </p>
                   <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-2">
-                    <span className="truncate text-xs font-normal text-muted">{evt.location}</span>
+                    <span className="truncate text-xs font-normal text-muted">{org.email}</span>
                     <Link
-                      href={`/admin/organizations/${evt.user_id}`}
+                      href={`/admin/organizations/${org.id}`}
                       className="inline-flex items-center gap-1 rounded border border-primary/30 bg-primary/10 px-2 py-0.5 text-[11px] font-semibold leading-tight text-primary-strong transition-all duration-200 hover:bg-primary/20 hover:-translate-y-0.5 active:scale-[0.95]"
                     >
                       Open Org <ChevronRight size={10} />
@@ -261,9 +290,9 @@ export default async function AdminDashboardPage() {
                   </div>
                 </div>
               ))}
-              {recentEvents.length === 0 && (
+              {recentOrgs.length === 0 && (
                 <p className="rounded-md border border-dashed border-border bg-surface/40 py-8 text-center text-sm text-muted">
-                  No recent activity detected.
+                  No recent organizations detected.
                 </p>
               )}
             </div>

@@ -3,12 +3,14 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight, Search, ArrowUpDown } from "lucide-react";
+import Image from "next/image";
 
 interface Organization {
   id: string;
   email: string | undefined;
   username: string | undefined;
   organizationName: string | undefined;
+  organizationLogoUrl: string | undefined;
   created_at: string;
   eventCount: number;
   attendeeCount: number;
@@ -97,14 +99,6 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
               <tr className="border-b border-border bg-surface text-xs font-semibold uppercase tracking-wide text-muted">
                 <th
                   className="cursor-pointer py-3.5 px-5 font-medium transition-colors hover:text-heading"
-                  onClick={() => toggleSort("username")}
-                >
-                  <div className="flex items-center">
-                    Username {renderSortIcon("username", sortField, sortOrder)}
-                  </div>
-                </th>
-                <th
-                  className="cursor-pointer py-3.5 px-5 font-medium transition-colors hover:text-heading"
                   onClick={() => toggleSort("organizationName")}
                 >
                   <div className="flex items-center">
@@ -143,17 +137,31 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                 <tr key={org.id} className="group cursor-default hover:bg-white/85 transition-colors">
                   <td className="py-5 px-6">
                     <div className="flex items-center gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-sm font-semibold uppercase text-primary-strong shadow-inner group-hover:scale-110 transition-transform duration-300">
-                        {(org.username || org.email || "u").slice(0, 2)}
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/50 bg-white text-sm font-semibold uppercase text-primary-strong shadow-sm group-hover:scale-110 transition-transform duration-300 overflow-hidden">
+                        {org.organizationLogoUrl && org.organizationLogoUrl.trim() !== "" ? (
+                          <Image
+                            src={org.organizationLogoUrl}
+                            alt={org.organizationName || "Logo"}
+                            width={128}
+                            height={128}
+                            unoptimized
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          (org.organizationName || org.username || "o").slice(0, 2)
+                        )}
                       </div>
                       <div className="flex min-w-0 flex-col gap-0.5">
-                        <span className="truncate text-sm font-semibold text-heading group-hover:text-primary-strong transition-colors">@{org.username || "unknown"}</span>
-                        <span className="ui-meta truncate">{org.email}</span>
+                        <span className="truncate text-sm font-semibold text-heading group-hover:text-primary-strong transition-colors">
+                          {org.organizationName || `@${org.username}`}
+                        </span>
+                        <div className="flex items-center gap-1.5 ui-meta truncate">
+                          <span className="opacity-70">@{org.username}</span>
+                          <span className="h-1 w-1 rounded-full bg-border" />
+                          <span className="opacity-70">{org.email}</span>
+                        </div>
                       </div>
                     </div>
-                  </td>
-                  <td className="py-5 px-6 text-sm text-heading font-medium">
-                    {org.organizationName || <span className="font-normal text-muted/60">—</span>}
                   </td>
                   <td className="py-5 px-6 text-sm text-muted font-normal">{new Date(org.created_at).toLocaleDateString()}</td>
                   <td className="py-5 px-6 text-center">
