@@ -163,7 +163,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                       </div>
                     </div>
                   </td>
-                  <td className="py-5 px-6 text-sm text-muted font-normal">{new Date(org.created_at).toLocaleDateString()}</td>
+                  <td className="py-5 px-6 text-sm text-muted font-normal">{org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}</td>
                   <td className="py-5 px-6 text-center">
                     <span className="inline-flex items-center justify-center rounded-md bg-info/10 px-3 py-1.5 text-sm font-semibold leading-tight text-info border border-info/20">
                       {org.eventCount}

@@ -270,7 +270,7 @@ export default async function AdminDashboardPage() {
                       New Organization
                     </span>
                     <span className="text-xs font-normal text-muted">
-                      {new Date(org.created_at).toLocaleDateString()}
+                      {org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}
                     </span>
                   </div>
                   <h3 className="mt-2 truncate text-sm font-semibold text-heading group-hover:text-primary-strong">
