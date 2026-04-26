@@ -117,14 +117,16 @@ export default async function CardViewPage(props: {
       let organizationName = "";
       let organizationLogoUrl = "";
       if (secureRecord.event_id) {
-        const ev = await queryNeonOne<{ sponsors: unknown; user_id: string | null }>(
-          `SELECT sponsors, user_id
+        const ev = await queryNeonOne<{ sponsors: unknown; user_id: string | null; logo_url: string | null }>(
+          `SELECT sponsors, user_id, logo_url
            FROM public.events
            WHERE id = $1`,
           [secureRecord.event_id],
         );
         if (ev) {
           sponsors = parseEventSponsors(ev.sponsors);
+          const campaignLogoUrl = String(ev.logo_url || "").trim();
+          
           if (ev.user_id) {
             try {
               const ownerId = String(ev.user_id).trim();
@@ -150,7 +152,9 @@ export default async function CardViewPage(props: {
                 (typeof userData?.publicMetadata?.organization_name === "string"
                   ? String(userData.publicMetadata.organization_name).trim()
                   : "");
-              organizationLogoUrl =
+              
+              // Campaign-specific logo takes precedence over profile logo
+              organizationLogoUrl = campaignLogoUrl ||
                 String(profileData?.organization_logo_url || "").trim() ||
                 (typeof userData?.publicMetadata?.organization_logo_url === "string"
                   ? String(userData.publicMetadata.organization_logo_url).trim()

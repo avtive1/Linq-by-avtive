@@ -304,9 +304,12 @@ function DashboardContent() {
                 const shouldForceOwnerOnboarding = onboardingIntent === "owner" && !teamStepCompleted;
                 if (!isMounted) return;
                 if (needsProfileSetup) {
-                  setOwnerProfileUsernameDraft(effectiveName || "");
-                  setOwnerProfilePhotoDraft("");
-                  setOwnerProfileSetupError("");
+                  // Only initialize if not already open to prevent overwriting user input on auto-refresh (e.g. on window focus)
+                  if (!isOwnerProfileSetupModalOpen) {
+                    setOwnerProfileUsernameDraft(effectiveName || "");
+                    setOwnerProfilePhotoDraft("");
+                    setOwnerProfileSetupError("");
+                  }
                 }
                 setIsOwnerProfileSetupModalOpen(needsProfileSetup);
                 setIsOwnerOnboardingModalOpen(!needsProfileSetup && (shouldShowOnboarding || shouldForceOwnerOnboarding));

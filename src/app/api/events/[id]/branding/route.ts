@@ -26,10 +26,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       location: string | null;
       date: string | null;
       time: string | null;
+      logo_url: string | null;
       sponsors: unknown;
       registration_form_config: unknown;
     }>(
-      `SELECT user_id, name, location, date, time, sponsors, registration_form_config
+      `SELECT user_id, name, location, date, time, logo_url, sponsors, registration_form_config
        FROM public.events
        WHERE id = $1`,
       [id],
@@ -64,11 +65,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
          WHERE id = $1`,
         [eventRow.user_id],
       );
+      const campaignLogoUrl = String(eventRow.logo_url || "").trim();
+
       return NextResponse.json(
         {
           data: {
             organizationName: String(publicProfile?.organization_name || ""),
-            organizationLogoUrl: String(publicProfile?.organization_logo_url || ""),
+            organizationLogoUrl: campaignLogoUrl || String(publicProfile?.organization_logo_url || ""),
             eventName: String(eventRow.name || ""),
             eventLocation: String(eventRow.location || ""),
             eventDate: String(eventRow.date || ""),
@@ -94,12 +97,15 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     ]);
 
     const organizationName =
-      profileData?.organization_name ||
+      (profileData?.organization_name || "").trim() ||
       (typeof userData?.publicMetadata?.organization_name === "string"
         ? String(userData.publicMetadata.organization_name)
         : "");
+
+    const campaignLogoUrl = String(eventRow.logo_url || "").trim();
     const organizationLogoUrl =
-      profileData?.organization_logo_url ||
+      campaignLogoUrl ||
+      (profileData?.organization_logo_url || "").trim() ||
       (typeof userData?.publicMetadata?.organization_logo_url === "string"
         ? String(userData.publicMetadata.organization_logo_url)
         : "");
