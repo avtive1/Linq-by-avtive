@@ -35,6 +35,8 @@ export async function proxy(request: NextRequest) {
   if (isAuthRoute(request) && userId) {
     return NextResponse.redirect(new URL(isAdminUser ? "/admin" : "/dashboard", request.url));
   }
+
+  return NextResponse.next();
 }
 
 export const config = {
@@ -46,6 +48,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

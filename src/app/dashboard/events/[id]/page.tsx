@@ -1147,7 +1147,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     {ownerTopRoles.length === 0 ? (
                       <p className="text-sm text-muted">No attendee roles yet.</p>
                     ) : (
-                      ownerTopRoles.map((entry, roleIdx) => (
+                      ownerTopRoles.slice(0, 3).map((entry, roleIdx) => (
                         <motion.div
                           key={entry.role}
                           className="flex items-center justify-between rounded-md border border-border/60 bg-white/60 p-2.5 transition-colors hover:bg-white"
