@@ -57,6 +57,9 @@ export async function uploadImageToCloudinary(input: {
     timestamp,
     folder: input.folder || "",
     public_id: input.publicId || "",
+    overwrite: "true",
+    invalidate: "true",
+    unique_filename: input.publicId ? "false" : "true",
   };
   const signature = signCloudinaryParams(signParams);
 
@@ -67,6 +70,9 @@ export async function uploadImageToCloudinary(input: {
   formData.append("signature", signature);
   if (input.folder) formData.append("folder", input.folder);
   if (input.publicId) formData.append("public_id", input.publicId);
+  formData.append("overwrite", "true");
+  formData.append("invalidate", "true");
+  if (input.publicId) formData.append("unique_filename", "false");
 
   const response = await fetch(getUploadEndpoint(), {
     method: "POST",

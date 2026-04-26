@@ -145,7 +145,7 @@ function VerticalSponsorsStrip({ sponsors }: { sponsors?: SponsorEntry[] }) {
 
 function DefaultAvatarPlaceholder({ className = "w-20 h-20" }: { className?: string }) {
   return (
-    <img src="/default-avatar-placeholder.svg" className={`${className} object-cover`} alt="Default profile" />
+    <img src="/default-avatar-placeholder.svg" className={`${className} object-cover bg-white`} alt="Default profile" />
   );
 }
 
@@ -311,6 +311,11 @@ export function CardPreview({
     times: "'Times New Roman', Times, serif",
   };
   const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;
+  const photoUrl = String(data.photo || "").trim();
+  const hasRealPhoto =
+    Boolean(photoUrl) &&
+    !photoUrl.endsWith("/default-avatar-placeholder.svg") &&
+    photoUrl !== "/default-avatar-placeholder.svg";
 
   const rawQrInput = data.linkedin?.trim() || "";
   let finalQrUrl = "";
@@ -465,9 +470,9 @@ export function CardPreview({
 
         {/* Front (verticalSide 1): profile photo. Back (verticalSide 2): scannable QR from LinkedIn / URL field */}
         {verticalSide === 1 ? (
-          <div className="absolute left-[166px] top-[541px] z-4 flex h-[244px] w-[244px] items-center justify-center overflow-hidden rounded-lg border border-white/25 bg-white/10 shadow-md">
-            {data.photo ? (
-              <img src={data.photo} alt="" className="h-full w-full object-cover" />
+          <div className={`absolute left-[166px] top-[541px] z-40 isolate flex h-[244px] w-[244px] items-center justify-center overflow-hidden rounded-lg border border-white/25 shadow-md ${hasRealPhoto ? "bg-white/10" : "bg-white"}`}>
+            {hasRealPhoto ? (
+              <img src={photoUrl} alt="" className="h-full w-full object-cover" />
             ) : (
               <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
             )}
@@ -610,9 +615,9 @@ export function CardPreview({
       </div>
 
       <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
-        <div className="mb-5 flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-white/10">
-          {data.photo ? (
-            <img src={data.photo} className="w-full h-full object-cover" />
+        <div className={`relative z-40 isolate mb-5 flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 ${hasRealPhoto ? "bg-white/10" : "bg-white"}`}>
+          {hasRealPhoto ? (
+            <img src={photoUrl} className="w-full h-full object-cover" />
           ) : (
             <DefaultAvatarPlaceholder className="w-full h-full" />
           )}
@@ -624,11 +629,9 @@ export function CardPreview({
         <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
       </section>
 
-      {hasSponsors && (
-        <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
-          <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
-        </footer>
-      )}
+      <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
+        <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
+      </footer>
     </div>
   );
 }

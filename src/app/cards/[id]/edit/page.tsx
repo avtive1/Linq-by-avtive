@@ -80,7 +80,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
   const [draftCustomColor, setDraftCustomColor] = useState("#2563EB");
   const [customColorAnchorRect, setCustomColorAnchorRect] = useState<DOMRect | null>(null);
@@ -281,7 +280,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         throw new Error(errorData.error || "Failed to save changes.");
       }
 
-      toast.success("Card updated successfully.");
       try {
         const { toPng } = await import("html-to-image");
         if (!eventId) {
@@ -333,8 +331,9 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       } catch (verticalErr) {
         console.warn("Preview upload skipped:", verticalErr);
       }
+      toast.success("Card updated successfully.");
       router.refresh();
-      router.push(`/cards/${id}`);
+      router.push(`/cards/${id}?share=true`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save changes.";
       toast.error(message);
@@ -528,14 +527,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                 </div>
               </div>
             </div>
-            <div className="mt-8 flex justify-center gap-4">
-              <Button 
-                onClick={() => setShowPrintPreview(true)} 
-                variant="secondary"
-                className="rounded-md h-12 min-w-[160px] px-7 shadow-sm hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
-              >
-                Print Badge
-              </Button>
+            <div className="mt-8 flex justify-center">
               <Button 
                 onClick={() => handleSubmit()} 
                 disabled={saving}
@@ -639,96 +631,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         </div>
       </div>
     </div>
-
-      {/* Print Preview Overlay */}
-      {showPrintPreview && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl flex flex-col items-center p-8 overflow-y-auto animate-fade-in z-[100]">
-          <div className="w-full max-w-4xl flex justify-between items-center mb-12">
-            <h2 className="text-xl font-semibold text-white tracking-[-0.03em] leading-[1.15]">Print Ready Badge</h2>
-            <div className="flex gap-4">
-              <Button variant="secondary" onClick={() => setShowPrintPreview(false)}>Close Overlay</Button>
-              <Button onClick={() => {
-                const printFrame = document.createElement('iframe');
-                printFrame.style.position = 'fixed';
-                printFrame.style.width = '0';
-                printFrame.style.height = '0';
-                printFrame.style.border = '0';
-                document.body.appendChild(printFrame);
-
-                const frontHtml = verticalFrontRef.current?.innerHTML || "";
-                const backHtml = verticalBackRef.current?.innerHTML || "";
-                
-                const doc = printFrame.contentWindow?.document;
-                if (!doc) return;
-
-                // Copy all stylesheets from main document
-                const styles = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-                  .map(s => s.outerHTML)
-                  .join('\n');
-
-                doc.open();
-                doc.write(`
-                  <!DOCTYPE html>
-                  <html>
-                    <head>
-                      <title>Attendee Badge</title>
-                      ${styles}
-                      <style>
-                        @page { margin: 0; size: A4 portrait; }
-                        body { margin: 0 !important; padding: 1cm !important; background: white !important; display: flex; justify-content: center; }
-                        .print-container { width: 762px; height: 666px; position: relative; }
-                        .scale-wrapper { transform: scale(0.65); transform-origin: top left; display: flex; gap: 20px; }
-                        .card { width: 576px; height: 1024px; position: relative; overflow: hidden; background: white; }
-                        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-                      </style>
-                    </head>
-                    <body>
-                      <div class="print-container">
-                        <div class="scale-wrapper">
-                          <div class="card">${frontHtml}</div>
-                          <div class="card">${backHtml}</div>
-                        </div>
-                      </div>
-                      <script>
-                        function startPrint() {
-                          window.focus();
-                          window.print();
-                          setTimeout(() => { window.frameElement.remove(); }, 500);
-                        }
-                        // Use a slightly longer timeout to ensure fonts and QR codes are fully rendered
-                        window.onload = () => setTimeout(startPrint, 800);
-                      </script>
-                    </body>
-                  </html>
-                `);
-                doc.close();
-              }}>Print Card Now</Button>
-            </div>
-          </div>
-
-          <div className="flex flex-col lg:flex-row gap-12">
-            <div className="flex flex-col items-center gap-6">
-              <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-tight">Front side (Photo)</span>
-              <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl">
-                <CardPreview data={form} isVertical verticalSide={1} />
-              </div>
-            </div>
-            <div className="flex flex-col items-center gap-6">
-              <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-tight">Back side (QR)</span>
-              <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl">
-                <CardPreview data={form} isVertical verticalSide={2} />
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-24 p-8 border border-white/10 rounded-xl bg-white/5 max-w-lg text-center">
-            <p className="text-sm text-white/60 mb-4 leading-relaxed">
-              For the best experience, use heavy cardstock and set your printer to <b>Portrait</b> with <b>Default</b> margins.
-            </p>
-            <p className="text-[13px] font-medium text-primary tracking-[0.01em] leading-tight">Fold along the center after printing</p>
-          </div>
-        </div>
-      )}
 
       {/* Responsive scale styles */}
       <style>{`

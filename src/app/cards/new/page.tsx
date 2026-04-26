@@ -235,8 +235,6 @@ function NewCardForm() {
         throw new Error(body.error || "Failed to save card");
       }
 
-      toast.success("Attendee card saved successfully!");
-
       if (body.data?.id) {
         try {
           const { toPng } = await import("html-to-image");
@@ -268,6 +266,7 @@ function NewCardForm() {
         } catch (verticalErr) {
           console.warn("Vertical preview upload skipped:", verticalErr);
         }
+        toast.success("Attendee card saved successfully!");
         const nextUrl = body.shareToken
           ? `/cards/${body.data.id}?share=true&token=${encodeURIComponent(String(body.shareToken))}`
           : `/cards/${body.data.id}?share=true`;
@@ -469,7 +468,7 @@ function NewCardForm() {
                   <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
                   <div className="vertical-preview-frame mt-1">
                     <div className="preview-card-capture vertical-preview">
-                      <CardPreview data={form} preview isVertical verticalSide={1} />
+                      <CardPreview data={form} preview isVertical verticalSide={2} />
                     </div>
                   </div>
                 </div>

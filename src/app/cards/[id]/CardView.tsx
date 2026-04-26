@@ -333,8 +333,8 @@ export default function CardView({
           gap: 180px;
         }
         .vertical-card-frame {
-          width: 288px;
-          height: 512px;
+          width: 391px;
+          height: 695px;
           overflow: hidden;
           display: flex;
           justify-content: center;
@@ -369,12 +369,12 @@ export default function CardView({
         }
         @media (min-width: 1025px) {
           .card-capture {
-            transform: scale(${viewMode === "horizontal" ? "0.6" : "0.72"});
-            margin-bottom: ${viewMode === "horizontal" ? "-251px" : "-287px"};
+            transform: scale(${viewMode === "horizontal" ? "0.82" : "0.72"});
+            margin-bottom: ${viewMode === "horizontal" ? "-113px" : "-287px"};
           }
           .card-capture-vertical {
-            transform: scale(0.5);
-            margin-bottom: -512px;
+            transform: scale(0.68);
+            margin-bottom: -328px;
           }
         }
       `}</style>

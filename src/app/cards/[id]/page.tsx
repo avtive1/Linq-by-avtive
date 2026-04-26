@@ -30,6 +30,12 @@ export default async function CardViewPage(props: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ share?: string; token?: string }>;
 }) {
+  const appendVersionParam = (url: string, version: string) => {
+    const cleanUrl = String(url || "").trim();
+    if (!cleanUrl || !version) return cleanUrl;
+    const sep = cleanUrl.includes("?") ? "&" : "?";
+    return `${cleanUrl}${sep}v=${encodeURIComponent(version)}`;
+  };
   const readString = (value: unknown) => (typeof value === "string" ? value : "");
   const params = await props.params;
   const searchParams = await props.searchParams;
@@ -96,6 +102,17 @@ export default async function CardViewPage(props: {
     
     if (record) {
       const { row: secureRecord } = decryptAttendeeSensitiveFields(record);
+      const previewVersion = [
+        String(secureRecord.updated_at || "").trim(),
+        readString(secureRecord.photo_url),
+        readString(secureRecord.name),
+        readString(secureRecord.role),
+        readString(secureRecord.company),
+        readString(secureRecord.card_color),
+        readString(secureRecord.linkedin),
+      ]
+        .filter(Boolean)
+        .join("|");
       let sponsors = undefined as CardData["sponsors"];
       let organizationName = "";
       let organizationLogoUrl = "";
@@ -169,17 +186,26 @@ export default async function CardViewPage(props: {
         organizationName,
         organizationLogoUrl,
         cardPreviewUrl:
-          readString(secureRecord.card_preview_url) ||
+          appendVersionParam(
+            readString(secureRecord.card_preview_url) ||
           (process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
             ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-horizontal`
-            : undefined),
+            : ""),
+            previewVersion,
+          ) || undefined,
         verticalFrontUrl:
           process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
-            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-front`
+            ? appendVersionParam(
+                `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-front`,
+                previewVersion,
+              )
             : undefined,
         verticalBackUrl:
           process.env.CLOUDINARY_CLOUD_NAME && readString(secureRecord.event_id)
-            ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-back`
+            ? appendVersionParam(
+                `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${readString(secureRecord.event_id)}/${readString(secureRecord.id)}-vertical-back`,
+                previewVersion,
+              )
             : undefined,
       };
     }
