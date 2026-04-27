@@ -2277,7 +2277,9 @@ function DashboardContent() {
                             </div>
                             <div className="flex flex-col gap-2 min-w-0">
                               <span className="text-base font-semibold text-heading truncate leading-[1.4]">{m.member_email}</span>
-                              <span className="text-[13px] leading-tight text-muted font-medium bg-surface/50 w-fit px-3 py-1 rounded-md border border-border/30">{m.role_label}</span>
+                              <span className="text-[15px] leading-tight text-muted font-semibold bg-surface/55 w-fit px-3.5 py-1.5 rounded-md border border-border/35">
+                                {m.role_label}
+                              </span>
                             </div>
                           </div>
                           

@@ -1345,13 +1345,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-md border border-border/60 bg-white p-4">
-                  <p className="text-sm font-semibold text-heading">Guest Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview form to open preview + edit controls.</p>
+                <div className="rounded-md border border-border/60 bg-white p-4.5">
+                  <p className="text-base font-semibold text-heading">Guest Form</p>
+                  <p className="text-sm text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3"
+                    className="mb-3 !h-10 px-4 text-sm"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("guest")}
                     >
@@ -1360,15 +1360,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   {!canManageEvent && (
                     <p className="text-[11px] text-muted -mt-2 mb-2">You need campaign manage access to edit fields.</p>
                   )}
-                  <p className="mt-3 text-xs text-muted">{previewGuestFields.length} fields configured</p>
+                  <p className="mt-2 text-sm text-muted">{previewGuestFields.length} fields configured</p>
                 </div>
-                <div className="rounded-md border border-border/60 bg-white p-4">
-                  <p className="text-sm font-semibold text-heading">Visitor Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview form to open preview + edit controls.</p>
+                <div className="rounded-md border border-border/60 bg-white p-4.5">
+                  <p className="text-base font-semibold text-heading">Visitor Form</p>
+                  <p className="text-sm text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3"
+                    className="mb-3 !h-10 px-4 text-sm"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("visitor")}
                   >
@@ -1377,7 +1377,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   {!canManageEvent && (
                     <p className="text-[11px] text-muted -mt-2 mb-2">You need campaign manage access to edit fields.</p>
                   )}
-                  <p className="mt-3 text-xs text-muted">{previewVisitorFields.length} fields configured</p>
+                  <p className="mt-2 text-sm text-muted">{previewVisitorFields.length} fields configured</p>
                 </div>
               </div>
             </div>
@@ -1822,7 +1822,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         value=""
                         disabled
                       />
-                      <div className="mt-1.5 flex items-center justify-end gap-2">
+                      <div className="mt-2.5 flex items-center justify-between gap-3">
                         <button
                           type="button"
                           onClick={() =>
@@ -1830,37 +1830,50 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                               fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
                             )
                           }
-                          className={`px-3 py-1.5 text-xs rounded-[4px] border font-semibold transition-colors ${
-                            field.required
-                              ? "border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
-                              : "border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100"
-                          }`}
+                          className="inline-flex items-center gap-2 px-0 py-0 text-sm font-semibold text-heading transition-colors"
+                          aria-pressed={field.required}
+                          aria-label={`${field.required ? "Set optional" : "Set required"} for ${field.label}`}
                         >
-                          {field.required ? "Required" : "Optional"}
+                          <span
+                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                              field.required ? "bg-[#4FAE62]" : "bg-slate-300"
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                                field.required ? "translate-x-4" : "translate-x-0.5"
+                              }`}
+                            />
+                          </span>
+                          <span className="min-w-[92px] text-[17px] leading-none text-[#2F4C97] -ml-1.5">
+                            {field.required ? "Required" : "Optional"}
+                          </span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => startEditCustomField(field)}
-                          className="px-3 py-1.5 text-xs rounded-[4px] border border-primary/30 text-primary-strong bg-primary/10 font-semibold hover:bg-primary/15 transition-colors"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (editingCustomFieldId === field.id) {
-                              setEditingCustomFieldId(null);
-                              setNewFieldLabel("");
-                              setNewFieldType("text");
-                            }
-                            updateDraftFields(formBuilderRole, (fields) =>
-                              fields.filter((f) => f.id !== field.id),
-                            );
-                          }}
-                          className="px-3 py-1.5 text-xs rounded-[4px] border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
-                        >
-                          Remove
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => startEditCustomField(field)}
+                            className="px-3 py-1.5 text-xs rounded-[4px] border border-primary/30 text-primary-strong bg-primary/10 font-semibold hover:bg-primary/15 transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (editingCustomFieldId === field.id) {
+                                setEditingCustomFieldId(null);
+                                setNewFieldLabel("");
+                                setNewFieldType("text");
+                              }
+                              updateDraftFields(formBuilderRole, (fields) =>
+                                fields.filter((f) => f.id !== field.id),
+                              );
+                            }}
+                            className="px-3 py-1.5 text-xs rounded-[4px] border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                          >
+                            Remove
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
