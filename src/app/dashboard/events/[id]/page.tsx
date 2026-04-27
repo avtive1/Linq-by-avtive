@@ -1845,7 +1845,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                               }`}
                             />
                           </span>
-                          <span className="min-w-[92px] text-[17px] leading-none text-[#2F4C97] -ml-1.5">
+                          <span className="min-w-[92px] text-[18px] leading-none text-[#2F4C97] -ml-2">
                             {field.required ? "Required" : "Optional"}
                           </span>
                         </button>
