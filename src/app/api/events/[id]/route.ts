@@ -7,6 +7,14 @@ import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { normalizeRegistrationFormConfig } from "@/lib/registration-form";
 
+function isPastEventDate(dateStr: string) {
+  const parsed = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed < today;
+}
+
 async function getCurrentUserId() {
   const cookieStore = await cookies();
   return getServerUserIdFromCookies(cookieStore);
@@ -149,6 +157,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
     if ("registration_form_config" in patch) {
       patch.registration_form_config = normalizeRegistrationFormConfig(patch.registration_form_config);
+    }
+    if ("date" in patch) {
+      const nextDate = String(patch.date || "").trim();
+      if (!nextDate) {
+        return NextResponse.json({ error: "Event date is required." }, { status: 400 });
+      }
+      if (isPastEventDate(nextDate)) {
+        return NextResponse.json({ error: "Event date must be today or in the future." }, { status: 400 });
+      }
     }
     if (!Object.keys(patch).length) {
       return NextResponse.json({ error: "No valid fields provided." }, { status: 400 });

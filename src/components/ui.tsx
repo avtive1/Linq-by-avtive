@@ -25,6 +25,7 @@ type InputProps = {
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
   maxLength?: number;
   disabled?: boolean;
+  min?: string;
 };
 
 export function TextInput({
@@ -44,6 +45,7 @@ export function TextInput({
   onFocus,
   maxLength,
   disabled,
+  min,
 }: InputProps) {
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
@@ -99,6 +101,7 @@ export function TextInput({
           disabled={disabled}
           onFocus={onFocus}
           maxLength={maxLength}
+          min={min}
           className={`h-full flex-1 py-0 text-[16px] leading-[1.6] border-none outline-none focus:ring-0 placeholder:text-muted/40 placeholder:font-normal font-normal ${
             isLocked ? "text-slate-500 cursor-not-allowed bg-transparent" : "text-heading bg-transparent"
           } ${

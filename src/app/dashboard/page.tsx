@@ -599,6 +599,11 @@ function DashboardContent() {
   const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
   const isTeamMemberMode = !isPreviewMode && isOrgTeamMember;
   const isOrgAdminMode = !isPreviewMode && !isOrgTeamMember && isOrgOwner;
+  const minCampaignDate = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString().slice(0, 10);
+  }, []);
   const orgDisplayName = toOrganizationDisplayName(organizationName);
   const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
   const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
@@ -652,6 +657,10 @@ function DashboardContent() {
     }
     if (eventForm.name.trim().length > EVENT_NAME_MAX_CHARS) {
       toast.error(`Campaign name can be up to ${EVENT_NAME_MAX_CHARS} characters.`);
+      return;
+    }
+    if (eventForm.date < minCampaignDate) {
+      toast.error("Campaign date must be today or in the future.");
       return;
     }
 
@@ -1935,6 +1944,7 @@ function DashboardContent() {
                   label="Campaign Date"
                     required
                     type="date"
+                    min={minCampaignDate}
                     value={eventForm.date}
                     onChange={(v) => setEventForm({ ...eventForm, date: v })}
                   />

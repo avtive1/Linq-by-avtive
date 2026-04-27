@@ -302,6 +302,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   }, [id, router, impersonateId, isPreviewMode, userId, refreshTick, sessionStatus]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
+  const minCampaignDate = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString().slice(0, 10);
+  }, []);
   const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
   const canReviewAccessRequests = isEventOwner;
   const canManageEvent = isEventOwner || grantedPermissions.includes("manage_event");
@@ -400,6 +405,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
     if (editForm.name.trim().length > EVENT_NAME_MAX_CHARS) {
       toast.error(`Campaign name can be up to ${EVENT_NAME_MAX_CHARS} characters.`);
+      return;
+    }
+    if (editForm.date < minCampaignDate) {
+      toast.error("Campaign date must be today or in the future.");
       return;
     }
 
@@ -1515,12 +1524,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
-                          <span className="text-[12px] bg-primary/10 px-2.5 py-0.5 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.2] shrink-0">
+                          <span className="text-[14px] bg-primary/10 px-3 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-[0em] leading-[1.2] shrink-0">
                             {card.guestCategory}
                           </span>
                         )}
                         {card.company && (
-                          <span className="text-[12px] bg-primary/10 px-2.5 py-0.5 rounded-inline border border-primary/20 text-primary-strong font-medium tracking-[0em] leading-[1.2] shrink-0">
+                          <span className="text-[14px] bg-primary/10 px-3 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-[0em] leading-[1.2] shrink-0">
                             {card.company}
                           </span>
                         )}
@@ -2203,6 +2212,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     label="Event Date"
                     required
                     type="date"
+                    min={minCampaignDate}
                     value={editForm.date}
                     onChange={(v) => setEditForm({ ...editForm, date: v })}
                   />
@@ -2329,6 +2339,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   label="New Event Date"
                   required
                   type="date"
+                  min={minCampaignDate}
                   value={renewForm.date}
                   onChange={(v) => setRenewForm({ ...renewForm, date: v })}
                 />

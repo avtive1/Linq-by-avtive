@@ -4,6 +4,14 @@ import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 
+function isPastEventDate(dateStr: string) {
+  const parsed = new Date(`${dateStr}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return parsed < today;
+}
+
 function getViewerAdminAccess(params: {
   viewerId: string;
   sessionUserId: string;
@@ -131,6 +139,9 @@ export async function POST(req: Request) {
 
     if (!payload.name || !payload.location || !payload.date || !payload.time) {
       return NextResponse.json({ error: "Missing required event fields." }, { status: 400 });
+    }
+    if (isPastEventDate(payload.date)) {
+      return NextResponse.json({ error: "Event date must be today or in the future." }, { status: 400 });
     }
 
     const { isAdminByRole, isAdminByEmail } = getViewerAdminAccess({
