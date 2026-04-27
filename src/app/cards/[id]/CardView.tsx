@@ -281,18 +281,18 @@ export default function CardView({
              )}
 
              {/* View toggles: badge/print must work even without LinkedIn (QR back may be empty). */}
-             <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20">
+             <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20 gap-1">
                 <button
                   type="button"
                   onClick={() => changeViewMode("horizontal")}
-                  className={`px-4 py-2 rounded-md text-[13px] leading-tight font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-10 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </button>
                 <button
                   type="button"
                   onClick={() => changeViewMode("vertical")}
-                  className={`px-4 py-2 rounded-md text-[13px] leading-tight font-medium tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-10 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
                 </button>
@@ -505,7 +505,7 @@ export default function CardView({
           margin-top: -10px;
         }
         .vertical-card-frame {
-          width: 450px;
+          width: 430px;
           overflow: visible;
           display: flex;
           justify-content: center;
@@ -535,8 +535,8 @@ export default function CardView({
             margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "1024px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"})) - ${viewMode === "horizontal" ? "628px" : "1024px"});
           }
           .card-capture-vertical {
-            transform: scale(0.52);
-            margin-bottom: -492px;
+            transform: scale(0.49);
+            margin-bottom: -522px;
           }
         }
         @media (min-width: 1025px) {
@@ -545,8 +545,8 @@ export default function CardView({
             margin-bottom: ${viewMode === "horizontal" ? "-113px" : "-287px"};
           }
           .card-capture-vertical {
-            transform: scale(0.78);
-            margin-bottom: -225px;
+            transform: scale(0.74);
+            margin-bottom: -266px;
           }
         }
       `}</style>
