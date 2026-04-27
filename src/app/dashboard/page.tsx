@@ -70,6 +70,14 @@ const formatJoinStatus = (status: string) => {
   return { label: "Pending", className: "text-amber-700 bg-amber-50 border-amber-200" };
 };
 
+const toOrganizationDisplayName = (rawName: string) => {
+  const name = String(rawName || "").trim();
+  if (!name) return "Organization";
+  // Keep original casing when provided; only uplift fully lowercase names for heading readability.
+  if (name !== name.toLowerCase()) return name;
+  return name.replace(/\b([a-z])/g, (match) => match.toUpperCase());
+};
+
 function DashboardContent() {
   const EVENT_NAME_MAX_CHARS = 18;
   const router = useRouter();
@@ -551,7 +559,7 @@ function DashboardContent() {
   const hasCreateCampaignPermission = grantedPermissions.includes("create_event");
   const isTeamMemberMode = !isPreviewMode && isOrgTeamMember;
   const isOrgAdminMode = !isPreviewMode && !isOrgTeamMember && isOrgOwner;
-  const orgDisplayName = organizationName?.trim() || "Organization";
+  const orgDisplayName = toOrganizationDisplayName(organizationName);
   const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
   const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
   const previewEventsPct = Math.max(8, Math.round((stats.totalEvents / previewMaxMetric) * 100));
