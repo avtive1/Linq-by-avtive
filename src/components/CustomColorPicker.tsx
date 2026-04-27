@@ -15,7 +15,8 @@ type Props = {
 type Rgb = { r: number; g: number; b: number };
 type Hsv = { h: number; s: number; v: number };
 
-const SWATCHES = ["#C71B1B", "#F3F4F6", "#E5E7EB", "#D1D5DB", "#9CA3AF", "#6B7280", "#4B5563", "#1F2937"];
+const DEFAULT_SWATCHES = ["#C71B1B", "#F3F4F6", "#E5E7EB", "#D1D5DB", "#9CA3AF", "#6B7280", "#4B5563", "#1F2937"];
+const SWATCHES_STORAGE_KEY = "customColorPickerSlotsV1";
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const toHex = (n: number) => n.toString(16).padStart(2, "0");
@@ -77,6 +78,8 @@ function hsvToRgb({ h, s, v }: Hsv): Rgb {
 export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchorRect }: Props) {
   const initialHsv = rgbToHsv(hexToRgb(value || "#2563EB"));
   const [hsv, setHsv] = useState<Hsv>(initialHsv);
+  const [swatches, setSwatches] = useState<string[]>(DEFAULT_SWATCHES);
+  const [selectedSlot, setSelectedSlot] = useState(0);
   const [mounted, setMounted] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
@@ -86,8 +89,8 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   const currentHex = useMemo(() => rgbToHex(currentRgb), [currentRgb]);
   const pureHue = useMemo(() => rgbToHex(hsvToRgb({ h: hsv.h, s: 1, v: 1 })), [hsv.h]);
   const panelPosition = useMemo(() => {
-    const panelW = 340;
-    const panelH = 330;
+    const panelW = 520;
+    const panelH = 500;
     const gap = 10;
     if (!anchorRect || typeof window === "undefined") {
       return { top: 120, left: 120 };
@@ -113,6 +116,14 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     onChange(rgbToHex(hsvToRgb(next)));
   };
 
+  const updateSwatchSlot = (index: number, color: string) => {
+    setSwatches((prev) => {
+      const next = [...prev];
+      next[index] = color;
+      return next;
+    });
+  };
+
   const pickSV = (clientX: number, clientY: number) => {
     const el = svRef.current;
     if (!el) return;
@@ -134,6 +145,34 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     setMounted(true);
     return () => setMounted(false);
   }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      const raw = window.localStorage.getItem(SWATCHES_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return;
+      const cleaned = parsed
+        .map((v) => String(v || "").trim())
+        .filter((v) => /^#[0-9a-fA-F]{6}$/.test(v))
+        .slice(0, DEFAULT_SWATCHES.length);
+      if (cleaned.length === DEFAULT_SWATCHES.length) {
+        setSwatches(cleaned);
+      }
+    } catch {
+      // no-op
+    }
+  }, [mounted]);
+
+  useEffect(() => {
+    if (!mounted) return;
+    try {
+      window.localStorage.setItem(SWATCHES_STORAGE_KEY, JSON.stringify(swatches));
+    } catch {
+      // no-op
+    }
+  }, [swatches, mounted]);
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
@@ -160,14 +199,14 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   return createPortal(
     <div
       ref={panelRef}
-      className="fixed z-[120] rounded-lg border border-white/15 bg-[#101217] p-3 text-white shadow-2xl"
+      className="fixed z-[120] rounded-md border border-white/15 bg-[#101217] p-4 text-white shadow-2xl"
       style={{ top: panelPosition.top, left: panelPosition.left }}
     >
-      <div className="mb-2 text-xs font-medium text-white/85">Select Color</div>
-      <div className="flex gap-3">
+      <div className="mb-3 text-2xl font-medium leading-tight text-white/85">Select Color</div>
+      <div className="flex gap-4">
         <div
           ref={svRef}
-          className="relative h-44 w-44 cursor-crosshair overflow-hidden rounded-sm"
+          className="relative h-68 w-68 cursor-crosshair overflow-hidden rounded-md"
           style={{
             backgroundColor: pureHue,
             backgroundImage: "linear-gradient(to right, #ffffff, rgba(255,255,255,0)), linear-gradient(to top, #000000, rgba(0,0,0,0))",
@@ -182,6 +221,22 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
             window.addEventListener("mousemove", onMove);
             window.addEventListener("mouseup", onUp);
           }}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            pickSV(touch.clientX, touch.clientY);
+            const onMove = (ev: TouchEvent) => {
+              const t = ev.touches[0];
+              if (!t) return;
+              pickSV(t.clientX, t.clientY);
+            };
+            const onEnd = () => {
+              window.removeEventListener("touchmove", onMove);
+              window.removeEventListener("touchend", onEnd);
+            };
+            window.addEventListener("touchmove", onMove, { passive: true });
+            window.addEventListener("touchend", onEnd, { passive: true });
+          }}
         >
           <span
             className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
@@ -190,7 +245,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         </div>
         <div
           ref={hueRef}
-          className="relative h-44 w-4 cursor-ns-resize rounded-sm"
+          className="relative h-68 w-6 cursor-ns-resize rounded-md"
           style={{
             background:
               "linear-gradient(to bottom, #ff0000, #ff00ff, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000)",
@@ -205,17 +260,33 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
             window.addEventListener("mousemove", onMove);
             window.addEventListener("mouseup", onUp);
           }}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            if (!touch) return;
+            pickHue(touch.clientY);
+            const onMove = (ev: TouchEvent) => {
+              const t = ev.touches[0];
+              if (!t) return;
+              pickHue(t.clientY);
+            };
+            const onEnd = () => {
+              window.removeEventListener("touchmove", onMove);
+              window.removeEventListener("touchend", onEnd);
+            };
+            window.addEventListener("touchmove", onMove, { passive: true });
+            window.addEventListener("touchend", onEnd, { passive: true });
+          }}
         >
           <span
             className="pointer-events-none absolute left-0 right-0 h-1 rounded bg-white shadow"
             style={{ top: `${(hsv.h / 360) * 100}%` }}
           />
         </div>
-        <div className="flex min-w-[90px] flex-col gap-2">
-          <div className="h-10 w-full rounded-sm border border-white/15" style={{ background: currentHex }} />
+        <div className="flex min-w-[120px] flex-col gap-3">
+          <div className="h-14 w-full rounded-md border border-white/15" style={{ background: currentHex }} />
           {(["r", "g", "b"] as const).map((key) => (
             <div key={key} className="flex items-center gap-2">
-              <span className="w-3 text-xs uppercase text-white/70">{key}</span>
+              <span className="w-4 text-sm uppercase text-white/70">{key}</span>
               <input
                 type="number"
                 min={0}
@@ -226,12 +297,12 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                   const nextRgb = { ...currentRgb, [key]: val };
                   commitColor(rgbToHsv(nextRgb));
                 }}
-                className="h-7 w-14 rounded border border-white/20 bg-white px-1 text-xs text-black"
+                className="h-10 w-20 rounded-md border border-white/20 bg-white px-2 text-sm text-black"
               />
             </div>
           ))}
           <div className="flex items-center gap-2">
-            <span className="w-3 text-xs text-white/70">#</span>
+            <span className="w-4 text-sm text-white/70">#</span>
             <input
               type="text"
               value={currentHex.replace("#", "")}
@@ -239,37 +310,40 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                 const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
                 if (raw.length === 6) commitColor(rgbToHsv(hexToRgb(`#${raw}`)));
               }}
-              className="h-7 w-16 rounded border border-white/20 bg-white px-1 text-xs uppercase text-black"
+              className="h-10 w-22 rounded-md border border-white/20 bg-white px-2 text-sm uppercase text-black"
             />
           </div>
         </div>
       </div>
 
-      <div className="mt-3 flex gap-1">
-        {SWATCHES.map((sw) => (
+      <div className="mt-4 flex gap-2">
+        {swatches.map((sw, idx) => (
           <button
-            key={sw}
+            key={`${sw}-${idx}`}
             type="button"
-            onClick={() => commitColor(rgbToHsv(hexToRgb(sw)))}
-            className="h-5 w-5 rounded-sm border border-white/20"
+            onClick={() => {
+              setSelectedSlot(idx);
+              commitColor(rgbToHsv(hexToRgb(sw)));
+            }}
+            className={`h-8 w-8 rounded-md border ${selectedSlot === idx ? "border-white shadow-[0_0_0_2px_rgba(255,255,255,0.45)]" : "border-white/20"}`}
             style={{ background: sw }}
             aria-label={`Select ${sw}`}
           />
         ))}
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5">
           <Button
             type="button"
-            className="!h-6 min-h-0 px-2.5 text-xs font-medium leading-none bg-[#fcfffd] text-[#1f4a90] border border-[#eef8f1] hover:bg-[#f7fdf9] rounded-md"
+            className="!h-8 min-h-0 px-3 text-sm font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-sm"
             onClick={onConfirm}
           >
             Confirm
           </Button>
           <Button
             type="button"
-            className="!h-6 min-h-0 px-2.5 text-xs font-medium leading-none bg-white text-[#1f4a90] border border-white/70 hover:bg-white/95 rounded-md"
+            className="!h-8 min-h-0 px-3 text-sm font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-sm"
             onClick={onCancel}
           >
             Cancel
@@ -277,8 +351,8 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         </div>
         <Button
           type="button"
-          className="!h-6 min-h-0 px-2.5 text-xs font-medium leading-none bg-[#fcfffd] text-[#1f4a90] border border-[#eef8f1] hover:bg-[#f7fdf9] rounded-md"
-          onClick={onConfirm}
+          className="!h-8 min-h-0 px-3 text-sm font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-sm"
+          onClick={() => updateSwatchSlot(selectedSlot, currentHex)}
         >
           Replace
         </Button>
