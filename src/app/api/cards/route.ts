@@ -9,10 +9,15 @@ import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 
 export async function POST(req: Request) {
   try {
-    await queryNeon(
-      `ALTER TABLE public.attendees
-       ADD COLUMN IF NOT EXISTS custom_fields jsonb NOT NULL DEFAULT '{}'::jsonb`,
-    );
+    try {
+      await queryNeon(
+        `ALTER TABLE public.attendees
+         ADD COLUMN IF NOT EXISTS custom_fields jsonb NOT NULL DEFAULT '{}'::jsonb`,
+      );
+    } catch (schemaErr) {
+      // Do not block card creation if runtime schema patch cannot run (permissions/lock/env differences).
+      console.warn("Skipping attendees.custom_fields runtime schema patch:", schemaErr);
+    }
     const payload = (await req.json()) as Record<string, unknown>;
     if (
       "custom_fields" in payload &&

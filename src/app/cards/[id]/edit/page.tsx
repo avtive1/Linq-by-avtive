@@ -28,6 +28,8 @@ type FormState = {
   linkedin: string;
   designType: "design1";
   color: string;
+  horizontalTextColor: string;
+  verticalTextColor: string;
   fontFamily: string;
   sponsors: SponsorEntry[];
   organizationName: string;
@@ -67,6 +69,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     linkedin: "",
     designType: "design1",
     color: "purple",
+    horizontalTextColor: "",
+    verticalTextColor: "",
     fontFamily: "inter",
     sponsors: [],
     organizationName: "",
@@ -86,8 +90,16 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
   const [draftCustomColor, setDraftCustomColor] = useState("#2563EB");
   const [customColorAnchorRect, setCustomColorAnchorRect] = useState<DOMRect | null>(null);
+  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+  const [draftTextColor, setDraftTextColor] = useState("#FFFFFF");
+  const [textColorAnchorRect, setTextColorAnchorRect] = useState<DOMRect | null>(null);
+  const [activeTextTarget, setActiveTextTarget] = useState<"horizontal" | "vertical">("horizontal");
+  const [horizontalTextColor, setHorizontalTextColor] = useState("");
+  const [verticalTextColor, setVerticalTextColor] = useState("");
+  const [existingCustomFields, setExistingCustomFields] = useState<Record<string, unknown>>({});
   const isCustomColorSelected = !presetColorNames.has(form.color);
   const isCustomPickerActive = showCustomColorPicker || isCustomColorSelected;
+  const previewData = { ...form, horizontalTextColor, verticalTextColor };
 
   useEffect(() => {
     let isMounted = true;
@@ -168,11 +180,21 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           linkedin: record.linkedin || "",
           designType: "design1",
           color: record.card_color || "purple",
+          horizontalTextColor: "",
+          verticalTextColor: "",
           fontFamily: "inter",
           sponsors,
           organizationName,
           organizationLogoUrl,
         });
+        const customFieldsRaw = (record.custom_fields && typeof record.custom_fields === "object" && !Array.isArray(record.custom_fields))
+          ? (record.custom_fields as Record<string, unknown>)
+          : {};
+        setExistingCustomFields(customFieldsRaw);
+        const savedHorizontalTextColor = String(customFieldsRaw.__horizontal_text_color || "").trim();
+        const savedVerticalTextColor = String(customFieldsRaw.__vertical_text_color || "").trim();
+        setHorizontalTextColor(savedHorizontalTextColor);
+        setVerticalTextColor(savedVerticalTextColor);
       } catch {
         toast.error("Failed to load card.");
       } finally {
@@ -267,6 +289,12 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         design_type: "design1",
         card_color: form.color,
       };
+      const nextCustomFields: Record<string, unknown> = { ...existingCustomFields };
+      if (horizontalTextColor.trim()) nextCustomFields.__horizontal_text_color = horizontalTextColor.trim();
+      else delete nextCustomFields.__horizontal_text_color;
+      if (verticalTextColor.trim()) nextCustomFields.__vertical_text_color = verticalTextColor.trim();
+      else delete nextCustomFields.__vertical_text_color;
+      updatePayload.custom_fields = nextCustomFields;
 
       const res = await fetch(`/api/cards/${id}`, {
         method: "PATCH",
@@ -348,6 +376,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         console.warn("Preview upload skipped:", verticalErr);
       }
       toast.success("Card updated successfully.");
+      setExistingCustomFields(nextCustomFields);
       router.refresh();
       const returnUrl = shareToken
         ? `/cards/${id}?share=true&token=${encodeURIComponent(shareToken)}`
@@ -516,13 +545,13 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         }}
       >
         <div ref={cardRef} style={{ width: '1200px', height: '628px' }}>
-          <CardPreview data={form} />
+          <CardPreview data={previewData} />
         </div>
         <div ref={verticalFrontRef} style={{ width: '576px', height: '1024px' }}>
-          <CardPreview data={form} isVertical verticalSide={1} />
+          <CardPreview data={previewData} isVertical verticalSide={1} />
         </div>
         <div ref={verticalBackRef} style={{ width: '576px', height: '1024px' }}>
-          <CardPreview data={form} isVertical verticalSide={2} />
+          <CardPreview data={previewData} isVertical verticalSide={2} />
         </div>
       </div>
 
@@ -536,7 +565,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                   <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
                   <div className="horizontal-preview-frame">
                     <div className="preview-card-capture horizontal-preview">
-                      <CardPreview data={form} preview />
+                      <CardPreview data={previewData} preview />
                     </div>
                   </div>
               </div>
@@ -545,7 +574,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                 <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
                 <div className="vertical-preview-frame mt-1">
                   <div className="preview-card-capture vertical-preview">
-                    <CardPreview data={form} preview isVertical verticalSide={2} />
+                    <CardPreview data={previewData} preview isVertical verticalSide={2} />
                   </div>
                 </div>
               </div>
@@ -592,6 +621,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                 <button
                   type="button"
                   onClick={(e) => {
+                    setShowTextColorPicker(false);
                     setCustomColorAnchorRect(e.currentTarget.getBoundingClientRect());
                     setDraftCustomColor(isCustomColorSelected ? form.color : "#2563EB");
                     setShowCustomColorPicker(true);
@@ -636,7 +666,69 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
           <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
-          {/* Item 3: Typography Selection */}
+          {/* Item 3: Text Color Selection */}
+          <div className="relative flex-1 flex flex-col gap-3 items-center justify-center">
+            <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Text color</span>
+            <div className="flex h-10 items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
+              <button
+                type="button"
+                onClick={(e) => {
+                  setActiveTextTarget("horizontal");
+                  setShowCustomColorPicker(false);
+                  setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                  setDraftTextColor(horizontalTextColor || "#FFFFFF");
+                  setShowTextColorPicker(true);
+                }}
+                className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                  activeTextTarget === "horizontal"
+                    ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                    : "text-heading/75 hover:bg-slate-100/80"
+                }`}
+              >
+                T1 - Horizontal
+              </button>
+              <div className="mx-1 h-5 w-px bg-border/70" />
+              <button
+                type="button"
+                onClick={(e) => {
+                  setActiveTextTarget("vertical");
+                  setShowCustomColorPicker(false);
+                  setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                  setDraftTextColor(verticalTextColor || "#000000");
+                  setShowTextColorPicker(true);
+                }}
+                className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                  activeTextTarget === "vertical"
+                    ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                    : "text-heading/75 hover:bg-slate-100/80"
+                }`}
+              >
+                T2 - Vertical
+              </button>
+            </div>
+            {showTextColorPicker && (
+              <CustomColorPicker
+                value={draftTextColor}
+                anchorRect={textColorAnchorRect}
+                onChange={(next) => setDraftTextColor(next)}
+                onCancel={() => setShowTextColorPicker(false)}
+                onConfirm={() => {
+                  if (activeTextTarget === "horizontal") {
+                    setHorizontalTextColor(draftTextColor);
+                    setForm((f) => ({ ...f, horizontalTextColor: draftTextColor }));
+                  } else {
+                    setVerticalTextColor(draftTextColor);
+                    setForm((f) => ({ ...f, verticalTextColor: draftTextColor }));
+                  }
+                  setShowTextColorPicker(false);
+                }}
+              />
+            )}
+          </div>
+
+          <div className="w-px bg-white/25 hidden lg:block mx-1" />
+
+          {/* Item 4: Typography Selection */}
           <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
             <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
             <div className="h-11">

@@ -175,6 +175,14 @@ export default async function CardViewPage(props: {
     
     if (record) {
       const { row: secureRecord } = decryptAttendeeSensitiveFields(record);
+      const customFields =
+        secureRecord.custom_fields &&
+        typeof secureRecord.custom_fields === "object" &&
+        !Array.isArray(secureRecord.custom_fields)
+          ? (secureRecord.custom_fields as Record<string, unknown>)
+          : {};
+      const horizontalTextColor = readString(customFields.__horizontal_text_color);
+      const verticalTextColor = readString(customFields.__vertical_text_color);
       const previewVersion = [
         String(secureRecord.updated_at || "").trim(),
         readString(secureRecord.photo_url),
@@ -182,6 +190,8 @@ export default async function CardViewPage(props: {
         readString(secureRecord.role),
         readString(secureRecord.company),
         readString(secureRecord.card_color),
+        horizontalTextColor,
+        verticalTextColor,
         readString(secureRecord.linkedin),
       ]
         .filter(Boolean)
@@ -257,6 +267,8 @@ export default async function CardViewPage(props: {
         photo: readString(secureRecord.photo_url) || undefined,
         designType: readString(secureRecord.design_type),
         color: readString(secureRecord.card_color),
+        horizontalTextColor: horizontalTextColor || undefined,
+        verticalTextColor: verticalTextColor || undefined,
         fontFamily: readString(secureRecord.card_font) || undefined,
         cardRole: readString(secureRecord.track) as "guest" | "visitor",
         sponsors,

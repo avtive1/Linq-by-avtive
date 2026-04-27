@@ -44,6 +44,8 @@ function NewCardForm() {
     linkedin: "",
     designType: "design1" as "design1",
     color: "purple",
+    horizontalTextColor: "",
+    verticalTextColor: "",
     fontFamily: "inter",
     cardRole: initialRole,
     guestCategory: initialRole === "guest" ? initialGuestCategory : "",
@@ -63,6 +65,12 @@ function NewCardForm() {
   const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
   const [draftCustomColor, setDraftCustomColor] = useState("#2563EB");
   const [customColorAnchorRect, setCustomColorAnchorRect] = useState<DOMRect | null>(null);
+  const [showTextColorPicker, setShowTextColorPicker] = useState(false);
+  const [draftTextColor, setDraftTextColor] = useState("#FFFFFF");
+  const [textColorAnchorRect, setTextColorAnchorRect] = useState<DOMRect | null>(null);
+  const [activeTextTarget, setActiveTextTarget] = useState<"horizontal" | "vertical">("horizontal");
+  const [horizontalTextColor, setHorizontalTextColor] = useState("");
+  const [verticalTextColor, setVerticalTextColor] = useState("");
 
 
   // Fetch event details for the locked header / preview.
@@ -242,6 +250,14 @@ function NewCardForm() {
       }
 
       // 3. Save EVERYTHING in one single Insert call
+      const attendeeCustomFields: Record<string, string> = Object.fromEntries(
+        enabledFields
+          .filter((field) => !knownFieldIds.has(field.id))
+          .map((field) => [field.id, customFieldValues[field.id] || ""]),
+      );
+      if (horizontalTextColor.trim()) attendeeCustomFields.__horizontal_text_color = horizontalTextColor.trim();
+      if (verticalTextColor.trim()) attendeeCustomFields.__vertical_text_color = verticalTextColor.trim();
+
       const attendeeData = {
         user_id: null,
         name: form.name,
@@ -261,11 +277,7 @@ function NewCardForm() {
         card_color: form.color,
         track: form.cardRole,
         guest_category: form.cardRole === "guest" ? (form.guestCategory || null) : null,
-        custom_fields: Object.fromEntries(
-          enabledFields
-            .filter((field) => !knownFieldIds.has(field.id))
-            .map((field) => [field.id, customFieldValues[field.id] || ""]),
-        ),
+        custom_fields: attendeeCustomFields,
       };
 
       const res = await fetch("/api/cards", {
@@ -377,6 +389,7 @@ function NewCardForm() {
   const presetColorNames = new Set(colors.map((c) => c.name));
   const isCustomColorSelected = !presetColorNames.has(form.color);
   const isCustomPickerActive = showCustomColorPicker || isCustomColorSelected;
+  const previewData = { ...form, horizontalTextColor, verticalTextColor };
 
   return (
     <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-x-hidden">
@@ -531,13 +544,13 @@ function NewCardForm() {
         }}
       >
         <div ref={cardRef} style={{ width: '1200px', height: '628px' }}>
-          <CardPreview data={form} />
+          <CardPreview data={previewData} />
         </div>
         <div ref={verticalFrontRef} style={{ width: '576px', height: '1024px' }}>
-          <CardPreview data={form} isVertical verticalSide={1} />
+          <CardPreview data={previewData} isVertical verticalSide={1} />
         </div>
         <div ref={verticalBackRef} style={{ width: '576px', height: '1024px' }}>
-          <CardPreview data={form} isVertical verticalSide={2} />
+          <CardPreview data={previewData} isVertical verticalSide={2} />
         </div>
       </div>
 
@@ -551,7 +564,7 @@ function NewCardForm() {
                    <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
                    <div className="horizontal-preview-frame">
                       <div className="preview-card-capture horizontal-preview">
-                        <CardPreview data={form} preview />
+                        <CardPreview data={previewData} preview />
                       </div>
                    </div>
                 </div>
@@ -560,7 +573,7 @@ function NewCardForm() {
                   <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
                   <div className="vertical-preview-frame mt-1">
                     <div className="preview-card-capture vertical-preview">
-                      <CardPreview data={form} preview isVertical verticalSide={2} />
+                      <CardPreview data={previewData} preview isVertical verticalSide={2} />
                     </div>
                   </div>
                 </div>
@@ -606,6 +619,7 @@ function NewCardForm() {
                  <button
                     type="button"
                     onClick={(e) => {
+                      setShowTextColorPicker(false);
                       setCustomColorAnchorRect(e.currentTarget.getBoundingClientRect());
                       setDraftCustomColor(isCustomColorSelected ? form.color : "#2563EB");
                       setShowCustomColorPicker(true);
@@ -650,7 +664,69 @@ function NewCardForm() {
 
            <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
-           {/* Item 3: Typography Selection */}
+           {/* Item 3: Text Color Selection */}
+           <div className="relative flex-1 flex flex-col gap-3 items-center justify-center">
+              <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Text color</span>
+              <div className="flex h-10 items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    setActiveTextTarget("horizontal");
+                    setShowCustomColorPicker(false);
+                    setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                    setDraftTextColor(horizontalTextColor || "#FFFFFF");
+                    setShowTextColorPicker(true);
+                  }}
+                  className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                    activeTextTarget === "horizontal"
+                      ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                      : "text-heading/75 hover:bg-slate-100/80"
+                  }`}
+                >
+                  T1 - Horizontal
+                </button>
+                <div className="mx-1 h-5 w-px bg-border/70" />
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    setActiveTextTarget("vertical");
+                    setShowCustomColorPicker(false);
+                    setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                    setDraftTextColor(verticalTextColor || "#000000");
+                    setShowTextColorPicker(true);
+                  }}
+                  className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                    activeTextTarget === "vertical"
+                      ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                      : "text-heading/75 hover:bg-slate-100/80"
+                  }`}
+                >
+                  T2 - Vertical
+                </button>
+              </div>
+              {showTextColorPicker && (
+                <CustomColorPicker
+                  value={draftTextColor}
+                  anchorRect={textColorAnchorRect}
+                  onChange={(next) => setDraftTextColor(next)}
+                  onCancel={() => setShowTextColorPicker(false)}
+                  onConfirm={() => {
+                    if (activeTextTarget === "horizontal") {
+                      setHorizontalTextColor(draftTextColor);
+                      setForm((f) => ({ ...f, horizontalTextColor: draftTextColor }));
+                    } else {
+                      setVerticalTextColor(draftTextColor);
+                      setForm((f) => ({ ...f, verticalTextColor: draftTextColor }));
+                    }
+                    setShowTextColorPicker(false);
+                  }}
+                />
+              )}
+           </div>
+
+           <div className="w-px bg-white/25 hidden lg:block mx-1" />
+
+           {/* Item 4: Typography Selection */}
            <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
               <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
               <div className="h-11">
@@ -684,13 +760,13 @@ function NewCardForm() {
                 <div className="flex flex-col items-center gap-6">
                    <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-tight print:hidden">Front side (Photo)</span>
                    <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
-                      <CardPreview data={form} isVertical verticalSide={1} />
+                      <CardPreview data={previewData} isVertical verticalSide={1} />
                    </div>
                 </div>
                 <div className="flex flex-col items-center gap-6">
                    <span className="text-[13px] font-medium text-white/50 tracking-[0.01em] leading-tight print:hidden">Back side (QR)</span>
                    <div style={{ width: "576px", height: "1024px", transform: "scale(0.5)", transformOrigin: "top center", marginBottom: "-512px" }} className="shadow-2xl print:transform-none print:m-0">
-                      <CardPreview data={form} isVertical verticalSide={2} />
+                      <CardPreview data={previewData} isVertical verticalSide={2} />
                    </div>
                 </div>
              </div>

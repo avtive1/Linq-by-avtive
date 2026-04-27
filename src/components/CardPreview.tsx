@@ -195,6 +195,7 @@ function OrganizationBrand({
   nameBoxClassName,
   nameTextClassName,
   textColorClassName = "text-white",
+  nameTextStyle,
 }: {
   name: string;
   logoUrl?: string;
@@ -202,6 +203,7 @@ function OrganizationBrand({
   nameBoxClassName: string;
   nameTextClassName: string;
   textColorClassName?: string;
+  nameTextStyle?: React.CSSProperties;
 }) {
   return (
     <>
@@ -215,7 +217,7 @@ function OrganizationBrand({
         )}
       </div>
       <div className={`flex items-center overflow-hidden ${nameBoxClassName}`}>
-        <p className={`m-0 w-full truncate font-extrabold ${textColorClassName} ${nameTextClassName}`}>{name || "Organization"}</p>
+        <p className={`m-0 w-full truncate font-extrabold ${textColorClassName} ${nameTextClassName}`} style={nameTextStyle}>{name || "Organization"}</p>
       </div>
     </>
   );
@@ -302,6 +304,12 @@ export function CardPreview({
   const isCustomTheme = !COLOR_THEMES[String(data.color || "").trim()];
 
   const theme = resolveTheme(data.color);
+  const horizontalTextColorOverride = String(data.horizontalTextColor || "").trim();
+  const verticalTextColorOverride = String(data.verticalTextColor || "").trim();
+  const hasHorizontalTextOverride = Boolean(horizontalTextColorOverride);
+  const hasVerticalTextOverride = Boolean(verticalTextColorOverride);
+  const horizontalTextColor = horizontalTextColorOverride || (theme.textColor || "#FFFFFF");
+  const verticalTextColor = verticalTextColorOverride || (theme.textColor || "#FFFFFF");
   
   // Font Mapping
   const fontMap: Record<string, string> = {
@@ -405,6 +413,7 @@ export function CardPreview({
               nameBoxClassName="h-[66.81px] w-[236.56px]"
               nameTextClassName="text-[44px] leading-none"
               textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : "text-black"}
+              nameTextStyle={hasVerticalTextOverride ? { color: verticalTextColor } : { color: "#000000" }}
             />
           </div>
         ) : (
@@ -422,14 +431,14 @@ export function CardPreview({
           </div>
         )}
 
-        <p className="absolute left-[31px] top-[131px] m-0 text-black text-[30px] font-medium tracking-[3px] uppercase leading-none z-20">
+        <p className="absolute left-[31px] top-[131px] m-0 text-[30px] font-medium tracking-[3px] uppercase leading-none z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
           {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
         </p>
 
         <h1 
           className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px] z-20"
           style={{ 
-            color: "#000000",
+            color: hasVerticalTextOverride ? verticalTextColor : "#000000",
             fontFamily: selectedFont,
             letterSpacing: "-2.99px"
           }}
@@ -443,25 +452,25 @@ export function CardPreview({
 
 
         {/* Meta Info - Precisely positioned per provided CSS */}
-        <p className="absolute left-[30px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px] z-20">
-          <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
+        <p className="absolute left-[30px] top-[346px] m-0 flex items-center gap-[10px] text-[24px] font-medium leading-[34px] z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
+          <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z" />
           </svg>
           {data.sessionDate || "Friday, 11th April, 2026"}
         </p>
-        <p className="absolute left-[261px] top-[346px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px] z-20">
-          <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
+        <p className="absolute left-[261px] top-[346px] m-0 flex items-center gap-[10px] text-[24px] font-medium leading-[34px] z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
+          <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z" />
           </svg>
           {sessionTimeLabel}
         </p>
-        <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-black text-[24px] font-medium leading-[34px] z-20">
+        <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-[24px] font-medium leading-[34px] z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
           {isWebinarLocation ? (
             <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z" />
             </svg>
           ) : (
-            <svg className="w-[20px] h-[20px] fill-current text-black" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z" />
             </svg>
           )}
@@ -494,19 +503,19 @@ export function CardPreview({
         {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
         <p
           className="absolute left-0 top-[820px] w-full text-center z-4 m-0 text-[35px] font-bold leading-none"
-          style={{ color: theme.textColor || "#FFFFFF" }}
+          style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
         >
           {data.name || "Full Name"}
         </p>
         <p
           className="absolute left-0 top-[869px] w-full text-center z-4 m-0 text-[21px] font-medium leading-none"
-          style={{ color: theme.textColor || "#FFFFFF" }}
+          style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
         >
           {data.role || "Role/Title"}
         </p>
         <p
           className="absolute left-0 top-[900px] w-full text-center z-4 m-0 text-[21px] font-medium leading-none"
-          style={{ color: theme.textColor || "#FFFFFF" }}
+          style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
         >
           {data.company || "Organization"}
         </p>
@@ -528,17 +537,17 @@ export function CardPreview({
   };
 
   const titleKickerStyle: React.CSSProperties = {
-    color: theme.accent,
+    color: hasHorizontalTextOverride ? horizontalTextColor : theme.accent,
   };
 
   const titleStyle: React.CSSProperties = {
-    color: theme.titleColor || theme.textColor || "white",
+    color: hasHorizontalTextOverride ? horizontalTextColor : (theme.titleColor || theme.textColor || "white"),
     lineHeight: "0.91",
     letterSpacing: "-0.04em",
     fontWeight: "800",
   };
 
-  const metaTextColor = { color: theme.textColor || "white" };
+  const metaTextColor = { color: hasHorizontalTextOverride ? horizontalTextColor : (theme.textColor || "white") };
 
   // Horizontal Card (Design 1 - Default)
   return (
@@ -605,6 +614,7 @@ export function CardPreview({
             nameBoxClassName="h-[48px] w-[165px]"
             nameTextClassName="text-[31px] leading-none"
             textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : undefined}
+            nameTextStyle={hasHorizontalTextOverride ? { color: horizontalTextColor } : undefined}
           />
         ) : (
           <>

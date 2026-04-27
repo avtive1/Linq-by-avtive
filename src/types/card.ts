@@ -23,6 +23,8 @@ export type CardData = {
   eventId?: string; // Links to events collection
   designType?: string;
   color?: string;
+  horizontalTextColor?: string;
+  verticalTextColor?: string;
   fontFamily?: string;
   cardRole?: "guest" | "visitor";
   /** Resolved from the linked event for card rendering */
