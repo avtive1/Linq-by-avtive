@@ -134,6 +134,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isSavingRegistrationForm, setIsSavingRegistrationForm] = useState(false);
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState<"text" | "number" | "url">("text");
+  const [editingCustomFieldId, setEditingCustomFieldId] = useState<string | null>(null);
   const [isAccessRequestOpen, setIsAccessRequestOpen] = useState(false);
   const [accessRequestAction, setAccessRequestAction] = useState("manage_event");
   const [accessRequestNote, setAccessRequestNote] = useState("");
@@ -655,6 +656,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   const openRegistrationFormModal = (role: "guest" | "visitor") => {
     setFormBuilderRole(role);
+    setEditingCustomFieldId(null);
+    setNewFieldLabel("");
+    setNewFieldType("text");
     setRegistrationFormDraft(
       normalizeRegistrationFormConfig(
         eventData?.registration_form_config || getDefaultRegistrationFormConfig(),
@@ -702,6 +706,24 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.error("Field label is required.");
       return;
     }
+    if (editingCustomFieldId) {
+      updateDraftFields(formBuilderRole, (fields) =>
+        fields.map((field) =>
+          field.id === editingCustomFieldId
+            ? {
+                ...field,
+                label,
+                inputType: newFieldType,
+                placeholder: label,
+              }
+            : field,
+        ),
+      );
+      setEditingCustomFieldId(null);
+      setNewFieldLabel("");
+      setNewFieldType("text");
+      return;
+    }
     const idBase = label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "") || "field";
     const fieldId = `${idBase}_${Date.now().toString().slice(-5)}`;
     updateDraftFields(formBuilderRole, (fields) => [
@@ -717,6 +739,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     ]);
     setNewFieldLabel("");
     setNewFieldType("text");
+  };
+  const startEditCustomField = (field: RegistrationFieldDefinition) => {
+    setEditingCustomFieldId(field.id);
+    setNewFieldLabel(field.label);
+    if (field.inputType === "number" || field.inputType === "url" || field.inputType === "text") {
+      setNewFieldType(field.inputType);
+    } else {
+      setNewFieldType("text");
+    }
   };
 
   const handleExport = () => {
@@ -1746,118 +1777,100 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingRegistrationForm && setIsRegistrationFormOpen(false)}
           />
-          <div className="relative w-full max-w-[760px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-border/30">
+          <div className="relative w-full max-w-[780px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-7 pb-4 flex items-start justify-between border-b border-border/40 bg-white/70">
               <div>
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
-                  {formBuilderRole === "guest" ? "Guest Preview" : "Visitor Preview"}
+                  {formBuilderRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
                 </h2>
-                <p className="text-sm text-muted mt-1">
+                <p className="text-sm text-muted mt-1.5">
                   Review the live form and manage custom fields in one place.
                 </p>
               </div>
               <button
                 onClick={() => setIsRegistrationFormOpen(false)}
-                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-10 h-10 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="px-8 py-6 flex flex-col gap-5 max-h-[68vh] overflow-y-auto">
-              <div className="flex gap-2">
-                {(["visitor", "guest"] as const).map((role) => (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => setFormBuilderRole(role)}
-                    className={`px-4 py-2 rounded-md border text-sm font-semibold transition-all ${
-                      formBuilderRole === role
-                        ? "bg-primary/10 border-primary/40 text-primary-strong"
-                        : "bg-white border-border/60 text-heading hover:border-primary/30"
-                    }`}
-                  >
-                    {role === "visitor" ? "Visitor Form" : "Guest Form"}
-                  </button>
-                ))}
-              </div>
-
-              <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
-                <p className="text-sm font-semibold text-heading mb-3">
-                  {formBuilderRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
-                </p>
-                <div className="grid gap-3">
-                  {getEnabledFieldsForRole(registrationFormDraft, formBuilderRole).map((field) => {
-                    const isCustomField = !CORE_PREVIEW_FIELD_IDS.has(field.id);
-                    if (!isCustomField) {
-                      return (
-                        <TextInput
-                          key={`builder-preview-${formBuilderRole}-${field.id}`}
-                          label={field.label}
-                          required={field.required}
-                          type={field.id === "email" ? "email" : field.inputType}
-                          placeholder={field.placeholder || field.label}
-                          value=""
-                          disabled
-                        />
-                      );
-                    }
+            <div className="px-8 py-6 flex flex-col gap-4 max-h-[68vh] overflow-y-auto bg-white/40">
+              <div className="grid gap-3">
+                {getEnabledFieldsForRole(registrationFormDraft, formBuilderRole).map((field) => {
+                  const isCustomField = !CORE_PREVIEW_FIELD_IDS.has(field.id);
+                  if (!isCustomField) {
                     return (
-                      <div
+                      <TextInput
                         key={`builder-preview-${formBuilderRole}-${field.id}`}
-                        className="rounded-md border border-primary/35 bg-white p-3 shadow-[0_4px_10px_rgba(23,58,35,0.06)]"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-semibold text-heading">
-                              {field.label}
-                              {field.required ? " *" : ""}
-                            </p>
-                            <p className="text-xs text-muted mt-0.5">Custom field • Type: {field.inputType}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateDraftFields(formBuilderRole, (fields) =>
-                                  fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
-                                )
-                              }
-                              className={`px-2.5 py-1 text-[11px] rounded-md border font-semibold ${
-                                field.required
-                                  ? "bg-primary/10 border-primary/30 text-primary-strong"
-                                  : "bg-white border-border text-muted"
-                              }`}
-                            >
-                              {field.required ? "Required" : "Optional"}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                updateDraftFields(formBuilderRole, (fields) =>
-                                  fields.filter((f) => f.id !== field.id),
-                                )
-                              }
-                              className="px-2.5 py-1 text-[11px] rounded-md border border-red-200 text-red-600 bg-red-50"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-                        <input
-                          type="text"
-                          disabled
-                          className="mt-2 h-10 w-full rounded-md border border-primary/25 bg-primary/5 px-3 text-[13px] text-heading/70"
-                          placeholder={field.placeholder || field.label}
-                        />
-                      </div>
+                        label={field.label}
+                        required={field.required}
+                        type={field.id === "email" ? "email" : field.inputType}
+                        placeholder={field.placeholder || field.label}
+                        value=""
+                        disabled
+                      />
                     );
-                  })}
-                </div>
+                  }
+                  return (
+                    <div key={`builder-preview-${formBuilderRole}-${field.id}`} className="rounded-md">
+                      <TextInput
+                        label={field.label}
+                        required={field.required}
+                        type={field.inputType}
+                        placeholder={field.placeholder || field.label}
+                        value=""
+                        disabled
+                      />
+                      <div className="mt-1.5 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            updateDraftFields(formBuilderRole, (fields) =>
+                              fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
+                            )
+                          }
+                          className={`px-3 py-1.5 text-xs rounded-[4px] border font-semibold transition-colors ${
+                            field.required
+                              ? "border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100"
+                              : "border-slate-300 text-slate-700 bg-slate-50 hover:bg-slate-100"
+                          }`}
+                        >
+                          {field.required ? "Required" : "Optional"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => startEditCustomField(field)}
+                          className="px-3 py-1.5 text-xs rounded-[4px] border border-primary/30 text-primary-strong bg-primary/10 font-semibold hover:bg-primary/15 transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (editingCustomFieldId === field.id) {
+                              setEditingCustomFieldId(null);
+                              setNewFieldLabel("");
+                              setNewFieldType("text");
+                            }
+                            updateDraftFields(formBuilderRole, (fields) =>
+                              fields.filter((f) => f.id !== field.id),
+                            );
+                          }}
+                          className="px-3 py-1.5 text-xs rounded-[4px] border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              <div className="rounded-md border border-dashed border-border/70 bg-surface/30 p-4">
-                <p className="text-sm font-semibold text-heading mb-3">Add Custom Field</p>
+              <div className="pt-2">
+                <p className="text-sm font-semibold text-heading mb-3">
+                  {editingCustomFieldId ? "Edit Custom Field" : "Add Custom Field"}
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <TextInput
                     label="Field Label"
@@ -1877,23 +1890,39 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   />
                 </div>
                 <div className="mt-3 flex justify-end">
-                  <Button variant="secondary" onClick={addCustomFieldToDraft}>
-                    Add Field
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    {editingCustomFieldId && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setEditingCustomFieldId(null);
+                          setNewFieldLabel("");
+                          setNewFieldType("text");
+                        }}
+                      >
+                        Cancel Edit
+                      </Button>
+                    )}
+                    <Button variant="secondary" size="sm" onClick={addCustomFieldToDraft}>
+                      {editingCustomFieldId ? "Save Edit" : "Add Field"}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="px-8 py-4 border-t border-border/30 flex gap-3">
+            <div className="px-8 py-4 border-t border-border/40 flex gap-3 bg-white/80">
               <Button
                 variant="secondary"
                 fullWidth
+                className="h-11"
                 disabled={isSavingRegistrationForm}
                 onClick={() => setIsRegistrationFormOpen(false)}
               >
                 Cancel
               </Button>
-              <Button fullWidth disabled={isSavingRegistrationForm} onClick={saveRegistrationFormConfig}>
+              <Button fullWidth className="h-11" disabled={isSavingRegistrationForm} onClick={saveRegistrationFormConfig}>
                 {isSavingRegistrationForm ? "Saving..." : "Save Form"}
               </Button>
             </div>
