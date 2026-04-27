@@ -1346,12 +1346,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-md border border-border/60 bg-white p-4.5">
-                  <p className="text-base font-semibold text-heading">Guest Form</p>
-                  <p className="text-sm text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
+                  <p className="text-[18px] font-semibold text-heading">Guest Form</p>
+                  <p className="text-[16px] text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3 !h-10 px-4 text-sm"
+                    className="mb-3 !h-10 px-4 text-[15px]"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("guest")}
                     >
@@ -1363,12 +1363,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <p className="mt-2 text-sm text-muted">{previewGuestFields.length} fields configured</p>
                 </div>
                 <div className="rounded-md border border-border/60 bg-white p-4.5">
-                  <p className="text-base font-semibold text-heading">Visitor Form</p>
-                  <p className="text-sm text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
+                  <p className="text-[18px] font-semibold text-heading">Visitor Form</p>
+                  <p className="text-[16px] text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3 !h-10 px-4 text-sm"
+                    className="mb-3 !h-10 px-4 text-[15px]"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("visitor")}
                   >
