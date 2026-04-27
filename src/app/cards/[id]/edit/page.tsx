@@ -410,9 +410,9 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               router.refresh();
               router.push(target);
             }}
-            className="inline-flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group bg-transparent border-none cursor-pointer"
+            className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group bg-transparent border-none cursor-pointer py-1"
           >
-            <ArrowLeft size={12} className="group-hover:-translate-x-0.5 transition-transform" />
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
             Back
           </button>
         </div>

@@ -220,7 +220,7 @@ export default async function AdminDashboardPage() {
             <Users size={28} strokeWidth={2} />
           </div>
           <div className="relative z-10 flex flex-col">
-            <span className="text-xs font-semibold uppercase tracking-wide text-muted mb-1">Total Attendees</span>
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted mb-1">Total Leads</span>
             <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{totalAttendees}</span>
           </div>
         </div>

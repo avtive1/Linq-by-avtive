@@ -250,7 +250,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           return {
             id: String(secure.id || ""),
             name: String(secure.name || ""),
-            role: String(secure.role || "Attendee"),
+            role: String(secure.role || "Lead"),
             company: String(secure.company || ""),
             email: String(secure.card_email || ""),
             eventName: String(secure.event_name || ""),
@@ -343,7 +343,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const ownerTopRoles = useMemo(() => {
     const roleMap = new Map<string, number>();
     for (const card of cards) {
-      const role = String(card.role || "Attendee").trim() || "Attendee";
+      const role = String(card.role || "Lead").trim() || "Lead";
       roleMap.set(role, (roleMap.get(role) || 0) + 1);
     }
     return Array.from(roleMap.entries())
@@ -578,7 +578,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   const handleDeleteEvent = async () => {
     if (cards.length > 0) {
-      toast.error("You cannot delete an event with registered attendees.");
+      toast.error("You cannot delete an event with registered leads.");
       return;
     }
     if (deleteConfirm.trim() !== (eventData?.name || "").trim()) {
@@ -746,7 +746,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.download = `${eventData?.name || 'event'}-attendees-export.csv`;
+    link.download = `${eventData?.name || 'event'}-leads-export.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -927,10 +927,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }
                 router.push("/dashboard");
               }}
-            className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer"
+            className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer py-1"
             >
               <motion.span {...hoverIconNudge(-2)} className="inline-flex">
-                <ArrowLeft size={12} className="transition-transform" />
+                <ArrowLeft size={16} className="transition-transform" />
               </motion.span>
               {isPreviewMode ? "Back to Organization View" : "Back to Dashboard"}
             </button>
@@ -1089,7 +1089,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   {isDuplicating ? "..." : "Duplicate"}
                 </Button>
                 <div 
-                  title={cards.length > 0 ? "Events with registered attendees cannot be deleted." : ""}
+                  title={cards.length > 0 ? "Events with registered leads cannot be deleted." : ""}
                   className={cards.length > 0 ? "cursor-help" : ""}
                 >
                   <Button
@@ -1167,7 +1167,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
 
               <div className="p-3 rounded-md bg-white/60 border border-white/60 text-sm font-normal text-muted/90 leading-relaxed shadow-sm">
-                This campaign is currently locked for <span className="text-heading font-semibold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and attendee data, but record modification and deletion are restricted to maintain audit integrity.
+                This campaign is currently locked for <span className="text-heading font-semibold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and lead data, but record modification and deletion are restricted to maintain audit integrity.
               </div>
 
 
@@ -1191,7 +1191,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <span className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
                       Organization Admin Event Console
                     </span>
-                    <span className="text-sm text-muted">Live attendee and composition insight</span>
+                    <span className="text-sm text-muted">Live lead and composition insight</span>
                   </div>
                 </div>
               </div>
@@ -1205,7 +1205,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <Layers3 size={13} className="text-primary-strong" />
-                    Attendee Composition
+                    Leads Composition
                   </p>
                   <div className="grid grid-cols-2 gap-2.5">
                     {[
@@ -1241,7 +1241,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </p>
                   <div className="space-y-2">
                     {ownerTopRoles.length === 0 ? (
-                      <p className="text-sm text-muted">No attendee roles yet.</p>
+                      <p className="text-sm text-muted">No lead roles yet.</p>
                     ) : (
                       ownerTopRoles.slice(0, 3).map((entry, roleIdx) => (
                         <motion.div
@@ -1311,7 +1311,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div>
                   <h3 className="text-xl font-semibold text-heading tracking-[-0.02em]">Registration Form Preview</h3>
                   <p className="text-sm text-muted mt-1">
-                    Preview the attendee form for guests and visitors, then customize optional fields.
+                    Preview the lead form for guests and visitors, then customize optional fields.
                   </p>
                 </div>
                 <Button
@@ -1326,7 +1326,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Guest Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview to view exact attendee form.</p>
+                  <p className="text-xs text-muted mb-3">Click preview to view exact lead form.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1342,7 +1342,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Visitor Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview to view exact attendee form.</p>
+                  <p className="text-xs text-muted mb-3">Click preview to view exact lead form.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1400,7 +1400,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </span>
                   <span className={`text-lg font-black uppercase tracking-wide ${
                     isTeamMemberEventMode ? "text-primary-strong" : "text-white/40"
-                  }`}>Attendees</span>
+                  }`}>Leads</span>
                 </div>
               </div>
             </div>
@@ -1431,7 +1431,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted/30 group-focus-within:text-primary transition-colors z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
               type="text"
-              placeholder="Search attendees in this campaign..."
+              placeholder="Search leads in this campaign..."
               className={`w-full h-14 pl-16 pr-8 py-0 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-base font-medium leading-[1.6] text-heading shadow-md placeholder:text-muted/30 ${
                 isPreviewMode
                   ? "bg-white/90 border border-primary/20 focus:bg-white"
@@ -1447,8 +1447,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         {cards.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6 animate-slide-up delay-300">
             <div className="flex flex-col gap-1">
-              <p className="text-heading font-medium text-lg">No attendees yet</p>
-              <p className="text-sm text-muted">Share the registration link to invite attendees to register for this campaign.</p>
+              <p className="text-heading font-medium text-lg">No leads yet</p>
+              <p className="text-sm text-muted">Share the registration link to invite leads to register for this campaign.</p>
             </div>
           </div>
         ) : (
@@ -1505,10 +1505,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         )}
                       </div>
                       <div className="flex flex-wrap items-center gap-2 ui-meta mt-0.5">
-                        <span className="flex items-center gap-1.5">
-                          <BarChart3 size={12} className="text-primary-strong/60" />
-                          {card.role}
-                        </span>
+                        <span className="flex items-center">{card.role}</span>
                         {card.email && (
                           <span className="hidden sm:inline-flex items-center gap-1 opacity-70">
                             • {card.email}
@@ -1549,7 +1546,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           icon={<Pencil size={14} />}
                           className="rounded-sm bg-white/50 border-white/60 opacity-50 cursor-not-allowed grayscale"
                           disabled
-                          title="Request access to edit attendee cards."
+                          title="Request access to edit lead cards."
                         >
                           Edit
                         </Button>
@@ -1563,7 +1560,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           handleDelete(card.id);
                         }}
                         disabled={!canDeleteCards}
-                        title={!canDeleteCards ? "Request access to delete attendee cards." : "Delete attendee card"}
+                        title={!canDeleteCards ? "Request access to delete lead cards." : "Delete lead card"}
                         className={`w-10 h-10 p-0 rounded-inline transition-all shrink-0 ${
                           canDeleteCards
                             ? "text-muted hover:text-red-500 hover:bg-red-50/50 hover:border-red-200"
@@ -1620,9 +1617,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 className="w-full rounded-md border border-border/60 bg-white px-3 py-2 text-sm text-heading outline-none focus:border-primary/70"
               >
                 <option value="manage_event">Manage event settings</option>
-                <option value="delete_event">Delete event (only when attendees = 0)</option>
-                <option value="edit_cards">Edit attendee cards</option>
-                <option value="delete_cards">Delete attendee cards</option>
+                <option value="delete_event">Delete event (only when leads = 0)</option>
+                <option value="edit_cards">Edit lead cards</option>
+                <option value="delete_cards">Delete lead cards</option>
               </select>
               <TextInput
                 label="Reason"
@@ -1763,7 +1760,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {previewRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
                 </h2>
-                <p className="text-sm text-muted mt-1">This is the exact field structure attendees will see.</p>
+                <p className="text-sm text-muted mt-1">This is the exact field structure leads will see.</p>
               </div>
               <button
                 onClick={() => setIsRegistrationPreviewOpen(false)}
@@ -2072,7 +2069,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="flex flex-col gap-1 pr-4">
                 <h2 className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</h2>
                 <p className="text-sm text-muted">
-                  Up to five logos with names. They appear on every attendee card for this campaign.
+                  Up to five logos with names. They appear on every lead card for this campaign.
                 </p>
               </div>
               <button
@@ -2242,7 +2239,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-red-500 tracking-[-0.03em] leading-[1.15]">Delete event?</h2>
                 <p className="text-sm text-muted">
-                  This permanently removes the event, <span className="font-medium text-heading">{cards.length}</span> attendee {cards.length === 1 ? "card" : "cards"}, and all uploaded photos. This cannot be undone.
+                  This permanently removes the event, <span className="font-medium text-heading">{cards.length}</span> lead {cards.length === 1 ? "card" : "cards"}, and all uploaded photos. This cannot be undone.
                 </p>
               </div>
               <button

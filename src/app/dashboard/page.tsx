@@ -73,9 +73,7 @@ const formatJoinStatus = (status: string) => {
 const toOrganizationDisplayName = (rawName: string) => {
   const name = String(rawName || "").trim();
   if (!name) return "Organization";
-  // Keep original casing when provided; only uplift fully lowercase names for heading readability.
-  if (name !== name.toLowerCase()) return name;
-  return name.replace(/\b([a-z])/g, (match) => match.toUpperCase());
+  return name.toUpperCase();
 };
 
 function DashboardContent() {
@@ -1114,10 +1112,10 @@ function DashboardContent() {
             {isPreviewMode ? (
               <Link
                 href={impersonateId ? `/admin/organizations/${impersonateId}` : "/admin"}
-                className="flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2"
+                className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2 py-1"
               >
                 <motion.span {...hoverIconNudge(-2)} className="inline-flex">
-                  <ArrowLeft size={12} className="transition-transform" />
+                  <ArrowLeft size={16} className="transition-transform" />
                 </motion.span>
                 Back
               </Link>
@@ -1165,7 +1163,7 @@ function DashboardContent() {
             )}
             {!isPreviewMode && !isOrgTeamMember && isOrgOwner && (
               <p className="text-sm font-normal text-primary-strong/85 mt-1 leading-[1.6]">
-                Organization owner mode: you can review team join requests and manage access.
+                You can review team join requests and manage access.
               </p>
             )}
             {!isPreviewMode && !isOrgTeamMember && hasPendingOrgJoin && (
@@ -1269,7 +1267,7 @@ function DashboardContent() {
                     <p className="text-sm text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-heading/70">
+                <div className="flex items-center gap-2 text-sm font-medium text-heading/75">
                   <Activity size={14} className="text-primary-strong" />
                   Analytics
                 </div>
@@ -1278,7 +1276,7 @@ function DashboardContent() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 {[
                   { label: "Total Campaigns", value: stats.totalEvents },
-                  { label: "Total Attendees", value: stats.totalAttendees },
+                  { label: "Total Leads", value: stats.totalAttendees },
                   { label: "Organization Members", value: orgMemberCount },
                   { label: "Avg / Campaign", value: ownerAvgAttendees },
                   { label: "Highest Campaign Reach", value: ownerTopCampaigns[0]?.attendeeCount || 0 },
@@ -1465,7 +1463,7 @@ function DashboardContent() {
                         <span className="text-4xl font-semibold text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">
                            <AnimatedCounter value={stats.totalAttendees} />
                         </span>
-                        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Total Attendees</span>
+                        <span className="text-xs font-semibold text-muted uppercase tracking-wide">Total Leads</span>
                      </div>
                   </div>
                </div>

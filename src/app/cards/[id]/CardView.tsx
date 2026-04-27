@@ -272,9 +272,9 @@ export default function CardView({
                 <div className="flex items-center gap-3">
                   <Link
                     href={backHref}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
+                    className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group py-1"
                   >
-                    <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                     Back
                   </Link>
                 </div>
@@ -505,7 +505,7 @@ export default function CardView({
           margin-top: -10px;
         }
         .vertical-card-frame {
-          width: 430px;
+          width: 395px;
           overflow: visible;
           display: flex;
           justify-content: center;
@@ -535,8 +535,8 @@ export default function CardView({
             margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "1024px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"})) - ${viewMode === "horizontal" ? "628px" : "1024px"});
           }
           .card-capture-vertical {
-            transform: scale(0.49);
-            margin-bottom: -522px;
+            transform: scale(0.45);
+            margin-bottom: -566px;
           }
         }
         @media (min-width: 1025px) {
@@ -545,8 +545,8 @@ export default function CardView({
             margin-bottom: ${viewMode === "horizontal" ? "-113px" : "-287px"};
           }
           .card-capture-vertical {
-            transform: scale(0.74);
-            margin-bottom: -266px;
+            transform: scale(0.68);
+            margin-bottom: -328px;
           }
         }
       `}</style>
