@@ -1315,7 +1315,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Guest Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview form to view and edit fields.</p>
+                  <p className="text-xs text-muted mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1332,7 +1332,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Visitor Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview form to view and edit fields.</p>
+                  <p className="text-xs text-muted mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1777,6 +1777,25 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     {role === "visitor" ? "Visitor Form" : "Guest Form"}
                   </button>
                 ))}
+              </div>
+
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-4">
+                <p className="text-sm font-semibold text-heading mb-3">
+                  {formBuilderRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
+                </p>
+                <div className="grid gap-3">
+                  {getEnabledFieldsForRole(registrationFormDraft, formBuilderRole).map((field) => (
+                    <TextInput
+                      key={`builder-preview-${formBuilderRole}-${field.id}`}
+                      label={field.label}
+                      required={field.required}
+                      type={field.id === "email" ? "email" : field.inputType}
+                      placeholder={field.placeholder || field.label}
+                      value=""
+                      disabled
+                    />
+                  ))}
+                </div>
               </div>
 
               <div className="flex flex-col gap-3">
