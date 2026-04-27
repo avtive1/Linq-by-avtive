@@ -271,6 +271,7 @@ export default async function CardViewPage(props: {
         verticalTextColor: verticalTextColor || undefined,
         fontFamily: readString(secureRecord.card_font) || undefined,
         cardRole: readString(secureRecord.track) as "guest" | "visitor",
+        guestCategory: readString(secureRecord.guest_category),
         sponsors,
         organizationName,
         organizationLogoUrl,

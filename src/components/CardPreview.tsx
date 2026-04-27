@@ -436,7 +436,7 @@ export function CardPreview({
         </p>
 
         <h1 
-          className="absolute left-[27px] top-[184px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px] z-20"
+          className="absolute left-[27px] top-[166px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px] z-20"
           style={{ 
             color: hasVerticalTextOverride ? verticalTextColor : "#000000",
             fontFamily: selectedFont,
@@ -448,6 +448,11 @@ export function CardPreview({
               <span className="block">Pakistan Tech</span>
               <span className="block">Summit</span>
             </>)}
+          {data.cardRole === "guest" && data.guestCategory && (
+            <span className="block text-[35px] font-bold tracking-[1px] uppercase mt-[16px] leading-none" style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.accent === "#000000" ? "#000000" : theme.accent || "#000000") }}>
+              AS {data.guestCategory}
+            </span>
+          )}
         </h1>
 
 
@@ -574,7 +579,7 @@ export function CardPreview({
         {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
       </p>
       
-      <h1 className="absolute left-[50px] top-[138px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
+      <h1 className="absolute left-[50px] top-[116px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
         {data.eventName ? (
           data.eventName.split("<br />").map((text, i) => <span key={i} className="block">{text}</span>)
         ) : (
@@ -582,6 +587,11 @@ export function CardPreview({
             <span className="block">Pakistan Tech</span>
             <span className="block">Summit</span>
           </>
+        )}
+        {data.cardRole === "guest" && data.guestCategory && (
+          <span className="block text-[30px] font-bold tracking-[1px] uppercase mt-[18px] leading-none" style={{ color: hasHorizontalTextOverride ? horizontalTextColor : theme.accent || "#FFFFFF" }}>
+            AS {data.guestCategory}
+          </span>
         )}
       </h1>
 
