@@ -99,7 +99,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     const vh = window.innerHeight;
 
     let left = anchorRect.right + gap;
-    let top = anchorRect.top;
+    let top = anchorRect.bottom + gap;
 
     // Prefer side placement, then fall back to above.
     if (left + panelW > vw - 12) left = anchorRect.left - panelW - gap;
@@ -278,14 +278,14 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         >
           <span
             className="pointer-events-none absolute left-0 right-0 h-1 rounded bg-white shadow"
-            style={{ top: `${(hsv.h / 360) * 100}%` }}
+            style={{ top: `calc(${(hsv.h / 360) * 100}% - 2px)` }}
           />
         </div>
         <div className="flex min-w-[96px] flex-col gap-1.5">
           <div className="h-10 w-full rounded-[6px] border border-white/15" style={{ background: currentHex }} />
           {(["r", "g", "b"] as const).map((key) => (
             <div key={key} className="flex items-center gap-1.5">
-              <span className="w-4 text-[12px] uppercase text-white/70">{key}</span>
+              <span className="w-5 text-[15px] font-medium uppercase text-white/75">{key}</span>
               <input
                 type="number"
                 min={0}
@@ -296,12 +296,12 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                   const nextRgb = { ...currentRgb, [key]: val };
                   commitColor(rgbToHsv(nextRgb));
                 }}
-                className="h-7 w-14 rounded-[5px] border border-white/20 bg-white px-1.5 text-[11px] text-black"
+                className="h-7 w-14 rounded-[5px] border border-white/20 bg-white px-1.5 text-[10px] text-black"
               />
             </div>
           ))}
           <div className="flex items-center gap-1.5">
-            <span className="w-4 text-[12px] text-white/70">#</span>
+            <span className="w-5 text-[15px] font-medium text-white/75">#</span>
             <input
               type="text"
               value={currentHex.replace("#", "")}
@@ -309,7 +309,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                 const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
                 if (raw.length === 6) commitColor(rgbToHsv(hexToRgb(`#${raw}`)));
               }}
-              className="h-7 w-16 rounded-[5px] border border-white/20 bg-white px-1.5 text-[11px] uppercase text-black"
+              className="h-7 w-18 rounded-[5px] border border-white/20 bg-white px-1.5 text-[9px] uppercase tracking-tight text-black"
             />
           </div>
         </div>
@@ -336,7 +336,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-6 min-h-0 px-2 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[3px] shadow-none"
+            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[2px] shadow-none"
             onClick={onConfirm}
           >
             Confirm
@@ -344,7 +344,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-6 min-h-0 px-2 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[3px] shadow-none"
+            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[2px] shadow-none"
             onClick={onCancel}
           >
             Cancel
@@ -353,7 +353,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         <Button
           type="button"
           variant="secondary"
-          className="!h-6 min-h-0 px-2 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[3px] shadow-none"
+          className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[2px] shadow-none"
           onClick={() => updateSwatchSlot(selectedSlot, currentHex)}
         >
           Replace
