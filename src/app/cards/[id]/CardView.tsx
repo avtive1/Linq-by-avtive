@@ -14,11 +14,13 @@ export default function CardView({
   isShareMode = false,
   initialViewMode = "horizontal",
   impersonateId = "",
+  shareToken = "",
 }: {
   card: CardData;
   isShareMode?: boolean;
   initialViewMode?: "horizontal" | "vertical";
   impersonateId?: string;
+  shareToken?: string;
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
@@ -300,6 +302,16 @@ export default function CardView({
           </div>
 
           <div className="flex items-center gap-3">
+            {isShareMode && shareToken && (
+              <Link href={`/cards/${card.id}/edit?share=true&token=${encodeURIComponent(shareToken)}`}>
+                <Button
+                  variant="secondary"
+                  className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
+                >
+                  Edit
+                </Button>
+              </Link>
+            )}
             {viewMode === "horizontal" && (
               <Button
                 onClick={handleShareLinkedIn}

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, use, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui";
 import { ArrowLeft } from "lucide-react";
@@ -44,7 +44,10 @@ const presetColorNames = new Set(colors.map((c) => c.name));
 
 export default function EditCardPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { id } = use(params);
+  const shareToken = String(searchParams.get("token") || "").trim();
+  const isShareEditMode = searchParams.get("share") === "true";
   const cardRef = useRef<HTMLDivElement>(null);
   const verticalFrontRef = useRef<HTMLDivElement>(null);
   const verticalBackRef = useRef<HTMLDivElement>(null);
@@ -94,16 +97,19 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           if (isMounted) setNotFound(true);
           return;
         }
-        const authRes = await fetch("/api/auth/me");
-        const authPayload = await authRes.json();
-        const userId = authPayload?.data?.userId ? String(authPayload.data.userId) : "";
-        if (!isMounted) return;
-        if (!userId) {
-          router.replace("/login");
-          return;
+        const authHeaders = shareToken ? { Authorization: `Bearer ${shareToken}` } : undefined;
+        if (!shareToken) {
+          const authRes = await fetch("/api/auth/me");
+          const authPayload = await authRes.json();
+          const userId = authPayload?.data?.userId ? String(authPayload.data.userId) : "";
+          if (!isMounted) return;
+          if (!userId) {
+            router.replace("/login");
+            return;
+          }
         }
 
-        const resp = await fetch(`/api/cards/${id}`, { method: "GET" });
+        const resp = await fetch(`/api/cards/${id}`, { method: "GET", headers: authHeaders });
         if (resp.status === 404) {
           if (isMounted) setNotFound(true);
           return;
@@ -176,7 +182,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
     load();
     return () => { isMounted = false; };
-  }, [id, router]);
+  }, [id, router, shareToken]);
 
   const update = (key: keyof FormState) => (val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
@@ -264,7 +270,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
       const res = await fetch(`/api/cards/${id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(shareToken ? { Authorization: `Bearer ${shareToken}` } : {}),
+        },
         body: JSON.stringify(updatePayload),
       });
 
@@ -285,7 +294,11 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         if (!eventId) {
           // Vertical preview upload requires event-scoped folder authorization.
           router.refresh();
-          router.push(`/cards/${id}`);
+          router.push(
+            shareToken
+              ? `/cards/${id}?share=true&token=${encodeURIComponent(shareToken)}`
+              : `/cards/${id}`,
+          );
           return;
         }
         const uploadPreview = async (
@@ -324,7 +337,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         if (horizontalUrl) {
           await fetch(`/api/cards/${id}`, {
             method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(shareToken ? { Authorization: `Bearer ${shareToken}` } : {}),
+            },
             body: JSON.stringify({ card_preview_url: horizontalUrl }),
           });
         }
@@ -333,7 +349,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       }
       toast.success("Card updated successfully.");
       router.refresh();
-      router.push(`/cards/${id}?share=true`);
+      const returnUrl = shareToken
+        ? `/cards/${id}?share=true&token=${encodeURIComponent(shareToken)}`
+        : "/cards/" + id + "?share=true";
+      router.push(returnUrl);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save changes.";
       toast.error(message);
@@ -406,7 +425,11 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         <div className="flex items-center gap-4 mb-12 -ml-1 sm:-ml-2">
           <button
             onClick={() => {
-              const target = eventId ? `/dashboard/events/${eventId}` : "/dashboard";
+              const target = shareToken || isShareEditMode
+                ? `/cards/${id}?share=true${shareToken ? `&token=${encodeURIComponent(shareToken)}` : ""}`
+                : eventId
+                  ? `/dashboard/events/${eventId}`
+                  : "/dashboard";
               router.refresh();
               router.push(target);
             }}

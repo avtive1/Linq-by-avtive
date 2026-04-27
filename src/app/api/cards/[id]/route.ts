@@ -8,11 +8,35 @@ import { logSecurityEvent } from "@/lib/security/telemetry";
 import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 
 async function getAuthedSessionAndPermission(
+  req: Request,
   id: string,
   mode: "read" | "edit" | "delete" = "read",
 ) {
+  const authHeader = req.headers.get("authorization") || "";
+  const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+    ? authHeader.slice(7).trim()
+    : "";
+  if (bearerToken && mode !== "delete") {
+    try {
+      const verified = await verifyAttendeeCardToken(bearerToken);
+      const tokenCardId = String(verified.payload.cardId || "").trim();
+      const tokenScope = String(verified.payload.scope || "").trim();
+      const hasReadScope = tokenScope.includes("card:read");
+      const hasEditScope = tokenScope.includes("card:edit");
+      const tokenCanRead = hasReadScope || hasEditScope;
+      const tokenCanEdit = hasEditScope || hasReadScope;
+      const tokenAllowed = mode === "read" ? tokenCanRead : tokenCanEdit;
+      if (tokenCardId === id && tokenAllowed) {
+        return { userId: String(verified.payload.sub || "").trim() || "token-user", tokenAccess: true as const };
+      }
+    } catch {
+      // Fall through to normal session checks.
+    }
+  }
+
   const cookieStore = await cookies();
   const userId = await getServerUserIdFromCookies(cookieStore);
   if (!userId) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
@@ -67,14 +91,14 @@ async function getAuthedSessionAndPermission(
   if (!canEdit) {
     return { error: NextResponse.json({ error: "Forbidden: You do not have permission to edit this card" }, { status: 403 }) };
   }
-  return { userId };
+  return { userId, tokenAccess: false as const };
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid card id" }, { status: 400 });
-    const auth = await getAuthedSessionAndPermission(id, "read");
+    const auth = await getAuthedSessionAndPermission(_, id, "read");
     if (auth.error) return auth.error;
 
     const attendee = await queryNeonOne<Record<string, unknown>>(
@@ -103,7 +127,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid card id" }, { status: 400 });
     const updatePayload = await req.json();
-    const auth = await getAuthedSessionAndPermission(id, "edit");
+    const auth = await getAuthedSessionAndPermission(req, id, "edit");
     if (auth.error) return auth.error;
     const userId = auth.userId!;
 
@@ -133,7 +157,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   try {
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid card id" }, { status: 400 });
-    const auth = await getAuthedSessionAndPermission(id, "delete");
+    const auth = await getAuthedSessionAndPermission(_, id, "delete");
     if (auth.error) return auth.error;
 
     const deleted = await queryNeon<{ id: string }>(

@@ -88,10 +88,12 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   const currentRgb = useMemo(() => hsvToRgb(hsv), [hsv]);
   const currentHex = useMemo(() => rgbToHex(currentRgb), [currentRgb]);
   const pureHue = useMemo(() => rgbToHex(hsvToRgb({ h: hsv.h, s: 1, v: 1 })), [hsv.h]);
+  const hueIndicatorTop = useMemo(() => (clamp(hsv.h, 0, 359) / 359) * 100, [hsv.h]);
   const panelPosition = useMemo(() => {
     const panelW = 420;
     const panelH = 360;
-    const gap = 10;
+    const gap = 6;
+    const verticalNudge = 10;
     if (!anchorRect || typeof window === "undefined") {
       return { top: 120, left: 120 };
     }
@@ -99,13 +101,13 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     const vh = window.innerHeight;
 
     let left = anchorRect.right + gap;
-    let top = anchorRect.bottom + gap;
+    let top = anchorRect.bottom + gap + verticalNudge;
 
     // Prefer side placement, then fall back to above.
     if (left + panelW > vw - 12) left = anchorRect.left - panelW - gap;
     if (left < 12) left = Math.max(12, Math.min(vw - panelW - 12, anchorRect.left));
 
-    if (top + panelH > vh - 12) top = anchorRect.top - panelH - gap;
+    if (top + panelH > vh - 12) top = vh - panelH - 12;
     if (top < 12) top = Math.max(12, Math.min(vh - panelH - 12, anchorRect.bottom + gap));
 
     return { top, left };
@@ -138,7 +140,8 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const y = clamp(clientY - rect.top, 0, rect.height);
-    commitColor({ ...hsv, h: Math.round((y / rect.height) * 360) });
+    const nextHue = clamp(Math.round((y / rect.height) * 359), 0, 359);
+    commitColor({ ...hsv, h: nextHue });
   };
 
   useEffect(() => {
@@ -244,7 +247,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         </div>
         <div
           ref={hueRef}
-          className="relative h-48 w-4 cursor-ns-resize rounded-[3px]"
+          className="relative h-48 w-4 cursor-ns-resize rounded-none"
           style={{
             background:
               "linear-gradient(to bottom, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
@@ -277,8 +280,8 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           }}
         >
           <span
-            className="pointer-events-none absolute left-0 right-0 h-1 rounded bg-white shadow"
-            style={{ top: `calc(${(hsv.h / 360) * 100}% - 2px)` }}
+            className="pointer-events-none absolute left-0 right-0 h-1 rounded-none bg-white shadow"
+            style={{ top: `calc(${hueIndicatorTop}% - 2px)` }}
           />
         </div>
         <div className="flex min-w-[96px] flex-col gap-1.5">
@@ -296,7 +299,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                   const nextRgb = { ...currentRgb, [key]: val };
                   commitColor(rgbToHsv(nextRgb));
                 }}
-                className="h-7 w-14 rounded-[5px] border border-white/20 bg-white px-1.5 text-[10px] text-black"
+                className="h-7 w-14 rounded-[5px] border border-white/20 bg-white px-1.5 text-[12px] text-black"
               />
             </div>
           ))}
@@ -336,7 +339,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[2px] shadow-none"
+            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-none shadow-none"
             onClick={onConfirm}
           >
             Confirm
@@ -344,7 +347,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[2px] shadow-none"
+            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-none shadow-none"
             onClick={onCancel}
           >
             Cancel
@@ -353,7 +356,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         <Button
           type="button"
           variant="secondary"
-          className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[2px] shadow-none"
+          className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-none shadow-none"
           onClick={() => updateSwatchSlot(selectedSlot, currentHex)}
         >
           Replace

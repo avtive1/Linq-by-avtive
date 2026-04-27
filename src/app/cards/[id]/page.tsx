@@ -321,6 +321,7 @@ export default async function CardViewPage(props: {
       isShareMode={isShareMode}
       initialViewMode={initialViewMode}
       impersonateId={impersonateId}
+      shareToken={token}
     />
   );
 }

@@ -131,8 +131,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     getDefaultRegistrationFormConfig(),
   );
   const [isSavingRegistrationForm, setIsSavingRegistrationForm] = useState(false);
-  const [isRegistrationPreviewOpen, setIsRegistrationPreviewOpen] = useState(false);
-  const [previewRole, setPreviewRole] = useState<"guest" | "visitor">("visitor");
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState<"text" | "number" | "url">("text");
   const [isAccessRequestOpen, setIsAccessRequestOpen] = useState(false);
@@ -1310,49 +1308,43 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div>
                   <h3 className="text-xl font-semibold text-heading tracking-[-0.02em]">Registration Form Preview</h3>
                   <p className="text-sm text-muted mt-1">
-                    Preview the lead form for guests and visitors, then customize optional fields.
+                    Preview the lead form for guests and visitors and manage fields in one place.
                   </p>
                 </div>
-                <Button
-                  variant="secondary"
-                  disabled={!canManageEvent}
-                  onClick={() => openRegistrationFormModal("visitor")}
-                  className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
-                >
-                  Customize Form
-                </Button>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Guest Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview to view exact lead form.</p>
+                  <p className="text-xs text-muted mb-3">Click preview form to view and edit fields.</p>
                   <Button
                     variant="secondary"
                     size="sm"
                     className="mb-3"
-                    onClick={() => {
-                      setPreviewRole("guest");
-                      setIsRegistrationPreviewOpen(true);
-                    }}
-                  >
+                    disabled={!canManageEvent}
+                    onClick={() => openRegistrationFormModal("guest")}
+                    >
                     Preview Form
                   </Button>
+                  {!canManageEvent && (
+                    <p className="text-[11px] text-muted -mt-2 mb-2">You need campaign manage access to edit fields.</p>
+                  )}
                   <p className="mt-3 text-xs text-muted">{previewGuestFields.length} fields configured</p>
                 </div>
                 <div className="rounded-md border border-border/60 bg-white p-4">
                   <p className="text-sm font-semibold text-heading">Visitor Form</p>
-                  <p className="text-xs text-muted mb-3">Click preview to view exact lead form.</p>
+                  <p className="text-xs text-muted mb-3">Click preview form to view and edit fields.</p>
                   <Button
                     variant="secondary"
                     size="sm"
                     className="mb-3"
-                    onClick={() => {
-                      setPreviewRole("visitor");
-                      setIsRegistrationPreviewOpen(true);
-                    }}
+                    disabled={!canManageEvent}
+                    onClick={() => openRegistrationFormModal("visitor")}
                   >
                     Preview Form
                   </Button>
+                  {!canManageEvent && (
+                    <p className="text-[11px] text-muted -mt-2 mb-2">You need campaign manage access to edit fields.</p>
+                  )}
                   <p className="mt-3 text-xs text-muted">{previewVisitorFields.length} fields configured</p>
                 </div>
               </div>
@@ -1747,49 +1739,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
       )}
 
-      {isRegistrationPreviewOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => setIsRegistrationPreviewOpen(false)}
-          />
-          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 border-b border-border/30 flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
-                  {previewRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
-                </h2>
-                <p className="text-sm text-muted mt-1">This is the exact field structure leads will see.</p>
-              </div>
-              <button
-                onClick={() => setIsRegistrationPreviewOpen(false)}
-                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="px-8 py-6 flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
-              {getEnabledFieldsForRole(livePreviewConfig, previewRole).map((field) => (
-                <TextInput
-                  key={`preview-${field.id}`}
-                  label={field.label}
-                  required={field.required}
-                  type={field.id === "email" ? "email" : field.inputType}
-                  placeholder={field.placeholder || field.label}
-                  value=""
-                  disabled
-                />
-              ))}
-            </div>
-            <div className="px-8 py-4 border-t border-border/30">
-              <Button fullWidth onClick={() => setIsRegistrationPreviewOpen(false)}>
-                Close Preview
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {isRegistrationFormOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
@@ -1799,9 +1748,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[760px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-border/30">
               <div>
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Customize Registration Form</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Preview Form</h2>
                 <p className="text-sm text-muted mt-1">
-                  Locked fields stay mandatory. Optional fields can be removed or marked required.
+                  Review the exact live form and add or remove fields as needed.
                 </p>
               </div>
               <button
@@ -1834,10 +1783,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 {registrationFormDraft[formBuilderRole].map((field) => (
                   <div key={field.id} className="rounded-md border border-border/60 bg-white px-4 py-3 flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-heading truncate">
-                        {field.label}
-                        {field.locked ? " (locked)" : ""}
-                      </p>
+                      <p className="text-sm font-semibold text-heading truncate">{field.label}</p>
                       <p className="text-xs text-muted mt-1">Type: {field.inputType}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -1873,11 +1819,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           )}
                         </>
                       )}
-                      {field.locked && (
-                        <span className="px-3 py-1.5 text-xs rounded-md border border-border/60 text-muted bg-surface/50">
-                          Locked
-                        </span>
-                      )}
+                      {field.locked && <span className="px-3 py-1.5 text-xs rounded-md border border-border/60 text-muted bg-surface/50">Required</span>}
                     </div>
                   </div>
                 ))}
@@ -1921,7 +1863,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 Cancel
               </Button>
               <Button fullWidth disabled={isSavingRegistrationForm} onClick={saveRegistrationFormConfig}>
-                {isSavingRegistrationForm ? "Saving..." : "Save Form Settings"}
+                {isSavingRegistrationForm ? "Saving..." : "Save Form"}
               </Button>
             </div>
           </div>
