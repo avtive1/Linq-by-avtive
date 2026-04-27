@@ -1340,14 +1340,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div>
                   <h3 className="text-xl font-semibold text-heading tracking-[-0.02em]">Registration Form Preview</h3>
                   <p className="text-sm text-muted mt-1">
-                    Preview the lead form for guests and visitors and manage fields in one place.
+                    Click preview form to open preview + edit controls.
                   </p>
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="rounded-md border border-border/60 bg-white p-4.5">
                   <p className="text-[18px] font-semibold text-heading">Guest Form</p>
-                  <p className="text-[16px] text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
@@ -1364,7 +1363,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
                 <div className="rounded-md border border-border/60 bg-white p-4.5">
                   <p className="text-[18px] font-semibold text-heading">Visitor Form</p>
-                  <p className="text-[16px] text-muted mt-1 mb-3">Click preview form to open preview + edit controls.</p>
                   <Button
                     variant="secondary"
                     size="sm"
