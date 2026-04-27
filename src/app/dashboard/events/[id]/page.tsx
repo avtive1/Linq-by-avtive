@@ -1188,10 +1188,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <Activity size={20} />
                   </span>
                   <div className="flex flex-col">
-                    <span className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
-                      Organization Admin Event Console
+                    <span className="text-2xl sm:text-[30px] font-bold tracking-[-0.02em] text-primary-strong leading-tight">
+                      Campaign Management Console
                     </span>
-                    <span className="text-sm text-muted">Live lead and composition insight</span>
                   </div>
                 </div>
               </div>
