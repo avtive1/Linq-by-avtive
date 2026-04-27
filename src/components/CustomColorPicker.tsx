@@ -15,7 +15,7 @@ type Props = {
 type Rgb = { r: number; g: number; b: number };
 type Hsv = { h: number; s: number; v: number };
 
-const DEFAULT_SWATCHES = ["#C71B1B", "#F3F4F6", "#E5E7EB", "#D1D5DB", "#9CA3AF", "#6B7280", "#4B5563", "#1F2937"];
+const DEFAULT_SWATCHES = ["#C71B1B", "#F3F4F6", "#D1D5DB", "#9CA3AF", "#4B5563"];
 const SWATCHES_STORAGE_KEY = "customColorPickerSlotsV1";
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
@@ -244,7 +244,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         </div>
         <div
           ref={hueRef}
-          className="relative h-48 w-4 cursor-ns-resize rounded-[6px]"
+          className="relative h-48 w-4 cursor-ns-resize rounded-[3px]"
           style={{
             background:
               "linear-gradient(to bottom, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
@@ -281,11 +281,11 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
             style={{ top: `${(hsv.h / 360) * 100}%` }}
           />
         </div>
-        <div className="flex min-w-[102px] flex-col gap-2">
+        <div className="flex min-w-[96px] flex-col gap-1.5">
           <div className="h-10 w-full rounded-[6px] border border-white/15" style={{ background: currentHex }} />
           {(["r", "g", "b"] as const).map((key) => (
             <div key={key} className="flex items-center gap-1.5">
-              <span className="w-4 text-sm uppercase text-white/70">{key}</span>
+              <span className="w-4 text-[12px] uppercase text-white/70">{key}</span>
               <input
                 type="number"
                 min={0}
@@ -296,12 +296,12 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                   const nextRgb = { ...currentRgb, [key]: val };
                   commitColor(rgbToHsv(nextRgb));
                 }}
-                className="h-8 w-16 rounded-[6px] border border-white/20 bg-white px-2 text-sm text-black"
+                className="h-7 w-14 rounded-[5px] border border-white/20 bg-white px-1.5 text-[11px] text-black"
               />
             </div>
           ))}
           <div className="flex items-center gap-1.5">
-            <span className="w-4 text-sm text-white/70">#</span>
+            <span className="w-4 text-[12px] text-white/70">#</span>
             <input
               type="text"
               value={currentHex.replace("#", "")}
@@ -309,13 +309,13 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
                 const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
                 if (raw.length === 6) commitColor(rgbToHsv(hexToRgb(`#${raw}`)));
               }}
-              className="h-8 w-18 rounded-[6px] border border-white/20 bg-white px-2 text-sm uppercase text-black"
+              className="h-7 w-16 rounded-[5px] border border-white/20 bg-white px-1.5 text-[11px] uppercase text-black"
             />
           </div>
         </div>
       </div>
 
-      <div className="mt-2.5 flex gap-1.5">
+      <div className="mt-3 flex gap-3">
         {swatches.map((sw, idx) => (
           <button
             key={`${sw}-${idx}`}
@@ -324,7 +324,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
               setSelectedSlot(idx);
               commitColor(rgbToHsv(hexToRgb(sw)));
             }}
-            className={`h-6 w-6 rounded-[6px] border ${selectedSlot === idx ? "border-white shadow-[0_0_0_2px_rgba(255,255,255,0.45)]" : "border-white/20"}`}
+            className={`h-7 w-7 rounded-[3px] border ${selectedSlot === idx ? "border-white shadow-[0_0_0_2px_rgba(255,255,255,0.45)]" : "border-white/20"}`}
             style={{ background: sw }}
             aria-label={`Select ${sw}`}
           />
@@ -336,7 +336,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-7 min-h-0 px-2.5 text-sm font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[4px] shadow-none"
+            className="!h-6 min-h-0 px-2 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[3px] shadow-none"
             onClick={onConfirm}
           >
             Confirm
@@ -344,7 +344,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-7 min-h-0 px-2.5 text-sm font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[4px] shadow-none"
+            className="!h-6 min-h-0 px-2 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[3px] shadow-none"
             onClick={onCancel}
           >
             Cancel
@@ -353,7 +353,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         <Button
           type="button"
           variant="secondary"
-          className="!h-7 min-h-0 px-2.5 text-sm font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[4px] shadow-none"
+          className="!h-6 min-h-0 px-2 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-[#79D980] hover:text-[#090a0c] rounded-[3px] shadow-none"
           onClick={() => updateSwatchSlot(selectedSlot, currentHex)}
         >
           Replace

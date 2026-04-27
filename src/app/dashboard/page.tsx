@@ -1866,9 +1866,6 @@ function DashboardContent() {
         <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
-            onClick={() => {
-              setIsEventModalOpen(false);
-            }}
           />
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
@@ -1877,14 +1874,6 @@ function DashboardContent() {
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create New Campaign</h2>
                 <p className="text-sm text-muted">Add details for the upcoming conference.</p>
               </div>
-              <button 
-                onClick={() => {
-                  setIsEventModalOpen(false);
-                }}
-                className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
-              >
-                <X size={20} />
-              </button>
             </div>
 
             {/* Modal Body */}
