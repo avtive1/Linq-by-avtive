@@ -149,9 +149,9 @@ export function Button({
   const isBlue = variant === "blue";
   
   const sizeClasses = {
-    sm: "h-9 px-3 text-[14px] leading-[1.25] rounded-md font-semibold",
-    md: "h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold",
-    lg: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-semibold",
+    sm: "h-10 px-4 text-[15px] leading-[1.25] rounded-md font-semibold",
+    md: "h-11 px-5 text-[17px] leading-[1.25] rounded-md font-semibold",
+    lg: "h-12 px-6 text-[18px] leading-[1.25] rounded-md font-semibold",
   };
 
   return (

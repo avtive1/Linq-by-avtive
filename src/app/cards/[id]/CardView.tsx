@@ -421,32 +421,12 @@ export default function CardView({
             <div className="vertical-pair-wrapper">
               <div className="vertical-card-frame">
                 <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  {verticalFrontPreviewUrl && !verticalFrontPreviewFailed ? (
-                    <img
-                      src={verticalFrontPreviewUrl}
-                      alt="Vertical front card preview"
-                      className="h-full w-full object-contain"
-                      loading="eager"
-                      onError={() => setVerticalFrontPreviewFailed(true)}
-                    />
-                  ) : (
-                    <CardPreview data={card} isVertical verticalSide={1} />
-                  )}
+                  <CardPreview data={card} isVertical verticalSide={1} />
                 </div>
               </div>
               <div className="vertical-card-frame">
                 <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  {verticalBackPreviewUrl && !verticalBackPreviewFailed ? (
-                    <img
-                      src={verticalBackPreviewUrl}
-                      alt="Vertical back card preview"
-                      className="h-full w-full object-contain"
-                      loading="eager"
-                      onError={() => setVerticalBackPreviewFailed(true)}
-                    />
-                  ) : (
-                    <CardPreview data={card} isVertical verticalSide={2} />
-                  )}
+                  <CardPreview data={card} isVertical verticalSide={2} />
                 </div>
               </div>
             </div>
@@ -521,10 +501,11 @@ export default function CardView({
           display: flex;
           justify-content: center;
           align-items: flex-start;
-          gap: 180px;
+          gap: 120px;
+          margin-top: -10px;
         }
         .vertical-card-frame {
-          width: 391px;
+          width: 450px;
           overflow: visible;
           display: flex;
           justify-content: center;
@@ -539,13 +520,14 @@ export default function CardView({
         @media (max-width: 1024px) {
           .card-scale-wrapper { overflow: hidden; }
           .vertical-pair-wrapper {
-            gap: 20px;
+            gap: 16px;
             overflow-x: auto;
             justify-content: flex-start;
             padding-bottom: 6px;
+            margin-top: -4px;
           }
           .vertical-card-frame {
-            width: 260px;
+            width: 300px;
             flex: 0 0 auto;
           }
           .card-capture {
@@ -553,8 +535,8 @@ export default function CardView({
             margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "1024px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"})) - ${viewMode === "horizontal" ? "628px" : "1024px"});
           }
           .card-capture-vertical {
-            transform: scale(calc((100vw - 56px) / 1300));
-            margin-bottom: calc((1024px * ((100vw - 56px) / 1300)) - 1024px);
+            transform: scale(0.52);
+            margin-bottom: -492px;
           }
         }
         @media (min-width: 1025px) {
@@ -563,8 +545,8 @@ export default function CardView({
             margin-bottom: ${viewMode === "horizontal" ? "-113px" : "-287px"};
           }
           .card-capture-vertical {
-            transform: scale(0.68);
-            margin-bottom: -328px;
+            transform: scale(0.78);
+            margin-bottom: -225px;
           }
         }
       `}</style>

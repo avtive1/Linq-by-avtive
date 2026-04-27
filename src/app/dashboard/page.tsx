@@ -146,6 +146,7 @@ function DashboardContent() {
     totalEvents: 0,
     totalAttendees: 0,
   });
+  const [topRoles, setTopRoles] = useState<Array<{ role: string; count: number }>>([]);
   const [userEmail, setUserEmail] = useState("");
   const [currentPasswordDraft, setCurrentPasswordDraft] = useState("");
   const [newPasswordDraft, setNewPasswordDraft] = useState("");
@@ -408,6 +409,7 @@ function DashboardContent() {
         setIsCheckingAuth(false);
         setEvents([]);
         setStats({ totalEvents: 0, totalAttendees: 0 });
+        setTopRoles([]);
       }
     };
     checkUser();
@@ -424,6 +426,7 @@ function DashboardContent() {
         // Keep preview/dashboard stable instead of crashing the whole data load on one auth edge case.
         setEvents([]);
         setStats({ totalEvents: 0, totalAttendees: 0 });
+        setTopRoles([]);
         toast.error(message);
         return;
       }
@@ -438,8 +441,47 @@ function DashboardContent() {
         totalAttendees: mappedEvents.reduce((sum, evt) => sum + (evt.attendeeCount || 0), 0),
       });
 
+      if (mappedEvents.length === 0) {
+        setTopRoles([]);
+        return;
+      }
+
+      const attendeesByEvent = await Promise.all(
+        mappedEvents.map(async (evt) => {
+          try {
+            const attendeesRes = await fetch(
+              `/api/events/${evt.id}/attendees${
+                impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""
+              }`,
+            );
+            if (!attendeesRes.ok) return [];
+            const attendeesPayload = await attendeesRes.json().catch(() => null);
+            return Array.isArray(attendeesPayload?.data) ? attendeesPayload.data : [];
+          } catch {
+            return [];
+          }
+        }),
+      );
+
+      if (getIsMounted && !getIsMounted()) return;
+
+      const roleCounts = new Map<string, number>();
+      for (const attendees of attendeesByEvent) {
+        for (const attendee of attendees as Array<Record<string, unknown>>) {
+          const role = String(attendee?.role || "").trim();
+          if (!role) continue;
+          roleCounts.set(role, (roleCounts.get(role) || 0) + 1);
+        }
+      }
+      const rankedRoles = Array.from(roleCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .map(([role, count]) => ({ role, count }));
+      setTopRoles(rankedRoles);
+
     } catch (err: unknown) {
       console.error("Error fetching dashboard data:", err);
+      setTopRoles([]);
       toast.error("Could not load data. Please refresh and try again.");
     }
   };
@@ -1081,7 +1123,7 @@ function DashboardContent() {
               </Link>
             ) : null}
             <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70">
-              {organizationName?.trim() || "Organization"}
+              Dashboard
             </span>
             <h1
               className="text-4xl sm:text-5xl lg:text-6xl font-bold text-heading tracking-tight leading-[1.1]"
@@ -1092,8 +1134,8 @@ function DashboardContent() {
                 : isOrgTeamMember
                   ? "Team Workspace"
                   : isOrgOwner
-                    ? `${orgDisplayName} Dashboard`
-                    : "Dashboard"}
+                    ? orgDisplayName
+                    : "Workspace"}
             </h1>
             {userName && (
               <div className="text-lg font-normal text-muted flex items-center gap-2 mt-1 leading-[1.6]">
@@ -1108,7 +1150,7 @@ function DashboardContent() {
                     }`}
                   >
                     {isOrgOwner ? <ShieldCheck size={12} /> : <UserCheck size={12} />}
-                    {isOrgOwner ? `${orgDisplayName} Admin` : "Team Member"}
+                    {isOrgOwner ? "Admin" : "Team Member"}
                   </span>
                 )}
               </div>
@@ -1229,7 +1271,7 @@ function DashboardContent() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-heading/70">
                   <Activity size={14} className="text-primary-strong" />
-                  Live operational visibility
+                  Analytics
                 </div>
               </div>
 
@@ -1256,7 +1298,7 @@ function DashboardContent() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 {/* Campaign Status — 3-tile visual */}
                 <motion.div
                   className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
@@ -1321,6 +1363,43 @@ function DashboardContent() {
                           </span>
                           <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
                             {evt.attendeeCount || 0}
+                          </span>
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+
+                {/* Top Roles — ranked list */}
+                <motion.div
+                  className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
+                  viewport={presets.viewport}
+                  {...fadeUp(0.12)}
+                  {...hoverLift(-2, 1.005)}
+                >
+                  <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+                    <Users size={14} className="text-primary-strong" />
+                    Top 5 Roles
+                  </p>
+                  <div className="flex flex-col">
+                    {topRoles.length === 0 ? (
+                      <p className="text-sm text-muted">No roles data yet.</p>
+                    ) : (
+                      topRoles.map((entry, roleIdx) => (
+                        <motion.div
+                          key={`${entry.role}-${roleIdx}`}
+                          className="flex items-center gap-3 py-2.5 border-b border-border/25 last:border-0 last:pb-0 first:pt-0"
+                          viewport={presets.viewport}
+                          {...staggerItem(roleIdx, 0.04, 0.2, 8, 0.24)}
+                        >
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-[11px] font-bold text-primary-strong">
+                            {roleIdx + 1}
+                          </span>
+                          <span className="flex-1 truncate text-sm font-medium text-heading leading-tight">
+                            {entry.role}
+                          </span>
+                          <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
+                            {entry.count}
                           </span>
                         </motion.div>
                       ))
@@ -1413,11 +1492,11 @@ function DashboardContent() {
         {/* Search Bar + Filters */}
         <motion.div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
           <div className="relative flex-1">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={20} strokeWidth={2.5} />
+            <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={22} strokeWidth={2.5} />
             <input
               type="text"
               placeholder={isTeamMemberMode ? "Search assigned campaigns..." : "Search campaigns..."}
-              className={`w-full h-12 pl-20 pr-6 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-base leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
+              className={`w-full h-14 pl-24 pr-7 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-[17px] leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
                 isPreviewMode
                   ? "bg-white/90 border border-heading/20 focus:bg-white"
                   : isTeamMemberMode || isOrgAdminMode
@@ -1432,13 +1511,13 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setIsEventFilterOpen((prev) => !prev)}
-              className={`h-12 px-5 rounded-md border shadow-sm inline-flex items-center gap-2 text-sm font-medium transition-all duration-150 ${
+              className={`h-14 px-6 rounded-md border shadow-sm inline-flex items-center gap-2.5 text-base font-semibold transition-all duration-150 ${
                 isEventFilterOpen
                   ? "bg-primary/10 border-primary/30 text-primary-strong"
                   : "bg-white/92 border-primary/20 text-heading hover:bg-white hover:border-primary/30"
               }`}
             >
-              <SlidersHorizontal size={16} />
+              <SlidersHorizontal size={18} />
               Filter
             </button>
             {isEventFilterOpen && (
@@ -1734,8 +1813,8 @@ function DashboardContent() {
                     </h3>
                     
                     <div className="flex flex-col gap-2 mb-6">
-                      <div className="flex items-center gap-3 text-heading font-normal bg-white/50 w-fit px-3 py-2 rounded-md border border-border/60 shadow-sm">
-                        <Calendar size={18} className="text-primary-strong" />
+                      <div className="flex items-center gap-3 text-muted font-normal px-1">
+                        <Calendar size={18} className="text-muted/60" />
                         <span className="text-sm leading-[1.6] tracking-[0em]">{evt.date}</span>
                       </div>
                       <div className="flex items-center gap-3 text-muted font-normal px-1">
