@@ -65,6 +65,7 @@ type ActiveGrant = {
   permission: string;
   created_at: string;
 };
+const CORE_PREVIEW_FIELD_IDS = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
 
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const EVENT_NAME_MAX_CHARS = 18;
@@ -1748,9 +1749,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[760px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between border-b border-border/30">
               <div>
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Preview Form</h2>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                  {formBuilderRole === "guest" ? "Guest Preview" : "Visitor Preview"}
+                </h2>
                 <p className="text-sm text-muted mt-1">
-                  Review the exact live form and add or remove fields as needed.
+                  Review the live form and manage custom fields in one place.
                 </p>
               </div>
               <button
@@ -1784,46 +1787,50 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   {formBuilderRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
                 </p>
                 <div className="grid gap-3">
-                  {getEnabledFieldsForRole(registrationFormDraft, formBuilderRole).map((field) => (
-                    <TextInput
-                      key={`builder-preview-${formBuilderRole}-${field.id}`}
-                      label={field.label}
-                      required={field.required}
-                      type={field.id === "email" ? "email" : field.inputType}
-                      placeholder={field.placeholder || field.label}
-                      value=""
-                      disabled
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                {registrationFormDraft[formBuilderRole].map((field) => (
-                  <div key={field.id} className="rounded-md border border-border/60 bg-white px-4 py-3 flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-heading truncate">{field.label}</p>
-                      <p className="text-xs text-muted mt-1">Type: {field.inputType}</p>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      {!field.locked && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              updateDraftFields(formBuilderRole, (fields) =>
-                                fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
-                              )
-                            }
-                            className={`px-3 py-1.5 text-xs rounded-md border font-semibold ${
-                              field.required
-                                ? "bg-primary/10 border-primary/30 text-primary-strong"
-                                : "bg-white border-border text-muted"
-                            }`}
-                          >
-                            {field.required ? "Required" : "Optional"}
-                          </button>
-                          {!["company", "email", "linkedin", "photo"].includes(field.id) && (
+                  {getEnabledFieldsForRole(registrationFormDraft, formBuilderRole).map((field) => {
+                    const isCustomField = !CORE_PREVIEW_FIELD_IDS.has(field.id);
+                    if (!isCustomField) {
+                      return (
+                        <TextInput
+                          key={`builder-preview-${formBuilderRole}-${field.id}`}
+                          label={field.label}
+                          required={field.required}
+                          type={field.id === "email" ? "email" : field.inputType}
+                          placeholder={field.placeholder || field.label}
+                          value=""
+                          disabled
+                        />
+                      );
+                    }
+                    return (
+                      <div
+                        key={`builder-preview-${formBuilderRole}-${field.id}`}
+                        className="rounded-md border border-primary/35 bg-white p-3 shadow-[0_4px_10px_rgba(23,58,35,0.06)]"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-heading">
+                              {field.label}
+                              {field.required ? " *" : ""}
+                            </p>
+                            <p className="text-xs text-muted mt-0.5">Custom field • Type: {field.inputType}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                updateDraftFields(formBuilderRole, (fields) =>
+                                  fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
+                                )
+                              }
+                              className={`px-2.5 py-1 text-[11px] rounded-md border font-semibold ${
+                                field.required
+                                  ? "bg-primary/10 border-primary/30 text-primary-strong"
+                                  : "bg-white border-border text-muted"
+                              }`}
+                            >
+                              {field.required ? "Required" : "Optional"}
+                            </button>
                             <button
                               type="button"
                               onClick={() =>
@@ -1831,17 +1838,22 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                                   fields.filter((f) => f.id !== field.id),
                                 )
                               }
-                              className="px-3 py-1.5 text-xs rounded-md border border-red-200 text-red-600 bg-red-50"
+                              className="px-2.5 py-1 text-[11px] rounded-md border border-red-200 text-red-600 bg-red-50"
                             >
-                              Remove
+                              Delete
                             </button>
-                          )}
-                        </>
-                      )}
-                      {field.locked && <span className="px-3 py-1.5 text-xs rounded-md border border-border/60 text-muted bg-surface/50">Required</span>}
-                    </div>
-                  </div>
-                ))}
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          disabled
+                          className="mt-2 h-10 w-full rounded-md border border-primary/25 bg-primary/5 px-3 text-[13px] text-heading/70"
+                          placeholder={field.placeholder || field.label}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
 
               <div className="rounded-md border border-dashed border-border/70 bg-surface/30 p-4">
