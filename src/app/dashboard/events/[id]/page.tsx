@@ -1994,11 +1994,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsShareActionsOpen(false)}
           />
-          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>
-                <p className="text-sm text-muted">
+                <h3 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>
+                <p className="text-base text-muted mt-1">
                   {shareDraftRole === "guest"
                     ? "Use this guest link directly."
                     : "Use the link directly or share on LinkedIn."}
@@ -2012,11 +2012,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <X size={18} />
               </button>
             </div>
-            <div className="px-6 pb-6 flex flex-col gap-3">
+            <div className="px-8 pb-8 flex flex-col gap-4">
               {shareDraftRole === "visitor" && (
-                <div className="rounded-md border border-border/60 bg-surface/40 px-3 py-2">
-                  <p className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted mb-1">Default LinkedIn caption</p>
-                  <p className="text-xs text-heading wrap-break-word">{shareDraftMessage}</p>
+                <div className="rounded-md border border-border/60 bg-surface/40 px-4 py-3">
+                  <p className="text-sm font-medium tracking-[0.01em] leading-tight text-muted mb-1.5">Default LinkedIn caption</p>
+                  <p className="text-sm text-heading wrap-break-word">{shareDraftMessage}</p>
                 </div>
               )}
               <div className={`grid gap-3 ${shareDraftRole === "visitor" ? "grid-cols-2" : "grid-cols-1"}`}>

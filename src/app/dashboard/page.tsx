@@ -1175,77 +1175,99 @@ function DashboardContent() {
 
           <div className="flex gap-3 items-center">
             {isAdmin && (
-               <Link href="/admin">
-                <Button
-                  variant="secondary"
-                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium"
-                  icon={<Sparkles size={18} />}
-                >
-                  Admin Panel
-                </Button>
-               </Link>
+              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+                <Link href="/admin">
+                  <Button
+                    variant="secondary"
+                    className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium"
+                    icon={<Sparkles size={18} />}
+                  >
+                    Admin Panel
+                  </Button>
+                </Link>
+              </motion.div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  if (isOrgTeamMember && !hasCreateCampaignPermission) {
-                    setIsRequestPermissionModalOpen(true);
-                    return;
-                  }
-                  setIsEventModalOpen(true);
+              <motion.div
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.965 }}
+                animate={{
+                  boxShadow: [
+                    "0 0 0 rgba(111,166,255,0.0)",
+                    "0 0 0 8px rgba(111,166,255,0.14)",
+                    "0 0 0 rgba(111,166,255,0.0)",
+                  ],
                 }}
-                className={`min-w-[168px] whitespace-nowrap justify-center bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
-                  isOrgTeamMember && !hasCreateCampaignPermission
-                    ? "cursor-help shadow-inner bg-danger/5 border-danger/20 text-danger hover:bg-danger/10 hover:border-danger/30"
-                    : "shadow-sm hover:shadow-md"
-                }`}
-                title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
-                icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
+                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                className="rounded-md"
               >
-                <span>New Campaign</span>
-              </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (isOrgTeamMember && !hasCreateCampaignPermission) {
+                      setIsRequestPermissionModalOpen(true);
+                      return;
+                    }
+                    setIsEventModalOpen(true);
+                  }}
+                  className={`min-w-[168px] whitespace-nowrap justify-center bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
+                    isOrgTeamMember && !hasCreateCampaignPermission
+                      ? "cursor-help shadow-inner bg-danger/5 border-danger/20 text-danger hover:bg-danger/10 hover:border-danger/30"
+                      : "shadow-sm hover:shadow-md"
+                  }`}
+                  title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
+                  icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
+                >
+                  <span>New Campaign</span>
+                </Button>
+              </motion.div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && !isOrgTeamMember && (
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  void openTeamAccessModal("list");
-                }}
-                className="min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
-                icon={<Users size={18} />}
-              >
-                Team Access
-              </Button>
+              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    void openTeamAccessModal("list");
+                  }}
+                  className="min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  icon={<Users size={18} />}
+                >
+                  Team Access
+                </Button>
+              </motion.div>
             )}
             {!isPreviewMode && (
+              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setUsernameDraft(userName);
+                    setOrganizationDraft(organizationName);
+                    setUserEmail(session?.user?.email || "");
+                    setCurrentPasswordDraft("");
+                    setNewPasswordDraft("");
+                    setPasswordError("");
+                    setUsernameError("");
+                    setOrganizationLogoDraft("");
+                    setIsUsernameModalOpen(true);
+                  }}
+                  className="whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  icon={<Settings size={18} />}
+                >
+                  <span className="hidden sm:inline">Settings</span>
+                </Button>
+              </motion.div>
+            )}
+            <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
               <Button
                 variant="secondary"
-                onClick={() => {
-                  setUsernameDraft(userName);
-                  setOrganizationDraft(organizationName);
-                  setUserEmail(session?.user?.email || "");
-                  setCurrentPasswordDraft("");
-                  setNewPasswordDraft("");
-                  setPasswordError("");
-                  setUsernameError("");
-                  setOrganizationLogoDraft("");
-                  setIsUsernameModalOpen(true);
-                }}
-                className="whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
-                icon={<Settings size={18} />}
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                icon={isLoggingOut ? undefined : <LogOut size={18} />}
               >
-                <span className="hidden sm:inline">Settings</span>
+                <span className="hidden sm:inline">{isLoggingOut ? "..." : "Logout"}</span>
               </Button>
-            )}
-            <Button
-              variant="secondary"
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              icon={isLoggingOut ? undefined : <LogOut size={18} />}
-            >
-              <span className="hidden sm:inline">{isLoggingOut ? "..." : "Logout"}</span>
-            </Button>
+            </motion.div>
           </div>
         </motion.div>
         {isOrgAdminMode && (
