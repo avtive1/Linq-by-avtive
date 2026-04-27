@@ -107,7 +107,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", location: "", location_type: "onsite", date: "", time: "" });
+  const [editForm, setEditForm] = useState({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Delete event modal
@@ -393,6 +393,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       location_type: eventData.location_type || "onsite",
       date: eventData.date || "",
       time: eventData.time || "",
+      logo: eventData.logo_url || "",
     });
     setIsEditOpen(true);
   };
@@ -414,6 +415,28 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     setIsSavingEdit(true);
     try {
+      let logo_url = eventData?.logo_url || "";
+      if (editForm.logo && editForm.logo.startsWith("data:")) {
+        if (!userId) {
+          throw new Error("You must be logged in to update campaign logo.");
+        }
+        const uploadRes = await fetch("/api/media/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            dataUrl: editForm.logo,
+            folder: `events/${userId}`,
+          }),
+        });
+        const uploadPayload = await uploadRes.json();
+        if (!uploadRes.ok || !uploadPayload?.data?.url) {
+          throw new Error(uploadPayload?.error || "Campaign logo upload failed.");
+        }
+        logo_url = String(uploadPayload.data.url);
+      } else if (typeof editForm.logo === "string" && editForm.logo.trim()) {
+        logo_url = editForm.logo.trim();
+      }
+
       const updateRes = await fetch(`/api/events/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -423,6 +446,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           location_type: editForm.location_type,
           date: editForm.date,
           time: editForm.time,
+          logo_url,
         }),
       });
       const updatePayload = await updateRes.json();
@@ -435,13 +459,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         location_type: editForm.location_type,
         date: editForm.date,
         time: editForm.time,
+        logo_url,
       } : prev);
-      toast.success("Event updated.");
+      toast.success("Campaign updated.");
       router.refresh();
       setIsEditOpen(false);
     } catch (err) {
       console.error("Error updating event:", err);
-      toast.error("Failed to update event.");
+      toast.error("Failed to update campaign.");
     } finally {
       setIsSavingEdit(false);
     }
@@ -2135,7 +2160,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
       )}
 
-      {/* Edit Event Modal */}
+      {/* Edit Campaign Modal */}
       {isEditOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
           <div
@@ -2145,8 +2170,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Event</h2>
-                <p className="text-sm text-muted">Update the event details below.</p>
+                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Campaign</h2>
+                <p className="text-sm text-muted">Update the campaign details below.</p>
               </div>
               <button
                 onClick={() => setIsEditOpen(false)}
@@ -2159,7 +2184,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <form onSubmit={handleEditSubmit} className="p-8 pt-4 flex flex-col gap-6">
               <div className="flex flex-col gap-4">
                 <TextInput
-                  label="Name of the Event"
+                  label="Name of the Campaign"
                   required
                   value={editForm.name}
                   maxLength={EVENT_NAME_MAX_CHARS}
@@ -2224,6 +2249,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     onChange={(v) => setEditForm({ ...editForm, time: v })}
                   />
                 </div>
+
+                <FilePicker
+                  label="Campaign Logo"
+                  required
+                  value={editForm.logo}
+                  onChange={(v) => setEditForm({ ...editForm, logo: v })}
+                  onError={(msg) => toast.error(msg)}
+                  cropTitle="Crop campaign logo"
+                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropApplyLabel="Apply logo"
+                />
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
