@@ -370,15 +370,15 @@ export function CardPreview({
           style={{ background: theme.accent === "#000000" ? "#FFFFFF" : theme.accent || "#FFFFFF" }}
         />
         <div 
-          className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none z-1" 
+          className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none z-[1]" 
           style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} 
         />
 
         {/* Background Overlays - masked by z-index */}
         <div className="absolute inset-0 z-0 pointer-events-none">
           <img 
-            src="https://www.figma.com/api/mcp/asset/cfa963ed-fe15-42b0-a98e-e2e901c4176a" 
-            className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] max-w-none" 
+            src="/card-assets/buildings-overlay-vertical.png" 
+            className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] z-[1] max-w-none" 
             alt="" 
           />
         </div>
@@ -554,12 +554,12 @@ export function CardPreview({
         style={{ background: theme.accent === "#000000" ? "#FFFFFF" : theme.accent || "#FFFFFF" }}
       />
       <div 
-        className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none z-1" 
+        className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none z-[1]" 
         style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} 
       />
 
       {/* Background Overlays */}
-      <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none z-1" src="https://www.figma.com/api/mcp/asset/a068f32c-5159-4502-a8f7-c3748e1a7c88" alt="" />
+      <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none z-[1]" src="/card-assets/buildings-overlay-horizontal.png" alt="" />
       
       <p className="absolute left-[58px] top-[81px] m-0 font-medium text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
         {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
