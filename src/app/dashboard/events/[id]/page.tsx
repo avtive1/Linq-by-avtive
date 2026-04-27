@@ -1935,11 +1935,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsGuestCategoryOpen(false)}
           />
-          <div className="relative w-full max-w-[430px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Guest Category</h3>
-                <p className="text-sm text-muted">Type category like Judge, Speaker, Chief Guest, Evaluator.</p>
+                <h3 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Guest Category</h3>
+                <p className="text-base text-muted mt-1">Type category like Judge, Speaker, Chief Guest, Evaluator.</p>
               </div>
               <button
                 type="button"
@@ -1950,7 +1950,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </button>
             </div>
             <form
-              className="px-6 pb-6 flex flex-col gap-3"
+              className="px-8 pb-8 flex flex-col gap-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 const value = guestCategoryInput.trim();
@@ -1975,7 +1975,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }}
               />
               {guestCategoryError && <p className="text-sm font-normal leading-[1.6] text-red-500">{guestCategoryError}</p>}
-              <div className="flex gap-3 pt-1">
+              <div className="flex gap-3 pt-2">
                 <Button type="button" variant="secondary" fullWidth onClick={() => setIsGuestCategoryOpen(false)}>
                   Cancel
                 </Button>
@@ -1994,7 +1994,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsShareActionsOpen(false)}
           />
-          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[640px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div>
                 <h3 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>

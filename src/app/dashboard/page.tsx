@@ -1190,15 +1190,8 @@ function DashboardContent() {
             {!isPreviewMode && !hasPendingOrgJoin && (
               <motion.div
                 whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.965 }}
-                animate={{
-                  boxShadow: [
-                    "0 0 0 rgba(111,166,255,0.0)",
-                    "0 0 0 8px rgba(111,166,255,0.14)",
-                    "0 0 0 rgba(111,166,255,0.0)",
-                  ],
-                }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                whileTap={{ scale: 0.94 }}
+                transition={{ type: "spring", stiffness: 400, damping: 24 }}
                 className="rounded-md"
               >
                 <Button
