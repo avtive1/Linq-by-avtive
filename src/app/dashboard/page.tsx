@@ -1360,72 +1360,7 @@ function DashboardContent() {
             </p>
           </motion.div>
         )}
-        {/* Bento Grid Statistics Section */}
-        {!isPreviewMode ? (
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8"
-            viewport={presets.viewport}
-            active-tokens="motion-token-enter"
-          >
-            {/* Live Presence Metric */}
-            <motion.div
-              className={`flex items-center gap-6 p-8 rounded-md group transition-all duration-300 ${
-                isOrgAdminMode || isTeamMemberMode
-                  ? "bg-white/95 border border-primary/20 shadow-md ring-1 ring-primary/5 shadow-primary/5"
-                  : "glass-panel hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/40"
-              }`}
-              viewport={presets.viewport}
-              {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
-            >
-              <div className={`w-14 h-14 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-                isOrgAdminMode || isTeamMemberMode
-                  ? "bg-primary/12 text-primary-strong border border-primary/25"
-                  : "bg-primary/15 text-primary-strong hover:bg-primary/25"
-              }`}>
-                <Users size={28} />
-              </div>
-              <div className="flex flex-col">
-                <span className={isOrgAdminMode ? "mb-1 text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow mb-1"}>Live Presence</span>
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
-                    <AnimatedCounter value={stats.totalAttendees} />
-                  </span>
-                  <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Attendees</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Total Events Metric */}
-            <motion.div
-              className={`flex items-center gap-6 p-8 rounded-md group transition-all duration-300 ${
-                isOrgAdminMode || isTeamMemberMode
-                  ? "bg-white/95 border border-primary/20 shadow-md ring-1 ring-primary/5 shadow-primary/5"
-                  : "glass-panel hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/40"
-              }`}
-              viewport={presets.viewport}
-              {...(isTeamMemberMode || isOrgAdminMode ? hoverLift(-4, 1.012) : {})}
-            >
-              <div className={`w-14 h-14 rounded-md flex items-center justify-center shrink-0 transition-transform group-hover:scale-105 ${
-                isOrgAdminMode || isTeamMemberMode
-                  ? "bg-primary/12 text-primary-strong border border-primary/25"
-                  : "bg-primary/15 text-primary-strong hover:bg-primary/25"
-              }`}>
-                <BarChart3 size={28} />
-              </div>
-              <div className="flex flex-col">
-                <span className={isOrgAdminMode ? "mb-1 text-xs font-semibold uppercase tracking-wide text-muted" : "ui-eyebrow mb-1"}>
-                  {isTeamMemberMode ? "Assigned Workload" : isOrgAdminMode ? "Campaign Command" : "Activity Tracking"}
-                </span>
-                <div className="flex items-baseline gap-2">
-                  <span className={`text-5xl font-medium tracking-[-0.01em] leading-[1.02] ${isOrgAdminMode ? "text-heading" : "text-heading"}`}>
-                    <AnimatedCounter value={stats.totalEvents} />
-                  </span>
-                  <span className={`text-lg font-bold ${isOrgAdminMode ? "text-primary-strong" : "text-primary-strong"}`}>Total Campaigns</span>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : (
+        {!isPreviewMode ? null : (
           <div className="motion-token-enter mb-10 p-7 rounded-2xl border border-heading/10 bg-linear-to-br from-white via-white/40 to-primary/5 shadow-md backdrop-blur-xl ring-1 ring-white/20 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
             

@@ -1519,7 +1519,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link href={`/cards/${card.id}`} className="shrink-0">
+                    <Link
+                      href={`/cards/${card.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`}
+                      className="shrink-0"
+                    >
                       <Button
                         variant="secondary"
                         icon={

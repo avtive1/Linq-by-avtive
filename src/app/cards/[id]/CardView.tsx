@@ -13,10 +13,12 @@ export default function CardView({
   card,
   isShareMode = false,
   initialViewMode = "horizontal",
+  impersonateId = "",
 }: {
   card: CardData;
   isShareMode?: boolean;
   initialViewMode?: "horizontal" | "vertical";
+  impersonateId?: string;
 }) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
@@ -40,6 +42,14 @@ export default function CardView({
     () => String(card.verticalBackUrl || "").trim(),
     [card.verticalBackUrl],
   );
+  const backHref = useMemo(() => {
+    if (card?.eventId) {
+      return impersonateId
+        ? `/dashboard/events/${card.eventId}?impersonate=${encodeURIComponent(impersonateId)}`
+        : `/dashboard/events/${card.eventId}`;
+    }
+    return impersonateId ? `/dashboard?impersonate=${encodeURIComponent(impersonateId)}` : "/dashboard";
+  }, [card?.eventId, impersonateId]);
 
   useEffect(() => {
     try {
@@ -130,24 +140,41 @@ export default function CardView({
   };
 
   const getVerticalExports = async () => {
-    if (!verticalFrontExportRef.current || !verticalBackExportRef.current) {
-      throw new Error("Badge previews are not ready yet.");
-    }
-    const [frontDataUrl, backDataUrl] = await Promise.all([
-      toPng(verticalFrontExportRef.current, {
+    const blobToDataUrl = (blob: Blob) =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Failed to read badge image blob."));
+        reader.readAsDataURL(blob);
+      });
+    const getBlobFromUrl = async (url: string) => {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to fetch badge image (${res.status}).`);
+      return res.blob();
+    };
+    const getBlobFromRef = async (ref: HTMLDivElement | null) => {
+      if (!ref) throw new Error("Badge previews are not ready yet.");
+      const dataUrl = await toPng(ref, {
         quality: 1,
         pixelRatio: 2,
         backgroundColor: "#ffffff",
         skipFonts: false,
-      }),
-      toPng(verticalBackExportRef.current, {
-        quality: 1,
-        pixelRatio: 2,
-        backgroundColor: "#ffffff",
-        skipFonts: false,
-      }),
+      });
+      const res = await fetch(dataUrl);
+      if (!res.ok) throw new Error("Failed to render badge export image.");
+      return res.blob();
+    };
+
+    const [frontBlob, backBlob] = await Promise.all([
+      verticalFrontPreviewUrl && !verticalFrontPreviewFailed
+        ? getBlobFromUrl(verticalFrontPreviewUrl)
+        : getBlobFromRef(verticalFrontExportRef.current),
+      verticalBackPreviewUrl && !verticalBackPreviewFailed
+        ? getBlobFromUrl(verticalBackPreviewUrl)
+        : getBlobFromRef(verticalBackExportRef.current),
     ]);
-    return { frontDataUrl, backDataUrl };
+    const [frontDataUrl, backDataUrl] = await Promise.all([blobToDataUrl(frontBlob), blobToDataUrl(backBlob)]);
+    return { frontDataUrl, backDataUrl, frontBlob, backBlob };
   };
 
   const handleDownloadBadgePdf = async () => {
@@ -190,13 +217,9 @@ export default function CardView({
     setIsDownloading(true);
     setShowBadgeDownloadMenu(false);
     try {
-      const { frontDataUrl, backDataUrl } = await getVerticalExports();
+      const { frontBlob, backBlob } = await getVerticalExports();
       const [{ default: JSZip }] = await Promise.all([import("jszip")]);
       const zip = new JSZip();
-      const [frontBlob, backBlob] = await Promise.all([
-        fetch(frontDataUrl).then((res) => res.blob()),
-        fetch(backDataUrl).then((res) => res.blob()),
-      ]);
       const base = card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee";
       zip.file(`${base}-badge-front.png`, frontBlob);
       zip.file(`${base}-badge-back.png`, backBlob);
@@ -248,7 +271,7 @@ export default function CardView({
              ) : (
                 <div className="flex items-center gap-3">
                   <Link
-                    href={card?.eventId ? `/dashboard/events/${card.eventId}` : "/dashboard"}
+                    href={backHref}
                     className="inline-flex items-center gap-2 text-sm font-medium text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
                   >
                     <ArrowLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
@@ -502,10 +525,10 @@ export default function CardView({
         }
         .vertical-card-frame {
           width: 391px;
-          height: 695px;
-          overflow: hidden;
+          overflow: visible;
           display: flex;
           justify-content: center;
+          align-items: flex-start;
         }
         .card-capture {
           transform-origin: top center;
@@ -523,7 +546,6 @@ export default function CardView({
           }
           .vertical-card-frame {
             width: 260px;
-            height: 462px;
             flex: 0 0 auto;
           }
           .card-capture {

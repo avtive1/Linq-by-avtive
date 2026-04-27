@@ -100,7 +100,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
 // This makes the page a Server Component
 export default async function CardViewPage(props: { 
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ share?: string; token?: string }>;
+  searchParams: Promise<{ share?: string; token?: string; impersonate?: string }>;
 }) {
   const appendVersionParam = (url: string, version: string) => {
     const cleanUrl = String(url || "").trim();
@@ -130,6 +130,7 @@ export default async function CardViewPage(props: {
   const initialViewMode: "horizontal" | "vertical" =
     savedViewMode === "vertical" ? "vertical" : "horizontal";
   const token = String(searchParams?.token || "");
+  const impersonateId = String(searchParams?.impersonate || "").trim();
   let card: CardData | null = null;
 
   try {
@@ -314,5 +315,12 @@ export default async function CardViewPage(props: {
     );
   }
 
-  return <CardView card={card} isShareMode={isShareMode} initialViewMode={initialViewMode} />;
+  return (
+    <CardView
+      card={card}
+      isShareMode={isShareMode}
+      initialViewMode={initialViewMode}
+      impersonateId={impersonateId}
+    />
+  );
 }
