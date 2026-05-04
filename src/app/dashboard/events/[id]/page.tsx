@@ -1374,7 +1374,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div>
                   <h3 className="text-xl font-semibold text-heading tracking-[-0.02em]">Registration Form Preview</h3>
                   <p className="text-sm text-muted mt-1">
-                    Click preview form to open preview + edit controls.
+                    Click preview form to open preview & edit controls.
                   </p>
                 </div>
               </div>

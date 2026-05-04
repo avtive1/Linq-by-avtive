@@ -160,6 +160,14 @@ function NewCardForm() {
         newErrors[field.id] = `${field.label} is required`;
       }
     });
+    
+    // Explicit mandatory checks for Email and Organization
+    if (enabledFields.some(f => f.id === "email") && !form.email.trim()) {
+      newErrors.email = "Email is required";
+    }
+    if (enabledFields.some(f => f.id === "company") && !form.company.trim()) {
+      newErrors.company = "Organization is required";
+    }
 
     if (enabledFields.some((field) => field.id === "email") && form.email && !/\S+@\S+\.\S+/.test(form.email)) {
       newErrors.email = "Invalid email format";
@@ -461,7 +469,7 @@ function NewCardForm() {
                   <TextInput
                     key={field.id}
                     label={field.label}
-                    required={field.required}
+                    required={true}
                     placeholder={field.placeholder || "Organization"}
                     value={form.company}
                     error={errors.company}
@@ -474,7 +482,7 @@ function NewCardForm() {
                   <TextInput
                     key={field.id}
                     label={field.label}
-                    required={field.required}
+                    required={true}
                     type="email"
                     icon="email"
                     placeholder={field.placeholder || "hello@example.com"}
