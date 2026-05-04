@@ -62,6 +62,68 @@ function toTime24(hour12: string, minute: string, period: "AM" | "PM"): string {
   return `${String(hour24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
+export function TextArea({
+  label,
+  required,
+  placeholder,
+  value,
+  onChange,
+  error,
+  className = "",
+  readOnly,
+  maxLength,
+  disabled,
+  rows = 2,
+}: InputProps & { rows?: number }) {
+  const isLocked = Boolean(disabled || readOnly);
+  const borderClasses = error
+    ? "border-red-500 focus-within:border-red-500"
+    : isLocked
+      ? "border-slate-200 focus-within:border-slate-300 focus-within:border-[1.5px]"
+      : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]";
+
+  return (
+    <div className={`flex flex-col gap-2 w-full group ${className}`}>
+      {label && (
+        <div className="flex items-center gap-1">
+          <label
+            className={`text-[14px] font-medium leading-[1.25] tracking-[0.01em] ${isLocked ? "text-muted" : "text-heading"}`}
+          >
+            {label}
+          </label>
+          {required && <span className="text-primary-strong text-[14px] font-semibold leading-[1.25]">*</span>}
+        </div>
+      )}
+      <div 
+        className={`
+          flex border rounded-md shadow-sm transition-all duration-200 overflow-hidden
+          ${borderClasses}
+          ${isLocked ? "bg-slate-100 cursor-not-allowed" : "bg-white"}
+        `}
+      >
+        <textarea
+          rows={rows}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange?.(e.target.value)}
+          readOnly={readOnly}
+          disabled={disabled}
+          maxLength={maxLength}
+          className={`w-full p-4 text-[16px] leading-[1.6] border-none outline-none focus:ring-0 placeholder:text-muted/40 placeholder:font-normal font-normal resize-none ${
+            isLocked ? "text-slate-500 cursor-not-allowed bg-transparent" : "text-heading bg-transparent"
+          }`}
+        />
+      </div>
+      {maxLength && (
+        <p className={`text-[12px] font-medium text-right mt-1 ${String(value || "").length >= maxLength ? "text-amber-600" : "text-muted"}`}>
+          {String(value || "").length}/{maxLength}
+        </p>
+      )}
+      {error && <p className="text-[14px] font-medium leading-[1.55] text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+}
+
 export function TextInput({
   label,
   required,

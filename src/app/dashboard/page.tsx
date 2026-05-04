@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
+import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
@@ -78,6 +78,7 @@ const toOrganizationDisplayName = (rawName: string) => {
 
 function DashboardContent() {
   const EVENT_NAME_MAX_CHARS = 18;
+  const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
   const router = useRouter();
   const searchParams = useSearchParams();
   const impersonateId = searchParams.get("impersonate");
@@ -133,6 +134,7 @@ function DashboardContent() {
   const [ownerProfileSetupError, setOwnerProfileSetupError] = useState("");
   const [eventForm, setEventForm] = useState({
     name: "",
+    description: "",
     location: "",
     location_type: "onsite" as "onsite" | "webinar",
     date: "",
@@ -687,6 +689,7 @@ function DashboardContent() {
       
       const data = {
         name: eventForm.name,
+        description: eventForm.description,
         location: eventForm.location_type === "webinar" ? "Webinar" : eventForm.location,
         location_type: eventForm.location_type,
         date: eventForm.date,
@@ -706,7 +709,7 @@ function DashboardContent() {
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
-      setEventForm({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
+      setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
       fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId));
     } catch (err: unknown) {
       console.error(err);
@@ -1876,34 +1879,42 @@ function DashboardContent() {
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white border border-border/70 rounded-md shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+            <div className="px-8 pt-6 pb-3 flex items-center justify-between border-b border-border/50 shrink-0">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create New Campaign</h2>
-                <p className="text-sm text-muted">Add details for the upcoming conference.</p>
+                <h2 className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Create New Campaign</h2>
+                <p className="text-[13px] text-muted">Add details for your upcoming campaign.</p>
               </div>
+              <button onClick={() => setIsEventModalOpen(false)} className="text-muted hover:text-heading p-1"><X size={20}/></button>
             </div>
 
             {/* Modal Body */}
-            <form onSubmit={handleEventSubmit} className="p-8 pt-4 flex flex-col gap-6">
-              <div className="flex flex-col gap-4">
-                <TextInput
-                  label="Name of the Campaign"
-                  required
-                  placeholder="e.g. TechConf 2026"
-                  value={eventForm.name}
-                  maxLength={EVENT_NAME_MAX_CHARS}
-                  onChange={(v) => setEventForm({ ...eventForm, name: v })}
+            <form onSubmit={handleEventSubmit} className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
+              <div className="flex flex-col gap-5 pb-20">
+                <div className="flex flex-col gap-1.5">
+                  <TextInput
+                    label="Name of the Campaign"
+                    required
+                    placeholder="e.g. TechConf 2026"
+                    value={eventForm.name}
+                    maxLength={EVENT_NAME_MAX_CHARS}
+                    onChange={(v) => setEventForm({ ...eventForm, name: v })}
+                  />
+                  <div className="flex justify-end">
+                    <span className={`text-[11px] font-medium ${eventForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"}`}>
+                      {eventForm.name.length}/{EVENT_NAME_MAX_CHARS} chars
+                    </span>
+                  </div>
+                </div>
+
+                <TextArea
+                  label="Campaign Description"
+                  placeholder="Describe your campaign (e.g. goals, audience)..."
+                  value={eventForm.description}
+                  maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
+                  onChange={(v: string) => setEventForm({ ...eventForm, description: v })}
                 />
-                <p
-                  className={`-mt-2 text-sm leading-[1.6] font-normal ${
-                    eventForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"
-                  }`}
-                >
-                  {eventForm.name.length}/{EVENT_NAME_MAX_CHARS} characters
-                  {eventForm.name.length >= EVENT_NAME_MAX_CHARS ? " (maximum reached)" : " max"}
-                </p>
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
@@ -1966,13 +1977,12 @@ function DashboardContent() {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-border/50 p-6 flex flex-col sm:flex-row gap-3 mt-auto shrink-0">
                 <Button 
                   variant="secondary" 
                   fullWidth 
-                  onClick={() => {
-                    setIsEventModalOpen(false);
-                  }}
+                  onClick={() => setIsEventModalOpen(false)}
                   className="order-2 sm:order-1"
                 >
                   Cancel

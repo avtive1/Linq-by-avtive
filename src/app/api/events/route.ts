@@ -65,12 +65,13 @@ export async function GET(req: Request) {
     const rows = await queryNeon<{
       id: string;
       name: string;
+      description: string;
       location: string;
       date: string;
       logo_url: string | null;
       attendee_count: string | number;
     }>(
-      `SELECT e.id, e.name, e.location, e.date, e.logo_url, COUNT(a.id)::int AS attendee_count
+      `SELECT e.id, e.name, e.description, e.location, e.date, e.logo_url, COUNT(a.id)::int AS attendee_count
        FROM public.events e
        LEFT JOIN public.attendees a ON a.event_id = e.id
        WHERE e.user_id = $1
@@ -84,6 +85,7 @@ export async function GET(req: Request) {
         data: rows.map((row) => ({
           id: row.id,
           name: row.name,
+          description: row.description,
           location: row.location,
           date: row.date,
           logo_url: row.logo_url,
@@ -102,7 +104,8 @@ export async function POST(req: Request) {
   try {
     await queryNeon(
       `ALTER TABLE public.events
-       ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
+       ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
+       ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT ''`,
     );
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
@@ -115,6 +118,7 @@ export async function POST(req: Request) {
 
     const body = (await req.json()) as {
       name?: string;
+      description?: string;
       location?: string;
       location_type?: "onsite" | "webinar";
       date?: string;
@@ -127,6 +131,7 @@ export async function POST(req: Request) {
     const ownerId = String(body.ownerId || viewerId);
     const payload = {
       name: String(body.name || "").trim(),
+      description: String(body.description || "").trim().slice(0, 220),
       location: String(body.location || "").trim(),
       location_type: body.location_type || "onsite",
       date: String(body.date || ""),

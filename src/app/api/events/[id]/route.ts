@@ -23,7 +23,8 @@ async function getCurrentUserId() {
 async function ensureEventRegistrationFormColumn() {
   await queryNeon(
     `ALTER TABLE public.events
-     ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
+     ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
+     ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT ''`,
   );
 }
 
@@ -42,6 +43,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
     id: string;
     user_id: string;
     name: string;
+    description: string;
     location: string;
     location_type: "onsite" | "webinar" | null;
     date: string;
@@ -136,6 +138,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = (await req.json()) as Record<string, unknown>;
     const allowed = [
       "name",
+      "description",
       "location",
       "location_type",
       "date",
@@ -146,7 +149,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     ] as const;
     const patch: Record<string, unknown> = {};
     for (const key of allowed) {
-      if (key in body) patch[key] = body[key];
+      if (key in body) {
+        if (key === "description") {
+          patch[key] = String(body[key] || "").trim().slice(0, 220);
+        } else {
+          patch[key] = body[key];
+        }
+      }
     }
     if ("sponsors" in patch) {
       try {

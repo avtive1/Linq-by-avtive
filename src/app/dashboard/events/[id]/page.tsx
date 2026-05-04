@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
+import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
 
 import {
   Plus,
@@ -69,6 +69,7 @@ const CORE_PREVIEW_FIELD_IDS = new Set(["name", "role", "company", "email", "lin
 
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const EVENT_NAME_MAX_CHARS = 18;
+  const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
   const router = useRouter();
   const { id } = use(params);
 
@@ -107,7 +108,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ name: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
+  const [editForm, setEditForm] = useState({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   // Delete event modal
@@ -206,6 +207,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         setEventData({
           id: eventRecord.id,
           name: eventRecord.name,
+          description: eventRecord.description || "",
           location: eventRecord.location,
           location_type: eventRecord.location_type || "onsite",
           date: eventRecord.date,
@@ -389,6 +391,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     if (!eventData) return;
     setEditForm({
       name: eventData.name || "",
+      description: eventData.description || "",
       location: eventData.location_type === "webinar" ? "" : (eventData.location || ""),
       location_type: eventData.location_type || "onsite",
       date: eventData.date || "",
@@ -442,6 +445,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: editForm.name,
+          description: editForm.description,
           location: editForm.location_type === "webinar" ? "Webinar" : editForm.location,
           location_type: editForm.location_type,
           date: editForm.date,
@@ -455,6 +459,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setEventData((prev) => prev ? {
         ...prev,
         name: editForm.name,
+        description: editForm.description,
         location: editForm.location_type === "webinar" ? "Webinar" : editForm.location,
         location_type: editForm.location_type,
         date: editForm.date,
@@ -524,6 +529,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       // Create a duplicate/renewed event in DB instead of updating the old one
       const insertPayload = {
         name: eventData?.name || "Renewed Event",
+        description: eventData?.description || "",
         location: renewForm.location.trim(),
         location_type: eventData?.location_type || "onsite",
         date: renewForm.date,
@@ -582,6 +588,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: `${eventData.name} (Copy)`,
+          description: eventData.description || "",
           location: eventData.location,
           location_type: eventData.location_type || "onsite",
           date: eventData.date,
@@ -2167,37 +2174,46 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+          <div className="relative w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="px-8 pt-6 pb-3 flex items-center justify-between border-b border-border/50 shrink-0">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Campaign</h2>
-                <p className="text-sm text-muted">Update the campaign details below.</p>
+                <h2 className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Edit Campaign</h2>
+                <p className="text-[13px] text-muted">Update the campaign details below.</p>
               </div>
               <button
                 onClick={() => setIsEditOpen(false)}
-                className="w-11 h-11 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="p-8 pt-4 flex flex-col gap-6">
-              <div className="flex flex-col gap-4">
-                <TextInput
-                  label="Name of the Campaign"
-                  required
-                  value={editForm.name}
-                  maxLength={EVENT_NAME_MAX_CHARS}
-                  onChange={(v) => setEditForm({ ...editForm, name: v })}
+            {/* Modal Body */}
+            <form onSubmit={handleEditSubmit} className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
+              <div className="flex flex-col gap-5 pb-20">
+                <div className="flex flex-col gap-1.5">
+                  <TextInput
+                    label="Name of the Campaign"
+                    required
+                    value={editForm.name}
+                    maxLength={EVENT_NAME_MAX_CHARS}
+                    onChange={(v) => setEditForm({ ...editForm, name: v })}
+                  />
+                  <div className="flex justify-end">
+                    <span className={`text-[11px] font-medium ${editForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"}`}>
+                      {editForm.name.length}/{EVENT_NAME_MAX_CHARS} chars
+                    </span>
+                  </div>
+                </div>
+
+                <TextArea
+                  label="Campaign Description"
+                  placeholder="Describe your campaign (e.g. goals, audience)..."
+                  value={editForm.description}
+                  maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
+                  onChange={(v: string) => setEditForm({ ...editForm, description: v })}
                 />
-                <p
-                  className={`-mt-2 text-[13px] font-normal leading-[1.6] ${
-                    editForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"
-                  }`}
-                >
-                  {editForm.name.length}/{EVENT_NAME_MAX_CHARS} characters
-                  {editForm.name.length >= EVENT_NAME_MAX_CHARS ? " (maximum reached)" : " max"}
-                </p>
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
@@ -2261,7 +2277,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              {/* Modal Footer */}
+              <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-border/50 p-6 flex flex-col sm:flex-row gap-3 mt-auto shrink-0">
                 <Button
                   variant="secondary"
                   fullWidth

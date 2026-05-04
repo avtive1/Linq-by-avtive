@@ -42,6 +42,7 @@ export type CardData = {
 export type EventData = {
   id: string;
   name: string;
+  description?: string;
   location: string;
   location_type?: string;
   date: string;
