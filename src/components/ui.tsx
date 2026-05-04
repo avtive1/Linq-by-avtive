@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { Mail, Lock, Eye, EyeOff, User } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, User, Clock3 } from "lucide-react";
 import { ImageCropperModal } from "./ImageCropperModal";
 import { FreeformImageCropModal } from "./FreeformImageCropModal";
 
@@ -27,6 +27,40 @@ type InputProps = {
   disabled?: boolean;
   min?: string;
 };
+
+type TimeInputProps = {
+  label?: string;
+  required?: boolean;
+  value?: string;
+  onChange?: (v: string) => void;
+  error?: string;
+  disabled?: boolean;
+};
+
+function parseTime24(value: string): { hour12: string; minute: string; period: "AM" | "PM" } {
+  const match = /^(\d{2}):(\d{2})$/.exec(String(value || "").trim());
+  if (!match) return { hour12: "12", minute: "00", period: "AM" };
+  const hour24 = Number(match[1]);
+  const minute = Number(match[2]);
+  if (!Number.isInteger(hour24) || hour24 < 0 || hour24 > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+    return { hour12: "12", minute: "00", period: "AM" };
+  }
+  const period: "AM" | "PM" = hour24 >= 12 ? "PM" : "AM";
+  const hour12Num = hour24 % 12 || 12;
+  return {
+    hour12: String(hour12Num).padStart(2, "0"),
+    minute: String(minute).padStart(2, "0"),
+    period,
+  };
+}
+
+function toTime24(hour12: string, minute: string, period: "AM" | "PM"): string {
+  const h = Number(hour12);
+  const m = Number(minute);
+  if (!Number.isInteger(h) || h < 1 || h > 12 || !Number.isInteger(m) || m < 0 || m > 59) return "";
+  const hour24 = period === "PM" ? (h % 12) + 12 : h % 12;
+  return `${String(hour24).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
 
 export function TextInput({
   label,
@@ -118,6 +152,127 @@ export function TextInput({
           </button>
         )}
       </div>
+      {error && <p className="text-[14px] font-medium leading-[1.55] text-red-500 mt-1">{error}</p>}
+    </div>
+  );
+}
+
+export function TimeInput({
+  label,
+  required,
+  value = "",
+  onChange,
+  error,
+  disabled,
+}: TimeInputProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const parsed = parseTime24(value);
+  const hours = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, "0"));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+  const periods: Array<"AM" | "PM"> = ["AM", "PM"];
+
+  useEffect(() => {
+    const onMouseDown = (event: MouseEvent) => {
+      if (!wrapRef.current) return;
+      if (!wrapRef.current.contains(event.target as Node)) setIsOpen(false);
+    };
+    if (isOpen) document.addEventListener("mousedown", onMouseDown);
+    return () => document.removeEventListener("mousedown", onMouseDown);
+  }, [isOpen]);
+
+  const commit = (hour12: string, minute: string, period: "AM" | "PM") => {
+    const next = toTime24(hour12, minute, period);
+    if (next) onChange?.(next);
+  };
+
+  const listBase =
+    "h-56 overflow-y-auto px-1 py-1 border border-border/10 rounded-md bg-slate-50/50 custom-scrollbar w-full";
+  const itemBase =
+    "w-full rounded-md px-2 py-1.5 text-center text-[15px] font-medium tracking-[0.01em] leading-tight transition-all duration-200";
+  const selectedItem = "bg-primary text-primary-foreground shadow-sm scale-[1.02] font-semibold";
+  const idleItem = "text-heading hover:bg-primary/10 hover:text-primary-strong";
+  const displayValue = `${parsed.hour12}:${parsed.minute} ${parsed.period}`;
+  const borderClasses = error
+    ? "border-red-500 focus-within:border-red-500"
+    : "border-border/60 focus-within:border-primary/80 focus-within:border-[1.5px]";
+
+  return (
+    <div ref={wrapRef} className={`relative flex flex-col gap-2 w-full group ${disabled ? "opacity-60" : ""}`}>
+      {label && (
+        <div className="flex items-center gap-1">
+          <label className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">{label}</label>
+          {required && <span className="text-primary-strong text-[14px] font-medium leading-[1.25]">*</span>}
+        </div>
+      )}
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`
+          flex h-11 w-full items-center rounded-md border bg-white px-4 text-left shadow-sm transition-all duration-200
+          ${borderClasses}
+          ${disabled ? "cursor-not-allowed bg-surface/50" : "cursor-pointer hover:border-primary/40"}
+        `}
+      >
+        <span className={`flex-1 text-[16px] leading-[1.6] ${value ? "text-heading" : "text-muted/55"}`}>
+          {value ? displayValue : "--:-- --"}
+        </span>
+        <Clock3 size={18} className="text-muted/60 group-hover:text-primary transition-colors" />
+      </button>
+      {isOpen && !disabled && (
+        <div className="absolute right-0 top-[calc(100%+6px)] z-[120] w-[280px] rounded-lg border border-border/60 bg-white p-3 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+          {/* Caret / Arrow */}
+          <div className="absolute -top-1.5 right-4 w-3 h-3 bg-white border-t border-l border-border/60 rotate-45" />
+          <div className="flex items-start gap-2.5 h-full relative z-10">
+            <div className="flex flex-col flex-1 gap-1.5">
+              <span className="text-[10px] font-bold text-muted/60 uppercase tracking-wider text-center mb-1">Hour</span>
+              <div className={listBase}>
+                {hours.map((h) => (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => commit(h, parsed.minute, parsed.period)}
+                    className={`${itemBase} ${parsed.hour12 === h ? selectedItem : idleItem} mb-0.5 last:mb-0`}
+                  >
+                    {h}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col flex-1 gap-1.5">
+              <span className="text-[10px] font-bold text-muted/60 uppercase tracking-wider text-center mb-1">Min</span>
+              <div className={listBase}>
+                {minutes.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => commit(parsed.hour12, m, parsed.period)}
+                    className={`${itemBase} ${parsed.minute === m ? selectedItem : idleItem} mb-0.5 last:mb-0`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-col flex-1 gap-1.5">
+              <span className="text-[10px] font-bold text-muted/60 uppercase tracking-wider text-center mb-1">AM/PM</span>
+              <div className={listBase}>
+                {periods.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => commit(parsed.hour12, parsed.minute, p)}
+                    className={`${itemBase} ${parsed.period === p ? selectedItem : idleItem} mb-0.5 last:mb-0`}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {error && <p className="text-[14px] font-medium leading-[1.55] text-red-500 mt-1">{error}</p>}
     </div>
   );

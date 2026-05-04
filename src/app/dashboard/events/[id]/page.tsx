@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker, Select } from "@/components/ui";
+import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
 
 import {
   Plus,
@@ -2167,7 +2167,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Edit Campaign</h2>
@@ -2241,10 +2241,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     value={editForm.date}
                     onChange={(v) => setEditForm({ ...editForm, date: v })}
                   />
-                  <TextInput
+                  <TimeInput
                     label="Event Time"
                     required
-                    type="time"
                     value={editForm.time}
                     onChange={(v) => setEditForm({ ...editForm, time: v })}
                   />

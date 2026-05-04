@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker } from "@/components/ui";
+import { Button, TextInput, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
@@ -1876,7 +1876,7 @@ function DashboardContent() {
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
           />
-          <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[460px] glass-panel bg-white border border-border/70 rounded-md shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-8 pb-4 flex items-center justify-between">
               <div className="flex flex-col gap-1">
@@ -1948,10 +1948,9 @@ function DashboardContent() {
                     value={eventForm.date}
                     onChange={(v) => setEventForm({ ...eventForm, date: v })}
                   />
-                  <TextInput
-                  label="Campaign Time"
+                  <TimeInput
+                    label="Campaign Time"
                     required
-                    type="time"
                     value={eventForm.time}
                     onChange={(v) => setEventForm({ ...eventForm, time: v })}
                   />
