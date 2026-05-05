@@ -1076,7 +1076,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                       <button
                         onClick={() => {
-                          const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=visitor`;
+                          const url = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=v`;
                           setIsShareOpen(false);
                           openShareActions(url, "visitor");
                         }}
@@ -2012,7 +2012,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   setGuestCategoryError("Please enter a guest category.");
                   return;
                 }
-                const url = `${window.location.origin}/cards/new?eventId=${eventData.id}&share=true&role=guest&guestCategory=${encodeURIComponent(value)}`;
+                const url = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=g&c=${encodeURIComponent(value)}`;
                 setIsGuestCategoryOpen(false);
                 openShareActions(url, "guest");
               }}
@@ -2221,11 +2221,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="onsite" checked={editForm.location_type === "onsite"} onChange={() => setEditForm({ ...editForm, location_type: "onsite" })} className="accent-primary" />
+                        <input type="radio" name="locationType" value="onsite" checked={editForm.location_type === "onsite"} onChange={() => setEditForm({ ...editForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Onsite
                      </label>
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="webinar" checked={editForm.location_type === "webinar"} onChange={() => setEditForm({ ...editForm, location_type: "webinar", location: "" })} className="accent-primary" />
+                        <input type="radio" name="locationType" value="webinar" checked={editForm.location_type === "webinar"} onChange={() => setEditForm({ ...editForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Webinar
                      </label>
                   </div>

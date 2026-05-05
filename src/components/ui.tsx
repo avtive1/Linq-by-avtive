@@ -252,7 +252,7 @@ export function TimeInput({
     "h-56 overflow-y-auto px-1 py-1 border border-border/10 rounded-md bg-slate-50/50 custom-scrollbar w-full";
   const itemBase =
     "w-full rounded-md px-2 py-1.5 text-center text-[15px] font-medium tracking-[0.01em] leading-tight transition-all duration-200";
-  const selectedItem = "bg-primary text-primary-foreground shadow-sm scale-[1.02] font-semibold";
+  const selectedItem = "bg-primary/20 text-primary-strong shadow-sm scale-[1.02] font-semibold border border-primary/20";
   const idleItem = "text-heading hover:bg-primary/10 hover:text-primary-strong";
   const displayValue = `${parsed.hour12}:${parsed.minute} ${parsed.period}`;
   const borderClasses = error

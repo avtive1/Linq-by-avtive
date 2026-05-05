@@ -1922,11 +1922,11 @@ function DashboardContent() {
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="onsite" checked={eventForm.location_type === "onsite"} onChange={() => setEventForm({ ...eventForm, location_type: "onsite" })} className="accent-primary" />
+                        <input type="radio" name="locationType" value="onsite" checked={eventForm.location_type === "onsite"} onChange={() => setEventForm({ ...eventForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Onsite
                      </label>
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="webinar" checked={eventForm.location_type === "webinar"} onChange={() => setEventForm({ ...eventForm, location_type: "webinar", location: "" })} className="accent-primary" />
+                        <input type="radio" name="locationType" value="webinar" checked={eventForm.location_type === "webinar"} onChange={() => setEventForm({ ...eventForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Webinar
                      </label>
                   </div>

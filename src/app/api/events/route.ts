@@ -12,6 +12,15 @@ function isPastEventDate(dateStr: string) {
   return parsed < today;
 }
 
+function generateShortId(length = 8) {
+  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 function getViewerAdminAccess(params: {
   viewerId: string;
   sessionUserId: string;
@@ -30,8 +39,22 @@ function getViewerAdminAccess(params: {
   };
 }
 
+async function ensureEventTableSchema() {
+  await queryNeon(
+    `ALTER TABLE public.events
+     ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
+     ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '',
+     ADD COLUMN IF NOT EXISTS short_id text`,
+  );
+  // Populate missing short_ids for existing events using first 8 chars of UUID
+  await queryNeon(`UPDATE public.events SET short_id = SUBSTRING(id::text, 1, 8) WHERE short_id IS NULL`);
+  // Ensure uniqueness safely
+  await queryNeon(`CREATE UNIQUE INDEX IF NOT EXISTS events_short_id_idx ON public.events (short_id)`);
+}
+
 export async function GET(req: Request) {
   try {
+    await ensureEventTableSchema();
     const session = await getServerAuthSession();
     const viewerId = String(session?.user?.id || "").trim();
     if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -69,9 +92,10 @@ export async function GET(req: Request) {
       location: string;
       date: string;
       logo_url: string | null;
+      short_id: string | null;
       attendee_count: string | number;
     }>(
-      `SELECT e.id, e.name, e.description, e.location, e.date, e.logo_url, COUNT(a.id)::int AS attendee_count
+      `SELECT e.id, e.name, e.description, e.location, e.date, e.logo_url, e.short_id, COUNT(a.id)::int AS attendee_count
        FROM public.events e
        LEFT JOIN public.attendees a ON a.event_id = e.id
        WHERE e.user_id = $1
@@ -89,6 +113,7 @@ export async function GET(req: Request) {
           location: row.location,
           date: row.date,
           logo_url: row.logo_url,
+          shortId: row.short_id,
           attendeeCount: Number(row.attendee_count || 0),
         })),
       },
@@ -102,11 +127,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    await queryNeon(
-      `ALTER TABLE public.events
-       ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
-       ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT ''`,
-    );
+    await ensureEventTableSchema();
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 
@@ -140,6 +161,7 @@ export async function POST(req: Request) {
       registration_form_config: normalizeRegistrationFormConfig(
         body.registration_form_config || getDefaultRegistrationFormConfig(),
       ),
+      short_id: generateShortId(),
     };
 
     if (!payload.name || !payload.location || !payload.date || !payload.time) {

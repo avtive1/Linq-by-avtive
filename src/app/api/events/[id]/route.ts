@@ -24,8 +24,13 @@ async function ensureEventRegistrationFormColumn() {
   await queryNeon(
     `ALTER TABLE public.events
      ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
-     ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT ''`,
+     ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '',
+     ADD COLUMN IF NOT EXISTS short_id text`,
   );
+  // Populate missing short_ids for existing events
+  await queryNeon(`UPDATE public.events SET short_id = SUBSTRING(id::text, 1, 8) WHERE short_id IS NULL`);
+  // Ensure uniqueness safely
+  await queryNeon(`CREATE UNIQUE INDEX IF NOT EXISTS events_short_id_idx ON public.events (short_id)`);
 }
 
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>): boolean {
@@ -51,6 +56,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
     logo_url: string | null;
     sponsors: unknown;
     registration_form_config: unknown;
+    short_id: string | null;
   }>(`SELECT * FROM public.events WHERE id = $1`, [eventId]);
   if (!eventRow) return { eventRow: null, isOwner: false, permissions: [] as string[], isOrgMemberViewer: false };
 

@@ -50,6 +50,7 @@ export type EventData = {
   user?: string;
   created?: string;
   logo_url?: string;
+  short_id?: string;
   sponsors?: SponsorEntry[];
   registration_form_config?: RegistrationFormConfig;
 };
