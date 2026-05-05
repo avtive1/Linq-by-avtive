@@ -59,6 +59,8 @@ type MyOrgJoinRequest = {
   rejection_reason?: string | null;
 };
 
+const ENABLE_DASHBOARD_BOOTSTRAP = process.env.NEXT_PUBLIC_DASHBOARD_BOOTSTRAP !== "false";
+
 const formatJoinStatus = (status: string) => {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "approved") {
@@ -165,6 +167,90 @@ function DashboardContent() {
   useEffect(() => {
     let isMounted = true;
     const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+    const hydrateSecondaryPanels = async (params: {
+      isOrgTeamMember: boolean;
+      isOrgOwner: boolean;
+      profileOrganizationName: string;
+      effectiveName: string;
+      onboardingIntentValue: string | null;
+    }) => {
+      const { isOrgTeamMember, isOrgOwner, profileOrganizationName, effectiveName, onboardingIntentValue } = params;
+      if (!isMounted) return;
+
+      if (isOrgTeamMember) {
+        try {
+          const mineRes = await fetch("/api/access-requests/mine");
+          const minePayload = await mineRes.json().catch(() => null);
+          if (!isMounted) return;
+          if (mineRes.ok && Array.isArray(minePayload?.data)) {
+            setMyAccessRequests(minePayload.data);
+          }
+        } catch {}
+        return;
+      }
+
+      if (isOrgOwner) {
+        try {
+          const onboardingRes = await fetch("/api/onboarding/organization-owner", { cache: "no-store" });
+          const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
+          if (!isMounted) return;
+          const shouldShowOnboarding = Boolean(onboardingPayload?.data?.shouldShowOnboarding);
+          const teamStepCompleted = Boolean(onboardingPayload?.data?.teamStepCompleted);
+          const needsProfileSetup = Boolean(onboardingPayload?.data?.needsProfileSetup);
+          const shouldForceOwnerOnboarding = onboardingIntentValue === "owner" && !teamStepCompleted;
+          if (needsProfileSetup) {
+            // Prevent draft reset while user is typing in modal.
+            if (!isOwnerProfileSetupModalOpen) {
+              setOwnerProfileUsernameDraft(effectiveName || "");
+              setOwnerProfilePhotoDraft("");
+              setOwnerProfileSetupError("");
+            }
+          }
+          setIsOwnerProfileSetupModalOpen(needsProfileSetup);
+          setIsOwnerOnboardingModalOpen(!needsProfileSetup && (shouldShowOnboarding || shouldForceOwnerOnboarding));
+        } catch {}
+      }
+
+      const [inboxRes, orgJoinInboxRes, failedRes] = await Promise.all([
+        fetch("/api/access-requests/inbox").catch(() => null),
+        fetch("/api/organization-join-requests/inbox").catch(() => null),
+        fetch("/api/access-requests/failed-notifications").catch(() => null),
+      ]);
+      if (!isMounted) return;
+      try {
+        if (inboxRes?.ok) {
+          const inboxPayload = await inboxRes.json();
+          if (!isMounted) return;
+          if (Array.isArray(inboxPayload?.data)) setInboxRequests(inboxPayload.data);
+        }
+      } catch {}
+      try {
+        if (orgJoinInboxRes?.ok) {
+          const orgJoinInboxPayload = await orgJoinInboxRes.json();
+          if (!isMounted) return;
+          if (Array.isArray(orgJoinInboxPayload?.data)) setOrgJoinInbox(orgJoinInboxPayload.data);
+        }
+      } catch {}
+      try {
+        if (failedRes?.ok) {
+          const failedPayload = await failedRes.json();
+          if (!isMounted) return;
+          if (Array.isArray(failedPayload?.data)) setFailedNotifications(failedPayload.data);
+        }
+      } catch {}
+
+      if (!isOrgOwner && profileOrganizationName) {
+        try {
+          const myJoinRes = await fetch("/api/organization-join-requests/mine").catch(() => null);
+          if (!isMounted || !myJoinRes?.ok) return;
+          const myJoinPayload = await myJoinRes.json();
+          if (!isMounted) return;
+          if (Array.isArray(myJoinPayload?.data)) {
+            setMyOrgJoinRequests(myJoinPayload.data);
+          }
+        } catch {}
+      }
+    };
 
     const resolveAuthedUserIdWithRetry = async () => {
       const sessionUserId = String(session?.user?.id || "").trim();
@@ -190,6 +276,34 @@ function DashboardContent() {
       return "";
     };
 
+    const loadBootstrapSnapshot = async () => {
+      try {
+        const res = await fetch("/api/dashboard/bootstrap", { cache: "no-store" });
+        if (!res.ok) return null;
+        const payload = await res.json().catch(() => null);
+        if (!payload || typeof payload !== "object" || !("data" in payload)) return null;
+        return payload.data as {
+          userId?: string;
+          isAdmin?: boolean;
+          profile?: { username?: string; organizationName?: string } | null;
+          member?: { org_owner_user_id?: string; role_label?: string; permissions?: string[] } | null;
+          ownerSignals?: { hasOwnedEvents?: boolean; hasOwnedMembers?: boolean; ownerByRegistry?: boolean } | null;
+          ownerOnboarding?: {
+            shouldShowOnboarding?: boolean;
+            teamStepCompleted?: boolean;
+            needsProfileSetup?: boolean;
+          } | null;
+          myAccessRequests?: unknown[];
+          myJoinRequests?: Array<{ status?: string }>;
+          inboxRequests?: unknown[];
+          orgJoinInbox?: unknown[];
+          failedNotifications?: unknown[];
+        };
+      } catch {
+        return null;
+      }
+    };
+
     const checkUser = async () => {
       try {
         setBootstrapError("");
@@ -198,6 +312,135 @@ function DashboardContent() {
         
         if (!userId) {
           router.replace("/login");
+          return;
+        }
+
+        const bootstrapData = ENABLE_DASHBOARD_BOOTSTRAP ? await loadBootstrapSnapshot() : null;
+        if (bootstrapData && String(bootstrapData.userId || "").trim()) {
+          const isActuallyAdmin = Boolean(bootstrapData.isAdmin);
+          if (isActuallyAdmin) setIsAdmin(true);
+
+          let effectiveId = userId;
+          let effectiveName = "";
+          let userisOrgTeamMemberLocal = false;
+          let userIsOrgOwnerLocal = false;
+          let gateStatus: "pending" | "awaiting_owner" | null = null;
+          const profileRow = bootstrapData.profile || null;
+
+          if (profileRow?.username?.trim()) {
+            effectiveName = profileRow.username.trim();
+          }
+          if (profileRow?.organizationName?.trim()) {
+            setOrganizationName(profileRow.organizationName.trim());
+          }
+
+          const memberData = bootstrapData.member || null;
+          if (typeof memberData?.org_owner_user_id === "string" && memberData.org_owner_user_id) {
+            effectiveId = memberData.org_owner_user_id;
+            setIsOrgTeamMember(true);
+            userisOrgTeamMemberLocal = true;
+            setIsOrgOwner(false);
+            setOrgRoleLabel(String(memberData.role_label || ""));
+            setOrgOwnerUserId(String(memberData.org_owner_user_id || ""));
+            setGrantedPermissions(Array.isArray(memberData.permissions) ? (memberData.permissions as string[]) : []);
+            if (Array.isArray(bootstrapData.myAccessRequests)) {
+              setMyAccessRequests(bootstrapData.myAccessRequests as MyAccessRequest[]);
+            }
+          } else {
+            setIsOrgTeamMember(false);
+            setOrgRoleLabel("");
+            const ownerSignals = bootstrapData.ownerSignals;
+            const userIsOrgOwner = Boolean(
+              ownerSignals?.hasOwnedEvents || ownerSignals?.hasOwnedMembers || ownerSignals?.ownerByRegistry,
+            );
+            setIsOrgOwner(userIsOrgOwner);
+            userIsOrgOwnerLocal = userIsOrgOwner;
+            if (!userIsOrgOwner) {
+              setIsOwnerProfileSetupModalOpen(false);
+              setIsOwnerOnboardingModalOpen(false);
+            } else {
+              const ownerOnboarding = bootstrapData.ownerOnboarding;
+              const teamStepCompleted = Boolean(ownerOnboarding?.teamStepCompleted);
+              const needsProfileSetup = Boolean(ownerOnboarding?.needsProfileSetup);
+              const shouldShowOnboarding = Boolean(ownerOnboarding?.shouldShowOnboarding);
+              const shouldForceOwnerOnboarding = onboardingIntent === "owner" && !teamStepCompleted;
+              if (needsProfileSetup && !isOwnerProfileSetupModalOpen) {
+                setOwnerProfileUsernameDraft(effectiveName || "");
+                setOwnerProfilePhotoDraft("");
+                setOwnerProfileSetupError("");
+              }
+              setIsOwnerProfileSetupModalOpen(needsProfileSetup);
+              setIsOwnerOnboardingModalOpen(!needsProfileSetup && (shouldShowOnboarding || shouldForceOwnerOnboarding));
+            }
+
+            if (profileRow?.organizationName?.trim() && !userIsOrgOwner) {
+              try {
+                const joinRes = await fetch("/api/organization-join-requests", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
+                });
+                if (joinRes.ok) {
+                  const joinPayload = await joinRes.json();
+                  const status = String(joinPayload?.data?.status || "").toLowerCase();
+                  if (status === "created" || status === "pending_exists" || status === "reapply_later") {
+                    gateStatus = "pending";
+                  } else if (status === "no_owner_found") {
+                    gateStatus = "awaiting_owner";
+                  }
+                }
+              } catch {}
+            }
+
+            if (Array.isArray(bootstrapData.myJoinRequests)) {
+              setMyOrgJoinRequests(bootstrapData.myJoinRequests as MyOrgJoinRequest[]);
+              if (
+                bootstrapData.myJoinRequests.some(
+                  (req) => String(req?.status || "").toLowerCase() === "pending",
+                )
+              ) {
+                gateStatus = "pending";
+              }
+            }
+            setJoinGateStatus(gateStatus);
+            setJoinGateOrgName(profileRow?.organizationName?.trim() || "");
+          }
+
+          if (Array.isArray(bootstrapData.inboxRequests)) {
+            setInboxRequests(bootstrapData.inboxRequests as PendingInboxRequest[]);
+          }
+          if (Array.isArray(bootstrapData.orgJoinInbox)) {
+            setOrgJoinInbox(bootstrapData.orgJoinInbox as OrgJoinInboxRequest[]);
+          }
+          if (Array.isArray(bootstrapData.failedNotifications)) {
+            setFailedNotifications(bootstrapData.failedNotifications as FailedNotification[]);
+          }
+
+          if (impersonateId && isActuallyAdmin) {
+            effectiveId = impersonateId;
+            setIsPreviewMode(true);
+            effectiveName = "Organization View";
+          }
+
+          setUserName(effectiveName);
+          if (
+            !isActuallyAdmin &&
+            !userisOrgTeamMemberLocal &&
+            !userIsOrgOwnerLocal &&
+            (gateStatus === "pending" || gateStatus === "awaiting_owner")
+          ) {
+            setIsCheckingAuth(false);
+            return;
+          }
+          fetchData(effectiveId, () => isMounted);
+          setIsCheckingAuth(false);
+          void hydrateSecondaryPanels({
+            isOrgTeamMember: userisOrgTeamMemberLocal,
+            isOrgOwner: userIsOrgOwnerLocal,
+            profileOrganizationName: profileRow?.organizationName?.trim() || "",
+            effectiveName,
+            onboardingIntentValue: onboardingIntent,
+          });
           return;
         }
         
@@ -275,13 +518,6 @@ function DashboardContent() {
             setOrgRoleLabel(String(memberData.role_label || ""));
             setOrgOwnerUserId(String(memberData.org_owner_user_id || ""));
             setGrantedPermissions(Array.isArray(memberData.permissions) ? (memberData.permissions as string[]) : []);
-            try {
-              const mineRes = await fetch("/api/access-requests/mine");
-              const minePayload = await mineRes.json();
-              if (mineRes.ok && Array.isArray(minePayload?.data)) {
-                setMyAccessRequests(minePayload.data);
-              }
-            } catch {}
           } else {
             setIsOrgTeamMember(false);
             setOrgRoleLabel("");
@@ -303,27 +539,7 @@ function DashboardContent() {
               ownedEvents.length > 0 || ownedMembers.length > 0 || ownerByRegistry;
             setIsOrgOwner(userIsOrgOwner);
             userIsOrgOwnerLocal = userIsOrgOwner;
-            if (userIsOrgOwner) {
-              try {
-                const onboardingRes = await fetch("/api/onboarding/organization-owner", { cache: "no-store" });
-                const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
-                const shouldShowOnboarding = Boolean(onboardingPayload?.data?.shouldShowOnboarding);
-                const teamStepCompleted = Boolean(onboardingPayload?.data?.teamStepCompleted);
-                const needsProfileSetup = Boolean(onboardingPayload?.data?.needsProfileSetup);
-                const shouldForceOwnerOnboarding = onboardingIntent === "owner" && !teamStepCompleted;
-                if (!isMounted) return;
-                if (needsProfileSetup) {
-                  // Only initialize if not already open to prevent overwriting user input on auto-refresh (e.g. on window focus)
-                  if (!isOwnerProfileSetupModalOpen) {
-                    setOwnerProfileUsernameDraft(effectiveName || "");
-                    setOwnerProfilePhotoDraft("");
-                    setOwnerProfileSetupError("");
-                  }
-                }
-                setIsOwnerProfileSetupModalOpen(needsProfileSetup);
-                setIsOwnerOnboardingModalOpen(!needsProfileSetup && (shouldShowOnboarding || shouldForceOwnerOnboarding));
-              } catch {}
-            } else {
+            if (!userIsOrgOwner) {
               setIsOwnerProfileSetupModalOpen(false);
               setIsOwnerOnboardingModalOpen(false);
             }
@@ -345,12 +561,7 @@ function DashboardContent() {
                 }
               } catch {}
             }
-            const [myJoinRes, inboxRes, orgJoinInboxRes, failedRes] = await Promise.all([
-              fetch("/api/organization-join-requests/mine").catch(() => null),
-              fetch("/api/access-requests/inbox").catch(() => null),
-              fetch("/api/organization-join-requests/inbox").catch(() => null),
-              fetch("/api/access-requests/failed-notifications").catch(() => null),
-            ]);
+            const myJoinRes = await fetch("/api/organization-join-requests/mine").catch(() => null);
             try {
               if (myJoinRes?.ok) {
                 const myJoinPayload = await myJoinRes.json();
@@ -364,24 +575,6 @@ function DashboardContent() {
                     gateStatus = "pending";
                   }
                 }
-              }
-            } catch {}
-            try {
-              if (inboxRes?.ok) {
-                const inboxPayload = await inboxRes.json();
-                if (Array.isArray(inboxPayload?.data)) setInboxRequests(inboxPayload.data);
-              }
-            } catch {}
-            try {
-              if (orgJoinInboxRes?.ok) {
-                const orgJoinInboxPayload = await orgJoinInboxRes.json();
-                if (Array.isArray(orgJoinInboxPayload?.data)) setOrgJoinInbox(orgJoinInboxPayload.data);
-              }
-            } catch {}
-            try {
-              if (failedRes?.ok) {
-                const failedPayload = await failedRes.json();
-                if (Array.isArray(failedPayload?.data)) setFailedNotifications(failedPayload.data);
               }
             } catch {}
             setJoinGateStatus(gateStatus);
@@ -402,6 +595,13 @@ function DashboardContent() {
         }
         fetchData(effectiveId, () => isMounted);
         setIsCheckingAuth(false);
+        void hydrateSecondaryPanels({
+          isOrgTeamMember: userisOrgTeamMemberLocal,
+          isOrgOwner: userIsOrgOwnerLocal,
+          profileOrganizationName: profileRow?.organizationName?.trim() || "",
+          effectiveName,
+          onboardingIntentValue: onboardingIntent,
+        });
       } catch (bootstrapErr) {
         console.error("Dashboard bootstrap error:", bootstrapErr);
         if (!isMounted) return;
