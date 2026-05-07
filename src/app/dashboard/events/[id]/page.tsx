@@ -489,11 +489,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.error("Please provide a new location for the event.");
       return;
     }
-    if (!renewForm.logo) {
-      toast.error("Please upload a logo for the event.");
-      return;
-    }
-
     const newDate = new Date(renewForm.date);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -2267,7 +2262,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                 <FilePicker
                   label="Campaign Logo"
-                  required
                   value={editForm.logo}
                   onChange={(v) => setEditForm({ ...editForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
@@ -2397,7 +2391,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 />
                 <FilePicker
                   label="New Event Logo"
-                  required
                   value={renewForm.logo}
                   onChange={(v) => setRenewForm({ ...renewForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
