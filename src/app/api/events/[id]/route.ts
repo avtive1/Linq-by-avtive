@@ -33,6 +33,17 @@ async function ensureEventRegistrationFormColumn() {
   await queryNeon(`CREATE UNIQUE INDEX IF NOT EXISTS events_short_id_idx ON public.events (short_id)`);
 }
 
+let ensureEventRegistrationFormColumnPromise: Promise<void> | null = null;
+async function ensureEventRegistrationFormColumnOnce() {
+  if (!ensureEventRegistrationFormColumnPromise) {
+    ensureEventRegistrationFormColumnPromise = ensureEventRegistrationFormColumn().catch((err) => {
+      ensureEventRegistrationFormColumnPromise = null;
+      throw err;
+    });
+  }
+  await ensureEventRegistrationFormColumnPromise;
+}
+
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>): boolean {
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
@@ -102,7 +113,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await ensureEventRegistrationFormColumn();
+    await ensureEventRegistrationFormColumnOnce();
     const session = await getServerAuthSession();
     const viewerId = await getCurrentUserId();
     if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -125,7 +136,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await ensureEventRegistrationFormColumn();
+    await ensureEventRegistrationFormColumnOnce();
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 

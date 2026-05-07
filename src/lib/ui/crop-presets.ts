@@ -1,0 +1,1 @@
+export const CAMPAIGN_LOGO_CROP_ASPECT = 1;

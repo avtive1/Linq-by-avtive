@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
+import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
 
 import { useSearchParams } from "next/navigation";
 
@@ -2171,8 +2172,10 @@ function DashboardContent() {
                   value={eventForm.logo}
                   onChange={(v) => setEventForm({ ...eventForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
+                  freeFormCrop={false}
+                  cropAspect={CAMPAIGN_LOGO_CROP_ASPECT}
                   cropTitle="Crop campaign logo"
-                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropSubtitle="Adjust the logo within the fixed frame used on cards."
                   cropApplyLabel="Apply logo"
                 />
               </div>

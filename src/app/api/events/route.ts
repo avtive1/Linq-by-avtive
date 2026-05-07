@@ -52,9 +52,20 @@ async function ensureEventTableSchema() {
   await queryNeon(`CREATE UNIQUE INDEX IF NOT EXISTS events_short_id_idx ON public.events (short_id)`);
 }
 
+let ensureEventTableSchemaPromise: Promise<void> | null = null;
+async function ensureEventTableSchemaOnce() {
+  if (!ensureEventTableSchemaPromise) {
+    ensureEventTableSchemaPromise = ensureEventTableSchema().catch((err) => {
+      ensureEventTableSchemaPromise = null;
+      throw err;
+    });
+  }
+  await ensureEventTableSchemaPromise;
+}
+
 export async function GET(req: Request) {
   try {
-    await ensureEventTableSchema();
+    await ensureEventTableSchemaOnce();
     const session = await getServerAuthSession();
     const viewerId = String(session?.user?.id || "").trim();
     if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -127,7 +138,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    await ensureEventTableSchema();
+    await ensureEventTableSchemaOnce();
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 

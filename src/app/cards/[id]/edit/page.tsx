@@ -549,8 +549,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               onChange={update("photo")}
               onError={(msg) => toast.error(msg)}
               error={errors.photo}
+              freeFormCrop={false}
+              cropAspect={1}
               cropTitle="Crop photo"
-              cropSubtitle="Drag the corners or edges to adjust the crop."
+              cropSubtitle="Adjust the photo within the fixed square frame shown on the card."
               cropApplyLabel="Apply photo"
             />
           </div>

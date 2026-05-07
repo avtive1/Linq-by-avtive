@@ -42,6 +42,7 @@ import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion"
 import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
 import {
   type RegistrationFieldDefinition,
   type RegistrationFormConfig,
@@ -2265,8 +2266,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   value={editForm.logo}
                   onChange={(v) => setEditForm({ ...editForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
+                  freeFormCrop={false}
+                  cropAspect={CAMPAIGN_LOGO_CROP_ASPECT}
                   cropTitle="Crop campaign logo"
-                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropSubtitle="Adjust the logo within the fixed frame used on cards."
                   cropApplyLabel="Apply logo"
                 />
               </div>
@@ -2394,8 +2397,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   value={renewForm.logo}
                   onChange={(v) => setRenewForm({ ...renewForm, logo: v })}
                   onError={(msg) => toast.error(msg)}
+                  freeFormCrop={false}
+                  cropAspect={CAMPAIGN_LOGO_CROP_ASPECT}
                   cropTitle="Crop event logo"
-                  cropSubtitle="Drag the corners or edges to adjust the crop."
+                  cropSubtitle="Adjust the logo within the fixed frame used on cards."
                   cropApplyLabel="Apply logo"
                 />
               </div>
