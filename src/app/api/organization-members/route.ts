@@ -71,6 +71,26 @@ export async function GET(req: Request) {
           [userIds, ownerId],
         )
       : [];
+    const roleLabels = Array.from(
+      new Set(data.map((row) => String(row.role_label || "").trim()).filter((label) => Boolean(label))),
+    );
+    const templateRows = roleLabels.length
+      ? await queryNeon<{ role_label: string; permissions: string[] | null }>(
+          `SELECT role_label, permissions
+           FROM public.organization_role_permission_templates
+           WHERE org_owner_user_id = $1
+             AND role_label = ANY($2::text[])`,
+          [ownerId, roleLabels],
+        )
+      : [];
+    const permissionsByRoleLabel = new Map<string, string[]>();
+    for (const row of templateRows) {
+      const templatePermissions = Array.isArray(row.permissions) ? row.permissions : [];
+      const normalizedTemplatePermissions = templatePermissions.filter((permission) =>
+        EDITABLE_ORG_PERMISSIONS.includes(permission as (typeof EDITABLE_ORG_PERMISSIONS)[number]),
+      );
+      permissionsByRoleLabel.set(row.role_label, normalizedTemplatePermissions);
+    }
     const permissionsByUserId = new Map<string, string[]>();
     for (const row of grantRows) {
       if (!EDITABLE_ORG_PERMISSIONS.includes(row.permission as (typeof EDITABLE_ORG_PERMISSIONS)[number])) continue;
@@ -83,7 +103,9 @@ export async function GET(req: Request) {
       const email = row.member_user_id
         ? emailByUserId.get(row.member_user_id) || row.member_email || "unknown"
         : row.member_email || "unknown";
-      const permissions = row.member_user_id ? permissionsByUserId.get(row.member_user_id) || [] : [];
+      const permissionsFromUserGrants = row.member_user_id ? permissionsByUserId.get(row.member_user_id) || [] : [];
+      const permissionsFromRoleTemplate = permissionsByRoleLabel.get(row.role_label) || [];
+      const permissions = permissionsFromUserGrants.length > 0 ? permissionsFromUserGrants : permissionsFromRoleTemplate;
       return { ...row, member_email: email, permissions };
     });
 
@@ -218,36 +240,80 @@ export async function POST(req: Request) {
     }
 
     if (target?.id) {
+      // Keep an org-level grant set in sync so permissions remain visible/editable
+      // even when there are no event-scoped grants yet.
+      if (normalizedPermissions.length > 0) {
+        await queryNeon(
+          `DELETE FROM public.access_grants
+           WHERE event_id IS NULL
+             AND granted_by_user_id = $1
+             AND grantee_user_id = $2
+             AND permission = ANY($3::text[])
+             AND permission <> ALL($4::text[])`,
+          [ownerId, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions],
+        );
+      } else {
+        await queryNeon(
+          `DELETE FROM public.access_grants
+           WHERE event_id IS NULL
+             AND granted_by_user_id = $1
+             AND grantee_user_id = $2
+             AND permission = ANY($3::text[])`,
+          [ownerId, target.id, EDITABLE_ORG_PERMISSIONS],
+        );
+      }
+
+      const existingOrgLevel = await queryNeon<{ permission: string }>(
+        `SELECT permission
+         FROM public.access_grants
+         WHERE event_id IS NULL
+           AND granted_by_user_id = $1
+           AND grantee_user_id = $2
+           AND status = 'active'
+           AND permission = ANY($3::text[])`,
+        [ownerId, target.id, normalizedPermissions],
+      );
+      const existingOrgPermissionSet = new Set(existingOrgLevel.map((row) => row.permission));
+      const orgLevelToInsert = normalizedPermissions
+        .filter((permission) => !existingOrgPermissionSet.has(permission))
+        .map((permission) => ({
+          grantee_user_id: target.id,
+          granted_by_user_id: ownerId,
+          permission,
+          status: "active",
+        }));
+      if (orgLevelToInsert.length > 0) {
+        await queryNeon(
+          `INSERT INTO public.access_grants (event_id, grantee_user_id, granted_by_user_id, permission, status)
+           SELECT NULL::uuid, x.grantee_user_id::uuid, x.granted_by_user_id::uuid, x.permission::text, x.status::text
+           FROM jsonb_to_recordset($1::jsonb) AS x(grantee_user_id text, granted_by_user_id text, permission text, status text)
+           ON CONFLICT DO NOTHING`,
+          [JSON.stringify(orgLevelToInsert)],
+        );
+      }
+
       const ownerEvents = await queryNeon<{ id: string }>(
         `SELECT id FROM public.events WHERE user_id = $1`,
         [ownerId],
       );
       const eventIds = ownerEvents.map((e) => e.id);
       if (eventIds.length > 0) {
-        // Remove editable permissions that are no longer selected.
-        // This must include both event-scoped grants and org-level grants (event_id IS NULL).
         if (normalizedPermissions.length > 0) {
           await queryNeon(
             `DELETE FROM public.access_grants
-             WHERE (
-                 event_id = ANY($1::uuid[])
-                 OR (event_id IS NULL AND granted_by_user_id = $5)
-               )
+             WHERE event_id = ANY($1::uuid[])
                AND grantee_user_id = $2
                AND permission = ANY($3::text[])
                AND permission <> ALL($4::text[])`,
-            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions, ownerId],
+            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions],
           );
         } else {
           await queryNeon(
             `DELETE FROM public.access_grants
-             WHERE (
-                 event_id = ANY($1::uuid[])
-                 OR (event_id IS NULL AND granted_by_user_id = $4)
-               )
+             WHERE event_id = ANY($1::uuid[])
                AND grantee_user_id = $2
                AND permission = ANY($3::text[])`,
-            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, ownerId],
+            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS],
           );
         }
 

@@ -6,6 +6,7 @@ import { insertRow, queryNeon } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { issueAttendeeCardToken } from "@/lib/security/tokens";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
+import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 
 export async function POST(req: Request) {
   try {
@@ -19,11 +20,16 @@ export async function POST(req: Request) {
       console.warn("Skipping attendees.custom_fields runtime schema patch:", schemaErr);
     }
     const payload = (await req.json()) as Record<string, unknown>;
+    const validation = validateAttendeeCoreFields(payload);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    const sanitizedPayload = validation.payload;
     if (
-      "custom_fields" in payload &&
-      (payload.custom_fields === null ||
-        typeof payload.custom_fields !== "object" ||
-        Array.isArray(payload.custom_fields))
+      "custom_fields" in sanitizedPayload &&
+      (sanitizedPayload.custom_fields === null ||
+        typeof sanitizedPayload.custom_fields !== "object" ||
+        Array.isArray(sanitizedPayload.custom_fields))
     ) {
       return NextResponse.json({ error: "custom_fields must be an object." }, { status: 400 });
     }
@@ -45,13 +51,13 @@ export async function POST(req: Request) {
 
     let isPublicEventRegistration = false;
     if (!authUserId && !tokenUserId) {
-      const eventId = String(payload.event_id || "").trim();
+      const eventId = String(sanitizedPayload.event_id || "").trim();
       if (!eventId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
       isPublicEventRegistration = true;
     }
-    const securePayload = encryptAttendeeSensitiveFields(payload) as Record<string, unknown>;
+    const securePayload = encryptAttendeeSensitiveFields(sanitizedPayload) as Record<string, unknown>;
     if (isPublicEventRegistration && !securePayload.user_id) {
       securePayload.user_id = null;
     }

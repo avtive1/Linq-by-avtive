@@ -9,6 +9,7 @@ import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
+import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 
 async function getAuthedSessionAndPermission(
   req: Request,
@@ -126,12 +127,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   try {
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid card id" }, { status: 400 });
-    const updatePayload = await req.json();
+    const updatePayload = (await req.json()) as Record<string, unknown>;
+    const validation = validateAttendeeCoreFields(updatePayload);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
     const auth = await getAuthedSessionAndPermission(req, id, "edit");
     if (auth.error) return auth.error;
     const userId = auth.userId!;
 
-    const securedPayload = encryptAttendeeSensitiveFields(updatePayload);
+    const securedPayload = encryptAttendeeSensitiveFields(validation.payload);
     const data = await updateRows("attendees", securedPayload, { id });
     const updateError = data.length ? null : { message: "No row updated" };
 

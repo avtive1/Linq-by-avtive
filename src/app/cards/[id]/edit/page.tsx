@@ -12,6 +12,9 @@ import { parseEventSponsors } from "@/lib/sponsors";
 import type { SponsorEntry } from "@/types/card";
 import { logSecurityEvent } from "@/lib/security/telemetry";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
+
+const URL_OR_QUERY_PATTERN = /(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$)|[?=&])/i;
 
 type FormState = {
   name: string;
@@ -231,6 +234,24 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     if (form.email && !/\S+@\S+\.\S+/.test(form.email)) {
       newErrors.email = "Invalid email format";
     }
+    const name = String(form.name || "").trim();
+    if (name.length > ATTENDEE_FIELD_LIMITS.name) {
+      newErrors.name = `Full Name must be ${ATTENDEE_FIELD_LIMITS.name} characters or less`;
+    } else if (name && URL_OR_QUERY_PATTERN.test(name)) {
+      newErrors.name = "Full Name cannot contain links or query text";
+    }
+    const role = String(form.role || "").trim();
+    if (role.length > ATTENDEE_FIELD_LIMITS.role) {
+      newErrors.role = `Role/Title must be ${ATTENDEE_FIELD_LIMITS.role} characters or less`;
+    } else if (role && URL_OR_QUERY_PATTERN.test(role)) {
+      newErrors.role = "Role/Title cannot contain links or query text";
+    }
+    const company = String(form.company || "").trim();
+    if (company.length > ATTENDEE_FIELD_LIMITS.company) {
+      newErrors.company = `Organization must be ${ATTENDEE_FIELD_LIMITS.company} characters or less`;
+    } else if (company && URL_OR_QUERY_PATTERN.test(company)) {
+      newErrors.company = "Organization cannot contain links or query text";
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -279,9 +300,9 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       }
 
       const updatePayload: Record<string, unknown> = {
-        name: form.name,
-        role: form.role,
-        company: form.company,
+        name: form.name.trim(),
+        role: form.role.trim(),
+        company: form.company.trim(),
         card_email: form.email,
         track: form.track || "",
         linkedin: formatQrLink(form.linkedin),
@@ -486,6 +507,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               placeholder="Full Name"
               value={form.name}
               error={errors.name}
+              maxLength={ATTENDEE_FIELD_LIMITS.name}
               onChange={update("name")}
             />
             <TextInput
@@ -494,6 +516,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               placeholder="Role/Title"
               value={form.role}
               error={errors.role}
+              maxLength={ATTENDEE_FIELD_LIMITS.role}
               onChange={update("role")}
             />
             <TextInput
@@ -502,6 +525,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               placeholder="Organization"
               value={form.company}
               error={errors.company}
+              maxLength={ATTENDEE_FIELD_LIMITS.company}
               onChange={update("company")}
             />
             <TextInput

@@ -18,6 +18,9 @@ import {
   getEnabledFieldsForRole,
   normalizeRegistrationFormConfig,
 } from "@/lib/registration-form";
+import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
+
+const URL_OR_QUERY_PATTERN = /(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$)|[?=&])/i;
 
 function NewCardForm() {
   const router = useRouter();
@@ -151,7 +154,7 @@ function NewCardForm() {
   };
 
   const validate = () => {
-    const newErrors: Record<string, string> = { ...errors };
+    const newErrors: Record<string, string> = {};
     enabledFields.forEach((field) => {
       const value = knownFieldIds.has(field.id)
         ? String(form[field.id as keyof typeof form] || "")
@@ -171,6 +174,33 @@ function NewCardForm() {
 
     if (enabledFields.some((field) => field.id === "email") && form.email && !/\S+@\S+\.\S+/.test(form.email)) {
       newErrors.email = "Invalid email format";
+    }
+    if (enabledFields.some((field) => field.id === "name")) {
+      const name = String(form.name || "").trim();
+      if (!name) newErrors.name = "Full Name is required";
+      else if (name.length > ATTENDEE_FIELD_LIMITS.name) {
+        newErrors.name = `Full Name must be ${ATTENDEE_FIELD_LIMITS.name} characters or less`;
+      } else if (URL_OR_QUERY_PATTERN.test(name)) {
+        newErrors.name = "Full Name cannot contain links or query text";
+      }
+    }
+    if (enabledFields.some((field) => field.id === "role")) {
+      const role = String(form.role || "").trim();
+      if (!role) newErrors.role = "Designation is required";
+      else if (role.length > ATTENDEE_FIELD_LIMITS.role) {
+        newErrors.role = `Designation must be ${ATTENDEE_FIELD_LIMITS.role} characters or less`;
+      } else if (URL_OR_QUERY_PATTERN.test(role)) {
+        newErrors.role = "Designation cannot contain links or query text";
+      }
+    }
+    if (enabledFields.some((field) => field.id === "company")) {
+      const company = String(form.company || "").trim();
+      if (!company) newErrors.company = "Organization is required";
+      else if (company.length > ATTENDEE_FIELD_LIMITS.company) {
+        newErrors.company = `Organization must be ${ATTENDEE_FIELD_LIMITS.company} characters or less`;
+      } else if (URL_OR_QUERY_PATTERN.test(company)) {
+        newErrors.company = "Organization cannot contain links or query text";
+      }
     }
     enabledFields.forEach((field) => {
       const value = knownFieldIds.has(field.id)
@@ -268,9 +298,9 @@ function NewCardForm() {
 
       const attendeeData = {
         user_id: null,
-        name: form.name,
-        role: form.role,
-        company: fieldEnabled("company") ? form.company : "",
+        name: form.name.trim(),
+        role: form.role.trim(),
+        company: fieldEnabled("company") ? form.company.trim() : "",
         card_email: fieldEnabled("email") ? form.email : "",
         event_name: form.eventName,
         session_date: form.sessionDate,
@@ -447,6 +477,7 @@ function NewCardForm() {
                     placeholder={field.placeholder || "Full Name"}
                     value={form.name}
                     error={errors.name}
+                    maxLength={ATTENDEE_FIELD_LIMITS.name}
                     onChange={update("name")}
                   />
                 );
@@ -460,6 +491,7 @@ function NewCardForm() {
                     placeholder={field.placeholder || "Designation"}
                     value={form.role}
                     error={errors.role}
+                    maxLength={ATTENDEE_FIELD_LIMITS.role}
                     onChange={update("role")}
                   />
                 );
@@ -473,6 +505,7 @@ function NewCardForm() {
                     placeholder={field.placeholder || "Organization"}
                     value={form.company}
                     error={errors.company}
+                    maxLength={ATTENDEE_FIELD_LIMITS.company}
                     onChange={update("company")}
                   />
                 );
