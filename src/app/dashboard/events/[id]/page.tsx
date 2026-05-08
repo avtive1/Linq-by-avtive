@@ -43,6 +43,8 @@ import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
+import { CardPreview } from "@/components/CardPreview";
+import { CustomColorPicker } from "@/components/CustomColorPicker";
 import {
   type RegistrationFieldDefinition,
   type RegistrationFormConfig,
@@ -67,6 +69,20 @@ type ActiveGrant = {
   created_at: string;
 };
 const CORE_PREVIEW_FIELD_IDS = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
+const BRAND_THEME_COLORS = [
+  { name: "purple", start: "#41295a", end: "#2f0743" },
+  { name: "red", start: "#c94b4b", end: "#4b134f" },
+  { name: "pink", start: "#EE0979", end: "#FF6A00" },
+  { name: "blue", start: "#D3CCE3", end: "#E9E4F0" },
+];
+const BRAND_PRESET_THEME_NAMES = new Set(BRAND_THEME_COLORS.map((c) => c.name));
+
+const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
+  purple: { start: "#eef0ff", end: "#f7f3ff" },
+  red: { start: "#fff1f1", end: "#fdf2ff" },
+  pink: { start: "#fff3f8", end: "#fff8f0" },
+  blue: { start: "#f1f5ff", end: "#f6f8ff" },
+};
 
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const EVENT_NAME_MAX_CHARS = 18;
@@ -129,11 +145,26 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [sponsorRows, setSponsorRows] = useState<SponsorFormRow[]>([]);
   const [isSavingSponsors, setIsSavingSponsors] = useState(false);
   const [isRegistrationFormOpen, setIsRegistrationFormOpen] = useState(false);
+  const [isBrandingOpen, setIsBrandingOpen] = useState(false);
   const [formBuilderRole, setFormBuilderRole] = useState<"guest" | "visitor">("visitor");
   const [registrationFormDraft, setRegistrationFormDraft] = useState<RegistrationFormConfig>(
     getDefaultRegistrationFormConfig(),
   );
   const [isSavingRegistrationForm, setIsSavingRegistrationForm] = useState(false);
+  const [brandingDraft, setBrandingDraft] = useState({
+    card_color: "purple",
+    card_font: "inter",
+    horizontal_text_color: "",
+    vertical_text_color: "",
+  });
+  const [isSavingBranding, setIsSavingBranding] = useState(false);
+  const [showBrandCustomColorPicker, setShowBrandCustomColorPicker] = useState(false);
+  const [draftBrandCustomColor, setDraftBrandCustomColor] = useState("#2563EB");
+  const [brandCustomColorAnchorRect, setBrandCustomColorAnchorRect] = useState<DOMRect | null>(null);
+  const [showBrandTextColorPicker, setShowBrandTextColorPicker] = useState(false);
+  const [draftBrandTextColor, setDraftBrandTextColor] = useState("#FFFFFF");
+  const [brandTextColorAnchorRect, setBrandTextColorAnchorRect] = useState<DOMRect | null>(null);
+  const [activeBrandTextTarget, setActiveBrandTextTarget] = useState<"horizontal" | "vertical">("horizontal");
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState<"text" | "number" | "url">("text");
   const [editingCustomFieldId, setEditingCustomFieldId] = useState<string | null>(null);
@@ -148,6 +179,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isLoadingGrants, setIsLoadingGrants] = useState(false);
   const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
+  const [organizationBranding, setOrganizationBranding] = useState({
+    name: "",
+    logoUrl: "",
+  });
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id || "";
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
@@ -205,6 +240,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         const eventRecord = eventPayload.data;
         if (!isMounted) return;
 
+        try {
+          const brandingRes = await fetch(`/api/events/${id}/branding`);
+          const brandingPayload = await brandingRes.json().catch(() => null);
+          if (brandingRes.ok && brandingPayload?.data && isMounted) {
+            setOrganizationBranding({
+              name: String(brandingPayload.data.organizationName || ""),
+              logoUrl: String(brandingPayload.data.organizationLogoUrl || ""),
+            });
+          }
+        } catch {
+          // Keep fallback branding values when branding endpoint fails.
+        }
+
         setEventData({
           id: eventRecord.id,
           name: eventRecord.name,
@@ -217,7 +265,20 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           logo_url: eventRecord.logo_url || "",
           sponsors: parseEventSponsors(eventRecord.sponsors),
           registration_form_config: normalizeRegistrationFormConfig(eventRecord.registration_form_config),
+          card_color: String(eventRecord.card_color || "purple"),
+          card_font: String(eventRecord.card_font || "inter"),
+          horizontal_text_color: String(eventRecord.horizontal_text_color || ""),
+          vertical_text_color: String(eventRecord.vertical_text_color || ""),
+          is_branding_finalized: Boolean(eventRecord.is_branding_finalized),
         });
+        if (!isBrandingOpen) {
+          setBrandingDraft({
+            card_color: String(eventRecord.card_color || "purple"),
+            card_font: String(eventRecord.card_font || "inter"),
+            horizontal_text_color: String(eventRecord.horizontal_text_color || ""),
+            vertical_text_color: String(eventRecord.vertical_text_color || ""),
+          });
+        }
 
         const [memberResult, attendeeRes] = await Promise.all([
           fetch("/api/organization-members/me")
@@ -302,7 +363,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode, userId, refreshTick, sessionStatus]);
+  }, [id, router, impersonateId, isPreviewMode, userId, refreshTick, sessionStatus, isBrandingOpen]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const minCampaignDate = useMemo(() => {
@@ -327,6 +388,30 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const livePreviewConfig = isRegistrationFormOpen
     ? normalizeRegistrationFormConfig(registrationFormDraft)
     : effectiveRegistrationConfig;
+  const isBrandingFinalized = Boolean(eventData?.is_branding_finalized);
+  const brandingPreviewData = useMemo(
+    () => ({
+      eventName: eventData?.name || "New Event",
+      sessionDate: eventData?.date || "",
+      sessionTime: eventData?.time || "",
+      location: eventData?.location || "",
+      cardRole: "visitor" as const,
+      name: "Attendee Name",
+      role: "Role/Title",
+      company: "Organization",
+      color: brandingDraft.card_color || "purple",
+      fontFamily: brandingDraft.card_font || "inter",
+      horizontalTextColor: brandingDraft.horizontal_text_color || "",
+      verticalTextColor: brandingDraft.vertical_text_color || "",
+      sponsors: eventData?.sponsors || [],
+      organizationName: organizationBranding.name || "Organization",
+      organizationLogoUrl: organizationBranding.logoUrl || eventData?.logo_url || "",
+      linkedin: "",
+    }),
+    [eventData, brandingDraft, organizationBranding],
+  );
+  const isBrandCustomThemeSelected = !BRAND_PRESET_THEME_NAMES.has(brandingDraft.card_color || "");
+  const isBrandCustomPickerActive = showBrandCustomColorPicker || isBrandCustomThemeSelected;
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -535,6 +620,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         sponsors: eventData?.sponsors?.length ? eventData.sponsors : [],
         registration_form_config:
           eventData?.registration_form_config || getDefaultRegistrationFormConfig(),
+        card_color: eventData?.card_color || "purple",
+        card_font: eventData?.card_font || "inter",
+        horizontal_text_color: eventData?.horizontal_text_color || "",
+        vertical_text_color: eventData?.vertical_text_color || "",
+        is_branding_finalized: Boolean(eventData?.is_branding_finalized),
       };
       const createRes = await fetch("/api/events", {
         method: "POST",
@@ -593,6 +683,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           sponsors: eventData.sponsors?.length ? eventData.sponsors : [],
           registration_form_config:
             eventData.registration_form_config || getDefaultRegistrationFormConfig(),
+          card_color: eventData.card_color || "purple",
+          card_font: eventData.card_font || "inter",
+          horizontal_text_color: eventData.horizontal_text_color || "",
+          vertical_text_color: eventData.vertical_text_color || "",
+          is_branding_finalized: Boolean(eventData.is_branding_finalized),
           ownerId: userId,
         }),
       });
@@ -734,6 +829,39 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.error("Could not save registration form.");
     } finally {
       setIsSavingRegistrationForm(false);
+    }
+  };
+
+  const saveBrandingConfig = async () => {
+    if (!eventData || isPreviewMode) return;
+    setIsSavingBranding(true);
+    try {
+      const payload = {
+        card_color: brandingDraft.card_color || "purple",
+        card_font: brandingDraft.card_font || "inter",
+        horizontal_text_color: brandingDraft.horizontal_text_color.trim(),
+        vertical_text_color: brandingDraft.vertical_text_color.trim(),
+        is_branding_finalized: true,
+      };
+      const res = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        toast.error(body?.error || "Could not save card branding.");
+        return;
+      }
+      setEventData((prev) => (prev ? { ...prev, ...payload, is_branding_finalized: true } : prev));
+      toast.success("Card branding saved.");
+      setIsBrandingOpen(false);
+      router.refresh();
+    } catch (err) {
+      console.error("Branding save error:", err);
+      toast.error("Could not save card branding.");
+    } finally {
+      setIsSavingBranding(false);
     }
   };
 
@@ -1039,10 +1167,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div className="relative" ref={shareRef}>
                   <Button
                     variant="secondary"
-                    onClick={() => setIsShareOpen(!isShareOpen)}
-                    disabled={status.label === "Past"}
+                    onClick={() => {
+                      if (!isBrandingFinalized) {
+                        toast.error("Please save card branding before sharing registration links.");
+                        return;
+                      }
+                      setIsShareOpen(!isShareOpen);
+                    }}
+                    disabled={status.label === "Past" || !isBrandingFinalized}
                     icon={<LinkIcon size={18} />}
-                    className={`hidden sm:flex transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                    className={`hidden sm:flex transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
                     Share Link
                   </Button>
@@ -1091,12 +1225,36 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                 <Button
                   variant="secondary"
-                  onClick={() => setIsShareOpen(!isShareOpen)}
-                  disabled={status.label === "Past"}
+                  onClick={() => {
+                    if (!isBrandingFinalized) {
+                      toast.error("Please save card branding before sharing registration links.");
+                      return;
+                    }
+                    setIsShareOpen(!isShareOpen);
+                  }}
+                  disabled={status.label === "Past" || !isBrandingFinalized}
                   icon={<LinkIcon size={18} />}
-                  className={`flex sm:hidden px-4 ${status.label === "Past" ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                  className={`flex sm:hidden px-4 ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                 >
                   <span className="sr-only">Share Form Link</span>
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    if (!canManageEvent) return;
+                    setBrandingDraft({
+                      card_color: String(eventData?.card_color || "purple"),
+                      card_font: String(eventData?.card_font || "inter"),
+                      horizontal_text_color: String(eventData?.horizontal_text_color || ""),
+                      vertical_text_color: String(eventData?.vertical_text_color || ""),
+                    });
+                    setIsBrandingOpen(true);
+                  }}
+                  disabled={!canManageEvent}
+                  icon={<Layers3 size={16} />}
+                  className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                >
+                  Card Branding
                 </Button>
                 {status.label === "Past" ? (
                   <Button 
@@ -1204,6 +1362,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
         </motion.div>
+        {!isPreviewMode && !isBrandingFinalized && (
+          <div className="mb-6 rounded-md border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Please save card branding first, then you can use <span className="font-semibold">Share Link</span> for Guest/Visitor registrations.
+          </div>
+        )}
 
         {isPreviewMode && (
           <div className="motion-token-enter mb-8 p-5 rounded-xl border border-primary/20 bg-linear-to-br from-white/95 to-info/5 shadow-xl backdrop-blur-xl relative overflow-hidden ring-1 ring-white/20">
@@ -1387,7 +1550,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3 !h-10 px-4 text-[15px]"
+                    className="mb-3 h-10! px-4 text-[15px]"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("guest")}
                     >
@@ -1403,7 +1566,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3 !h-10 px-4 text-[15px]"
+                    className="mb-3 h-10! px-4 text-[15px]"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("visitor")}
                   >
@@ -1801,6 +1964,217 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isBrandingOpen && (
+        <div className="fixed inset-0 z-100">
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
+          />
+          <div
+            className="relative h-full w-full overflow-hidden animate-in fade-in duration-200"
+            style={{
+              background: `linear-gradient(160deg, ${
+                BRAND_THEME_BACKDROPS[brandingDraft.card_color || "purple"]?.start || "#eef0ff"
+              } 0%, ${BRAND_THEME_BACKDROPS[brandingDraft.card_color || "purple"]?.end || "#f7f3ff"} 100%)`,
+            }}
+          >
+            <div className="mx-auto flex h-full w-full max-w-[1540px] flex-col px-6 py-6 sm:px-8">
+              <div className="flex items-start justify-between rounded-t-xl border border-border/40 bg-white/90 px-8 pb-4 pt-7 backdrop-blur-sm">
+                <div>
+                  <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Card Branding</h2>
+                  <p className="text-sm text-muted mt-1.5">Finalize branding first, then share guest/visitor links.</p>
+                </div>
+                <button
+                  onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
+                  className="w-10 h-10 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto border-x border-border/40 bg-white/70 px-8 py-6">
+                <div className="flex w-full flex-col gap-6">
+                  <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60">Social post layout</h4>
+                  <div className="w-full max-w-[740px] overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
+                        <div style={{ width: "1200px", height: "628px", transform: "scale(0.58)", transformOrigin: "top left", marginBottom: "-264px" }}>
+                          <CardPreview data={brandingPreviewData} preview />
+                        </div>
+                      </div>
+                    </div>
+                <div className="flex flex-col items-center gap-3">
+                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60">Event badge layout</h4>
+                  <div className="relative h-[300px] w-[186px] overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
+                    <div style={{ position: "absolute", top: 8, left: 8, width: "576px", height: "1024px", transform: "scale(0.28)", transformOrigin: "top left" }}>
+                          <CardPreview data={brandingPreviewData} preview isVertical verticalSide={2} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="w-full flex flex-col lg:flex-row gap-6 bg-white/75 border border-white/40 px-5 py-5 rounded-xl shadow-sm">
+                    <div className="relative flex-1 flex flex-col gap-2">
+                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Theme color</span>
+                      <div className="flex gap-2 h-10 items-center">
+                        {BRAND_THEME_COLORS.map((c) => (
+                          <button
+                            key={c.name}
+                            type="button"
+                            onClick={() => {
+                              setShowBrandCustomColorPicker(false);
+                              setBrandingDraft((prev) => ({ ...prev, card_color: c.name }));
+                            }}
+                            className={`w-8 h-8 rounded-full border transition-all ${
+                              brandingDraft.card_color === c.name
+                                ? "ring-2 ring-primary ring-offset-2 scale-110 border-transparent"
+                                : "border-white/40 hover:scale-105"
+                            }`}
+                            style={{ background: `linear-gradient(135deg, ${c.start}, ${c.end})` }}
+                            aria-label={`Set ${c.name} theme`}
+                          />
+                        ))}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            setShowBrandTextColorPicker(false);
+                            setBrandCustomColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                            setDraftBrandCustomColor(isBrandCustomThemeSelected ? brandingDraft.card_color : "#2563EB");
+                            setShowBrandCustomColorPicker(true);
+                          }}
+                          className={`w-8 h-8 rounded-full transition-all duration-150 relative overflow-hidden flex items-center justify-center p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-95 ${
+                            isBrandCustomPickerActive
+                              ? "ring-2 ring-primary ring-offset-2 scale-110 shadow-md"
+                              : "hover:scale-110 border border-white/40"
+                          }`}
+                          style={{
+                            background:
+                              "conic-gradient(from 0deg, #ff4d4f, #ffa940, #fadb14, #73d13d, #36cfc9, #4096ff, #9254de, #f759ab, #ff4d4f)",
+                          }}
+                          aria-label="Choose custom theme color"
+                          title="Choose custom theme color"
+                        >
+                          <span
+                            className="absolute inset-[3px] rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.35),inset_0_-1px_2px_rgba(0,0,0,0.18)]"
+                            style={{ background: isBrandCustomThemeSelected ? brandingDraft.card_color : "#ffffff" }}
+                          />
+                          <span
+                            className="relative z-10 text-[14px] font-bold leading-none"
+                            style={{ color: isBrandCustomThemeSelected ? "#ffffff" : "#2563EB" }}
+                          >
+                            +
+                          </span>
+                        </button>
+                      </div>
+                      {showBrandCustomColorPicker && (
+                        <CustomColorPicker
+                          value={draftBrandCustomColor}
+                          anchorRect={brandCustomColorAnchorRect}
+                          onChange={(next) => setDraftBrandCustomColor(next)}
+                          onCancel={() => setShowBrandCustomColorPicker(false)}
+                          onConfirm={() => {
+                            setBrandingDraft((prev) => ({ ...prev, card_color: draftBrandCustomColor }));
+                            setShowBrandCustomColorPicker(false);
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="relative flex-1 flex flex-col gap-2">
+                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Text color</span>
+                      <div className="flex h-10 items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm w-fit">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            setActiveBrandTextTarget("horizontal");
+                            setShowBrandCustomColorPicker(false);
+                            setBrandTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                            setDraftBrandTextColor(brandingDraft.horizontal_text_color || "#FFFFFF");
+                            setShowBrandTextColorPicker(true);
+                          }}
+                          className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                            activeBrandTextTarget === "horizontal"
+                              ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                              : "text-heading/75 hover:bg-slate-100/80"
+                          }`}
+                        >
+                          T1 - Horizontal
+                        </button>
+                        <div className="mx-1 h-5 w-px bg-border/70" />
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            setActiveBrandTextTarget("vertical");
+                            setShowBrandCustomColorPicker(false);
+                            setBrandTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                            setDraftBrandTextColor(brandingDraft.vertical_text_color || "#000000");
+                            setShowBrandTextColorPicker(true);
+                          }}
+                          className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                            activeBrandTextTarget === "vertical"
+                              ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                              : "text-heading/75 hover:bg-slate-100/80"
+                          }`}
+                        >
+                          T2 - Vertical
+                        </button>
+                      </div>
+                      {showBrandTextColorPicker && (
+                        <CustomColorPicker
+                          value={draftBrandTextColor}
+                          anchorRect={brandTextColorAnchorRect}
+                          onChange={(next) => setDraftBrandTextColor(next)}
+                          onCancel={() => setShowBrandTextColorPicker(false)}
+                          onConfirm={() => {
+                            if (activeBrandTextTarget === "horizontal") {
+                              setBrandingDraft((prev) => ({ ...prev, horizontal_text_color: draftBrandTextColor }));
+                            } else {
+                              setBrandingDraft((prev) => ({ ...prev, vertical_text_color: draftBrandTextColor }));
+                            }
+                            setShowBrandTextColorPicker(false);
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex-1 flex flex-col gap-2">
+                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
+                      <Select
+                        value={brandingDraft.card_font}
+                        onChange={(val) => setBrandingDraft((prev) => ({ ...prev, card_font: val }))}
+                        options={[
+                          { label: "Inter (Default)", value: "inter" },
+                          { label: "Poppins", value: "poppins" },
+                          { label: "Google Sans", value: "outfit" },
+                          { label: "Times New Roman", value: "times" },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border border-t-0 border-border/40 rounded-b-xl bg-white/95 px-8 py-4">
+                <div className="flex gap-3">
+                  <Button
+                    variant="secondary"
+                    fullWidth
+                    className="h-11"
+                    disabled={isSavingBranding}
+                    onClick={() => setIsBrandingOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button fullWidth className="h-11" disabled={isSavingBranding} onClick={saveBrandingConfig}>
+                    {isSavingBranding ? "Saving..." : "Save Branding"}
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

@@ -11,6 +11,15 @@ import { isValidUuid } from "@/lib/validation/uuid";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 
+function stripBrandingMutations(payload: Record<string, unknown>) {
+  const sanitized = { ...payload };
+  delete sanitized.card_color;
+  delete sanitized.design_type;
+  delete sanitized.card_font;
+  delete sanitized.custom_fields;
+  return sanitized;
+}
+
 async function getAuthedSessionAndPermission(
   req: Request,
   id: string,
@@ -28,7 +37,7 @@ async function getAuthedSessionAndPermission(
       const hasReadScope = tokenScope.includes("card:read");
       const hasEditScope = tokenScope.includes("card:edit");
       const tokenCanRead = hasReadScope || hasEditScope;
-      const tokenCanEdit = hasEditScope || hasReadScope;
+      const tokenCanEdit = hasEditScope;
       const tokenAllowed = mode === "read" ? tokenCanRead : tokenCanEdit;
       if (tokenCardId === id && tokenAllowed) {
         return { userId: String(verified.payload.sub || "").trim() || "token-user", tokenAccess: true as const };
@@ -136,7 +145,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (auth.error) return auth.error;
     const userId = auth.userId!;
 
-    const securedPayload = encryptAttendeeSensitiveFields(validation.payload);
+    const permittedPayload = auth.tokenAccess
+      ? stripBrandingMutations(validation.payload as Record<string, unknown>)
+      : validation.payload;
+    const securedPayload = encryptAttendeeSensitiveFields(permittedPayload);
     const data = await updateRows("attendees", securedPayload, { id });
     const updateError = data.length ? null : { message: "No row updated" };
 

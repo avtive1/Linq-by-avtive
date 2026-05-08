@@ -25,7 +25,12 @@ async function ensureEventRegistrationFormColumn() {
     `ALTER TABLE public.events
      ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
      ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '',
-     ADD COLUMN IF NOT EXISTS short_id text`,
+     ADD COLUMN IF NOT EXISTS short_id text,
+     ADD COLUMN IF NOT EXISTS card_color text NOT NULL DEFAULT 'purple',
+     ADD COLUMN IF NOT EXISTS card_font text NOT NULL DEFAULT 'inter',
+     ADD COLUMN IF NOT EXISTS horizontal_text_color text NOT NULL DEFAULT '',
+     ADD COLUMN IF NOT EXISTS vertical_text_color text NOT NULL DEFAULT '',
+     ADD COLUMN IF NOT EXISTS is_branding_finalized boolean NOT NULL DEFAULT false`,
   );
   // Populate missing short_ids for existing events
   await queryNeon(`UPDATE public.events SET short_id = SUBSTRING(id::text, 1, 8) WHERE short_id IS NULL`);
@@ -163,6 +168,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       "logo_url",
       "sponsors",
       "registration_form_config",
+      "card_color",
+      "card_font",
+      "horizontal_text_color",
+      "vertical_text_color",
+      "is_branding_finalized",
     ] as const;
     const patch: Record<string, unknown> = {};
     for (const key of allowed) {

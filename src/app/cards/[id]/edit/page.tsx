@@ -53,6 +53,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const { id } = use(params);
   const shareToken = String(searchParams.get("token") || "").trim();
   const isShareEditMode = searchParams.get("share") === "true";
+  const canCustomizeBranding = !shareToken && !isShareEditMode;
   const cardRef = useRef<HTMLDivElement>(null);
   const verticalFrontRef = useRef<HTMLDivElement>(null);
   const verticalBackRef = useRef<HTMLDivElement>(null);
@@ -307,14 +308,21 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         track: form.track || "",
         linkedin: formatQrLink(form.linkedin),
         photo_url,
-        design_type: "design1",
-        card_color: form.color,
       };
+      if (canCustomizeBranding) {
+        updatePayload.design_type = "design1";
+        updatePayload.card_color = form.color;
+      }
       const nextCustomFields: Record<string, unknown> = { ...existingCustomFields };
-      if (horizontalTextColor.trim()) nextCustomFields.__horizontal_text_color = horizontalTextColor.trim();
-      else delete nextCustomFields.__horizontal_text_color;
-      if (verticalTextColor.trim()) nextCustomFields.__vertical_text_color = verticalTextColor.trim();
-      else delete nextCustomFields.__vertical_text_color;
+      if (canCustomizeBranding) {
+        if (horizontalTextColor.trim()) nextCustomFields.__horizontal_text_color = horizontalTextColor.trim();
+        else delete nextCustomFields.__horizontal_text_color;
+        if (verticalTextColor.trim()) nextCustomFields.__vertical_text_color = verticalTextColor.trim();
+        else delete nextCustomFields.__vertical_text_color;
+      } else {
+        delete nextCustomFields.__horizontal_text_color;
+        delete nextCustomFields.__vertical_text_color;
+      }
       updatePayload.custom_fields = nextCustomFields;
 
       const res = await fetch(`/api/cards/${id}`, {
@@ -616,7 +624,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             </div>
         </div>
 
-        {/* Layout/Style Control Panel (identical to app/cards/new) */}
+        {canCustomizeBranding ? (
         <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
 
           {/* Item 2: Theme Selection */}
@@ -771,6 +779,13 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           </div>
         </div>
       </div>
+        ) : (
+          <div className="w-full max-w-[1040px] mt-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
+            <p className="text-sm text-muted text-center lg:text-left">
+              Card branding is managed by the event organization. You can update attendee details only.
+            </p>
+          </div>
+        )}
     </div>
 
       {/* Responsive scale styles */}

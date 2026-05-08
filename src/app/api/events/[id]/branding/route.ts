@@ -15,6 +15,13 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       `ALTER TABLE public.events
        ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
     );
+    await queryNeon(
+      `ALTER TABLE public.events
+       ADD COLUMN IF NOT EXISTS card_color text NOT NULL DEFAULT 'purple',
+       ADD COLUMN IF NOT EXISTS card_font text NOT NULL DEFAULT 'inter',
+       ADD COLUMN IF NOT EXISTS horizontal_text_color text NOT NULL DEFAULT '',
+       ADD COLUMN IF NOT EXISTS vertical_text_color text NOT NULL DEFAULT ''`,
+    );
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
     const { id } = await params;
@@ -29,8 +36,12 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       logo_url: string | null;
       sponsors: unknown;
       registration_form_config: unknown;
+      card_color: string | null;
+      card_font: string | null;
+      horizontal_text_color: string | null;
+      vertical_text_color: string | null;
     }>(
-      `SELECT user_id, name, location, date, time, logo_url, sponsors, registration_form_config
+      `SELECT user_id, name, location, date, time, logo_url, sponsors, registration_form_config, card_color, card_font, horizontal_text_color, vertical_text_color
        FROM public.events
        WHERE id = $1`,
       [id],
@@ -49,6 +60,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             eventTime: "",
             sponsors: [],
             registrationFormConfig: normalizeRegistrationFormConfig(null),
+            cardColor: "purple",
+            cardFont: "inter",
+            horizontalTextColor: "",
+            verticalTextColor: "",
           },
         },
         { status: 200 },
@@ -78,6 +93,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
             eventTime: String(eventRow.time || ""),
             sponsors: parseEventSponsors(eventRow.sponsors),
             registrationFormConfig: normalizeRegistrationFormConfig(eventRow.registration_form_config),
+            cardColor: String(eventRow.card_color || "purple"),
+            cardFont: String(eventRow.card_font || "inter"),
+            horizontalTextColor: String(eventRow.horizontal_text_color || ""),
+            verticalTextColor: String(eventRow.vertical_text_color || ""),
           },
         },
         { status: 200 },
@@ -121,6 +140,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
           eventTime: String(eventRow.time || ""),
           sponsors: parseEventSponsors(eventRow.sponsors),
           registrationFormConfig: normalizeRegistrationFormConfig(eventRow.registration_form_config),
+          cardColor: String(eventRow.card_color || "purple"),
+          cardFont: String(eventRow.card_font || "inter"),
+          horizontalTextColor: String(eventRow.horizontal_text_color || ""),
+          verticalTextColor: String(eventRow.vertical_text_color || ""),
         },
       },
       { status: 200 },

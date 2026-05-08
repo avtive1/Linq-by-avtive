@@ -44,7 +44,12 @@ async function ensureEventTableSchema() {
     `ALTER TABLE public.events
      ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
      ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '',
-     ADD COLUMN IF NOT EXISTS short_id text`,
+     ADD COLUMN IF NOT EXISTS short_id text,
+     ADD COLUMN IF NOT EXISTS card_color text NOT NULL DEFAULT 'purple',
+     ADD COLUMN IF NOT EXISTS card_font text NOT NULL DEFAULT 'inter',
+     ADD COLUMN IF NOT EXISTS horizontal_text_color text NOT NULL DEFAULT '',
+     ADD COLUMN IF NOT EXISTS vertical_text_color text NOT NULL DEFAULT '',
+     ADD COLUMN IF NOT EXISTS is_branding_finalized boolean NOT NULL DEFAULT false`,
   );
   // Populate missing short_ids for existing events using first 8 chars of UUID
   await queryNeon(`UPDATE public.events SET short_id = SUBSTRING(id::text, 1, 8) WHERE short_id IS NULL`);
@@ -158,6 +163,11 @@ export async function POST(req: Request) {
       logo_url?: string;
       ownerId?: string;
       registration_form_config?: unknown;
+      card_color?: string;
+      card_font?: string;
+      horizontal_text_color?: string;
+      vertical_text_color?: string;
+      is_branding_finalized?: boolean;
     };
 
     const ownerId = String(body.ownerId || viewerId);
@@ -172,6 +182,11 @@ export async function POST(req: Request) {
       registration_form_config: normalizeRegistrationFormConfig(
         body.registration_form_config || getDefaultRegistrationFormConfig(),
       ),
+      card_color: String(body.card_color || "purple").trim() || "purple",
+      card_font: String(body.card_font || "inter").trim() || "inter",
+      horizontal_text_color: String(body.horizontal_text_color || "").trim(),
+      vertical_text_color: String(body.vertical_text_color || "").trim(),
+      is_branding_finalized: Boolean(body.is_branding_finalized ?? false),
       short_id: generateShortId(),
     };
 

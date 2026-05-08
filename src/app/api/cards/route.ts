@@ -8,6 +8,25 @@ import { issueAttendeeCardToken } from "@/lib/security/tokens";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 
+function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
+  const sanitized = { ...payload };
+  delete sanitized.card_color;
+  delete sanitized.design_type;
+  delete sanitized.card_font;
+  const customFieldsRaw = sanitized.custom_fields;
+  if (
+    customFieldsRaw &&
+    typeof customFieldsRaw === "object" &&
+    !Array.isArray(customFieldsRaw)
+  ) {
+    const nextCustomFields = { ...(customFieldsRaw as Record<string, unknown>) };
+    delete nextCustomFields.__horizontal_text_color;
+    delete nextCustomFields.__vertical_text_color;
+    sanitized.custom_fields = nextCustomFields;
+  }
+  return sanitized;
+}
+
 export async function POST(req: Request) {
   try {
     try {
@@ -57,7 +76,11 @@ export async function POST(req: Request) {
       }
       isPublicEventRegistration = true;
     }
-    const securePayload = encryptAttendeeSensitiveFields(sanitizedPayload) as Record<string, unknown>;
+    const shouldRestrictBranding = isPublicEventRegistration || (!!tokenUserId && !authUserId);
+    const writePayload = shouldRestrictBranding
+      ? stripAttendeeBrandingFields(sanitizedPayload as Record<string, unknown>)
+      : sanitizedPayload;
+    const securePayload = encryptAttendeeSensitiveFields(writePayload) as Record<string, unknown>;
     if (isPublicEventRegistration && !securePayload.user_id) {
       securePayload.user_id = null;
     }
@@ -106,7 +129,7 @@ export async function POST(req: Request) {
         shareToken = await issueAttendeeCardToken({
           sub: tokenSubject,
           cardId: createdCardId,
-          scope: "card:read",
+          scope: "card:edit",
         });
       } catch {
         shareToken = null;

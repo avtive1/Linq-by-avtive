@@ -53,4 +53,9 @@ export type EventData = {
   short_id?: string;
   sponsors?: SponsorEntry[];
   registration_form_config?: RegistrationFormConfig;
+  card_color?: string;
+  card_font?: string;
+  horizontal_text_color?: string;
+  vertical_text_color?: string;
+  is_branding_finalized?: boolean;
 };
