@@ -857,6 +857,12 @@ function DashboardContent() {
       toast.error("Your organization join request is pending approval. Campaign creation is locked.");
       return;
     }
+    if (isOrgTeamMember && !hasCreateCampaignPermission) {
+      toast.error("Campaign creation access is not active. Request create_event permission from your organization admin.");
+      setIsEventModalOpen(false);
+      setIsRequestPermissionModalOpen(true);
+      return;
+    }
     if (!eventForm.name || (!eventForm.location && eventForm.location_type === "onsite") || !eventForm.date || !eventForm.time) {
       toast.error("Please fill all required fields.");
       return;
@@ -2310,7 +2316,7 @@ function DashboardContent() {
                 <Button 
                   type="submit" 
                   fullWidth 
-                  disabled={isSubmittingEvent}
+                  disabled={isSubmittingEvent || (isOrgTeamMember && !hasCreateCampaignPermission)}
                   className="order-1 sm:order-2 shadow-lg shadow-primary/20"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}

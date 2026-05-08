@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 
+const ORG_MANAGED_PERMISSIONS = new Set(["create_event", "manage_event", "edit_cards", "delete_cards"]);
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -29,20 +31,19 @@ export async function GET(req: Request) {
       permission: string;
       status: string;
       created_at: string;
+      event_id: string | null;
     }>(
-      `SELECT id, grantee_user_id, permission, status, created_at
+      `SELECT id, grantee_user_id, permission, status, created_at, event_id
        FROM public.access_grants
-       WHERE event_id = $1 AND status = 'active'
+       WHERE status = 'active'
+         AND (
+           event_id = $1
+           OR (event_id IS NULL AND granted_by_user_id = $4)
+         )
        ORDER BY created_at DESC
        LIMIT $2
        OFFSET $3`,
-      [eventId, limit, offset],
-    );
-    const countRow = await queryNeonOne<{ count: string }>(
-      `SELECT COUNT(*)::text AS count
-       FROM public.access_grants
-       WHERE event_id = $1 AND status = 'active'`,
-      [eventId],
+      [eventId, limit, offset, userId],
     );
     const granteeIds = Array.from(new Set(grants.map((g) => g.grantee_user_id)));
     const emailRows = granteeIds.length
@@ -58,15 +59,34 @@ export async function GET(req: Request) {
     const enriched = grants.map((g) => ({
       ...g,
       grantee_email: emailByUserId.get(g.grantee_user_id) || "unknown",
+      scope: g.event_id ? "event" : "organization",
     }));
+    const dedupedMap = new Map<string, (typeof enriched)[number]>();
+    for (const grant of enriched) {
+      const isOrgManagedPermission = ORG_MANAGED_PERMISSIONS.has(grant.permission);
+      const key = isOrgManagedPermission
+        ? `${grant.grantee_user_id}:${grant.permission}`
+        : `${grant.grantee_user_id}:${grant.event_id || "organization"}:${grant.permission}`;
+      const existing = dedupedMap.get(key);
+      if (!existing) {
+        dedupedMap.set(key, grant);
+        continue;
+      }
+      // Prefer org-level row for org-managed permissions for clearer access-control display.
+      if (!existing.event_id && grant.event_id) continue;
+      if (existing.event_id && !grant.event_id) {
+        dedupedMap.set(key, grant);
+      }
+    }
+    const deduped = Array.from(dedupedMap.values());
 
     return NextResponse.json(
       {
-        data: enriched,
+        data: deduped,
         pagination: {
           limit,
           offset,
-          total: Number(countRow?.count || 0),
+          total: deduped.length,
         },
       },
       { status: 200 },

@@ -194,6 +194,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isAccessControlOpen, setIsAccessControlOpen] = useState(false);
   const [activeGrants, setActiveGrants] = useState<ActiveGrant[]>([]);
   const [isLoadingGrants, setIsLoadingGrants] = useState(false);
+  const [revokingGrantId, setRevokingGrantId] = useState<string | null>(null);
   const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isOrgAdminReviewer, setIsOrgAdminReviewer] = useState(false);
   const [organizationBranding, setOrganizationBranding] = useState({
@@ -1049,6 +1050,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   };
 
   const revokeGrant = async (grantId: string) => {
+    setRevokingGrantId(grantId);
     try {
       const res = await fetch(`/api/access-grants/${grantId}`, { method: "DELETE" });
       const payload = await res.json();
@@ -1061,6 +1063,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     } catch (err) {
       console.error("Revoke grant error:", err);
       toast.error("Could not revoke grant.");
+    } finally {
+      setRevokingGrantId((current) => (current === grantId ? null : current));
     }
   };
 
@@ -1954,7 +1958,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="px-6 pt-6 pb-3 flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Active Access Grants</h3>
-                <p className="text-sm text-muted">Revoke member permissions for this campaign.</p>
+                <p className="text-sm text-muted">Revoke member permissions synced to this organization.</p>
               </div>
               <button
                 type="button"
@@ -1983,8 +1987,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       {group.grants.map(grant => (
                         <div key={grant.id} className="flex items-center justify-between gap-2 p-2 rounded-sm bg-surface/50 border border-border/30">
                           <p className="text-xs text-muted font-medium">Permission: <span className="text-heading">{grant.permission}</span></p>
-                          <Button size="sm" variant="secondary" onClick={() => revokeGrant(grant.id)} className="h-7 text-xs px-3">
-                            Revoke
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => revokeGrant(grant.id)}
+                            disabled={revokingGrantId === grant.id}
+                            className="h-7 text-xs px-3 disabled:opacity-60"
+                          >
+                            {revokingGrantId === grant.id ? "Revoking..." : "Revoke"}
                           </Button>
                         </div>
                       ))}
