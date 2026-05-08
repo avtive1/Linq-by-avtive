@@ -84,6 +84,23 @@ const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
   blue: { start: "#f1f5ff", end: "#f6f8ff" },
 };
 
+async function readResponsePayload(res: Response): Promise<unknown> {
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return res.json().catch(() => null);
+  }
+  const text = await res.text().catch(() => "");
+  return text ? { error: text } : null;
+}
+
+function getPayloadError(payload: unknown, fallback: string): string {
+  if (payload && typeof payload === "object" && "error" in payload) {
+    const value = (payload as { error?: unknown }).error;
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return fallback;
+}
+
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const EVENT_NAME_MAX_CHARS = 18;
   const CAMPAIGN_DESCRIPTION_MAX_CHARS = 220;
@@ -517,11 +534,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             folder: `events/${userId}`,
           }),
         });
-        const uploadPayload = await uploadRes.json();
-        if (!uploadRes.ok || !uploadPayload?.data?.url) {
-          throw new Error(uploadPayload?.error || "Campaign logo upload failed.");
+        const uploadPayload = await readResponsePayload(uploadRes);
+        const uploadedUrl =
+          uploadPayload && typeof uploadPayload === "object" && "data" in uploadPayload
+            ? (uploadPayload as { data?: { url?: unknown } }).data?.url
+            : undefined;
+        if (!uploadRes.ok || !uploadedUrl) {
+          throw new Error(getPayloadError(uploadPayload, "Campaign logo upload failed."));
         }
-        logo_url = String(uploadPayload.data.url);
+        logo_url = String(uploadedUrl);
       } else if (typeof editForm.logo === "string" && editForm.logo.trim()) {
         logo_url = editForm.logo.trim();
       }
@@ -539,8 +560,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           logo_url,
         }),
       });
-      const updatePayload = await updateRes.json();
-      if (!updateRes.ok) throw new Error(updatePayload?.error || "Failed to update event.");
+      const updatePayload = await readResponsePayload(updateRes);
+      if (!updateRes.ok) throw new Error(getPayloadError(updatePayload, "Failed to update event."));
 
       setEventData((prev) => prev ? {
         ...prev,
@@ -600,11 +621,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             folder: `events/${userId}`,
           }),
         });
-        const uploadPayload = await uploadRes.json();
-        if (!uploadRes.ok || !uploadPayload?.data?.url) {
-          throw new Error(uploadPayload?.error || "Logo upload failed.");
+        const uploadPayload = await readResponsePayload(uploadRes);
+        const uploadedUrl =
+          uploadPayload && typeof uploadPayload === "object" && "data" in uploadPayload
+            ? (uploadPayload as { data?: { url?: unknown } }).data?.url
+            : undefined;
+        if (!uploadRes.ok || !uploadedUrl) {
+          throw new Error(getPayloadError(uploadPayload, "Logo upload failed."));
         }
-        logo_url = String(uploadPayload.data.url);
+        logo_url = String(uploadedUrl);
       }
 
       // Create a duplicate/renewed event in DB instead of updating the old one
@@ -634,13 +659,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           ownerId: userId,
         }),
       });
-      const createPayload = await createRes.json();
+      const createPayload = await readResponsePayload(createRes);
       if (!createRes.ok) {
-        throw new Error(createPayload?.error || "Database insert failed.");
+        throw new Error(getPayloadError(createPayload, "Database insert failed."));
       }
-
-      const createdEvent = createPayload?.data;
-      if (!createdEvent?.id) {
+      const createdEventId =
+        createPayload && typeof createPayload === "object" && "data" in createPayload
+          ? (createPayload as { data?: { id?: unknown } }).data?.id
+          : undefined;
+      if (!createdEventId) {
         throw new Error("Insert failed: no data returned.");
       }
 
@@ -648,10 +675,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setIsRenewOpen(false);
       
       // Redirect to the newly created event
-      if (createdEvent?.id) {
-        router.refresh();
-        router.push(`/dashboard/events/${createdEvent.id}`);
-      }
+      router.refresh();
+      router.push(`/dashboard/events/${String(createdEventId)}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to renew event. Please try again.";
       console.error("Renewal error:", err);
@@ -691,14 +716,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           ownerId: userId,
         }),
       });
-      const duplicatePayload = await duplicateRes.json();
-      if (!duplicateRes.ok) throw new Error(duplicatePayload?.error || "Failed to duplicate event.");
-      const created = duplicatePayload?.data;
+      const duplicatePayload = await readResponsePayload(duplicateRes);
+      if (!duplicateRes.ok) throw new Error(getPayloadError(duplicatePayload, "Failed to duplicate event."));
+      const createdId =
+        duplicatePayload && typeof duplicatePayload === "object" && "data" in duplicatePayload
+          ? (duplicatePayload as { data?: { id?: unknown } }).data?.id
+          : undefined;
 
       toast.success("Event duplicated.");
-      if (created?.id) {
+      if (createdId) {
         router.refresh();
-        router.push(`/dashboard/events/${created?.id}`);
+        router.push(`/dashboard/events/${String(createdId)}`);
       }
     } catch (err) {
       console.error("Error duplicating event:", err);
@@ -737,9 +765,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       }
 
       const deleteRes = await fetch(`/api/events/${id}`, { method: "DELETE" });
-      const deletePayload = await deleteRes.json();
+      const deletePayload = await readResponsePayload(deleteRes);
       if (!deleteRes.ok) {
-        throw new Error(deletePayload?.error || "Could not delete event.");
+        throw new Error(getPayloadError(deletePayload, "Could not delete event."));
       }
 
       toast.success("Event deleted permanently.");
@@ -772,8 +800,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sponsors: resolved }),
       });
-      const savePayload = await saveRes.json();
-      if (!saveRes.ok) throw new Error(savePayload?.error || "Failed to save sponsors.");
+      const savePayload = await readResponsePayload(saveRes);
+      if (!saveRes.ok) throw new Error(getPayloadError(savePayload, "Failed to save sponsors."));
       setEventData((prev) => (prev ? { ...prev, sponsors: resolved } : prev));
       toast.success("Sponsors saved.");
       setIsSponsorsOpen(false);

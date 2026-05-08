@@ -21,6 +21,23 @@ import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
 
 const URL_OR_QUERY_PATTERN = /(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$)|[?=&])/i;
 
+async function readResponsePayload(res: Response): Promise<unknown> {
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return res.json().catch(() => null);
+  }
+  const text = await res.text().catch(() => "");
+  return text ? { error: text } : null;
+}
+
+function getPayloadError(payload: unknown, fallback: string): string {
+  if (payload && typeof payload === "object" && "error" in payload) {
+    const value = (payload as { error?: unknown }).error;
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return fallback;
+}
+
 function NewCardForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -316,16 +333,26 @@ function NewCardForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(attendeeData),
       });
-      const body = await res.json();
+      const body = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(body.error || "Failed to save card. Please try again.");
-        throw new Error(body.error || "Failed to save card");
+        const errorMessage = getPayloadError(body, "Failed to save card. Please try again.");
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
-      if (body.data?.id) {
+      const createdId =
+        body && typeof body === "object" && "data" in body
+          ? (body as { data?: { id?: unknown } }).data?.id
+          : undefined;
+      const createdShareToken =
+        body && typeof body === "object" && "shareToken" in body
+          ? (body as { shareToken?: unknown }).shareToken
+          : undefined;
+
+      if (createdId) {
         try {
           const { toPng } = await import("html-to-image");
-          const cardId = String(body.data.id);
+          const cardId = String(createdId);
           const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
             if (!node) return;
             const png = await toPng(node, {
@@ -343,9 +370,13 @@ function NewCardForm() {
                 publicId: `${cardId}-${suffix}`,
               }),
             });
-            const uploadPayload = await uploadRes.json();
-            if (!uploadRes.ok || !uploadPayload?.data?.url) {
-              throw new Error(uploadPayload?.error || `Failed to upload ${suffix} preview.`);
+            const uploadPayload = await readResponsePayload(uploadRes);
+            const uploadUrl =
+              uploadPayload && typeof uploadPayload === "object" && "data" in uploadPayload
+                ? (uploadPayload as { data?: { url?: unknown } }).data?.url
+                : undefined;
+            if (!uploadRes.ok || !uploadUrl) {
+              throw new Error(getPayloadError(uploadPayload, `Failed to upload ${suffix} preview.`));
             }
           };
           await uploadVertical(verticalFrontRef.current, "vertical-front");
@@ -354,9 +385,9 @@ function NewCardForm() {
           console.warn("Vertical preview upload skipped:", verticalErr);
         }
         toast.success("Attendee card saved successfully!");
-        const nextUrl = body.shareToken
-          ? `/cards/${body.data.id}?share=true&token=${encodeURIComponent(String(body.shareToken))}`
-          : `/cards/${body.data.id}?share=true`;
+        const nextUrl = createdShareToken
+          ? `/cards/${String(createdId)}?share=true&token=${encodeURIComponent(String(createdShareToken))}`
+          : `/cards/${String(createdId)}?share=true`;
         router.push(nextUrl);
       }
     } catch (err: unknown) {

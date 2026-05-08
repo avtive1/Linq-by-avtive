@@ -47,6 +47,23 @@ const colors = [
 ];
 const presetColorNames = new Set(colors.map((c) => c.name));
 
+async function readResponsePayload(res: Response): Promise<unknown> {
+  const contentType = res.headers.get("content-type") || "";
+  if (contentType.includes("application/json")) {
+    return res.json().catch(() => null);
+  }
+  const text = await res.text().catch(() => "");
+  return text ? { error: text } : null;
+}
+
+function getPayloadError(payload: unknown, fallback: string): string {
+  if (payload && typeof payload === "object" && "error" in payload) {
+    const value = (payload as { error?: unknown }).error;
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return fallback;
+}
+
 export default function EditCardPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -280,10 +297,14 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ dataUrl: form.photo, folder: `attendees/${eventId || "general"}` }),
         });
-        const uploadPayload = await uploadRes.json();
-        if (!uploadRes.ok || !uploadPayload?.data?.url) {
+        const uploadPayload = await readResponsePayload(uploadRes);
+        const uploadedUrl =
+          uploadPayload && typeof uploadPayload === "object" && "data" in uploadPayload
+            ? (uploadPayload as { data?: { url?: unknown } }).data?.url
+            : undefined;
+        if (!uploadRes.ok || !uploadedUrl) {
           toast.error("Failed to upload photo.");
-          throw new Error(uploadPayload?.error || "Photo upload failed.");
+          throw new Error(getPayloadError(uploadPayload, "Photo upload failed."));
         }
 
         if (originalPhotoPath) {
@@ -297,7 +318,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             throw new Error(deletePayload?.error || "Failed to delete old photo.");
           }
         }
-        photo_url = String(uploadPayload.data.url);
+        photo_url = String(uploadedUrl || "");
       }
 
       const updatePayload: Record<string, unknown> = {
@@ -335,15 +356,16 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData = await readResponsePayload(res);
+        const errorMessage = getPayloadError(errorData, "Failed to save changes.");
         logSecurityEvent({
           event: "security.attendees.update_failed",
           level: "error",
           resourceId: id,
-          details: { reason: errorData.error },
+          details: { reason: errorMessage },
         });
-        toast.error(errorData.error || "Failed to save changes.");
-        throw new Error(errorData.error || "Failed to save changes.");
+        toast.error(errorMessage);
+        throw new Error(errorMessage);
       }
 
       try {
