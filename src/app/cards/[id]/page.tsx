@@ -175,38 +175,36 @@ export default async function CardViewPage(props: {
     
     if (record) {
       const { row: secureRecord } = decryptAttendeeSensitiveFields(record);
+      /** Cache-bust string for Cloudinary URLs; must stay in scope for entire `card` build. */
+      let previewVersion = "";
       const customFields =
         secureRecord.custom_fields &&
         typeof secureRecord.custom_fields === "object" &&
         !Array.isArray(secureRecord.custom_fields)
           ? (secureRecord.custom_fields as Record<string, unknown>)
           : {};
-      const horizontalTextColor = readString(customFields.__horizontal_text_color);
-      const verticalTextColor = readString(customFields.__vertical_text_color);
-      const previewVersion = [
-        String(secureRecord.updated_at || "").trim(),
-        readString(secureRecord.photo_url),
-        readString(secureRecord.name),
-        readString(secureRecord.role),
-        readString(secureRecord.company),
-        readString(secureRecord.card_color),
-        horizontalTextColor,
-        verticalTextColor,
-        readString(secureRecord.linkedin),
-      ]
-        .filter(Boolean)
-        .join("|");
+      /** Per-attendee overrides (edit flow). Event-level branding lives on `events` — must merge or Badge View falls back to hardcoded black on the white panel. */
+      let eventHorizontalTextColor = "";
+      let eventVerticalTextColor = "";
       let sponsors = undefined as CardData["sponsors"];
       let organizationName = "";
       let organizationLogoUrl = "";
       if (secureRecord.event_id) {
-        const ev = await queryNeonOne<{ sponsors: unknown; user_id: string | null; logo_url: string | null }>(
-          `SELECT sponsors, user_id, logo_url
+        const ev = await queryNeonOne<{
+          sponsors: unknown;
+          user_id: string | null;
+          logo_url: string | null;
+          horizontal_text_color: string | null;
+          vertical_text_color: string | null;
+        }>(
+          `SELECT sponsors, user_id, logo_url, horizontal_text_color, vertical_text_color
            FROM public.events
            WHERE id = $1`,
           [secureRecord.event_id],
         );
         if (ev) {
+          eventHorizontalTextColor = readString(ev.horizontal_text_color);
+          eventVerticalTextColor = readString(ev.vertical_text_color);
           sponsors = parseEventSponsors(ev.sponsors);
           const campaignLogoUrl = String(ev.logo_url || "").trim();
           
@@ -248,6 +246,25 @@ export default async function CardViewPage(props: {
           }
         }
       }
+
+      const horizontalTextColor =
+        readString(customFields.__horizontal_text_color) || eventHorizontalTextColor;
+      const verticalTextColor =
+        readString(customFields.__vertical_text_color) || eventVerticalTextColor;
+
+      previewVersion = [
+        String(secureRecord.updated_at || "").trim(),
+        readString(secureRecord.photo_url),
+        readString(secureRecord.name),
+        readString(secureRecord.role),
+        readString(secureRecord.company),
+        readString(secureRecord.card_color),
+        horizontalTextColor,
+        verticalTextColor,
+        readString(secureRecord.linkedin),
+      ]
+        .filter(Boolean)
+        .join("|");
 
       card = {
         id: readString(secureRecord.id),
