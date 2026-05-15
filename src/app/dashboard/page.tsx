@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, BarChart3, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -128,7 +128,6 @@ function DashboardContent() {
   // REVERT_FIX_MARKER_V1
   const [joinGateOrgName, setJoinGateOrgName] = useState("");
   const [teamModalView, setTeamModalView] = useState<"list" | "add" | "edit">("list");
-  const [selectedMemberToEdit, setSelectedMemberToEdit] = useState<OrgMemberRow | null>(null);
   const [isOwnerOnboardingModalOpen, setIsOwnerOnboardingModalOpen] = useState(false);
   const [isSavingOwnerOnboarding, setIsSavingOwnerOnboarding] = useState(false);
   const [isOwnerProfileSetupModalOpen, setIsOwnerProfileSetupModalOpen] = useState(false);
@@ -615,6 +614,7 @@ function DashboardContent() {
     };
     checkUser();
     return () => { isMounted = false; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap on auth/URL gate; fetchData intentionally omitted to avoid loops
   }, [router, impersonateId, onboardingIntent, session, userId, refreshTick]);
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
@@ -808,9 +808,6 @@ function DashboardContent() {
     return today.toISOString().slice(0, 10);
   }, []);
   const orgDisplayName = toOrganizationDisplayName(organizationName);
-  const previewMaxMetric = Math.max(stats.totalAttendees, stats.totalEvents, 1);
-  const previewAttendeesPct = Math.max(8, Math.round((stats.totalAttendees / previewMaxMetric) * 100));
-  const previewEventsPct = Math.max(8, Math.round((stats.totalEvents / previewMaxMetric) * 100));
   const ownerStatusMetrics = useMemo(() => {
     const counts = { upcoming: 0, ongoing: 0, past: 0 };
     for (const evt of events) {
@@ -1019,7 +1016,7 @@ function DashboardContent() {
       toast.success("Password updated successfully.");
       setCurrentPasswordDraft("");
       setNewPasswordDraft("");
-    } catch (err) {
+    } catch {
       setPasswordError("Could not update password.");
     } finally {
       setIsSavingPassword(false);
@@ -1068,7 +1065,6 @@ function DashboardContent() {
 
   const openTeamMemberEdit = async (member: OrgMemberRow) => {
     setTeamError("");
-    setSelectedMemberToEdit(member);
     try {
       const res = await fetch("/api/organization-members", { cache: "no-store" });
       if (res.ok) {

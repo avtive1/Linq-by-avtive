@@ -60,7 +60,7 @@ function NewCardForm() {
     photo: "",
     year: new Date().getFullYear().toString(),
     linkedin: "",
-    designType: "design1" as "design1",
+    designType: "design1" as const,
     color: "purple",
     horizontalTextColor: "",
     verticalTextColor: "",
@@ -77,8 +77,6 @@ function NewCardForm() {
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
 
 
-  const [viewMode, setViewMode] = useState<"horizontal" | "vertical">("horizontal");
-  const [verticalSide, setVerticalSide] = useState<1 | 2>(1);
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [horizontalTextColor, setHorizontalTextColor] = useState("");
   const [verticalTextColor, setVerticalTextColor] = useState("");
@@ -86,7 +84,6 @@ function NewCardForm() {
 
   // Fetch event details for the locked header / preview.
   const [eventLoading, setEventLoading] = useState(!!eventId);
-  const [eventMissing, setEventMissing] = useState(false);
   const [eventPast, setEventPast] = useState(false);
 
   useEffect(() => {
@@ -100,7 +97,7 @@ function NewCardForm() {
         const brandingPayload = isJson ? await brandingRes.json() : null;
         if (!isMounted) return;
         if (!brandingRes.ok || !brandingPayload?.data?.eventName) {
-          setEventMissing(true);
+          // Event branding unavailable — form stays editable with empty event fields.
         } else {
           const status = getEventStatus(String(brandingPayload.data.eventDate || ""));
           if (status.label === "Past") {
@@ -125,8 +122,10 @@ function NewCardForm() {
             normalizeRegistrationFormConfig(brandingPayload.data.registrationFormConfig),
           );
         }
-      } catch (brandingErr) {
-        if (isMounted) setEventMissing(true);
+      } catch {
+        if (isMounted) {
+          // Branding fetch failed — user can still fill the card manually.
+        }
       }
       setEventLoading(false);
     };

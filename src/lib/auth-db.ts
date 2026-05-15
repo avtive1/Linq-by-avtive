@@ -291,11 +291,11 @@ export async function createOrganizationOwnerByAdmin(input: {
     throw new Error("An account with this email already exists.");
   }
 
-  let organizationName = normalizeOrganizationName(input.organizationName);
+  const organizationName = normalizeOrganizationName(input.organizationName);
   if (!organizationName) {
     throw new Error("Organization name is required.");
   }
-  let organizationKey = toOrganizationKey(organizationName);
+  const organizationKey = toOrganizationKey(organizationName);
   if (!organizationKey) {
     throw new Error("Invalid organization name.");
   }

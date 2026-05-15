@@ -184,7 +184,7 @@ export async function PATCH(req: Request) {
     if (ownedOrganizationByUser?.id) {
       const nextOrgKey = toOrganizationKey(nextOrganizationName);
       try {
-        const orgUpdatePayload: Record<string, any> = {
+        const orgUpdatePayload: Record<string, string | null | undefined> = {
           organization_name: nextOrganizationName,
           organization_name_key: nextOrgKey,
           updated_at: new Date().toISOString(),

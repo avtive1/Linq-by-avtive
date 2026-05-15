@@ -8,7 +8,6 @@ import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
 
 import {
-  Plus,
   Users,
   Calendar,
   MapPin,
@@ -18,7 +17,6 @@ import {
   ArrowLeft,
   User,
   ExternalLink,
-  BarChart3,
   Link as LinkIcon,
   Pencil,
   Copy,
@@ -145,7 +143,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [cards, setCards] = useState<AttendeeCard[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isGuestCategoryOpen, setIsGuestCategoryOpen] = useState(false);
   const [guestCategoryInput, setGuestCategoryInput] = useState("");
@@ -466,9 +463,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   );
   const previewGuestFields = getEnabledFieldsForRole(effectiveRegistrationConfig, "guest");
   const previewVisitorFields = getEnabledFieldsForRole(effectiveRegistrationConfig, "visitor");
-  const livePreviewConfig = isRegistrationFormOpen
-    ? normalizeRegistrationFormConfig(registrationFormDraft)
-    : effectiveRegistrationConfig;
   const isBrandingFinalized = Boolean(eventData?.is_branding_finalized);
   const brandingPreviewData = useMemo(
     () => ({
@@ -507,13 +501,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       return searchBlob.includes(query);
     });
   }, [searchQuery, cards]);
-  const previewCardsMax = Math.max(cards.length, filteredCards.length, 1);
-  const previewVisiblePct = Math.max(8, Math.round((filteredCards.length / previewCardsMax) * 100));
-  const previewTotalPct = Math.max(8, Math.round((cards.length / previewCardsMax) * 100));
-  const attendeeMax = Math.max(cards.length, 1);
   const ownerGuestCount = cards.filter((card) => String(card.track || "").toLowerCase() === "guest").length;
   const ownerVisitorCount = cards.filter((card) => String(card.track || "").toLowerCase() === "visitor").length;
-  const ownerProfileCompleteCount = cards.filter((card) => Boolean(card.email && card.company)).length;
   const ownerTopRoles = useMemo(() => {
     const roleMap = new Map<string, number>();
     for (const card of cards) {

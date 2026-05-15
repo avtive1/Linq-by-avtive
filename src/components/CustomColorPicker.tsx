@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui";
 
@@ -17,6 +17,12 @@ type Hsv = { h: number; s: number; v: number };
 
 const DEFAULT_SWATCHES = ["#C71B1B", "#F3F4F6", "#D1D5DB", "#9CA3AF", "#4B5563"];
 const SWATCHES_STORAGE_KEY = "customColorPickerSlotsV1";
+
+const subscribeNoop: (onStoreChange: () => void) => () => void = () => () => {};
+
+function useIsClient() {
+  return useSyncExternalStore(subscribeNoop, () => true, () => false);
+}
 
 const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
 const toHex = (n: number) => n.toString(16).padStart(2, "0");
@@ -80,7 +86,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   const [hsv, setHsv] = useState<Hsv>(initialHsv);
   const [swatches, setSwatches] = useState<string[]>(DEFAULT_SWATCHES);
   const [selectedSlot, setSelectedSlot] = useState(0);
-  const [mounted, setMounted] = useState(false);
+  const isClient = useIsClient();
   const panelRef = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
@@ -145,12 +151,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   };
 
   useEffect(() => {
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
+    if (!isClient) return;
     try {
       const raw = window.localStorage.getItem(SWATCHES_STORAGE_KEY);
       if (!raw) return;
@@ -161,21 +162,21 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         .filter((v) => /^#[0-9a-fA-F]{6}$/.test(v))
         .slice(0, DEFAULT_SWATCHES.length);
       if (cleaned.length === DEFAULT_SWATCHES.length) {
-        setSwatches(cleaned);
+        queueMicrotask(() => setSwatches(cleaned));
       }
     } catch {
       // no-op
     }
-  }, [mounted]);
+  }, [isClient]);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!isClient) return;
     try {
       window.localStorage.setItem(SWATCHES_STORAGE_KEY, JSON.stringify(swatches));
     } catch {
       // no-op
     }
-  }, [swatches, mounted]);
+  }, [swatches, isClient]);
 
   useEffect(() => {
     const onPointerDown = (event: MouseEvent | TouchEvent) => {
@@ -197,7 +198,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     };
   }, [onCancel]);
 
-  if (!mounted) return null;
+  if (!isClient) return null;
 
   return createPortal(
     <div

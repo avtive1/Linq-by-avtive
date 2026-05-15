@@ -285,7 +285,6 @@ function resolveTheme(color?: string): ColorTheme {
 
 export function CardPreview({
   data,
-  preview,
   id,
   isVertical = false,
   verticalSide = 1,
@@ -299,7 +298,6 @@ export function CardPreview({
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const isWebinarLocation = (data.location || "").trim().toLowerCase() === "webinar";
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
-  const hasSponsors = filterSponsors(data.sponsors).length > 0;
   const sessionTimeLabel = formatSessionTimeWithZone(data.sessionTime);
   const isCustomTheme = !COLOR_THEMES[String(data.color || "").trim()];
 
@@ -637,7 +635,11 @@ export function CardPreview({
       <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
         <div className={`relative z-40 isolate mb-5 flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 ${hasRealPhoto ? "bg-white/10" : "bg-white"}`}>
           {hasRealPhoto ? (
-            <img src={photoUrl} className="w-full h-full object-cover" />
+            <img
+              src={photoUrl}
+              className="w-full h-full object-cover"
+              alt={data.name?.trim() ? `Photo of ${data.name.trim()}` : "Attendee photo"}
+            />
           ) : (
             <DefaultAvatarPlaceholder className="w-full h-full" />
           )}

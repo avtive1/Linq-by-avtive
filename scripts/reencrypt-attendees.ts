@@ -19,7 +19,6 @@ async function run() {
   let updated = 0;
   while (true) {
     const from = page * pageSize;
-    const to = from + pageSize - 1;
     const { rows: data } = await pool.query(
       `SELECT id, card_email, linkedin
        FROM public.attendees

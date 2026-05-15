@@ -35,7 +35,6 @@ export async function resolveSponsorRowsToEntries(
   rows: SponsorFormRow[],
 ): Promise<SponsorEntry[]> {
   const out: SponsorEntry[] = [];
-  let seq = 0;
   for (const row of rows) {
     if (out.length >= MAX_EVENT_SPONSORS) break;
     const name = row.name.trim();
@@ -58,7 +57,6 @@ export async function resolveSponsorRowsToEntries(
       logo_url = String(uploadPayload.data.url);
     }
     out.push({ name, logo_url });
-    seq++;
   }
   return out;
 }

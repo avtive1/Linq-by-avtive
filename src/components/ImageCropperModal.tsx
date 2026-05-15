@@ -17,11 +17,7 @@ interface ImageCropperModalProps {
   applyLabel?: string;
 }
 
-const getCroppedImg = async (
-  imageSrc: string,
-  pixelCrop: Area,
-  flip = { horizontal: false, vertical: false }
-): Promise<string> => {
+const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.addEventListener("load", () => resolve(img));

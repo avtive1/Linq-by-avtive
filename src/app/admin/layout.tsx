@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getServerAuthSession } from "@/auth";
 import Link from "next/link";
 import Image from "next/image";
-import { Sparkles } from "lucide-react";
 import GradientBackground from "@/components/GradientBackground";
 import ExitAdminButton from "./_components/ExitAdminButton";
 
