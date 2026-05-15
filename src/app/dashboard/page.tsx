@@ -145,9 +145,6 @@ function DashboardContent() {
     logo: "",
   });
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
-  const [editingDescriptionEventId, setEditingDescriptionEventId] = useState("");
-  const [descriptionDraft, setDescriptionDraft] = useState("");
-  const [savingDescriptionEventId, setSavingDescriptionEventId] = useState("");
   const [stats, setStats] = useState({
     totalEvents: 0,
     totalAttendees: 0,
@@ -926,67 +923,6 @@ function DashboardContent() {
       toast.error("Failed to create event. Please try again.");
     } finally {
       setIsSubmittingEvent(false);
-    }
-  };
-
-  const startDescriptionEdit = (evt: DashboardEventData) => {
-    if (isPreviewMode) {
-      toast.error("Admin org preview is read-only.");
-      return;
-    }
-    setEditingDescriptionEventId(evt.id);
-    setDescriptionDraft(String(evt.description || ""));
-  };
-
-  const cancelDescriptionEdit = () => {
-    if (savingDescriptionEventId) return;
-    setEditingDescriptionEventId("");
-    setDescriptionDraft("");
-  };
-
-  const saveDescriptionEdit = async (eventId: string) => {
-    if (isPreviewMode) {
-      toast.error("Admin org preview is read-only.");
-      return;
-    }
-    if (savingDescriptionEventId) return;
-
-    const nextDescription = descriptionDraft.trim();
-    if (nextDescription.length > CAMPAIGN_DESCRIPTION_MAX_CHARS) {
-      toast.error(`Description can be up to ${CAMPAIGN_DESCRIPTION_MAX_CHARS} characters.`);
-      return;
-    }
-
-    setSavingDescriptionEventId(eventId);
-    try {
-      const res = await fetch(`/api/events/${eventId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ description: nextDescription }),
-      });
-      const payload = await res.json().catch(() => null);
-      if (!res.ok) {
-        toast.error(payload?.error || "Failed to update description.");
-        return;
-      }
-
-      setEvents((prev) =>
-        prev.map((evt) =>
-          evt.id === eventId
-            ? {
-                ...evt,
-                description: nextDescription,
-              }
-            : evt,
-        ),
-      );
-      setEditingDescriptionEventId("");
-      setDescriptionDraft("");
-      toast.success("Campaign description updated.");
-    } catch {
-      toast.error("Failed to update description.");
-    } finally {
-      setSavingDescriptionEventId("");
     }
   };
 
@@ -2085,7 +2021,7 @@ function DashboardContent() {
                   {...staggerItem(idx, 0.05, 0.28, 16, 0.3)}
                   {...hoverLift(-6, 1.01)}
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-2">
                     <div>
                       {evt.logo_url && (
                         <div className="w-20 h-20 rounded-md bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 shrink-0">
@@ -2108,76 +2044,23 @@ function DashboardContent() {
                       {evt.name}
                     </h3>
                     
-                    <div className="flex flex-col gap-2 mb-3">
+                    <div className="flex flex-col gap-1.5 mb-1">
                       <div className="flex items-center gap-3 text-muted font-normal px-1">
-                        <Calendar size={18} className="text-muted/60" />
+                        <Calendar size={18} className="text-muted/60 shrink-0" />
                         <span className="text-sm leading-[1.6] tracking-[0em]">{evt.date}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-muted font-normal px-1">
+                      <div className="flex items-center gap-3 text-muted font-normal px-1 min-w-0">
                         {(evt.location || "").trim().toLowerCase() === "webinar" ? (
-                          <Globe size={18} className="text-muted/60" />
+                          <Globe size={18} className="text-muted/60 shrink-0" />
                         ) : (
-                          <MapPin size={18} className="text-muted/60" />
+                          <MapPin size={18} className="text-muted/60 shrink-0" />
                         )}
                         <span className="text-sm leading-[1.6] tracking-[0em] truncate max-w-[200px]">{evt.location}</span>
                       </div>
                     </div>
-
-                    <div className="mb-6 rounded-md border border-border/60 bg-white/65 px-3 py-2.5">
-                      {editingDescriptionEventId === evt.id ? (
-                        <div className="flex flex-col gap-2">
-                          <textarea
-                            value={descriptionDraft}
-                            onChange={(e) => setDescriptionDraft(e.target.value)}
-                            maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
-                            rows={3}
-                            className="w-full resize-none rounded-md border border-border/70 bg-white px-2.5 py-2 text-sm leading-[1.5] text-heading outline-none focus:ring-2 focus:ring-primary/35"
-                            placeholder="Add a campaign description..."
-                          />
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-muted">
-                              {descriptionDraft.length}/{CAMPAIGN_DESCRIPTION_MAX_CHARS}
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={cancelDescriptionEdit}
-                                disabled={savingDescriptionEventId === evt.id}
-                                className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-muted transition-colors hover:text-heading disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => void saveDescriptionEdit(evt.id)}
-                                disabled={savingDescriptionEventId === evt.id}
-                                className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {savingDescriptionEventId === evt.id ? "Saving..." : "Save"}
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="m-0 line-clamp-2 text-[13px] leading-[1.5] text-muted">
-                            {String(evt.description || "").trim() || "No campaign description added yet."}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => startDescriptionEdit(evt)}
-                            className="inline-flex shrink-0 items-center justify-center rounded-md border border-border/70 bg-white p-1.5 text-muted transition-colors hover:text-primary-strong"
-                            aria-label="Edit campaign description"
-                            title="Edit campaign description"
-                          >
-                            <Pencil size={14} />
-                          </button>
-                        </div>
-                      )}
-                    </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-4 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
                     View Campaign
                     <motion.span {...hoverIconNudge(3)} className="inline-flex">
                       <ChevronRight size={20} className="transition-transform duration-200" />

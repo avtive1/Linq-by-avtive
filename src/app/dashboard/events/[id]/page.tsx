@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use, useMemo, Suspense, useRef } from "react";
+import { useState, useEffect, use, useMemo, Suspense, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -32,6 +32,7 @@ import {
   Layers3,
   ShieldCheck,
   Lock,
+  FileText,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -144,6 +145,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isEditingCampaignDescription, setIsEditingCampaignDescription] = useState(false);
+  const [campaignDescriptionDraft, setCampaignDescriptionDraft] = useState("");
+  const [isSavingCampaignDescription, setIsSavingCampaignDescription] = useState(false);
 
   // Delete event modal
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -493,6 +497,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   const openEdit = () => {
     if (!eventData) return;
+    cancelCampaignDescriptionEdit();
     setEditForm({
       name: eventData.name || "",
       description: eventData.description || "",
@@ -575,6 +580,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         logo_url,
       } : prev);
       toast.success("Campaign updated.");
+      cancelCampaignDescriptionEdit();
       router.refresh();
       setIsEditOpen(false);
     } catch (err) {
@@ -582,6 +588,41 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.error("Failed to update campaign.");
     } finally {
       setIsSavingEdit(false);
+    }
+  };
+
+  const cancelCampaignDescriptionEdit = () => {
+    if (isSavingCampaignDescription) return;
+    setIsEditingCampaignDescription(false);
+    setCampaignDescriptionDraft("");
+  };
+
+  const saveCampaignDescription = async () => {
+    if (!eventData || isPreviewMode || !canManageEvent || isSavingCampaignDescription) return;
+    const next = campaignDescriptionDraft.trim();
+    if (next.length > CAMPAIGN_DESCRIPTION_MAX_CHARS) {
+      toast.error(`Description can be up to ${CAMPAIGN_DESCRIPTION_MAX_CHARS} characters.`);
+      return;
+    }
+    setIsSavingCampaignDescription(true);
+    try {
+      const updateRes = await fetch(`/api/events/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: next }),
+      });
+      const updatePayload = await readResponsePayload(updateRes);
+      if (!updateRes.ok) throw new Error(getPayloadError(updatePayload, "Failed to update description."));
+      setEventData((prev) => (prev ? { ...prev, description: next } : prev));
+      setIsEditingCampaignDescription(false);
+      setCampaignDescriptionDraft("");
+      toast.success("Campaign description updated.");
+      router.refresh();
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update description.");
+    } finally {
+      setIsSavingCampaignDescription(false);
     }
   };
 
@@ -1076,6 +1117,78 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     setIsShareActionsOpen(true);
   };
 
+  const renderCampaignDescriptionSection = (): ReactNode => {
+    if (!eventData || isPreviewMode) return null;
+    const trimmed = String(eventData.description || "").trim();
+    const canEditInline = canManageEvent;
+    const showComposer = Boolean(canEditInline && isEditingCampaignDescription);
+
+    return (
+      <div className="rounded-md border border-primary/20 bg-white/90 px-4 py-3.5 shadow-sm">
+        <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
+          <FileText size={13} className="text-primary-strong shrink-0" />
+          About this campaign
+        </p>
+        {showComposer ? (
+          <div className="flex flex-col gap-2">
+            <textarea
+              value={campaignDescriptionDraft}
+              onChange={(e) => setCampaignDescriptionDraft(e.target.value)}
+              maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
+              rows={4}
+              className="w-full min-h-[100px] resize-y rounded-md border border-border/70 bg-white px-3 py-2 text-sm leading-relaxed text-heading outline-none focus:ring-2 focus:ring-primary/35"
+              placeholder="Add a campaign description..."
+              aria-label="Campaign description"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[11px] text-muted">
+                {campaignDescriptionDraft.length}/{CAMPAIGN_DESCRIPTION_MAX_CHARS}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={cancelCampaignDescriptionEdit}
+                  disabled={isSavingCampaignDescription}
+                  className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-muted transition-all duration-150 hover:text-heading hover:bg-surface-strong/80 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void saveCampaignDescription()}
+                  disabled={isSavingCampaignDescription}
+                  className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSavingCampaignDescription ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-start gap-3">
+            <p className="m-0 flex-1 whitespace-pre-wrap text-sm leading-relaxed text-heading/85">
+              {trimmed ? eventData.description : "No campaign description added yet."}
+            </p>
+            {canEditInline && (
+              <button
+                type="button"
+                onClick={() => {
+                  setCampaignDescriptionDraft(String(eventData.description || ""));
+                  setIsEditingCampaignDescription(true);
+                }}
+                className="inline-flex shrink-0 items-center justify-center rounded-md border border-border/70 bg-white p-1.75 text-muted transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary-strong hover:shadow-sm hover:scale-[1.04] active:scale-100 disabled:opacity-60"
+                aria-label="Edit campaign description"
+                title="Edit campaign description"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
@@ -1175,16 +1288,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 {status.label}
               </span>
             </div>
-            <div className="flex items-center gap-4 text-sm text-muted mt-2 font-medium">
-              <span className="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-sm border border-white/40 shadow-sm"><Calendar size={16} className="text-heading/80" /> {eventData.date}</span>
-              <span className="flex items-center gap-2 bg-white/50 px-3 py-2 rounded-sm border border-white/40 shadow-sm">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-1 mt-2 text-sm text-muted font-medium">
+              <div className="flex items-center gap-2 min-w-0">
+                <Calendar size={16} className="text-muted/70 shrink-0" />
+                <span className="tabular-nums">{eventData.date}</span>
+              </div>
+              <div className="flex items-center gap-2 min-w-0">
                 {(eventData.location_type === "webinar" || (eventData.location || "").trim().toLowerCase() === "webinar") ? (
-                  <Globe size={16} className="text-heading/80" />
+                  <Globe size={16} className="text-muted/70 shrink-0" />
                 ) : (
-                  <MapPin size={16} className="text-heading/80" />
-                )}{" "}
-                {eventData.location}
-              </span>
+                  <MapPin size={16} className="text-muted/70 shrink-0" />
+                )}
+                <span className="min-w-0 truncate">{eventData.location}</span>
+              </div>
             </div>
             {isTeamMemberEventMode && (
               <p className="mt-2 text-sm text-heading/75">
@@ -1312,7 +1428,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     onClick={() => (canManageEvent ? openEdit() : undefined)}
                     disabled={!canManageEvent}
                     icon={<Pencil size={16} />}
-                    className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                    className={
+                      !canManageEvent
+                        ? "opacity-50 cursor-not-allowed grayscale"
+                        : "transition-shadow duration-200 hover:shadow-md hover:border-primary/50 hover:bg-primary/9"
+                    }
                   >
                     Edit
                   </Button>
@@ -1457,6 +1577,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
 
+              {renderCampaignDescriptionSection()}
+
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <motion.div
                   className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
@@ -1558,6 +1680,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <p className="mt-2 text-sm text-muted">
               Card operations and campaign actions are shown based on your granted permissions.
             </p>
+          </motion.div>
+        )}
+
+        {!isOrgAdminEventMode && !isPreviewMode && (
+          <motion.div className="mb-8" viewport={presets.viewport} {...fadeUp(0.06)}>
+            {renderCampaignDescriptionSection()}
           </motion.div>
         )}
 
