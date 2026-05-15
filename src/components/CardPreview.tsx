@@ -649,7 +649,8 @@ export function CardPreview({
         <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
       </section>
 
-      <footer className="absolute bottom-0 left-0 right-0 grid h-[123px] place-items-center bg-white px-[40px]">
+      {/* z-10+ so noise/buildings overlays (z-1) cannot paint on top of the white sponsor strip */}
+      <footer className="absolute bottom-0 left-0 right-0 z-10 grid h-[123px] place-items-center bg-white px-[40px]">
         <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
       </footer>
     </div>

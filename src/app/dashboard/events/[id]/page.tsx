@@ -2225,7 +2225,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
                         Social post layout
                       </h4>
-                      <div className="w-full overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
+                      <div className="w-full overflow-hidden rounded-lg border border-border/20 bg-white px-2 pt-2 pb-0">
                         <div
                           style={{
                             width: "1200px",
@@ -2243,7 +2243,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
                         Event badge layout
                       </h4>
-                      <div className="relative h-[300px] w-[186px] overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
+                      <div className="relative h-[300px] w-[186px] overflow-hidden rounded-lg border border-border/20 bg-white px-2 pt-2 pb-0">
                         <div
                           style={{
                             position: "absolute",
