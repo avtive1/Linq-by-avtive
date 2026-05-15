@@ -1395,15 +1395,14 @@ function DashboardContent() {
           <div className="flex gap-3 items-center">
             {isAdmin && (
               <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
-                <Link href="/admin">
-                  <Button
-                    variant="secondary"
-                    className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium"
-                    icon={<Sparkles size={18} />}
-                  >
-                    Admin Panel
-                  </Button>
-                </Link>
+                <Button
+                  href="/admin"
+                  variant="secondary"
+                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium"
+                  icon={<Sparkles size={18} />}
+                >
+                  Admin Panel
+                </Button>
               </motion.div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && (

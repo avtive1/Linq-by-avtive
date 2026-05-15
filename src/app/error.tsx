@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect } from "react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
@@ -34,9 +33,9 @@ export default function GlobalError({
           <Button variant="primary" onClick={reset}>
             Try again
           </Button>
-          <Link href="/dashboard">
-            <Button variant="secondary">Go to Dashboard</Button>
-          </Link>
+          <Button href="/dashboard" variant="secondary">
+            Go to Dashboard
+          </Button>
         </div>
       </div>
     </main>

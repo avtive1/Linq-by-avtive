@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, User, Clock3 } from "lucide-react";
 import { ImageCropperModal } from "./ImageCropperModal";
 import { FreeformImageCropModal } from "./FreeformImageCropModal";
@@ -343,6 +344,8 @@ export function TimeInput({
 type ButtonProps = {
   children: React.ReactNode;
   onClick?: () => void;
+  /** When set, renders as `<Link>` (valid markup). Do not nest `Button` inside `Link`. */
+  href?: string;
   variant?: "primary" | "secondary" | "blue";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
@@ -356,6 +359,7 @@ type ButtonProps = {
 export function Button({
   children,
   onClick,
+  href,
   variant = "primary",
   size = "md",
   fullWidth,
@@ -374,13 +378,7 @@ export function Button({
     lg: "h-12 px-6 text-[18px] leading-[1.25] rounded-md font-semibold",
   };
 
-  return (
-    <button
-      type={type}
-      title={title}
-      onClick={!disabled ? onClick : undefined}
-      disabled={disabled}
-      className={`
+  const mergedClassName = `
         inline-flex items-center justify-center gap-2 tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2
         ${sizeClasses[size]}
         ${isPrimary 
@@ -390,7 +388,24 @@ export function Button({
           : "bg-white border border-border text-heading hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:active:scale-100"}
         ${fullWidth ? "w-full" : "w-auto"}
         ${className}
-      `}
+      `.trim();
+
+  if (href && !disabled) {
+    return (
+      <Link href={href} prefetch title={title} className={`no-underline ${mergedClassName}`}>
+        <span>{children}</span>
+        {icon}
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      type={type}
+      title={title}
+      onClick={!disabled ? onClick : undefined}
+      disabled={disabled}
+      className={mergedClassName}
     >
       <span>{children}</span>
       {icon}

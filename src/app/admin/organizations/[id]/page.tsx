@@ -2,6 +2,7 @@ import { getAdminUserById } from "@/lib/admin";
 import { queryNeon } from "@/lib/neon-db";
 import { Users, Calendar, ArrowLeft, Mail, Sparkles, Rocket, TrendingUp, Target } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui";
 import { getEventStatus } from "@/lib/utils";
 import { isValidUuid } from "@/lib/validation/uuid";
 
@@ -13,9 +14,9 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
     return (
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Invalid Organization Id</h2>
-        <Link href="/admin">
-          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-tight font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
-        </Link>
+        <Button href="/admin" variant="primary" className="mt-4">
+          Back to Dashboard
+        </Button>
       </div>
     );
   }
@@ -25,9 +26,9 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
     return (
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Organization Not Found</h2>
-        <Link href="/admin">
-          <button className="mt-4 px-6 py-2 bg-primary text-primary-foreground border border-primary rounded-md text-sm leading-tight font-medium tracking-[0.01em] transition-all duration-150 hover:brightness-95 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2">Back to Dashboard</button>
-        </Link>
+        <Button href="/admin" variant="primary" className="mt-4">
+          Back to Dashboard
+        </Button>
       </div>
     );
   }

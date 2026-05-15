@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
@@ -22,6 +22,7 @@ export default function CardView({
   impersonateId?: string;
   shareToken?: string;
 }) {
+  const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
   const [horizontalPreviewFailed, setHorizontalPreviewFailed] = useState(false);
@@ -272,13 +273,17 @@ export default function CardView({
                 </div>
              ) : (
                 <div className="flex items-center gap-3">
-                  <Link
-                    href={backHref}
-                    className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group py-1"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push(backHref);
+                      router.refresh();
+                    }}
+                    className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group py-1 cursor-pointer bg-transparent border-none text-left"
                   >
                     <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                     Back
-                  </Link>
+                  </button>
                 </div>
              )}
 
@@ -303,14 +308,13 @@ export default function CardView({
 
           <div className="flex items-center gap-3">
             {isShareMode && shareToken && (
-              <Link href={`/cards/${card.id}/edit?share=true&token=${encodeURIComponent(shareToken)}`}>
-                <Button
-                  variant="secondary"
-                  className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
-                >
-                  Edit
-                </Button>
-              </Link>
+              <Button
+                href={`/cards/${card.id}/edit?share=true&token=${encodeURIComponent(shareToken)}`}
+                variant="secondary"
+                className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
+              >
+                Edit
+              </Button>
             )}
             {viewMode === "horizontal" && (
               <Button

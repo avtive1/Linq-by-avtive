@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, Suspense, useRef } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
@@ -408,9 +407,9 @@ function NewCardForm() {
           <p className="text-sm text-muted">
             This page can only be opened from an event registration link provided by your organizer.
           </p>
-          <Link href="/" className="mt-2">
-            <Button variant="secondary">Back to home</Button>
-          </Link>
+          <Button href="/" variant="secondary" className="mt-2">
+            Back to home
+          </Button>
         </div>
       </main>
     );
@@ -434,9 +433,9 @@ function NewCardForm() {
           <p className="text-xs text-muted/60 font-medium italic">
             If you are the organizer, please renew the event in your dashboard to reactivate registration.
           </p>
-          <Link href="/" className="mt-2 w-full">
-            <Button variant="secondary" fullWidth>Back to Home</Button>
-          </Link>
+          <Button href="/" variant="secondary" fullWidth className="mt-2 w-full">
+            Back to Home
+          </Button>
         </div>
       </main>
     );

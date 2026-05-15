@@ -1,4 +1,3 @@
-import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { SearchX } from "lucide-react";
@@ -18,12 +17,12 @@ export default function NotFound() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/">
-            <Button variant="secondary">Back to Home</Button>
-          </Link>
-          <Link href="/dashboard">
-            <Button variant="primary">Open Dashboard</Button>
-          </Link>
+          <Button href="/" variant="secondary">
+            Back to Home
+          </Button>
+          <Button href="/dashboard" variant="primary">
+            Open Dashboard
+          </Button>
         </div>
       </div>
     </main>

@@ -79,11 +79,15 @@ export default function ForgotPasswordPage() {
                   If an account exists for <span className="font-semibold text-heading">{email}</span>, we sent a reset link. Click it to set a new password.
                 </p>
               </div>
-              <Link href="/login" className="w-full mt-2">
-                <Button variant="primary" fullWidth size="lg" className="h-12 text-base shadow-lg shadow-primary/20">
-                  Back to sign in
-                </Button>
-              </Link>
+              <Button
+                href="/login"
+                variant="primary"
+                fullWidth
+                size="lg"
+                className="mt-2 h-12 text-base shadow-lg shadow-primary/20"
+              >
+                Back to sign in
+              </Button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-8">

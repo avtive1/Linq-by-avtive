@@ -1,6 +1,5 @@
 "use client";
 import { useState, useEffect, use, useRef } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui";
@@ -472,9 +471,9 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         <GradientBackground />
         <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Card not found</p>
-          <Link href="/dashboard" className="mt-2">
-            <Button variant="secondary">Back to Dashboard</Button>
-          </Link>
+          <Button href="/dashboard" variant="secondary" className="mt-2">
+            Back to Dashboard
+          </Button>
         </div>
       </main>
     );
@@ -487,9 +486,9 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">You don&apos;t have permission to edit this card</p>
           <p className="text-sm text-muted">Only the event organizer can edit attendee cards.</p>
-          <Link href="/dashboard" className="mt-2">
-            <Button variant="secondary">Back to Dashboard</Button>
-          </Link>
+          <Button href="/dashboard" variant="secondary" className="mt-2">
+            Back to Dashboard
+          </Button>
         </div>
       </main>
     );
@@ -504,6 +503,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         
         <div className="flex items-center gap-4 mb-12 -ml-1 sm:-ml-2">
           <button
+            type="button"
             onClick={() => {
               const target = shareToken || isShareEditMode
                 ? `/cards/${id}?share=true${shareToken ? `&token=${encodeURIComponent(shareToken)}` : ""}`

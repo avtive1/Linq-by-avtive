@@ -1221,9 +1221,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       <main className="relative min-h-screen w-full bg-white flex flex-col items-center justify-center gap-4">
         <GradientBackground />
         <div className="relative z-10 text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Campaign not found</div>
-        <Link href="/dashboard" className="relative z-10">
-          <Button variant="secondary" icon={<ArrowLeft size={16} />}>Back to Dashboard</Button>
-        </Link>
+        <Button variant="secondary" icon={<ArrowLeft size={16} />} href="/dashboard" className="relative z-10">
+          Back to Dashboard
+        </Button>
       </main>
     );
   }
@@ -1251,40 +1251,39 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
         {/* Header row */}
-        <motion.div
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12 relative z-30"
-          viewport={presets.viewport}
-          {...fadeUp(0.02)}
-        >
-          <div className="flex flex-col gap-2 sm:gap-3">
-            <button
-              onClick={() => {
-                router.refresh();
-                if (isPreviewMode) {
-                  const target = eventData?.user ? `/dashboard?impersonate=${encodeURIComponent(eventData.user)}` : "/admin";
-                  router.push(target);
-                  return;
-                }
-                router.push("/dashboard");
-              }}
-            className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-2 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer py-1"
-            >
-              <motion.span {...hoverIconNudge(-2)} className="inline-flex">
-                <ArrowLeft size={16} className="transition-transform" />
-              </motion.span>
-              {isPreviewMode ? "Back to Organization View" : "Back to Dashboard"}
-            </button>
-            <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mt-1">
-              Campaign details
-            </span>
-            <div className="flex flex-wrap items-center gap-3 mt-1">
+        <motion.div className="relative z-30 mb-7 sm:mb-9" viewport={presets.viewport} {...fadeUp(0.02)}>
+          <button
+            type="button"
+            onClick={() => {
+              router.refresh();
+              if (isPreviewMode) {
+                const target = eventData?.user ? `/dashboard?impersonate=${encodeURIComponent(eventData.user)}` : "/admin";
+                router.push(target);
+                return;
+              }
+              router.push("/dashboard");
+            }}
+            className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1.5 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer py-1"
+          >
+            <motion.span {...hoverIconNudge(-2)} className="inline-flex">
+              <ArrowLeft size={16} className="transition-transform" />
+            </motion.span>
+            {isPreviewMode ? "Back to Organization View" : "Back to Dashboard"}
+          </button>
+          <span className="block text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mb-4">
+            Campaign details
+          </span>
+
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5 lg:gap-10">
+          <div className="min-w-0 flex flex-col gap-2.5">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
               <h1
                 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-heading tracking-tight leading-[1.1]"
                 style={{ fontWeight: 700 }}
               >
                 {eventData.name}
               </h1>
-              <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
+              <span className={`inline-flex shrink-0 text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
                 {status.label}
               </span>
             </div>
@@ -1309,7 +1308,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
 
-          <div className="flex flex-wrap gap-3 items-center relative z-20">
+          <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-2 lg:ml-auto lg:max-w-[min(100%,44rem)] lg:justify-end relative z-20 shrink-0">
             {!isPreviewMode && (
               <>
                 <div className="relative" ref={shareRef}>
@@ -1512,6 +1511,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 )}
               </>
             )}
+          </div>
           </div>
         </motion.div>
         {!isPreviewMode && !isBrandingFinalized && (
@@ -1897,29 +1897,29 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    <Link
+                    <Button
                       href={`/cards/${card.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`}
-                      className="shrink-0"
+                      variant="secondary"
+                      icon={
+                        <motion.span {...hoverIconNudge(2)} className="inline-flex">
+                          <ExternalLink size={14} />
+                        </motion.span>
+                      }
+                      className="shrink-0 rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
                     >
-                      <Button
-                        variant="secondary"
-                        icon={
-                          <motion.span {...hoverIconNudge(2)} className="inline-flex">
-                            <ExternalLink size={14} />
-                          </motion.span>
-                        }
-                        className="rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
-                      >
-                        View
-                      </Button>
-                    </Link>
+                      View
+                    </Button>
                     {!isPreviewMode &&
                       (canEditCards ? (
-                        <Link href={`/cards/${card.id}/edit`} className="shrink-0">
-                          <Button variant="secondary" size="sm" icon={<Pencil size={14} />} className="rounded-sm bg-white/50 border-white/60">
-                            Edit
-                          </Button>
-                        </Link>
+                        <Button
+                          href={`/cards/${card.id}/edit`}
+                          variant="secondary"
+                          size="sm"
+                          icon={<Pencil size={14} />}
+                          className="shrink-0 rounded-sm bg-white/50 border-white/60"
+                        >
+                          Edit
+                        </Button>
                       ) : (
                         <Button
                           variant="secondary"

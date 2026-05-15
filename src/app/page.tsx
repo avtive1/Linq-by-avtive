@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 
@@ -25,16 +24,12 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-4 animate-slide-up delay-200">
-          <Link href="/login" className="w-full sm:w-auto">
-            <Button variant="blue" size="lg" className="w-full whitespace-nowrap h-12 px-5 text-[19.5px]">
-              Get started
-            </Button>
-          </Link>
-          <Link href="/login" className="w-full sm:w-auto">
-            <Button variant="secondary" size="lg" className="w-full whitespace-nowrap glass-panel border-white/40 hover:bg-white/40 h-12 px-5 text-[19.5px]">
-              Log in
-            </Button>
-          </Link>
+          <Button href="/login" variant="blue" size="lg" className="w-full sm:w-auto whitespace-nowrap h-12 px-5 text-[19.5px]">
+            Get started
+          </Button>
+          <Button href="/login" variant="secondary" size="lg" className="w-full sm:w-auto whitespace-nowrap glass-panel border-white/40 hover:bg-white/40 h-12 px-5 text-[19.5px]">
+            Log in
+          </Button>
         </div>
 
         {/* Branding Footer */}

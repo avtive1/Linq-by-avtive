@@ -1,6 +1,5 @@
-import Link from "next/link";
-import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
+import GradientBackground from "@/components/GradientBackground";
 import { Info } from "lucide-react";
 import CardView from "./CardView";
 import { CardData } from "@/types/card";
@@ -160,9 +159,9 @@ export default async function CardViewPage(props: {
               <p className="text-heading font-semibold">Access denied</p>
               <p className="text-sm text-muted">Sign in or use a valid secure card link.</p>
             </div>
-            <Link href="/login" className="mt-2">
-              <Button variant="secondary">Go to Login</Button>
-            </Link>
+            <Button href="/login" variant="secondary" className="mt-2">
+              Go to Login
+            </Button>
           </div>
         </main>
       );
@@ -336,9 +335,9 @@ export default async function CardViewPage(props: {
             </p>
           </div>
           {!isShareMode && (
-            <Link href="/dashboard" className="mt-2">
-              <Button variant="secondary">Back to Dashboard</Button>
-            </Link>
+            <Button href="/dashboard" variant="secondary" className="mt-2">
+              Back to Dashboard
+            </Button>
           )}
         </div>
       </main>

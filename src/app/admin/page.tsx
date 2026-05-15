@@ -233,15 +233,14 @@ export default async function AdminDashboardPage() {
               <UserRound size={22} className="text-primary-strong" />
               Organizations Directory
             </h2>
-            <Link href="/admin/organizations/new">
-              <Button
-                variant="secondary"
-                size="md"
-                className="h-10 min-w-[176px] rounded-lg justify-center border-primary/25 bg-white text-sm font-semibold text-primary-strong shadow-sm transition-all hover:bg-primary/8 hover:border-primary/45 hover:shadow-md"
-              >
-                Create Organization
-              </Button>
-            </Link>
+            <Button
+              href="/admin/organizations/new"
+              variant="secondary"
+              size="md"
+              className="h-10 min-w-[176px] rounded-lg justify-center border-primary/25 bg-white text-sm font-semibold text-primary-strong shadow-sm transition-all hover:bg-primary/8 hover:border-primary/45 hover:shadow-md"
+            >
+              Create Organization
+            </Button>
           </div>
           <OrganizationsTable initialOrganizations={organizations} />
         </div>
