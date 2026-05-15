@@ -79,8 +79,10 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
         <div className="relative max-w-xl flex-1 group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted/40 group-focus-within:text-primary transition-colors" size={20} />
           <input
-            type="text"
-            placeholder="Search by username, email or organization..."
+              id="admin-organizations-search"
+              name="adminOrganizationsSearch"
+              type="text"
+              placeholder="Search by username, email or organization..."
             className="h-14 w-full rounded-xl border border-border/40 bg-white/80 py-0 pl-14 pr-6 text-base font-medium leading-[1.6] text-heading shadow-sm transition-all placeholder:text-muted/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

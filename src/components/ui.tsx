@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useId } from "react";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff, User, Clock3 } from "lucide-react";
 import { ImageCropperModal } from "./ImageCropperModal";
@@ -11,6 +11,8 @@ const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 type InputProps = {
   label?: string;
+  /** Associates `<label htmlFor>`; autofill tools also expect `id` and/or `name`. */
+  id?: string;
   required?: boolean;
   type?: string;
   placeholder?: string;
@@ -31,6 +33,8 @@ type InputProps = {
 
 type TimeInputProps = {
   label?: string;
+  id?: string;
+  name?: string;
   required?: boolean;
   value?: string;
   onChange?: (v: string) => void;
@@ -65,6 +69,8 @@ function toTime24(hour12: string, minute: string, period: "AM" | "PM"): string {
 
 export function TextArea({
   label,
+  id,
+  name,
   required,
   placeholder,
   value,
@@ -76,6 +82,9 @@ export function TextArea({
   disabled,
   rows = 2,
 }: InputProps & { rows?: number }) {
+  const uid = useId().replace(/:/g, "");
+  const inputId = id ?? name ?? `field-${uid}`;
+  const inputName = name ?? inputId;
   const isLocked = Boolean(disabled || readOnly);
   const borderClasses = error
     ? "border-red-500 focus-within:border-red-500"
@@ -88,6 +97,7 @@ export function TextArea({
       {label && (
         <div className="flex items-center gap-1">
           <label
+            htmlFor={inputId}
             className={`text-[14px] font-medium leading-[1.25] tracking-[0.01em] ${isLocked ? "text-muted" : "text-heading"}`}
           >
             {label}
@@ -103,6 +113,8 @@ export function TextArea({
         `}
       >
         <textarea
+          id={inputId}
+          name={inputName}
           rows={rows}
           placeholder={placeholder}
           value={value}
@@ -127,6 +139,7 @@ export function TextArea({
 
 export function TextInput({
   label,
+  id,
   required,
   type = "text",
   placeholder,
@@ -144,6 +157,9 @@ export function TextInput({
   disabled,
   min,
 }: InputProps) {
+  const uid = useId().replace(/:/g, "");
+  const inputId = id ?? name ?? `field-${uid}`;
+  const inputName = name ?? inputId;
   const [showPass, setShowPass] = useState(false);
   const isPassword = type === "password";
   const inputType = isPassword ? (showPass ? "text" : "password") : type;
@@ -159,6 +175,7 @@ export function TextInput({
       {label && (
         <div className="flex items-center gap-1">
           <label
+            htmlFor={inputId}
             className={`text-[14px] font-medium leading-[1.25] tracking-[0.01em] ${isLocked ? "text-muted" : "text-heading"}`}
           >
             {label}
@@ -188,12 +205,13 @@ export function TextInput({
           </div>
         )}
         <input
+          id={inputId}
+          name={inputName}
           type={inputType}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           autoComplete={autoComplete}
-          name={name}
           readOnly={readOnly}
           disabled={disabled}
           onFocus={onFocus}
@@ -222,12 +240,18 @@ export function TextInput({
 
 export function TimeInput({
   label,
+  id,
+  name,
   required,
   value = "",
   onChange,
   error,
   disabled,
 }: TimeInputProps) {
+  const uid = useId().replace(/:/g, "");
+  const inputId = id ?? name ?? `time-${uid}`;
+  const inputName = name ?? inputId;
+  const triggerId = `${inputId}-trigger`;
   const [isOpen, setIsOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const parsed = parseTime24(value);
@@ -264,13 +288,19 @@ export function TimeInput({
     <div ref={wrapRef} className={`relative flex flex-col gap-2 w-full group ${disabled ? "opacity-60" : ""}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">{label}</label>
+          <label htmlFor={triggerId} className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
+            {label}
+          </label>
           {required && <span className="text-primary-strong text-[14px] font-medium leading-[1.25]">*</span>}
         </div>
       )}
+      <input type="hidden" name={inputName} id={inputId} value={value} readOnly aria-hidden="true" tabIndex={-1} />
       <button
+        id={triggerId}
         type="button"
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
         className={`
           flex h-11 w-full items-center rounded-md border bg-white px-4 text-left shadow-sm transition-all duration-200
@@ -415,6 +445,8 @@ export function Button({
 
 export function Select({
   label,
+  id,
+  name,
   required,
   options,
   value,
@@ -424,6 +456,8 @@ export function Select({
   disabled,
 }: {
   label?: string;
+  id?: string;
+  name?: string;
   required?: boolean;
   options: Array<{ value: string; label: string }>;
   value?: string;
@@ -432,11 +466,14 @@ export function Select({
   placeholder?: string;
   disabled?: boolean;
 }) {
+  const uid = useId().replace(/:/g, "");
+  const selectId = id ?? name ?? `select-${uid}`;
+  const selectName = name ?? selectId;
   return (
     <div className={`flex flex-col gap-2 w-full group ${disabled ? "opacity-60" : ""}`}>
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
+          <label htmlFor={selectId} className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
             {label}
           </label>
           {required && <span className="text-primary-strong text-[14px] font-medium leading-[1.25]">*</span>}
@@ -452,6 +489,8 @@ export function Select({
         `}
       >
         <select
+          id={selectId}
+          name={selectName}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           disabled={disabled}
@@ -481,6 +520,8 @@ export function Select({
 
 export function FilePicker({
   label,
+  id,
+  name,
   value,
   onChange,
   onError,
@@ -495,6 +536,8 @@ export function FilePicker({
   freeFormCrop,
 }: {
   label?: string;
+  id?: string;
+  name?: string;
   value?: string;
   onChange: (base64: string) => void;
   onError?: (message: string) => void;
@@ -510,6 +553,9 @@ export function FilePicker({
   cropSubtitle?: string;
   cropApplyLabel?: string;
 }) {
+  const uid = useId().replace(/:/g, "");
+  const inputId = id ?? name ?? `file-${uid}`;
+  const inputName = name ?? inputId;
   const [cropperOpen, setCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
 
@@ -549,7 +595,7 @@ export function FilePicker({
     <div className="flex flex-col gap-2 w-full">
       {label && (
         <div className="flex items-center gap-1">
-          <label className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
+          <label htmlFor={inputId} className="text-[14px] font-medium text-heading leading-[1.25] tracking-[0.01em]">
             {label}
           </label>
           {required && <span className="text-primary-strong text-[14px] font-medium leading-[1.25]">*</span>}
@@ -560,6 +606,8 @@ export function FilePicker({
         ${error ? "border-red-500" : "border-border/60 hover:border-primary/40 hover:bg-white"}
       `}>
         <input
+          id={inputId}
+          name={inputName}
           type="file"
           accept="image/*"
           onChange={handleFileChange}

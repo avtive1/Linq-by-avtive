@@ -1861,6 +1861,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <div className="relative flex-1 group">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted/30 group-focus-within:text-primary transition-colors z-10 pointer-events-none" size={20} strokeWidth={2.5} />
             <input
+              id="event-attendees-search"
+              name="eventAttendeesSearch"
               type="text"
               placeholder="Search leads in this campaign..."
               className={`w-full h-14 pl-16 pr-8 py-0 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-base font-medium leading-[1.6] text-heading shadow-md placeholder:text-muted/30 ${
@@ -2877,11 +2879,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="onsite" checked={editForm.location_type === "onsite"} onChange={() => setEditForm({ ...editForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                        <input type="radio" id="event-edit-location-onsite" name="locationType" value="onsite" checked={editForm.location_type === "onsite"} onChange={() => setEditForm({ ...editForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Onsite
                      </label>
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="webinar" checked={editForm.location_type === "webinar"} onChange={() => setEditForm({ ...editForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                        <input type="radio" id="event-edit-location-webinar" name="locationType" value="webinar" checked={editForm.location_type === "webinar"} onChange={() => setEditForm({ ...editForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Webinar
                      </label>
                   </div>
@@ -2892,7 +2894,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                      <label className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location <span className="text-primary-strong">*</span></label>
                      <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
-                        <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
+                        <input id="event-edit-webinar-readonly" name="locationWebinarLabel" type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
                      </div>
                    </div>
                 ) : (

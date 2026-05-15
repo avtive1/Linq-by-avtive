@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, useId } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui";
 
@@ -87,6 +87,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   const [swatches, setSwatches] = useState<string[]>(DEFAULT_SWATCHES);
   const [selectedSlot, setSelectedSlot] = useState(0);
   const isClient = useIsClient();
+  const fieldUid = useId().replace(/:/g, "");
   const panelRef = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
@@ -300,6 +301,8 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
               <div key={key} className="flex w-full items-center justify-end gap-1">
                 <span className="w-3 shrink-0 text-right text-[15px] font-medium uppercase text-white/75">{key}</span>
                 <input
+                  id={`${fieldUid}-rgb-${key}`}
+                  name={`colorRgb${key}`}
                   type="number"
                   min={0}
                   max={255}
@@ -316,6 +319,8 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
             <div className="flex w-full items-center justify-end gap-1">
               <span className="w-3 shrink-0 text-right text-[15px] font-medium text-white/75">#</span>
               <input
+                id={`${fieldUid}-hex`}
+                name="colorHex"
                 type="text"
                 value={currentHex.replace("#", "")}
                 onChange={(e) => {

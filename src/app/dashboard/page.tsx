@@ -1721,6 +1721,8 @@ function DashboardContent() {
           <div className="relative flex-1">
             <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={22} strokeWidth={2.5} />
             <input
+              id="dashboard-campaign-search"
+              name="campaignSearch"
               type="text"
               placeholder={isTeamMemberMode ? "Search assigned campaigns..." : "Search campaigns..."}
               className={`w-full h-14 pl-24 pr-7 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-[17px] leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
@@ -2124,11 +2126,11 @@ function DashboardContent() {
                   </div>
                   <div className="flex gap-4 mb-1">
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="onsite" checked={eventForm.location_type === "onsite"} onChange={() => setEventForm({ ...eventForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                        <input type="radio" id="dashboard-event-location-onsite" name="locationType" value="onsite" checked={eventForm.location_type === "onsite"} onChange={() => setEventForm({ ...eventForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Onsite
                      </label>
                      <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" name="locationType" value="webinar" checked={eventForm.location_type === "webinar"} onChange={() => setEventForm({ ...eventForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                        <input type="radio" id="dashboard-event-location-webinar" name="locationType" value="webinar" checked={eventForm.location_type === "webinar"} onChange={() => setEventForm({ ...eventForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
                         Webinar
                      </label>
                   </div>
@@ -2139,7 +2141,7 @@ function DashboardContent() {
                      <label className="text-[14px] font-normal text-heading leading-tight tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
                      <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
                         <Globe size={18} className="text-muted mr-2" />
-                        <input type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
+                        <input id="dashboard-event-webinar-readonly" name="locationWebinarLabel" type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
                      </div>
                    </div>
                 ) : (
@@ -2621,6 +2623,8 @@ function DashboardContent() {
                           >
                             <div className="pt-1">
                               <input
+                                id={`team-permission-${perm.id}`}
+                                name={`teamPermission_${perm.id}`}
                                 type="checkbox"
                                 className="w-4 h-4 rounded-md accent-primary"
                                 checked={teamPermissionDraft.includes(perm.id)}

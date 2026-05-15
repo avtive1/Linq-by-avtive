@@ -235,6 +235,7 @@ export default function SignupPage() {
             <div className="flex flex-col gap-3">
               {/* Autofill Trap: These hidden fields capture the browser's forced autofill so our real fields stay clean */}
               <input 
+                id="signup-autofill-user-decoy"
                 type="text" 
                 name="fake_user_name" 
                 autoComplete="username" 
@@ -242,6 +243,7 @@ export default function SignupPage() {
                 tabIndex={-1} 
               />
               <input 
+                id="signup-autofill-pass-decoy"
                 type="password" 
                 name="fake_password" 
                 autoComplete="current-password" 

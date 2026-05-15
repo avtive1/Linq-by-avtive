@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useId } from "react";
 import Cropper, { Area, Point } from "react-easy-crop";
 import { X, ZoomIn, ZoomOut, Check } from "lucide-react";
 import { Button } from "./ui";
@@ -65,6 +65,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   subtitle = "Use a square crop for best card branding.",
   applyLabel = "Apply logo",
 }) => {
+  const rangeId = useId().replace(/:/g, "");
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -135,12 +136,14 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
           <div className="flex items-center gap-4">
             <ZoomOut size={16} className="text-muted" />
             <input
+              id={`${rangeId}-zoom`}
+              name="cropZoom"
               type="range"
               value={zoom}
               min={minZoom}
               max={maxZoom}
               step={0.05}
-              aria-labelledby="Zoom"
+              aria-label="Crop zoom"
               onChange={(e) => setZoom(Number(e.target.value))}
               className="flex-1 h-1.5 bg-slate-200 rounded-[4px] appearance-none cursor-pointer accent-primary"
             />
