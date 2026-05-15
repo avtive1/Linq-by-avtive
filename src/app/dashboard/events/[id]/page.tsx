@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use, useMemo, Suspense, useRef, type ReactNode } from "react";
+import { useState, useEffect, use, useMemo, useCallback, Suspense, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -30,6 +30,8 @@ import {
   Activity,
   TrendingUp,
   Layers3,
+  Undo2,
+  Redo2,
   ShieldCheck,
   Lock,
   FileText,
@@ -84,6 +86,26 @@ const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
   pink: { start: "#fff3f8", end: "#fff8f0" },
   blue: { start: "#f1f5ff", end: "#f6f8ff" },
 };
+
+type CardBrandingDraft = {
+  card_color: string;
+  card_font: string;
+  horizontal_text_color: string;
+  vertical_text_color: string;
+};
+
+function cloneCardBrandingDraft(d: CardBrandingDraft): CardBrandingDraft {
+  return { ...d };
+}
+
+function cardBrandingDraftsEqual(a: CardBrandingDraft, b: CardBrandingDraft) {
+  return (
+    a.card_color === b.card_color &&
+    a.card_font === b.card_font &&
+    a.horizontal_text_color === b.horizontal_text_color &&
+    a.vertical_text_color === b.vertical_text_color
+  );
+}
 
 async function readResponsePayload(res: Response): Promise<unknown> {
   const contentType = res.headers.get("content-type") || "";
@@ -172,13 +194,44 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     getDefaultRegistrationFormConfig(),
   );
   const [isSavingRegistrationForm, setIsSavingRegistrationForm] = useState(false);
-  const [brandingDraft, setBrandingDraft] = useState({
+  const [brandingDraft, setBrandingDraft] = useState<CardBrandingDraft>({
     card_color: "purple",
     card_font: "inter",
     horizontal_text_color: "",
     vertical_text_color: "",
   });
+  const [brandingUndoStack, setBrandingUndoStack] = useState<CardBrandingDraft[]>([]);
+  const [brandingRedoStack, setBrandingRedoStack] = useState<CardBrandingDraft[]>([]);
   const [isSavingBranding, setIsSavingBranding] = useState(false);
+
+  const editBrandingDraft = useCallback((recipe: (prev: CardBrandingDraft) => CardBrandingDraft) => {
+    setBrandingDraft((prev) => {
+      const next = recipe(prev);
+      if (cardBrandingDraftsEqual(prev, next)) return prev;
+      const snapshot = cloneCardBrandingDraft(prev);
+      setBrandingUndoStack((s) => [...s, snapshot]);
+      setBrandingRedoStack([]);
+      return next;
+    });
+  }, []);
+
+  const undoBrandingEdit = useCallback(() => {
+    if (brandingUndoStack.length === 0) return;
+    const past = [...brandingUndoStack];
+    const restored = past.pop()!;
+    setBrandingRedoStack((redo) => [cloneCardBrandingDraft(brandingDraft), ...redo]);
+    setBrandingUndoStack(past);
+    setBrandingDraft(restored);
+  }, [brandingDraft, brandingUndoStack]);
+
+  const redoBrandingEdit = useCallback(() => {
+    if (brandingRedoStack.length === 0) return;
+    const redoList = [...brandingRedoStack];
+    const replay = redoList.shift()!;
+    setBrandingUndoStack((u) => [...u, cloneCardBrandingDraft(brandingDraft)]);
+    setBrandingRedoStack(redoList);
+    setBrandingDraft(replay);
+  }, [brandingDraft, brandingRedoStack]);
   const [showBrandCustomColorPicker, setShowBrandCustomColorPicker] = useState(false);
   const [draftBrandCustomColor, setDraftBrandCustomColor] = useState("#2563EB");
   const [brandCustomColorAnchorRect, setBrandCustomColorAnchorRect] = useState<DOMRect | null>(null);
@@ -1395,6 +1448,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       horizontal_text_color: String(eventData?.horizontal_text_color || ""),
                       vertical_text_color: String(eventData?.vertical_text_color || ""),
                     });
+                    setBrandingUndoStack([]);
+                    setBrandingRedoStack([]);
                     setIsBrandingOpen(true);
                   }}
                   disabled={!canManageEvent}
@@ -2166,35 +2221,59 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <div className="min-h-0 flex-1 overflow-y-auto border-x border-border/40 bg-white/70 px-8 py-6">
                 <div className="flex w-full flex-col gap-6">
                   <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60">Social post layout</h4>
-                  <div className="w-full max-w-[740px] overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
-                        <div style={{ width: "1200px", height: "628px", transform: "scale(0.58)", transformOrigin: "top left", marginBottom: "-264px" }}>
+                    <div className="flex w-full max-w-[740px] flex-col items-center gap-3 xl:w-auto xl:items-start">
+                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
+                        Social post layout
+                      </h4>
+                      <div className="w-full overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
+                        <div
+                          style={{
+                            width: "1200px",
+                            height: "628px",
+                            transform: "scale(0.58)",
+                            transformOrigin: "top left",
+                            marginBottom: "-264px",
+                          }}
+                        >
                           <CardPreview data={brandingPreviewData} preview />
                         </div>
                       </div>
                     </div>
-                <div className="flex flex-col items-center gap-3">
-                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60">Event badge layout</h4>
-                  <div className="relative h-[300px] w-[186px] overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
-                    <div style={{ position: "absolute", top: 8, left: 8, width: "576px", height: "1024px", transform: "scale(0.28)", transformOrigin: "top left" }}>
+                    <div className="flex shrink-0 flex-col items-center gap-3 xl:items-start">
+                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
+                        Event badge layout
+                      </h4>
+                      <div className="relative h-[300px] w-[186px] overflow-hidden rounded-lg border border-border/20 bg-transparent p-2">
+                        <div
+                          style={{
+                            position: "absolute",
+                            top: 8,
+                            left: 8,
+                            width: "576px",
+                            height: "1024px",
+                            transform: "scale(0.28)",
+                            transformOrigin: "top left",
+                          }}
+                        >
                           <CardPreview data={brandingPreviewData} preview isVertical verticalSide={2} />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="w-full flex flex-col lg:flex-row gap-6 bg-white/75 border border-white/40 px-5 py-5 rounded-xl shadow-sm">
-                    <div className="relative flex-1 flex flex-col gap-2">
-                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Theme color</span>
-                      <div className="flex gap-2 h-10 items-center">
+                  <div className="w-full grid grid-cols-1 gap-y-8 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0 xl:gap-x-12">
+                    <div className="relative flex flex-col gap-2 lg:col-span-4">
+                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
+                        Theme color
+                      </span>
+                      <div className="flex h-11 items-center gap-2">
                         {BRAND_THEME_COLORS.map((c) => (
                           <button
                             key={c.name}
                             type="button"
                             onClick={() => {
                               setShowBrandCustomColorPicker(false);
-                              setBrandingDraft((prev) => ({ ...prev, card_color: c.name }));
+                              editBrandingDraft((prev) => ({ ...prev, card_color: c.name }));
                             }}
                             className={`w-8 h-8 rounded-full border transition-all ${
                               brandingDraft.card_color === c.name
@@ -2244,16 +2323,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           onChange={(next) => setDraftBrandCustomColor(next)}
                           onCancel={() => setShowBrandCustomColorPicker(false)}
                           onConfirm={() => {
-                            setBrandingDraft((prev) => ({ ...prev, card_color: draftBrandCustomColor }));
+                            editBrandingDraft((prev) => ({ ...prev, card_color: draftBrandCustomColor }));
                             setShowBrandCustomColorPicker(false);
                           }}
                         />
                       )}
                     </div>
 
-                    <div className="relative flex-1 flex flex-col gap-2">
-                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Text color</span>
-                      <div className="flex h-10 items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm w-fit">
+                    <div className="relative flex flex-col gap-2 lg:col-span-4">
+                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
+                        Text color
+                      </span>
+                      <div className="flex h-11 w-fit items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
                         <button
                           type="button"
                           onClick={(e) => {
@@ -2263,7 +2344,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             setDraftBrandTextColor(brandingDraft.horizontal_text_color || "#FFFFFF");
                             setShowBrandTextColorPicker(true);
                           }}
-                          className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                          className={`h-9 px-3 text-[12px] font-semibold rounded-sm transition-all ${
                             activeBrandTextTarget === "horizontal"
                               ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
                               : "text-heading/75 hover:bg-slate-100/80"
@@ -2281,7 +2362,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             setDraftBrandTextColor(brandingDraft.vertical_text_color || "#000000");
                             setShowBrandTextColorPicker(true);
                           }}
-                          className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
+                          className={`h-9 px-3 text-[12px] font-semibold rounded-sm transition-all ${
                             activeBrandTextTarget === "vertical"
                               ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
                               : "text-heading/75 hover:bg-slate-100/80"
@@ -2298,9 +2379,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           onCancel={() => setShowBrandTextColorPicker(false)}
                           onConfirm={() => {
                             if (activeBrandTextTarget === "horizontal") {
-                              setBrandingDraft((prev) => ({ ...prev, horizontal_text_color: draftBrandTextColor }));
+                              editBrandingDraft((prev) => ({ ...prev, horizontal_text_color: draftBrandTextColor }));
                             } else {
-                              setBrandingDraft((prev) => ({ ...prev, vertical_text_color: draftBrandTextColor }));
+                              editBrandingDraft((prev) => ({ ...prev, vertical_text_color: draftBrandTextColor }));
                             }
                             setShowBrandTextColorPicker(false);
                           }}
@@ -2308,11 +2389,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       )}
                     </div>
 
-                    <div className="flex-1 flex flex-col gap-2">
-                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
+                    <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
+                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
+                        Typography
+                      </span>
                       <Select
                         value={brandingDraft.card_font}
-                        onChange={(val) => setBrandingDraft((prev) => ({ ...prev, card_font: val }))}
+                        onChange={(val) => editBrandingDraft((prev) => ({ ...prev, card_font: val }))}
                         options={[
                           { label: "Inter (Default)", value: "inter" },
                           { label: "Poppins", value: "poppins" },
@@ -2326,19 +2409,54 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
 
               <div className="border border-t-0 border-border/40 rounded-b-xl bg-white/95 px-8 py-4">
-                <div className="flex gap-3">
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    className="h-11"
-                    disabled={isSavingBranding}
-                    onClick={() => setIsBrandingOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button fullWidth className="h-11" disabled={isSavingBranding} onClick={saveBrandingConfig}>
-                    {isSavingBranding ? "Saving..." : "Save Branding"}
-                  </Button>
+                <div className="grid w-full grid-cols-1 items-center gap-3 min-[560px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                  <div className="flex justify-center min-[560px]:justify-start">
+                    <Button
+                      className="h-11 w-full min-[560px]:w-auto shrink-0 px-6 sm:min-w-[132px]"
+                      disabled={isSavingBranding}
+                      onClick={saveBrandingConfig}
+                    >
+                      {isSavingBranding ? "Saving..." : "Save Branding"}
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="h-11 shrink-0 px-5"
+                      disabled={isSavingBranding || brandingUndoStack.length === 0}
+                      onClick={undoBrandingEdit}
+                      title="Undo the last theme, text color, or typography change"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Undo2 size={16} className="shrink-0 opacity-90" aria-hidden />
+                        Undo
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="h-11 shrink-0 px-5"
+                      disabled={isSavingBranding || brandingRedoStack.length === 0}
+                      onClick={redoBrandingEdit}
+                      title="Redo a change you undid"
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <Redo2 size={16} className="shrink-0 opacity-90" aria-hidden />
+                        Redo
+                      </span>
+                    </Button>
+                  </div>
+                  <div className="flex justify-center min-[560px]:justify-end">
+                    <Button
+                      variant="secondary"
+                      className="h-11 w-full min-[560px]:w-auto shrink-0 px-6 sm:min-w-[112px]"
+                      disabled={isSavingBranding}
+                      onClick={() => setIsBrandingOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
