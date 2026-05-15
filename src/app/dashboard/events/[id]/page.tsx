@@ -87,6 +87,12 @@ const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
   blue: { start: "#f1f5ff", end: "#f6f8ff" },
 };
 
+/** Branding modal previews: badge height matches scaled social (628×scale) for visual consistency */
+const BRANDING_MODAL_SOCIAL_SCALE = 0.58;
+const BRANDING_MODAL_SOCIAL_HEIGHT = 628 * BRANDING_MODAL_SOCIAL_SCALE;
+const BRANDING_MODAL_BADGE_SCALE = BRANDING_MODAL_SOCIAL_HEIGHT / 1024;
+const BRANDING_MODAL_SOCIAL_COLLAPSE_MARGIN = -628 * (1 - BRANDING_MODAL_SOCIAL_SCALE);
+
 type CardBrandingDraft = {
   card_color: string;
   card_font: string;
@@ -2219,20 +2225,20 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
 
               <div className="min-h-0 flex-1 overflow-y-auto border-x border-border/40 bg-white/70 px-8 py-6">
-                <div className="flex w-full flex-col gap-6">
+                <div className="flex w-full flex-col gap-12 lg:gap-16">
                   <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center">
                     <div className="flex w-full max-w-[740px] flex-col items-center gap-3 xl:w-auto xl:items-start">
                       <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
                         Social post layout
                       </h4>
-                      <div className="w-full overflow-hidden rounded-lg border border-border/20 bg-white px-2 pt-2 pb-0">
+                      <div className="w-full overflow-hidden">
                         <div
                           style={{
                             width: "1200px",
                             height: "628px",
-                            transform: "scale(0.58)",
+                            transform: `scale(${BRANDING_MODAL_SOCIAL_SCALE})`,
                             transformOrigin: "top left",
-                            marginBottom: "-264px",
+                            marginBottom: `${BRANDING_MODAL_SOCIAL_COLLAPSE_MARGIN}px`,
                           }}
                         >
                           <CardPreview data={brandingPreviewData} preview />
@@ -2243,15 +2249,22 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
                         Event badge layout
                       </h4>
-                      <div className="relative h-[300px] w-[186px] overflow-hidden rounded-lg border border-border/20 bg-white px-2 pt-2 pb-0">
+                      {/** Match social preview visual height; no nested card chrome */}
+                      <div
+                        className="relative shrink-0 overflow-hidden"
+                        style={{
+                          width: 576 * BRANDING_MODAL_BADGE_SCALE,
+                          height: BRANDING_MODAL_SOCIAL_HEIGHT,
+                        }}
+                      >
                         <div
                           style={{
                             position: "absolute",
-                            top: 8,
-                            left: 8,
+                            top: 0,
+                            left: 0,
                             width: "576px",
                             height: "1024px",
-                            transform: "scale(0.28)",
+                            transform: `scale(${BRANDING_MODAL_BADGE_SCALE})`,
                             transformOrigin: "top left",
                           }}
                         >
