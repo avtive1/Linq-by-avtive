@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     // Get current user's password hash
-    const authUser = await queryNeonOne<{ user_id: string; password_hash: string }>(
+    const authUser = await queryNeonOne<{ user_id: string; password_hash: string | null }>(
       `SELECT user_id, password_hash
        FROM public.auth_users
        WHERE user_id = $1`,
@@ -31,6 +31,13 @@ export async function POST(req: Request) {
 
     if (!authUser) {
       return NextResponse.json({ error: "User not found." }, { status: 404 });
+    }
+
+    if (authUser.password_hash == null || authUser.password_hash === "") {
+      return NextResponse.json(
+        { error: "This account does not use an app password. Sign in with Clerk or use Clerk account settings." },
+        { status: 400 },
+      );
     }
 
     // Verify current password

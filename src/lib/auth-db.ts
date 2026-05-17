@@ -5,7 +5,8 @@ import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization
 export type AuthUserRecord = {
   user_id: string;
   email: string;
-  password_hash: string;
+  /** Present for credential login; null for Clerk-linked-only rows once provisioning supports them */
+  password_hash: string | null;
   role: string | null;
   username: string | null;
   organization_name: string | null;
@@ -38,6 +39,17 @@ export async function ensureAuthSchema() {
   await queryNeon(
     `CREATE INDEX IF NOT EXISTS auth_users_email_idx
      ON public.auth_users (email)`,
+  );
+  await queryNeon(
+    `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS clerk_user_id text`,
+  );
+  await queryNeon(
+    `CREATE UNIQUE INDEX IF NOT EXISTS auth_users_clerk_user_id_uidx
+     ON public.auth_users (clerk_user_id)
+     WHERE clerk_user_id IS NOT NULL`,
+  );
+  await queryNeon(
+    `ALTER TABLE public.auth_users ALTER COLUMN password_hash DROP NOT NULL`,
   );
   // Older Neon DBs may lack these columns; signup + cards expect them.
   await queryNeon(
@@ -177,10 +189,80 @@ export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord 
 
 export async function verifyPassword(email: string, password: string): Promise<AuthUserRecord | null> {
   const user = await getAuthUserByEmail(email);
-  if (!user) return null;
+  if (!user || user.password_hash == null || user.password_hash === "") return null;
   const argon2 = await getArgon2();
   const ok = await argon2.verify(user.password_hash, password);
   return ok ? user : null;
+}
+
+export async function getInternalUserIdByClerkUserId(clerkUserId: string): Promise<string | null> {
+  await ensureAuthSchema();
+  const row = await queryNeonOne<{ user_id: string }>(
+    `SELECT user_id FROM public.auth_users WHERE clerk_user_id = $1 LIMIT 1`,
+    [clerkUserId],
+  );
+  return row?.user_id ?? null;
+}
+
+/**
+ * Resolve Clerk subject → existing auth_users.user_id by clerk_user_id or verified primary email.
+ * Links clerk_user_id on first successful email match.
+ */
+export async function linkAuthUserToClerkUser(clerkUserId: string, email: string): Promise<string | null> {
+  await ensureAuthSchema();
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) return null;
+
+  const already = await getInternalUserIdByClerkUserId(clerkUserId);
+  if (already) return already;
+
+  const byEmail = await queryNeonOne<{ user_id: string }>(
+    `SELECT user_id FROM public.auth_users WHERE lower(email) = lower($1) LIMIT 1`,
+    [normalizedEmail],
+  );
+  if (!byEmail?.user_id) return null;
+
+  await queryNeon(
+    `UPDATE public.auth_users SET clerk_user_id = $1, updated_at = now() WHERE user_id = $2`,
+    [clerkUserId, byEmail.user_id],
+  );
+  return byEmail.user_id;
+}
+
+export async function getAuthSessionPayloadByUserId(userId: string): Promise<{
+  userId: string;
+  email: string;
+  username: string | null;
+  role: string;
+  organizationName: string | null;
+} | null> {
+  await ensureAuthSchema();
+  const row = await queryNeonOne<{
+    userId: string;
+    email: string;
+    username: string | null;
+    role: string | null;
+    organizationName: string | null;
+  }>(
+    `SELECT au.user_id AS "userId",
+            au.email,
+            p.username,
+            COALESCE(p.role::text, 'user') AS role,
+            p.organization_name AS "organizationName"
+     FROM public.auth_users au
+     JOIN public.profiles p ON p.id = au.user_id
+     WHERE au.user_id = $1
+     LIMIT 1`,
+    [userId],
+  );
+  if (!row) return null;
+  return {
+    userId: row.userId,
+    email: row.email,
+    username: row.username,
+    role: row.role || "user",
+    organizationName: row.organizationName,
+  };
 }
 
 export async function registerUser(input: {

@@ -3,6 +3,7 @@ import { Inter_Tight, Poppins, Outfit } from "next/font/google";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 import "./globals.css";
 
@@ -34,12 +35,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${interTight.variable} ${poppins.variable} ${outfit.variable}`}>
       <body className={interTight.className}>
-        <AuthSessionProvider>
-          <Toaster position="top-center" richColors />
-          {children}
-          <Analytics />
-          <SpeedInsights />
-        </AuthSessionProvider>
+        <ClerkProvider>
+          <AuthSessionProvider>
+            <Toaster position="top-center" richColors />
+            {children}
+            <Analytics />
+            <SpeedInsights />
+          </AuthSessionProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

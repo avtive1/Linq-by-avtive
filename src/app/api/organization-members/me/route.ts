@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getServerAuthSession } from "@/auth";
+import { syncOrgMemberAccessGrantsFromTemplate } from "@/lib/organization/sync-org-member-access-grants";
 
 export async function GET() {
   try {
@@ -57,6 +58,11 @@ export async function GET() {
             { id: emailMatch.id },
             "id",
           );
+          try {
+            await syncOrgMemberAccessGrantsFromTemplate(emailMatch.org_owner_user_id, userId, emailMatch.role_label);
+          } catch (e: unknown) {
+            console.error("[organization-members/me] grant sync after lazy-link failed:", e);
+          }
         }
       }
     }

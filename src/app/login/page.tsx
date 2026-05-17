@@ -12,6 +12,8 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [needsOtpStep, setNeedsOtpStep] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,9 +27,65 @@ export default function LoginPage() {
     setError("");
     setIsSubmitting(true);
     try {
+      const trimmedEmail = email.trim().toLowerCase();
+
+      if (needsOtpStep) {
+        const code = otp.trim();
+        if (!code) {
+          setError("Enter the verification code from your email.");
+          return;
+        }
+        const result = await signIn("credentials", {
+          email: trimmedEmail,
+          password,
+          otp: code,
+          callbackUrl: "/",
+          redirect: false,
+        });
+        if (result?.error) {
+          setError("Incorrect email, password, or verification code.");
+          return;
+        }
+        if (result?.ok) {
+          let target = "/dashboard";
+          try {
+            const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
+            const adminPayload = await adminRes.json().catch(() => ({}));
+            const isAdmin = Boolean(adminRes.ok && adminPayload?.data?.isAdmin);
+            target = isAdmin ? "/admin" : "/dashboard";
+          } catch {
+            target = "/dashboard";
+          }
+          const rawCb = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("callbackUrl") : null;
+          const safeCb = rawCb && rawCb.startsWith("/") && !rawCb.startsWith("//") ? rawCb : null;
+          router.replace(safeCb || target);
+          router.refresh();
+          return;
+        }
+        setError("Sign-in failed. Please try again.");
+        return;
+      }
+
+      const pre = await fetch("/api/auth/request-login-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail, password }),
+      });
+      const prePayload = await pre.json().catch(() => ({}));
+      if (!pre.ok) {
+        setError(String(prePayload?.error || "Invalid email or password."));
+        return;
+      }
+      if (prePayload?.needsOtp === true) {
+        setNeedsOtpStep(true);
+        setOtp("");
+        return;
+      }
+
       const result = await signIn("credentials", {
-        email: email.trim().toLowerCase(),
+        email: trimmedEmail,
         password,
+        otp: "",
         callbackUrl: "/",
         redirect: false,
       });
@@ -45,7 +103,9 @@ export default function LoginPage() {
         } catch {
           target = "/dashboard";
         }
-        router.replace(target);
+        const rawCb = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("callbackUrl") : null;
+        const safeCb = rawCb && rawCb.startsWith("/") && !rawCb.startsWith("//") ? rawCb : null;
+        router.replace(safeCb || target);
         router.refresh();
         return;
       }
@@ -85,13 +145,51 @@ export default function LoginPage() {
             <div className="flex flex-col gap-6">
               <TextInput label="Email Address" required type="email" placeholder="you@example.com" icon="email" value={email} onChange={setEmail} />
               <TextInput label="Password" required type="password" placeholder="••••••••••••" icon="lock" value={password} onChange={setPassword} />
+              {needsOtpStep ? (
+                <TextInput
+                  label="Email verification code"
+                  required
+                  type="text"
+                  autoComplete="one-time-code"
+                  placeholder="6-digit code"
+                  icon="lock"
+                  value={otp}
+                  onChange={setOtp}
+                />
+              ) : null}
             </div>
+
+            {needsOtpStep ? (
+              <p className="text-sm text-muted leading-relaxed">
+                We sent a code to your email. Enter it to finish signing in to your organization account.
+              </p>
+            ) : null}
 
             {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
 
-            <Button type="submit" variant="primary" fullWidth size="lg" disabled={!email || !password || isSubmitting} className="h-12 text-base shadow-lg shadow-primary/20">
-              {isSubmitting ? "Signing in..." : "Sign in"}
+            <Button
+              type="submit"
+              variant="primary"
+              fullWidth
+              size="lg"
+              disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
+              className="h-12 text-base shadow-lg shadow-primary/20"
+            >
+              {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
             </Button>
+            {needsOtpStep ? (
+              <button
+                type="button"
+                className="text-sm text-muted hover:text-heading underline underline-offset-4 mx-auto block"
+                onClick={() => {
+                  setNeedsOtpStep(false);
+                  setOtp("");
+                  setError("");
+                }}
+              >
+                Use a different account
+              </button>
+            ) : null}
           </form>
         </div>
       </div>

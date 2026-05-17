@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
-import { seedViewEventGrantsForOrgMember } from "@/lib/organization/seedViewEventGrants";
+import { getPublicAppUrl } from "@/lib/app-url";
+import { sendTeamMemberAddedOwnerNoticeEmail, sendTeamMemberInviteEmail } from "@/lib/notifications/org-emails";
+import { createInviteRawToken, ensureOrganizationMemberInviteColumns } from "@/lib/organization/member-invite-db";
+import { syncOrgMemberAccessGrantsFromTemplate } from "@/lib/organization/sync-org-member-access-grants";
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
-import { getAdminUserByEmail } from "@/lib/admin";
+import { getAdminUserByEmail, getAdminUserEmailById } from "@/lib/admin";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 
 const EDITABLE_ORG_PERMISSIONS = ["create_event", "manage_event", "edit_cards", "delete_cards"] as const;
@@ -204,16 +206,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // If user exists, seed default view grants
-    if (target?.id) {
-      try {
-        await seedViewEventGrantsForOrgMember(ownerId, target.id);
-      } catch (e: unknown) {
-        // Log but don't fail the whole request
-        console.error("Grant seeding failed:", e);
-      }
-    }
-
     const existingTemplateRow = await queryNeonOne<{ id: string }>(
       `SELECT id
        FROM public.organization_role_permission_templates
@@ -240,128 +232,57 @@ export async function POST(req: Request) {
     }
 
     if (target?.id) {
-      // Keep an org-level grant set in sync so permissions remain visible/editable
-      // even when there are no event-scoped grants yet.
-      if (normalizedPermissions.length > 0) {
-        await queryNeon(
-          `DELETE FROM public.access_grants
-           WHERE event_id IS NULL
-             AND granted_by_user_id = $1
-             AND grantee_user_id = $2
-             AND permission = ANY($3::text[])
-             AND permission <> ALL($4::text[])`,
-          [ownerId, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions],
-        );
-      } else {
-        await queryNeon(
-          `DELETE FROM public.access_grants
-           WHERE event_id IS NULL
-             AND granted_by_user_id = $1
-             AND grantee_user_id = $2
-             AND permission = ANY($3::text[])`,
-          [ownerId, target.id, EDITABLE_ORG_PERMISSIONS],
-        );
-      }
-
-      const existingOrgLevel = await queryNeon<{ permission: string }>(
-        `SELECT permission
-         FROM public.access_grants
-         WHERE event_id IS NULL
-           AND granted_by_user_id = $1
-           AND grantee_user_id = $2
-           AND status = 'active'
-           AND permission = ANY($3::text[])`,
-        [ownerId, target.id, normalizedPermissions],
-      );
-      const existingOrgPermissionSet = new Set(existingOrgLevel.map((row) => row.permission));
-      const orgLevelToInsert = normalizedPermissions
-        .filter((permission) => !existingOrgPermissionSet.has(permission))
-        .map((permission) => ({
-          grantee_user_id: target.id,
-          granted_by_user_id: ownerId,
-          permission,
-          status: "active",
-        }));
-      if (orgLevelToInsert.length > 0) {
-        await queryNeon(
-          `INSERT INTO public.access_grants (event_id, grantee_user_id, granted_by_user_id, permission, status)
-           SELECT NULL::uuid, x.grantee_user_id::uuid, x.granted_by_user_id::uuid, x.permission::text, x.status::text
-           FROM jsonb_to_recordset($1::jsonb) AS x(grantee_user_id text, granted_by_user_id text, permission text, status text)
-           ON CONFLICT DO NOTHING`,
-          [JSON.stringify(orgLevelToInsert)],
-        );
-      }
-
-      const ownerEvents = await queryNeon<{ id: string }>(
-        `SELECT id FROM public.events WHERE user_id = $1`,
-        [ownerId],
-      );
-      const eventIds = ownerEvents.map((e) => e.id);
-      if (eventIds.length > 0) {
-        if (normalizedPermissions.length > 0) {
-          await queryNeon(
-            `DELETE FROM public.access_grants
-             WHERE event_id = ANY($1::uuid[])
-               AND grantee_user_id = $2
-               AND permission = ANY($3::text[])
-               AND permission <> ALL($4::text[])`,
-            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS, normalizedPermissions],
-          );
-        } else {
-          await queryNeon(
-            `DELETE FROM public.access_grants
-             WHERE event_id = ANY($1::uuid[])
-               AND grantee_user_id = $2
-               AND permission = ANY($3::text[])`,
-            [eventIds, target.id, EDITABLE_ORG_PERMISSIONS],
-          );
-        }
-
-        const existing = await queryNeon<{ event_id: string; permission: string }>(
-          `SELECT event_id, permission
-           FROM public.access_grants
-           WHERE event_id = ANY($1::uuid[])
-             AND grantee_user_id = $2
-             AND status = 'active'`,
-          [eventIds, target.id],
-        );
-        const existingSet = new Set(existing.map((g) => `${g.event_id}:${g.permission}`));
-        const toInsert: Array<Record<string, unknown>> = [];
-        for (const eventId of eventIds) {
-          for (const permission of normalizedPermissions) {
-            const key = `${eventId}:${permission}`;
-            if (existingSet.has(key)) continue;
-            toInsert.push({
-              event_id: eventId,
-              grantee_user_id: target.id,
-              granted_by_user_id: ownerId,
-              permission,
-              status: "active",
-            });
-          }
-        }
-        if (toInsert.length > 0) {
-          await queryNeon(
-            `INSERT INTO public.access_grants (event_id, grantee_user_id, granted_by_user_id, permission, status)
-             SELECT x.event_id::uuid, $1::uuid, $2::uuid, x.permission::text, x.status::text
-             FROM jsonb_to_recordset($3::jsonb) AS x(event_id text, permission text, status text)
-             ON CONFLICT DO NOTHING`,
-            [target.id, ownerId, JSON.stringify(toInsert)],
-          );
-        }
+      try {
+        await syncOrgMemberAccessGrantsFromTemplate(ownerId, target.id, nextRoleLabel);
+      } catch (e: unknown) {
+        console.error("Grant sync failed:", e);
       }
     }
 
-    const targetEmail = target?.emailAddresses?.[0]?.emailAddress;
-    if (targetEmail) {
-      await sendTransactionalEmail({
-        to: targetEmail,
-        subject: "You were granted organization access",
-        text:
-          `You were added to an organization with role "${nextRoleLabel}".\n\n` +
-          `Default permissions: ${normalizedPermissions.length ? normalizedPermissions.join(", ") : "none"}\n\n` +
-          `Sign in to your dashboard to continue.`,
+    await ensureOrganizationMemberInviteColumns();
+    const { raw: inviteRaw, hash: inviteHash } = createInviteRawToken();
+    const inviteExpires = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    await queryNeon(
+      `UPDATE public.organization_members
+       SET invite_token_hash = $1,
+           invite_token_expires_at = $2::timestamptz
+       WHERE org_owner_user_id = $3
+         AND lower(member_email) = lower($4)`,
+      [inviteHash, inviteExpires, ownerId, normalizedEmail],
+    );
+
+    const ownerProfile = await queryNeonOne<{ organization_name: string | null }>(
+      `SELECT organization_name FROM public.profiles WHERE id = $1 LIMIT 1`,
+      [ownerId],
+    );
+    const organizationName = String(ownerProfile?.organization_name || "your organization");
+    const acceptInviteUrl = `${getPublicAppUrl()}/invite/org-member?t=${encodeURIComponent(inviteRaw)}`;
+
+    try {
+      const invRes = await sendTeamMemberInviteEmail({
+        to: normalizedEmail,
+        organizationName,
+        roleLabel: nextRoleLabel,
+        acceptInviteUrl,
       });
+      if (!invRes.sent) console.warn("[organization-members] invitee email skipped:", invRes.error);
+    } catch (e: unknown) {
+      console.error("[organization-members] invitee email failed:", e);
+    }
+
+    try {
+      const ownerEmail = await getAdminUserEmailById(ownerId);
+      if (ownerEmail) {
+        const ownRes = await sendTeamMemberAddedOwnerNoticeEmail({
+          ownerEmail,
+          organizationName,
+          memberEmail: normalizedEmail,
+          roleLabel: nextRoleLabel,
+        });
+        if (!ownRes.sent) console.warn("[organization-members] owner notice skipped:", ownRes.error);
+      }
+    } catch (e: unknown) {
+      console.error("[organization-members] owner notice failed:", e);
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

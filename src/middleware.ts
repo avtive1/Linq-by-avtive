@@ -1,3 +1,4 @@
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { clientIp, getRateLimiters } from "@/lib/rate-limit";
@@ -10,7 +11,7 @@ function createRouteMatcher(patterns: string[]) {
   return (request: NextRequest) => regexes.some((re) => re.test(new URL(request.url).pathname));
 }
 
-export async function proxy(request: NextRequest) {
+export default clerkMiddleware(async (auth, request: NextRequest) => {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
@@ -26,17 +27,14 @@ export async function proxy(request: NextRequest) {
       const { success, reset } = await limiter.limit(ip);
       if (!success) {
         const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
-        return new NextResponse(
-          JSON.stringify({ error: "Too many requests. Please try again later." }),
-          {
-            status: 429,
-            headers: {
-              "Content-Type": "application/json",
-              "Retry-After": String(retryAfterSec),
-              "x-request-id": requestId,
-            },
+        return new NextResponse(JSON.stringify({ error: "Too many requests. Please try again later." }), {
+          status: 429,
+          headers: {
+            "Content-Type": "application/json",
+            "Retry-After": String(retryAfterSec),
+            "x-request-id": requestId,
           },
-        );
+        });
       }
     }
     const res = NextResponse.next({ request: { headers: reqHeaders } });
@@ -50,7 +48,10 @@ export async function proxy(request: NextRequest) {
     secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
     secureCookie,
   });
-  const userId = token?.uid || token?.sub;
+  const { userId: clerkUserId } = await auth();
+  const nextAuthUserId = token?.uid || token?.sub;
+  const userId = nextAuthUserId || clerkUserId || undefined;
+
   const tokenRole = String(token?.role || "").toLowerCase();
   const tokenEmail = String(token?.email || "").trim().toLowerCase();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
@@ -58,6 +59,7 @@ export async function proxy(request: NextRequest) {
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
   const isAdminUser = tokenRole === "admin" || Boolean(tokenEmail && adminEmails.includes(tokenEmail));
+
   if (isProtectedRoute.test(pathname) && !userId) {
     const r = NextResponse.redirect(new URL("/login", request.url));
     r.headers.set("x-request-id", requestId);
@@ -77,7 +79,7 @@ export async function proxy(request: NextRequest) {
   const res = NextResponse.next({ request: { headers: reqHeaders } });
   res.headers.set("x-request-id", requestId);
   return res;
-}
+});
 
 export const config = {
   matcher: [

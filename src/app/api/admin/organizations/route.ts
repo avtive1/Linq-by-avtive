@@ -3,6 +3,7 @@ import { getServerAuthSession } from "@/auth";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { createOrganizationOwnerByAdmin } from "@/lib/auth-db";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
+import { sendOrganizationCreatedWelcomeEmail } from "@/lib/notifications/org-emails";
 
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>) {
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
@@ -42,6 +43,18 @@ export async function POST(req: Request) {
     }
 
     const data = await createOrganizationOwnerByAdmin({ organizationName, email, password });
+
+    try {
+      const mail = await sendOrganizationCreatedWelcomeEmail({
+        to: email,
+        organizationName: data.organizationName,
+        temporaryPassword: password,
+      });
+      if (!mail.sent) console.warn("[admin/organizations] welcome email skipped:", mail.error);
+    } catch (e: unknown) {
+      console.error("[admin/organizations] welcome email failed:", e);
+    }
+
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to create organization.";

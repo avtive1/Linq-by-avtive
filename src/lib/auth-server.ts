@@ -4,5 +4,6 @@ import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension
 export async function getServerUserIdFromCookies(cookieStore: ReadonlyRequestCookies): Promise<string | null> {
   void cookieStore;
   const session = await getServerAuthSession();
-  return session?.user?.id || null;
+  const userId = String(session?.user?.id || "").trim();
+  return userId || null;
 }
