@@ -36,7 +36,7 @@ export async function isOrganizationAccountUser(userId: string): Promise<boolean
     `SELECT email FROM public.auth_users WHERE user_id = $1::uuid LIMIT 1`,
     [userId]
   );
-  const superAdminEmail = process.env.SUPERADMIN_EMAIL?.toLowerCase() || "";
+  const superAdminEmail = process.env.SUPERADMIN_EMAIL?.trim().toLowerCase() || "";
   if (user && superAdminEmail && user.email.toLowerCase() === superAdminEmail) {
     return false;
   }
