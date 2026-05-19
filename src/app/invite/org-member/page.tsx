@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { Eye, EyeOff } from "lucide-react";
@@ -184,6 +184,30 @@ function InviteOrgMemberInner() {
                 Sign in
               </Link>
             </div>
+          </div>
+        ) : session?.user?.email?.trim().toLowerCase() !== invitedEmail?.trim().toLowerCase() && invitedEmail ? (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+              <p className="text-sm text-yellow-800 leading-relaxed">
+                You are currently signed in as <strong className="break-all">{session.user.email}</strong>, but this invitation was sent to <strong className="break-all">{invitedEmail}</strong>.
+              </p>
+            </div>
+            <p className="text-sm text-muted leading-relaxed">
+              Please sign out of your current account to accept this invitation using the correct email address.
+            </p>
+            <Button
+              variant="primary"
+              fullWidth
+              size="lg"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                await signOut({ redirect: false });
+                setBusy(false);
+              }}
+            >
+              Sign out & Switch accounts
+            </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
