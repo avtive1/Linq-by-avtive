@@ -1,3 +1,5 @@
+import nodemailer from "nodemailer";
+
 type AccessRequestEmailInput = {
   to: string;
   subject: string;
@@ -10,34 +12,36 @@ type SendEmailResult = {
 };
 
 /**
- * Sends email via Resend API when configured.
+ * Sends email via Nodemailer (Gmail) when configured.
  * This is intentionally best-effort so product flows never break if email provider is unavailable.
  */
 export async function sendTransactionalEmail(input: AccessRequestEmailInput): Promise<SendEmailResult> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM || "no-reply@avtive.app";
-  if (!apiKey) {
-    return { sent: false, error: "Email provider not configured." };
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  const from = process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@avtive.app";
+
+  if (!user || !pass) {
+    return { sent: false, error: "Email provider not configured. Please set SMTP_USER and SMTP_PASS." };
   }
 
   try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: user,
+        pass: pass,
       },
-      body: JSON.stringify({
-        from,
-        to: [input.to],
-        subject: input.subject,
-        text: input.text,
-      }),
     });
-    if (!res.ok) {
-      const body = await res.text();
-      return { sent: false, error: `Resend error ${res.status}: ${body}` };
-    }
+
+    const info = await transporter.sendMail({
+      from: from,
+      to: input.to,
+      subject: input.subject,
+      text: input.text,
+    });
+
     return { sent: true };
   } catch (error) {
     console.error("Email send failed:", error);

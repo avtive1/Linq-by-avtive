@@ -7,7 +7,7 @@ import { getAdminUserEmailById } from "@/lib/admin";
 export async function GET() {
   try {
     // Hide notification failure UI when email delivery is intentionally disabled.
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.SMTP_USER) {
       return NextResponse.json({ data: [] }, { status: 200 });
     }
 

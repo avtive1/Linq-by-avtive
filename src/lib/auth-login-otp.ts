@@ -25,16 +25,34 @@ export async function ensureLoginEmailOtpSchema() {
 
 /** When false, organization users skip email OTP (e.g. local dev without Resend). */
 export function isOrgLoginEmailOtpGloballyEnabled(): boolean {
-  return Boolean(process.env.RESEND_API_KEY?.trim()) && process.env.ORG_LOGIN_EMAIL_OTP !== "false";
+  return Boolean(process.env.SMTP_USER?.trim()) && process.env.ORG_LOGIN_EMAIL_OTP !== "false";
 }
 
 export async function isOrganizationAccountUser(userId: string): Promise<boolean> {
   await ensureLoginEmailOtpSchema();
-  const owner = await queryNeonOne<{ one: string }>(
-    `SELECT '1' AS one FROM public.organizations WHERE owner_user_id = $1::uuid LIMIT 1`,
+
+  // Bypass OTP for the superadmin
+  const user = await queryNeonOne<{ email: string }>(
+    `SELECT email FROM public.auth_users WHERE user_id = $1::uuid LIMIT 1`,
+    [userId]
+  );
+  const superAdminEmail = process.env.SUPERADMIN_EMAIL?.toLowerCase() || "";
+  if (user && superAdminEmail && user.email.toLowerCase() === superAdminEmail) {
+    return false;
+  }
+
+  const owner = await queryNeonOne<{ setup_completed: string | null }>(
+    `SELECT p.owner_profile_setup_completed_at AS setup_completed 
+     FROM public.organizations o 
+     JOIN public.profiles p ON p.id = o.owner_user_id 
+     WHERE o.owner_user_id = $1::uuid LIMIT 1`,
     [userId],
   );
-  if (owner) return true;
+  if (owner) {
+    // Only require OTP if they haven't completed their profile setup (first login)
+    return owner.setup_completed == null;
+  }
+  
   const member = await queryNeonOne<{ one: string }>(
     `SELECT '1' AS one
      FROM public.organization_members
@@ -47,7 +65,7 @@ export async function isOrganizationAccountUser(userId: string): Promise<boolean
 
 export async function createAndEmailLoginOtp(userId: string, email: string): Promise<{ ok: boolean; error?: string }> {
   if (!isOrgLoginEmailOtpGloballyEnabled()) {
-    return { ok: false, error: "Login email verification is not configured (set RESEND_API_KEY)." };
+    return { ok: false, error: "Login email verification is not configured (set SMTP_USER)." };
   }
   await ensureLoginEmailOtpSchema();
   const code = String(Math.floor(100000 + Math.random() * 900000));
