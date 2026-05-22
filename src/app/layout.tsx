@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter_Tight, Poppins, Outfit } from "next/font/google";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
@@ -29,6 +29,12 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Avtive — Your Conference Card",
   description: "Register once. Generate a card for every event you attend.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

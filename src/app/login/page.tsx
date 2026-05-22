@@ -118,9 +118,9 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-hidden bg-transparent">
+    <main className="relative min-h-dvh w-full flex items-center justify-center overflow-x-hidden overflow-y-auto bg-transparent py-8 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] sm:py-12 sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] lg:pl-[max(1.5rem,env(safe-area-inset-left))] lg:pr-[max(1.5rem,env(safe-area-inset-right))]">
       <GradientBackground />
-      <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
+      <div className="relative z-10 w-full max-w-[520px] min-w-0 px-1 sm:px-0 animate-slide-up">
         <Link
           href="/"
           className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
@@ -135,7 +135,7 @@ export default function LoginPage() {
           <span className="ui-eyebrow text-muted/70">AVTIVE</span>
         </div>
 
-        <div className="glass-panel rounded-xl p-8 sm:p-12 shadow-2xl shadow-primary/5">
+        <div className="glass-panel rounded-xl p-5 sm:p-8 lg:p-10 xl:p-12 shadow-2xl shadow-primary/5">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Welcome back</h1>

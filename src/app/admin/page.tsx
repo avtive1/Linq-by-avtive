@@ -163,22 +163,22 @@ export default async function AdminDashboardPage() {
   });
 
   return (
-    <div className="flex flex-col gap-6 px-2 py-6 sm:px-4 sm:py-6 lg:px-6">
+    <div className="flex flex-col gap-6 py-6 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] lg:pl-[max(1.5rem,env(safe-area-inset-left))] lg:pr-[max(1.5rem,env(safe-area-inset-right))]">
       <div className="relative animate-slide-up overflow-hidden rounded-xl border border-primary/20 bg-linear-to-br from-white/90 via-white/80 to-primary/10 p-5 shadow-lg ring-1 ring-primary/10 ring-inset sm:p-6">
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -left-8 -bottom-10 h-32 w-32 rounded-full bg-info/10 blur-2xl" />
-        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="flex flex-col gap-3">
+        <div className="relative z-10 flex w-full min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex min-w-0 flex-col gap-3">
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-[0.04em] text-primary-strong">
               <ShieldCheck size={14} />
               Super Admin Command Center
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-heading" style={{ fontWeight: 700 }}>Platform Overview</h1>
-            <p className="max-w-2xl text-sm font-normal leading-[1.6] text-muted">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-heading wrap-break-word" style={{ fontWeight: 700 }}>Platform Overview</h1>
+            <p className="max-w-2xl min-w-0 text-sm font-normal leading-[1.6] text-muted">
               A centralized operational view for governance, organization growth, and recent activity across the platform.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:w-auto lg:shrink-0 lg:grid-cols-2 lg:gap-4">
             <div className="card-primary px-5 py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Avg events/org</p>
               <p className="mt-1.5 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgEventsPerOrg}</p>
@@ -191,7 +191,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
         <div className="card-primary group flex items-center gap-5 p-6 animate-slide-up">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
           <div className="relative z-10 w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong shrink-0 group-hover:scale-105 transition-transform">
@@ -226,18 +226,18 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 animate-slide-up delay-300">
-        <div className="lg:col-span-2 flex flex-col gap-5">
-          <div className="flex items-center justify-between gap-3 px-1">
-            <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
-              <UserRound size={22} className="text-primary-strong" />
-              Organizations Directory
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 animate-slide-up delay-300">
+        <div className="lg:col-span-2 flex min-w-0 flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-3 px-1 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+            <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
+              <UserRound size={22} className="shrink-0 text-primary-strong" />
+              <span className="min-w-0">Organizations Directory</span>
             </h2>
             <Button
               href="/admin/organizations/new"
               variant="secondary"
               size="md"
-              className="h-10 min-w-[176px] rounded-lg justify-center border-primary/25 bg-white text-sm font-semibold text-primary-strong shadow-sm transition-all hover:bg-primary/8 hover:border-primary/45 hover:shadow-md"
+              className="h-10 w-full shrink-0 justify-center rounded-lg border-primary/25 bg-white text-sm font-semibold text-primary-strong shadow-sm transition-all hover:bg-primary/8 hover:border-primary/45 hover:shadow-md sm:w-auto sm:min-w-[176px]"
             >
               Create Organization
             </Button>
@@ -245,13 +245,13 @@ export default async function AdminDashboardPage() {
           <OrganizationsTable initialOrganizations={organizations} />
         </div>
 
-        <div className="lg:col-span-1 flex flex-col gap-5">
-          <div className="flex items-center justify-between px-1">
-            <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
-              <Activity size={22} className="text-primary-strong" />
-              Recent Activity
+        <div className="lg:col-span-1 flex min-w-0 flex-col gap-5">
+          <div className="flex min-w-0 flex-col gap-2 px-1 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+            <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">
+              <Activity size={22} className="shrink-0 text-primary-strong" />
+              <span className="min-w-0">Recent Activity</span>
             </h2>
-            <span className="text-xs text-muted">
+            <span className="shrink-0 text-xs text-muted whitespace-nowrap sm:text-right">
               {mostRecentEventAt ? `Updated ${new Date(mostRecentEventAt).toLocaleDateString()}` : "No updates yet"}
             </span>
           </div>

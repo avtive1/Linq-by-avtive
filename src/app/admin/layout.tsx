@@ -30,15 +30,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <GradientBackground />
       
       <div className="relative z-50 border-b border-white/15 bg-linear-to-r from-heading via-[#2B4F95] to-heading backdrop-blur-xl shadow-2xl">
-        <div className="mx-auto flex w-full max-w-[1640px] animate-slide-up items-center justify-between gap-4 px-4 py-5 sm:px-8 lg:px-12">
+        <div className="mx-auto flex w-full max-w-[1640px] animate-slide-up flex-col gap-4 sm:flex-row sm:items-center sm:justify-between pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(1rem,env(safe-area-inset-top))] pb-4 sm:pb-5 sm:pl-[max(2rem,env(safe-area-inset-left))] sm:pr-[max(2rem,env(safe-area-inset-right))] lg:pl-12 lg:pr-12">
           <Link
             href="/admin"
-            className="group no-link-underline flex items-center gap-4 rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+            className="group no-link-underline flex min-w-0 flex-1 items-center gap-3 sm:gap-4 rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
-            <div className="overflow-hidden rounded-md border border-white/30 bg-white/95 px-2 py-1 shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
-              <Image src="/avtive-logo.svg" alt="Avtive logo" width={138} height={32} priority />
+            <div className="shrink-0 overflow-hidden rounded-md border border-white/30 bg-white/95 px-2 py-1 shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
+              <Image src="/avtive-logo.svg" alt="Avtive logo" width={138} height={32} className="h-8 w-auto max-w-[min(138px,calc(100vw-11rem))]" priority />
             </div>
-            <div className="flex flex-col">
+            <div className="flex min-w-0 flex-col">
               <h1 className="text-xl font-semibold leading-tight tracking-[0.02em]" style={{ color: "#FFFFFF" }}>
                 Owner Console
               </h1>
@@ -48,9 +48,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             </div>
           </Link>
 
-
-
-          <div className="flex items-center gap-3 animate-slide-up">
+          <div className="flex w-full shrink-0 justify-end sm:w-auto animate-slide-up">
             <ExitAdminButton />
           </div>
         </div>

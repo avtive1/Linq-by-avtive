@@ -77,13 +77,13 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="relative max-w-xl flex-1 group">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted/40 group-focus-within:text-primary transition-colors" size={20} />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/40 group-focus-within:text-primary transition-colors sm:left-5" size={20} />
           <input
               id="admin-organizations-search"
               name="adminOrganizationsSearch"
               type="text"
               placeholder="Search by username, email or organization..."
-            className="h-14 w-full rounded-xl border border-border/40 bg-white/80 py-0 pl-14 pr-6 text-base font-medium leading-[1.6] text-heading shadow-sm transition-all placeholder:text-muted/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10"
+            className="h-12 sm:h-14 w-full rounded-xl border border-border/40 bg-white/80 py-0 pl-12 pr-4 text-base font-medium leading-[1.6] text-heading shadow-sm transition-all placeholder:text-muted/30 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/10 sm:pl-14 sm:pr-6"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -94,8 +94,8 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-border/40 bg-white/60 shadow-md">
-        <div className="w-full overflow-x-auto">
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-border/40 bg-white/60 shadow-md">
+        <div className="w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
           <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
               <tr className="border-b border-border bg-surface text-xs font-semibold uppercase tracking-wide text-muted">
