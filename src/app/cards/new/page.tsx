@@ -723,18 +723,36 @@ function NewCardForm() {
         }
         @media (max-width: 1279px) {
           .horizontal-preview-frame {
-            width: min(100%, 780px);
-            height: calc(min(100%, 780px) * 0.5233);
+            container-type: inline-size;
+            width: 100%;
+            max-width: 780px;
+            aspect-ratio: 1200 / 628;
+            height: auto;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
           }
           .horizontal-preview {
-            transform: scale(calc(min(0.65, (100vw - 56px) / 1200)));
+            transform-origin: top center;
+            transform: scale(min(0.65, max(0.14, calc((100cqi - 24px) / 1200))));
+            width: 1200px;
+            height: 628px;
           }
           .vertical-preview-frame {
-            width: 272px;
-            height: 480px;
+            container-type: inline-size;
+            width: min(272px, 100%);
+            aspect-ratio: 576 / 1024;
+            height: auto;
+            display: flex;
+            justify-content: center;
+            overflow: hidden;
           }
           .vertical-preview {
-            transform: scale(0.468);
+            position: relative;
+            transform-origin: top center;
+            transform: scale(min(0.468, max(0.15, calc((100cqi - 16px) / 576))));
+            width: 576px;
+            height: 1024px;
           }
         }
         @media print {

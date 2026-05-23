@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, use, useMemo, useCallback, Suspense, useRef, type ReactNode } from "react";
+import { useState, useEffect, useLayoutEffect, use, useMemo, useCallback, Suspense, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -94,11 +94,8 @@ const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
   blue: { start: "#f1f5ff", end: "#f6f8ff" },
 };
 
-/** Branding modal previews: badge height matches scaled social (628×scale) for visual consistency */
+/** Default preview scale used on xl+ (side-by-side layout); narrower viewports shrink via ResizeObserver */
 const BRANDING_MODAL_SOCIAL_SCALE = 0.58;
-const BRANDING_MODAL_SOCIAL_HEIGHT = 628 * BRANDING_MODAL_SOCIAL_SCALE;
-const BRANDING_MODAL_BADGE_SCALE = BRANDING_MODAL_SOCIAL_HEIGHT / 1024;
-const BRANDING_MODAL_SOCIAL_COLLAPSE_MARGIN = -628 * (1 - BRANDING_MODAL_SOCIAL_SCALE);
 
 type CardBrandingDraft = {
   card_color: string;
@@ -161,6 +158,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [shareDraftMessage, setShareDraftMessage] = useState("");
   const [shareDraftRole, setShareDraftRole] = useState<"guest" | "visitor">("visitor");
   const shareRef = useRef<HTMLDivElement>(null);
+  const brandingSocialSizerRef = useRef<HTMLDivElement>(null);
+  /** Horizontal social preview scale; shrinks when container narrower than intrinsic 1200×628 layout. */
+  const [socialPreviewScale, setSocialPreviewScale] = useState(BRANDING_MODAL_SOCIAL_SCALE);
 
   // Close share menu on outside click
   useEffect(() => {
@@ -215,6 +215,52 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [brandingUndoStack, setBrandingUndoStack] = useState<CardBrandingDraft[]>([]);
   const [brandingRedoStack, setBrandingRedoStack] = useState<CardBrandingDraft[]>([]);
   const [isSavingBranding, setIsSavingBranding] = useState(false);
+
+  /** Measure before paint below xl so the first mobile frame isn't clipped while scale was still desktop (0.58). */
+  useLayoutEffect(() => {
+    if (!isBrandingOpen) {
+      setSocialPreviewScale(BRANDING_MODAL_SOCIAL_SCALE);
+      return;
+    }
+    /** Match Tailwind xl — only below this do we auto-shrink previews to fit stacked/narrow layouts */
+    const desktopMq =
+      typeof window !== "undefined" ? window.matchMedia("(min-width: 1280px)") : null;
+    const measure = () => {
+      if (desktopMq?.matches) {
+        setSocialPreviewScale(BRANDING_MODAL_SOCIAL_SCALE);
+        return;
+      }
+      const el = brandingSocialSizerRef.current;
+      let w = el?.clientWidth ?? 0;
+      /** Fresh open / ref clamp: vw minus modal chrome so we don't keep desktop scale during first paint */
+      if (typeof window !== "undefined" && w < 56) {
+        w = Math.max(140, Math.min(window.innerWidth - 48, 1200));
+      }
+      const padded = Math.max(36, w - 20);
+      const next = Math.min(BRANDING_MODAL_SOCIAL_SCALE, Math.max(0.14, padded / 1200));
+      setSocialPreviewScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+    };
+    measure();
+    desktopMq?.addEventListener?.("change", measure);
+    const ro =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            measure();
+          })
+        : null;
+    const el = brandingSocialSizerRef.current;
+    if (el && ro) ro.observe(el);
+    window.addEventListener("resize", measure);
+    window.addEventListener("orientationchange", measure);
+    const id = window.requestAnimationFrame(measure);
+    return () => {
+      desktopMq?.removeEventListener?.("change", measure);
+      ro?.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("orientationchange", measure);
+      window.cancelAnimationFrame(id);
+    };
+  }, [isBrandingOpen]);
 
   const editBrandingDraft = useCallback((recipe: (prev: CardBrandingDraft) => CardBrandingDraft) => {
     setBrandingDraft((prev) => {
@@ -1251,6 +1297,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     );
   };
 
+  const brandingBadgeResponsiveScale = (628 * socialPreviewScale) / 1024;
+  const brandingSocialRenderedHeightPx = 628 * socialPreviewScale;
+  /** Layout clip width matches scaled artwork so the xl row does not reserve max-w-[740px] slack */
+  const brandingSocialRenderedWidthPx = 1200 * socialPreviewScale;
+
   if (isLoading) {
     return (
       <main className={`${dashboardMainTransparent} flex flex-col items-center`}>
@@ -1386,7 +1437,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }}
                     disabled={status.label === "Past" || !isBrandingFinalized}
                     icon={<LinkIcon size={18} />}
-                    className={`hidden sm:flex transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                    className={`transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
                     Share Link
                   </Button>
@@ -1433,21 +1484,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   )}
                 </div>
 
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    if (!isBrandingFinalized) {
-                      toast.error("Please save card branding before sharing registration links.");
-                      return;
-                    }
-                    setIsShareOpen(!isShareOpen);
-                  }}
-                  disabled={status.label === "Past" || !isBrandingFinalized}
-                  icon={<LinkIcon size={18} />}
-                  className={`flex sm:hidden px-4 ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
-                >
-                  <span className="sr-only">Share Form Link</span>
-                </Button>
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1506,19 +1542,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
                   disabled={!canManageEvent}
                   icon={<Handshake size={16} />}
-                  className={`hidden md:flex ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                  className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
                 >
                   Sponsors
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
-                  disabled={!canManageEvent}
-                  icon={<Handshake size={16} />}
-                  className={`flex md:hidden px-4 ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
-                  aria-label="Sponsors"
-                >
-                  <span className="sr-only">Sponsors</span>
                 </Button>
                 <Button
                   variant="secondary"
@@ -1623,26 +1649,26 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
         {isOrgAdminEventMode && (
           <motion.div
-            className="mb-8 rounded-sm border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
+            className="mb-8 w-full max-w-full min-w-0 box-border rounded-sm border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-4 py-4 shadow-sm motion-token-enter motion-token-hover sm:px-5 overflow-x-auto"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
             {...hoverLift(-2, 1.004)}
           >
-            <div className="flex flex-col gap-4">
+            <div className="flex min-w-0 flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-sm border border-primary/25 bg-primary/12 text-primary-strong">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-primary/25 bg-primary/12 text-primary-strong">
                     <Activity size={20} />
                   </span>
-                  <div className="flex flex-col">
-                    <span className="text-2xl sm:text-[30px] font-bold tracking-[-0.02em] text-primary-strong leading-tight">
+                  <div className="min-w-0 flex flex-col">
+                    <span className="break-words text-2xl sm:text-[30px] font-bold tracking-[-0.02em] text-primary-strong leading-tight wrap-break-word">
                       Campaign Management Console
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
                 <motion.div
                   className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
@@ -2224,51 +2250,70 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </button>
               </div>
 
-              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto border-x border-border/40 bg-white/70 px-5 py-5 sm:px-8 sm:py-6">
+              <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto border-x border-border/40 bg-white/70 px-5 py-5 sm:px-8 sm:py-6">
                 <div className="flex w-full flex-col gap-12 lg:gap-16">
-                  <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center">
-                    <div className="flex w-full max-w-[740px] flex-col items-center gap-3 xl:w-auto xl:items-start">
-                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
-                        Social post layout
-                      </h4>
-                      <div className="w-full overflow-hidden">
+                  {/**
+                   * Outer: justify-center centers the shrink-wrapped row.
+                   * Inner must NOT use `w-full` at xl — that defeats `xl:w-fit` and skews previews right.
+                   */}
+                  <div className="flex w-full min-w-0 justify-center">
+                    <div className="flex min-w-0 max-w-full max-xl:w-full flex-col items-center gap-8 xl:w-fit xl:flex-row xl:items-start xl:justify-center xl:gap-6">
+                      <div className="flex min-w-0 max-w-full max-xl:w-full flex-col items-center gap-3 xl:w-fit xl:max-w-none xl:shrink-0 xl:items-start">
+                        <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
+                          Social post layout
+                        </h4>
                         <div
-                          style={{
-                            width: "1200px",
-                            height: "628px",
-                            transform: `scale(${BRANDING_MODAL_SOCIAL_SCALE})`,
-                            transformOrigin: "top left",
-                            marginBottom: `${BRANDING_MODAL_SOCIAL_COLLAPSE_MARGIN}px`,
-                          }}
+                          ref={brandingSocialSizerRef}
+                          className="max-xl:w-full min-w-0 overflow-x-hidden max-xl:overflow-x-auto max-xl:overscroll-x-contain"
                         >
-                          <CardPreview data={brandingPreviewData} preview />
+                          <div
+                            className="mx-auto"
+                            style={{
+                              width: `${brandingSocialRenderedWidthPx}px`,
+                              maxWidth: "100%",
+                              height: `${brandingSocialRenderedHeightPx}px`,
+                              overflow: "hidden",
+                              boxSizing: "border-box",
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: "1200px",
+                                height: "628px",
+                                transform: `scale(${socialPreviewScale})`,
+                                transformOrigin: "top left",
+                              }}
+                            >
+                              <CardPreview data={brandingPreviewData} preview />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-center gap-3 xl:items-start">
-                      <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
-                        Event badge layout
-                      </h4>
-                      {/** Match social preview visual height; no nested card chrome */}
-                      <div
-                        className="relative shrink-0 overflow-hidden"
-                        style={{
-                          width: 576 * BRANDING_MODAL_BADGE_SCALE,
-                          height: BRANDING_MODAL_SOCIAL_HEIGHT,
-                        }}
-                      >
+                      <div className="flex min-w-0 shrink-0 flex-col items-center gap-3 xl:w-fit xl:items-start">
+                        <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
+                          Event badge layout
+                        </h4>
+                        {/** Match social preview visual height; no nested card chrome */}
                         <div
+                          className="relative shrink-0 overflow-hidden"
                           style={{
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            width: "576px",
-                            height: "1024px",
-                            transform: `scale(${BRANDING_MODAL_BADGE_SCALE})`,
-                            transformOrigin: "top left",
+                            width: 576 * brandingBadgeResponsiveScale,
+                            height: brandingSocialRenderedHeightPx,
                           }}
                         >
-                          <CardPreview data={brandingPreviewData} preview isVertical verticalSide={2} />
+                          <div
+                            style={{
+                              position: "absolute",
+                              top: 0,
+                              left: 0,
+                              width: "576px",
+                              height: "1024px",
+                              transform: `scale(${brandingBadgeResponsiveScale})`,
+                              transformOrigin: "top left",
+                            }}
+                          >
+                            <CardPreview data={brandingPreviewData} preview isVertical verticalSide={2} />
+                          </div>
                         </div>
                       </div>
                     </div>
