@@ -32,6 +32,8 @@ export async function PATCH(req: Request) {
       organizationName?: string;
       organizationLogoUrl?: string;
       profilePhotoUrl?: string;
+      /** When true, organization owner onboarding may finish without uploading a logo/photo first. */
+      completeOwnerMandatorySetup?: boolean;
     };
     const nextUsername = String(body?.username || "").trim().toLowerCase();
     const nextOrganizationName = normalizeOrganizationName(String(body?.organizationName || ""));
@@ -162,7 +164,10 @@ export async function PATCH(req: Request) {
       updatePayload.profile_photo_url = nextProfilePhotoUrl;
     }
     const finalProfilePhotoUrl = nextProfilePhotoUrl || String(currentProfile.profile_photo_url || "").trim();
-    if (isOrganizationOwner && finalProfilePhotoUrl) {
+    const completeOwnerMandatorySetup = Boolean(body.completeOwnerMandatorySetup);
+    const shouldStampOwnerMandatorySetupDone =
+      isOrganizationOwner && (completeOwnerMandatorySetup || Boolean(finalProfilePhotoUrl));
+    if (shouldStampOwnerMandatorySetupDone) {
       updatePayload.owner_profile_setup_completed_at = new Date().toISOString();
     }
     if (usernameChanged) updatePayload.username_changed_at = new Date().toISOString();

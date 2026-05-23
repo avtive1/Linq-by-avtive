@@ -64,7 +64,6 @@ export default function SignupPage() {
     
     // Organization
     if (!form.organization) newErrors.organization = "Organization Name is required";
-    if (step === 2 && !form.organizationLogo) newErrors.organizationLogo = "Organization logo is required";
     
     // LinkedIn (Optional)
     // Removed strict "/" check to allow full URLs
@@ -228,7 +227,7 @@ export default function SignupPage() {
               <p className="text-base text-muted leading-[1.55]">
                 {signupStep === 1
                   ? "Step 1 of 2: Set up your account and organization."
-                  : "Step 2 of 2: Upload your organization logo to continue."}
+                  : "Step 2 of 2: Optionally upload your organization logo, then create your account."}
               </p>
             </div>
 
@@ -326,7 +325,6 @@ export default function SignupPage() {
               ) : (
                 <FilePicker
                   label="Organization Logo"
-                  required
                   value={form.organizationLogo}
                   onChange={update("organizationLogo")}
                   onError={(msg) => toast.error(msg)}
@@ -346,7 +344,7 @@ export default function SignupPage() {
                 onClick={handleContinueToLogoStep}
                 className="h-12 text-base shadow-lg shadow-primary/20"
               >
-                Continue to Logo
+                Continue
               </Button>
             ) : (
               <div className="flex items-center gap-3">

@@ -715,14 +715,10 @@ function DashboardContent() {
       setOwnerProfileSetupError("Use at least 3 characters: letters, numbers, underscore, or dot.");
       return false;
     }
-    if (!ownerProfilePhotoDraft) {
-      setOwnerProfileSetupError("Profile picture is required.");
-      return false;
-    }
     setIsSavingUsername(true);
     setOwnerProfileSetupError("");
     try {
-      let profilePhotoUrl = ownerProfilePhotoDraft;
+      let profilePhotoUrl = ownerProfilePhotoDraft.trim();
       if (profilePhotoUrl.startsWith("data:")) {
         const uploadRes = await fetch("/api/media/upload", {
           method: "POST",
@@ -742,8 +738,10 @@ function DashboardContent() {
         body: JSON.stringify({
           username: cleaned,
           organizationName: organizationName || organizationDraft || "Organization",
-          profilePhotoUrl,
-          organizationLogoUrl: profilePhotoUrl, // Save as organization logo as well
+          ...(profilePhotoUrl
+            ? { profilePhotoUrl: profilePhotoUrl, organizationLogoUrl: profilePhotoUrl }
+            : {}),
+          completeOwnerMandatorySetup: true,
         }),
       });
       const payload = await res.json().catch(() => null);
@@ -2333,7 +2331,7 @@ function DashboardContent() {
                 Complete your profile
               </h2>
               <p className="mt-2 text-sm text-muted leading-[1.6]">
-                Username and profile picture are required before continuing.
+                Username is required. Organization logo is optional and can be added anytime from Account Settings.
               </p>
             </div>
             <div className="px-10 py-8 flex flex-col gap-4">
@@ -2347,7 +2345,6 @@ function DashboardContent() {
               />
               <FilePicker
                 label="Organization Logo"
-                required
                 value={ownerProfilePhotoDraft}
                 onChange={(val) => {
                   setOwnerProfilePhotoDraft(val);

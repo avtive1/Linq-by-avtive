@@ -32,7 +32,6 @@ import {
   Redo2,
   ShieldCheck,
   Lock,
-  FileText,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -1172,11 +1171,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     const showComposer = Boolean(canEditInline && isEditingCampaignDescription);
 
     return (
-      <div className="rounded-md border border-primary/20 bg-white/90 px-4 py-3.5 shadow-sm">
-        <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
-          <FileText size={13} className="text-primary-strong shrink-0" />
-          About this campaign
-        </p>
+      <section
+        aria-label="Campaign description"
+        className="mt-4 w-full min-w-0 max-w-[min(100%,42rem)] border-0 bg-transparent text-left shadow-none sm:mt-6"
+      >
         {showComposer ? (
           <div className="flex flex-col gap-2">
             <textarea
@@ -1184,8 +1182,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               onChange={(e) => setCampaignDescriptionDraft(e.target.value)}
               maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
               rows={4}
-              className="w-full min-h-[100px] resize-y rounded-md border border-border/70 bg-white px-3 py-2 text-sm leading-relaxed text-heading outline-none focus:ring-2 focus:ring-primary/35"
-              placeholder="Add a campaign description..."
+              className="w-full min-h-[100px] resize-y rounded-md border border-border/60 bg-white/95 px-3 py-2.5 text-sm leading-relaxed text-heading outline-none shadow-sm focus:ring-2 focus:ring-primary/30"
+              placeholder="Add a short overview for clients and teammates…"
               aria-label="Campaign description"
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1197,7 +1195,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="button"
                   onClick={cancelCampaignDescriptionEdit}
                   disabled={isSavingCampaignDescription}
-                  className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-muted transition-all duration-150 hover:text-heading hover:bg-surface-strong/80 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-muted transition-all duration-150 hover:bg-surface-strong/80 hover:text-heading disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   Cancel
                 </button>
@@ -1213,9 +1211,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
         ) : (
-          <div className="flex items-start gap-3">
-            <p className="m-0 flex-1 whitespace-pre-wrap text-sm leading-relaxed text-heading/85">
-              {trimmed ? eventData.description : "No campaign description added yet."}
+          <div className="flex w-full min-w-0 items-start gap-3">
+            <p className="m-0 min-w-0 flex-1 whitespace-pre-wrap text-sm leading-relaxed text-heading/80">
+              {trimmed ? (
+                eventData.description
+              ) : (
+                <span className="text-muted italic font-normal">
+                  No campaign description added yet.
+                </span>
+              )}
             </p>
             {canEditInline && (
               <button
@@ -1224,7 +1228,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   setCampaignDescriptionDraft(String(eventData.description || ""));
                   setIsEditingCampaignDescription(true);
                 }}
-                className="inline-flex shrink-0 items-center justify-center rounded-md border border-border/70 bg-white p-1.75 text-muted transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary-strong hover:shadow-sm hover:scale-[1.04] active:scale-100 disabled:opacity-60"
+                className="-mt-0.5 shrink-0 self-start rounded-md p-1.5 text-muted/70 transition-colors duration-150 hover:bg-primary/[0.07] hover:text-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60"
                 aria-label="Edit campaign description"
                 title="Edit campaign description"
               >
@@ -1233,7 +1237,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
         )}
-      </div>
+      </section>
     );
   };
 
@@ -1335,7 +1339,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 {status.label}
               </span>
             </div>
-            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-1 mt-2 text-sm text-muted font-medium">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-1 text-sm text-muted font-medium">
               <div className="flex items-center gap-2 min-w-0">
                 <Calendar size={16} className="text-muted/70 shrink-0" />
                 <span className="tabular-nums">{eventData.date}</span>
@@ -1349,6 +1353,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <span className="min-w-0 truncate">{eventData.location}</span>
               </div>
             </div>
+            {renderCampaignDescriptionSection()}
             {isTeamMemberEventMode && (
               <p className="mt-2 text-sm text-heading/75">
                 Team execution mode: you can work inside granted permissions for this campaign.
@@ -1627,8 +1632,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
 
-              {renderCampaignDescriptionSection()}
-
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <motion.div
                   className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
@@ -1730,12 +1733,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <p className="mt-2 text-sm text-muted">
               Card operations and campaign actions are shown based on your granted permissions.
             </p>
-          </motion.div>
-        )}
-
-        {!isOrgAdminEventMode && !isPreviewMode && (
-          <motion.div className="mb-8" viewport={presets.viewport} {...fadeUp(0.06)}>
-            {renderCampaignDescriptionSection()}
           </motion.div>
         )}
 
