@@ -5,6 +5,7 @@ import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
 
 import { Lock } from "lucide-react";
+import { HorizontalPreviewScaler } from "@/components/HorizontalPreviewScaler";
 import { CardPreview } from "@/components/CardPreview";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -614,22 +615,22 @@ function NewCardForm() {
       </div>
 
         {/* Right Content - Preview */}
-        <div className="flex-1 flex flex-col items-center py-12 px-6 sm:px-8 lg:px-12 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
+        <div className="flex-1 flex min-w-0 flex-col items-stretch py-12 px-6 sm:px-8 lg:px-12 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
 
-          <div className="w-full flex-1 flex flex-col items-center justify-start px-4 sm:px-6 xl:px-8 pt-8">
-             <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center max-w-[1320px] mx-auto min-h-max">
+          <div className="flex w-full min-w-0 flex-1 flex-col items-stretch justify-start px-4 sm:px-6 xl:px-8 pt-8">
+             <div className="flex w-full min-w-0 max-w-[1320px] flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center mx-auto min-h-max">
                 {/* Horizontal Card Preview */}
-                <div className="flex flex-col items-center gap-8 shrink-0 w-full xl:w-auto">
-                   <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
-                   <div className="horizontal-preview-frame">
-                      <div className="preview-card-capture horizontal-preview">
+                <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 shrink xl:shrink-0">
+                   <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
+                   <HorizontalPreviewScaler className="horizontal-preview-frame">
+                      <div className="preview-card-capture">
                         <CardPreview data={previewData} preview />
                       </div>
-                   </div>
+                   </HorizontalPreviewScaler>
                 </div>
 
-                <div className="flex flex-col items-center gap-8 animate-fade-in shrink-0 w-full xl:w-auto">
-                  <h3 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
+                <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 animate-fade-in shrink xl:shrink-0">
+                  <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
                   <div className="vertical-preview-frame mt-1">
                     <div className="preview-card-capture vertical-preview">
                       <CardPreview data={previewData} preview isVertical verticalSide={2} />
@@ -695,17 +696,16 @@ function NewCardForm() {
       {/* Responsive scale styles */}
       <style>{`
         .horizontal-preview-frame {
+          position: relative;
           width: 780px;
-          height: 408px;
-          display: flex;
-          justify-content: center;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+          aspect-ratio: 1200 / 628;
+          height: auto;
           overflow: hidden;
-        }
-        .horizontal-preview {
-          transform-origin: top center;
-          transform: scale(0.65);
-          width: 1200px;
-          height: 628px;
+          display: block;
+          margin-inline: auto;
         }
         .vertical-preview-frame {
           width: 304px;
@@ -723,20 +723,14 @@ function NewCardForm() {
         }
         @media (max-width: 1279px) {
           .horizontal-preview-frame {
-            container-type: inline-size;
+            position: relative;
             width: 100%;
             max-width: 780px;
+            min-width: 0;
             aspect-ratio: 1200 / 628;
             height: auto;
-            display: flex;
-            justify-content: center;
             overflow: hidden;
-          }
-          .horizontal-preview {
-            transform-origin: top center;
-            transform: scale(min(0.65, max(0.14, calc((100cqi - 24px) / 1200))));
-            width: 1200px;
-            height: 628px;
+            margin-inline: auto;
           }
           .vertical-preview-frame {
             container-type: inline-size;
