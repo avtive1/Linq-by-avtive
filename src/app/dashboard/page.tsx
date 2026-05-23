@@ -12,6 +12,13 @@ import { getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
+import {
+  dashboardContentInset,
+  dashboardMainTransparent,
+  dashboardPreviewBannerOuter,
+  dashboardPreviewBannerInner,
+  dashboardModalBackdrop,
+} from "@/lib/ui/dashboard-shell";
 
 import { useSearchParams } from "next/navigation";
 
@@ -1238,10 +1245,10 @@ function DashboardContent() {
 
   if (isJoinBlocked) {
     return (
-      <main className="relative min-h-screen w-full bg-transparent">
+      <main className={dashboardMainTransparent}>
         <GradientBackground />
-        <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
-          <div className="mx-auto max-w-[760px] glass-panel rounded-md p-8 sm:p-12 flex flex-col gap-6 text-center">
+        <div className={dashboardContentInset}>
+          <div className="mx-auto max-w-[760px] glass-panel rounded-md p-6 sm:p-10 lg:p-12 flex flex-col gap-6 text-center">
             <h1
               className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
@@ -1265,17 +1272,19 @@ function DashboardContent() {
   }
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent">
+    <main className={dashboardMainTransparent}>
       {isPreviewMode && (
-        <div className="relative z-100 border-b border-white/20 bg-linear-to-r from-heading via-[#2B4F95] to-heading px-6 py-3 shadow-sm">
-          <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between text-sm font-medium text-white">
-            <div className="flex items-center gap-2">
-              <Sparkles size={18} className="text-primary" />
-              <span>Super Admin Inspection Mode &mdash; Organization View (Read Only)</span>
+        <div className={dashboardPreviewBannerOuter}>
+          <div className={dashboardPreviewBannerInner}>
+            <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
+              <Sparkles size={18} className="shrink-0 text-primary" />
+              <span className="min-w-0 leading-snug">
+                Super Admin Inspection Mode &mdash; Organization View (Read Only)
+              </span>
             </div>
             <Link
               href="/admin"
-              className="no-link-underline rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[13px] font-medium text-white hover:no-link-underline hover:bg-white/20"
+              className="no-link-underline shrink-0 self-start rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[13px] font-medium text-white hover:no-link-underline hover:bg-white/20 sm:self-auto"
             >
               Exit Preview
             </Link>
@@ -1284,7 +1293,7 @@ function DashboardContent() {
       )}
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
+      <div className={dashboardContentInset}>
         {isCheckingAuth ? (
           <>
             <div className="flex flex-col gap-6 mb-12">
@@ -1317,11 +1326,11 @@ function DashboardContent() {
         ) : null}
         {/* Header row */}
         <motion.div
-          className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-10 sm:mb-12"
+          className="mb-10 flex min-w-0 flex-col gap-4 sm:mb-12 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6"
           viewport={presets.viewport}
           {...fadeUp(0.02)}
         >
-          <div className="flex flex-col gap-1 sm:gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1 sm:gap-2">
             {isPreviewMode ? (
               <Link
                 href={impersonateId ? `/admin/organizations/${impersonateId}` : "/admin"}
@@ -1386,9 +1395,9 @@ function DashboardContent() {
             )}
           </div>
 
-          <div className="flex gap-3 items-center">
+          <div className="flex min-w-0 w-full flex-col items-stretch gap-3 max-lg:basis-full lg:w-auto lg:basis-auto lg:flex-row lg:flex-nowrap lg:items-center lg:justify-end">
             {isAdmin && (
-              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   href="/admin"
                   variant="secondary"
@@ -1404,7 +1413,7 @@ function DashboardContent() {
                 whileHover={{ y: -2, scale: 1.02 }}
                 whileTap={{ scale: 0.94 }}
                 transition={{ type: "spring", stiffness: 400, damping: 24 }}
-                className="rounded-md"
+                className="w-full shrink-0 rounded-md lg:w-auto lg:max-w-fit"
               >
                 <Button
                   variant="secondary"
@@ -1415,7 +1424,7 @@ function DashboardContent() {
                     }
                     setIsEventModalOpen(true);
                   }}
-                  className={`min-w-[168px] whitespace-nowrap justify-center bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
+                  className={`w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
                     isOrgTeamMember && !hasCreateCampaignPermission
                       ? "cursor-help shadow-inner bg-danger/5 border-danger/20 text-danger hover:bg-danger/10 hover:border-danger/30"
                       : "shadow-sm hover:shadow-md"
@@ -1428,13 +1437,13 @@ function DashboardContent() {
               </motion.div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && !isOrgTeamMember && (
-              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   variant="secondary"
                   onClick={() => {
                     void openTeamAccessModal("list");
                   }}
-                  className="min-w-[168px] whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
                   icon={<Users size={18} />}
                 >
                   Team Access
@@ -1442,7 +1451,7 @@ function DashboardContent() {
               </motion.div>
             )}
             {!isPreviewMode && (
-              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1456,28 +1465,30 @@ function DashboardContent() {
                     setOrganizationLogoDraft("");
                     setIsUsernameModalOpen(true);
                   }}
-                  className="whitespace-nowrap justify-center border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
                   icon={<Settings size={18} />}
                 >
-                  <span className="hidden sm:inline">Settings</span>
+                  <span>Settings</span>
                 </Button>
               </motion.div>
             )}
-            <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }}>
+            <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
               <Button
                 variant="secondary"
+                fullWidth
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 icon={isLoggingOut ? undefined : <LogOut size={18} />}
+                className="justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
               >
-                <span className="hidden sm:inline">{isLoggingOut ? "..." : "Logout"}</span>
+                <span>{isLoggingOut ? "..." : "Logout"}</span>
               </Button>
             </motion.div>
           </div>
         </motion.div>
         {isOrgAdminMode && (
           <motion.div
-            className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-6 py-6 shadow-lg"
+            className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-4 py-6 shadow-lg min-w-0 lg:px-6"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
           >
@@ -1535,7 +1546,7 @@ function DashboardContent() {
                     <Layers3 size={14} className="text-primary-strong" />
                     Campaign Status
                   </p>
-                  <div className="grid grid-cols-3 gap-2.5">
+                  <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-3">
                     {[
                       { label: "Upcoming", value: ownerStatusMetrics.upcoming, bg: "bg-primary/10", border: "border-primary/20", dot: "bg-primary", text: "text-primary-strong" },
                       { label: "Ongoing",  value: ownerStatusMetrics.ongoing,  bg: "bg-info/10",    border: "border-info/20",    dot: "bg-info",    text: "text-info" },
@@ -1715,30 +1726,32 @@ function DashboardContent() {
         )}
 
         {/* Search Bar + Filters */}
-        <motion.div className="flex flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
-          <div className="relative flex-1">
-            <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-heading z-10 pointer-events-none" size={22} strokeWidth={2.5} />
+        <motion.div className="flex min-w-0 flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
+          <div
+            className={`flex min-h-12 w-full min-w-0 flex-1 items-center gap-3 rounded-md border px-5 shadow-sm transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40 sm:h-14 sm:min-h-14 sm:gap-4 sm:px-7 ${
+              isPreviewMode
+                ? "border-heading/20 bg-white/90 focus-within:bg-white"
+                : isTeamMemberMode || isOrgAdminMode
+                  ? "border-primary/20 bg-white/92 focus-within:bg-white"
+                  : "border-border/60 bg-white/80 backdrop-blur-md focus-within:bg-white"
+            }`}
+          >
+            <Search className="pointer-events-none shrink-0 text-heading" size={22} strokeWidth={2.5} aria-hidden />
             <input
               id="dashboard-campaign-search"
               name="campaignSearch"
               type="text"
               placeholder={isTeamMemberMode ? "Search assigned campaigns..." : "Search campaigns..."}
-              className={`w-full h-14 pl-24 pr-7 py-0 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/40 transition-all text-[17px] leading-[1.6] text-heading shadow-sm placeholder:text-muted/55 ${
-                isPreviewMode
-                  ? "bg-white/90 border border-heading/20 focus:bg-white"
-                  : isTeamMemberMode || isOrgAdminMode
-                    ? "bg-white/92 border border-primary/20 focus:bg-white"
-                    : "bg-white/80 backdrop-blur-md border border-border/60 focus:bg-white"
-              }`}
+              className="min-w-0 flex-1 border-0 bg-transparent py-[0.65rem] pr-0 text-[17px] leading-[1.6] text-heading shadow-none outline-none ring-0 placeholder:text-muted/55 placeholder:opacity-90 focus-visible:ring-0 sm:h-full sm:min-h-0 sm:py-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <div className="relative self-start sm:self-auto">
+          <div className="relative w-full min-w-0 self-stretch sm:w-auto sm:self-auto">
             <button
               type="button"
               onClick={() => setIsEventFilterOpen((prev) => !prev)}
-              className={`h-14 px-6 rounded-md border shadow-sm inline-flex items-center gap-2.5 text-base font-semibold transition-all duration-150 ${
+              className={`h-11 w-full min-h-11 rounded-md border px-6 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:w-auto ${
                 isEventFilterOpen
                   ? "bg-primary/10 border-primary/30 text-primary-strong"
                   : "bg-white/92 border-primary/20 text-heading hover:bg-white hover:border-primary/30"
@@ -1748,7 +1761,7 @@ function DashboardContent() {
               Filter
             </button>
             {isEventFilterOpen && (
-              <div className="absolute right-0 mt-2 w-[280px] rounded-md border border-border/70 bg-white/95 p-4 shadow-xl z-30">
+              <div className="absolute left-1/2 z-30 mt-2 w-[min(calc(100vw-2rem),280px)] -translate-x-1/2 rounded-md border border-border/70 bg-white/95 p-4 shadow-xl sm:left-auto sm:right-0 sm:translate-x-0 sm:w-[280px]">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">Campaign status</p>
@@ -1998,7 +2011,7 @@ function DashboardContent() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 delay-300">
+          <div className="grid min-w-0 gap-4 sm:grid-cols-2 delay-300">
             {filteredEvents.length > 0 ? (
               filteredEvents.map((evt, idx) => {
                 const status = getEventStatus(evt.date);
@@ -2050,7 +2063,7 @@ function DashboardContent() {
                         ) : (
                           <MapPin size={18} className="text-muted/60 shrink-0" />
                         )}
-                        <span className="text-sm leading-[1.6] tracking-[0em] truncate max-w-[200px]">{evt.location}</span>
+                        <span className="min-w-0 max-w-full truncate text-sm leading-[1.6] tracking-[0em]">{evt.location}</span>
                       </div>
                     </div>
                   </div>
@@ -2077,7 +2090,7 @@ function DashboardContent() {
 
       {/* Event Creation Modal */}
       {isEventModalOpen && !isPreviewMode && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
           />
@@ -2206,7 +2219,7 @@ function DashboardContent() {
       )}
 
       {isUsernameModalOpen && !isPreviewMode && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
@@ -2323,7 +2336,7 @@ function DashboardContent() {
       )}
 
       {isOwnerProfileSetupModalOpen && !isPreviewMode && isOrgOwner && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
           <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-10 pt-10 pb-7 border-b border-border/10">
@@ -2382,7 +2395,7 @@ function DashboardContent() {
       )}
 
       {isOwnerOnboardingModalOpen && !isPreviewMode && isOrgOwner && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
           <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-10 pt-10 pb-7 border-b border-border/10">
@@ -2431,14 +2444,14 @@ function DashboardContent() {
       )}
 
       {isTeamModalOpen && !isPreviewMode && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
           <div className="relative w-full max-w-[660px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="px-12 pt-12 pb-8 flex items-center justify-between border-b border-border/10">
+            <div className="flex flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {teamModalView === "list" && "Organization Team"}
@@ -2461,7 +2474,7 @@ function DashboardContent() {
               </button>
             </div>
 
-            <div className="px-8 py-8">
+            <div className="px-4 py-6 sm:px-8 sm:py-8">
               {teamModalView === "list" && (
                 <div className="flex flex-col gap-8">
                   {!isOrgTeamMember && (
@@ -2670,7 +2683,7 @@ function DashboardContent() {
 
       {/* Request Permission Modal */}
       {isRequestPermissionModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] backdrop-blur-sm animate-in fade-in duration-200 sm:p-6">
           <div className="bg-white/95 border border-border/40 w-full max-w-[500px] rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/2">
               <div className="flex items-center gap-2">
@@ -2719,9 +2732,9 @@ function DashboardContent() {
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <main className="relative min-h-screen w-full bg-transparent">
+      <main className={dashboardMainTransparent}>
         <GradientBackground />
-        <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
+        <div className={dashboardContentInset}>
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-48 h-10" />

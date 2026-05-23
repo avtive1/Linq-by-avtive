@@ -44,6 +44,15 @@ import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
+import {
+  dashboardContentInset,
+  dashboardMainTransparent,
+  dashboardMainWhiteCenter,
+  dashboardPreviewBannerOuter,
+  dashboardPreviewBannerInner,
+  dashboardModalBackdrop,
+  dashboardModalBackdropTop,
+} from "@/lib/ui/dashboard-shell";
 import { CardPreview } from "@/components/CardPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import {
@@ -1244,9 +1253,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   if (isLoading) {
     return (
-      <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
+      <main className={`${dashboardMainTransparent} flex flex-col items-center`}>
         <GradientBackground />
-        <div className="relative z-10 w-full max-w-[1480px] px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
+        <div className={dashboardContentInset}>
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-64 h-12" />
@@ -1271,7 +1280,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   if (!eventData) {
     return (
-      <main className="relative min-h-screen w-full bg-white flex flex-col items-center justify-center gap-4">
+      <main className={dashboardMainWhiteCenter}>
         <GradientBackground />
         <div className="relative z-10 text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Campaign not found</div>
         <Button variant="secondary" icon={<ArrowLeft size={16} />} href="/dashboard" className="relative z-10">
@@ -1282,17 +1291,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent">
+    <main className={dashboardMainTransparent}>
       {isPreviewMode && (
-        <div className="relative z-100 border-b border-white/20 bg-linear-to-r from-heading via-[#2B4F95] to-heading px-6 py-3 shadow-sm">
-          <div className="mx-auto flex w-full max-w-[1480px] items-center justify-between text-sm font-medium text-white">
-            <div className="flex items-center gap-2">
-              <Sparkles size={18} className="text-primary" />
-              <span>Super Admin Inspection Mode &mdash; Event View</span>
+        <div className={dashboardPreviewBannerOuter}>
+          <div className={dashboardPreviewBannerInner}>
+            <div className="flex min-w-0 flex-1 items-start gap-2 sm:items-center">
+              <Sparkles size={18} className="shrink-0 text-primary" />
+              <span className="min-w-0 leading-snug">Super Admin Inspection Mode &mdash; Event View</span>
             </div>
             <Link
               href="/admin"
-              className="flex items-center gap-2 rounded-sm border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:bg-white/20 hover:border-white/40 active:scale-95"
+              className="flex shrink-0 items-center gap-2 self-start rounded-sm border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:border-white/40 hover:bg-white/20 active:scale-95 sm:self-auto"
             >
               <ArrowLeft size={14} />
               Exit Preview
@@ -1302,7 +1311,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
       <GradientBackground />
 
-      <div className="relative z-10 max-w-[1480px] mx-auto px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
+      <div className={dashboardContentInset}>
         {/* Header row */}
         <motion.div className="relative z-30 mb-7 sm:mb-9" viewport={presets.viewport} {...fadeUp(0.02)}>
           <button
@@ -1362,7 +1371,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
 
-          <div className="flex w-full flex-wrap items-center gap-x-2 gap-y-2 lg:ml-auto lg:max-w-[min(100%,44rem)] lg:justify-end relative z-20 shrink-0">
+          <div className="flex min-w-0 w-full flex-wrap items-center gap-x-2 gap-y-2 lg:ml-auto lg:max-w-[min(100%,44rem)] lg:justify-end relative z-20 shrink-0">
             {!isPreviewMode && (
               <>
                 <div className="relative" ref={shareRef}>
@@ -1383,7 +1392,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </Button>
 
                   {isShareOpen && (
-                    <div className="absolute top-full right-0 mt-3 w-56 bg-white border border-border shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] rounded-xl py-1 z-9999 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="absolute left-1/2 right-auto top-full z-9999 mt-3 w-[min(22rem,calc(100vw-2rem))] max-w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-border bg-white py-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] animate-in fade-in slide-in-from-top-2 duration-200 sm:left-auto sm:right-0 sm:w-56 sm:max-w-none sm:translate-x-0">
                       <div className="px-4 py-2 mb-1 border-b border-border/40">
                         <span className="text-[13px] font-medium text-muted/50 uppercase tracking-[0.01em] leading-tight">Share Options</span>
                       </div>
@@ -1855,19 +1864,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
 
         {/* Search Bar */}
-        <motion.div className="flex flex-col sm:flex-row gap-3 mb-4 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
-          <div className="relative flex-1 group">
-            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted/30 group-focus-within:text-primary transition-colors z-10 pointer-events-none" size={20} strokeWidth={2.5} />
+        <motion.div className="mb-4 flex min-w-0 flex-col gap-3 delay-200 sm:flex-row sm:gap-3" viewport={presets.viewport} {...fadeUp(0.1)}>
+          <div
+            className={`group flex min-h-12 w-full min-w-0 flex-1 items-center gap-3 rounded-xl border px-5 shadow-md transition-all focus-within:outline-none focus-within:ring-4 focus-within:ring-primary/10 sm:h-14 sm:min-h-14 sm:gap-[0.875rem] sm:px-7 ${
+              isPreviewMode
+                ? "border-primary/20 bg-white/90 focus-within:bg-white"
+                : "border-white/40 bg-white/70 backdrop-blur-md focus-within:bg-white"
+            }`}
+          >
+            <Search className="pointer-events-none shrink-0 text-muted/50 transition-colors group-focus-within:text-primary" size={20} strokeWidth={2.5} aria-hidden />
             <input
               id="event-attendees-search"
               name="eventAttendeesSearch"
               type="text"
               placeholder="Search leads in this campaign..."
-              className={`w-full h-14 pl-16 pr-8 py-0 rounded-xl focus:outline-none focus:ring-4 focus:ring-primary/10 transition-all text-base font-medium leading-[1.6] text-heading shadow-md placeholder:text-muted/30 ${
-                isPreviewMode
-                  ? "bg-white/90 border border-primary/20 focus:bg-white"
-                  : "bg-white/70 backdrop-blur-md border border-white/40 focus:bg-white"
-              }`}
+              className="min-w-0 flex-1 border-0 bg-transparent py-[0.65rem] pr-0 text-base font-medium leading-[1.6] text-heading shadow-none outline-none ring-0 placeholder:text-muted/30 focus-visible:ring-0 sm:h-full sm:min-h-0 sm:py-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -2015,7 +2026,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       </div>
 
       {isAccessRequestOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
@@ -2082,7 +2093,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isAccessInboxOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsAccessInboxOpen(false)}
@@ -2127,7 +2138,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isAccessControlOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsAccessControlOpen(false)}
@@ -2199,8 +2210,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               } 0%, ${BRAND_THEME_BACKDROPS[brandingDraft.card_color || "purple"]?.end || "#f7f3ff"} 100%)`,
             }}
           >
-            <div className="mx-auto flex h-full w-full max-w-[1540px] flex-col px-6 py-6 sm:px-8">
-              <div className="flex items-start justify-between rounded-t-xl border border-border/40 bg-white/90 px-8 pb-4 pt-7 backdrop-blur-sm">
+            <div className="mx-auto flex min-w-0 h-full w-full max-w-[1540px] flex-col px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:py-6">
+              <div className="flex min-w-0 flex-wrap items-start justify-between gap-4 rounded-t-xl border border-border/40 bg-white/90 px-5 pb-4 pt-6 backdrop-blur-sm sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
                 <div>
                   <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Card Branding</h2>
                   <p className="text-sm text-muted mt-1.5">Finalize branding first, then share guest/visitor links.</p>
@@ -2213,7 +2224,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </button>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto border-x border-border/40 bg-white/70 px-8 py-6">
+              <div className="min-h-0 min-w-0 flex-1 overflow-y-auto border-x border-border/40 bg-white/70 px-5 py-5 sm:px-8 sm:py-6">
                 <div className="flex w-full flex-col gap-12 lg:gap-16">
                   <div className="w-full flex flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center">
                     <div className="flex w-full max-w-[740px] flex-col items-center gap-3 xl:w-auto xl:items-start">
@@ -2461,7 +2472,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isRegistrationFormOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingRegistrationForm && setIsRegistrationFormOpen(false)}
@@ -2634,7 +2645,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Sponsors modal */}
       {isGuestCategoryOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsGuestCategoryOpen(false)}
@@ -2693,7 +2704,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isShareActionsOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsShareActionsOpen(false)}
@@ -2762,7 +2773,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Sponsors modal */}
       {isSponsorsOpen && eventData && (
-        <div className="fixed inset-0 z-100 flex items-start justify-center overflow-y-auto p-4 pt-6 sm:p-8">
+        <div className={dashboardModalBackdropTop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
@@ -2819,7 +2830,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Edit Campaign Modal */}
       {isEditOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => setIsEditOpen(false)}
@@ -2954,7 +2965,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       {/* Delete Event Modal */}
       {isDeleteOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isDeleting && setIsDeleteOpen(false)}
@@ -3008,7 +3019,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
       {/* Renew Event Modal */}
       {isRenewOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-6 sm:p-8">
+        <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isRenewing && setIsRenewOpen(false)}
@@ -3089,9 +3100,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 export default function EventPage({ params }: { params: Promise<{ id: string }> }) {
   return (
     <Suspense fallback={
-      <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center">
+      <main className={`${dashboardMainTransparent} flex flex-col items-center`}>
         <GradientBackground />
-        <div className="relative z-10 w-full max-w-[1480px] px-2 sm:px-4 lg:px-6 py-12 sm:py-16 md:py-20">
+        <div className={dashboardContentInset}>
           <div className="flex flex-col gap-6 mb-12">
             <Skeleton className="w-24 h-4" />
             <Skeleton className="w-64 h-12" />
