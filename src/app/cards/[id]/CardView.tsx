@@ -425,6 +425,7 @@ export default function CardView({
             <div className="card-scale-wrapper w-full">
               <div className="card-capture" style={{ width: "1200px", height: "628px" }}>
                 {horizontalPreviewUrl && !horizontalPreviewFailed ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- Remote preview URL from storage; next/image would need allowlist churn
                   <img
                     src={horizontalPreviewUrl}
                     alt="Horizontal card preview"

@@ -1,4 +1,8 @@
 "use client";
+/* eslint-disable @next/next/no-img-element --
+ * Card canvases use dynamic URLs (avatars, sponsors, CDN assets) and are captured via html-to-image;
+ * opting out of next/image avoids brittle remotePatterns and sizing constraints.
+ */
 import { useState, useEffect, useCallback } from "react";
 import QRCode from "qrcode";
 import { CardData, SponsorEntry } from "@/types/card";
