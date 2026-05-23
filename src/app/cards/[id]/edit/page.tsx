@@ -2,7 +2,8 @@
 import { useState, useEffect, use, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker, Skeleton, Select } from "@/components/ui";
+import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
+import { CardTypographyPicker } from "@/components/CardTypographyPicker";
 import { ArrowLeft } from "lucide-react";
 import { CardPreview } from "@/components/CardPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
@@ -12,6 +13,7 @@ import type { SponsorEntry } from "@/types/card";
 import { logSecurityEvent } from "@/lib/security/telemetry";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
+import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 
 const URL_OR_QUERY_PATTERN = /(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$)|[?=&])/i;
 
@@ -385,6 +387,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         ) => {
           if (!node) return;
           try {
+            await waitForCardFontsReadyForCapture(String(form.fontFamily || "inter"));
             const png = await toPng(node, {
               quality: 1,
               pixelRatio: 2,
@@ -787,18 +790,13 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           {/* Item 4: Typography Selection */}
           <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
             <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
-            <div className="h-11">
-                <Select
+            <div className="min-h-[44px] w-full lg:max-w-[320px]">
+                <CardTypographyPicker
                   value={form.fontFamily}
-                    onChange={(val) => update("fontFamily")(val)}
-                  options={[
-                      { label: "Inter (Default)", value: "inter" },
-                      { label: "Poppins", value: "poppins" },
-                      { label: "Google Sans", value: "outfit" },
-                      { label: "Times New Roman", value: "times" },
-                  ]}
+                  onChange={(val) => update("fontFamily")(val)}
+                  buttonClassName="min-h-[44px]"
                 />
-          </div>
+            </div>
         </div>
       </div>
         ) : (

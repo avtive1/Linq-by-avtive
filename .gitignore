@@ -45,6 +45,7 @@ yarn-error.log*
 
 # scratch scripts
 /scratch/
+/scripts/fonts-metadata-raw.json
 
 # vercel
 .vercel

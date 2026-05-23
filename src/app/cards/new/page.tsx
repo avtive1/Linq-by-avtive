@@ -17,6 +17,7 @@ import {
   normalizeRegistrationFormConfig,
 } from "@/lib/registration-form";
 import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
+import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 
 const URL_OR_QUERY_PATTERN = /(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$)|[?=&])/i;
 
@@ -269,6 +270,7 @@ function NewCardForm() {
       if (cardRef.current) {
         try {
           const { toPng } = await import("html-to-image");
+          await waitForCardFontsReadyForCapture(String(form.fontFamily || "inter"));
           const dataUrl = await toPng(cardRef.current, {
             quality: 1,
             pixelRatio: 2, // 2x for high resolution
@@ -353,6 +355,7 @@ function NewCardForm() {
           const cardId = String(createdId);
           const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
             if (!node) return;
+            await waitForCardFontsReadyForCapture(String(form.fontFamily || "inter"));
             const png = await toPng(node, {
               quality: 1,
               pixelRatio: 2,

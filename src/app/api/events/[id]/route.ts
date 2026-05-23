@@ -6,6 +6,7 @@ import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { normalizeRegistrationFormConfig } from "@/lib/registration-form";
+import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 
 function isPastEventDate(dateStr: string) {
   const parsed = new Date(`${dateStr}T00:00:00`);
@@ -194,6 +195,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if ("registration_form_config" in patch) {
       patch.registration_form_config = normalizeRegistrationFormConfig(patch.registration_form_config);
     }
+    if ("card_font" in patch) {
+      patch.card_font = sanitizeStoredCardFont(patch.card_font);
+    }
+
     if ("date" in patch) {
       const nextDate = String(patch.date || "").trim();
       if (!nextDate) {

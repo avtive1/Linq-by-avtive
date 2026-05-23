@@ -6,6 +6,7 @@ import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { toPng } from "html-to-image";
+import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
 
@@ -83,6 +84,7 @@ export default function CardView({
     if (!cardRef.current) return;
     setIsDownloading(true);
     try {
+      await waitForCardFontsReadyForCapture(String(card.fontFamily || "inter"));
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 2,
@@ -110,6 +112,7 @@ export default function CardView({
     setIsDownloading(true);
     setShowPostDownloadMenu(false);
     try {
+      await waitForCardFontsReadyForCapture(String(card.fontFamily || "inter"));
       const dataUrl = await toPng(cardRef.current, {
         quality: 1,
         pixelRatio: 2,
@@ -157,6 +160,7 @@ export default function CardView({
     };
     const getBlobFromRef = async (ref: HTMLDivElement | null) => {
       if (!ref) throw new Error("Badge previews are not ready yet.");
+      await waitForCardFontsReadyForCapture(String(card.fontFamily || "inter"));
       const dataUrl = await toPng(ref, {
         quality: 1,
         pixelRatio: 2,

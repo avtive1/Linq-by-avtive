@@ -3,6 +3,7 @@ import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
+import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 
 function isPastEventDate(dateStr: string) {
   const parsed = new Date(`${dateStr}T00:00:00`);
@@ -183,7 +184,7 @@ export async function POST(req: Request) {
         body.registration_form_config || getDefaultRegistrationFormConfig(),
       ),
       card_color: String(body.card_color || "purple").trim() || "purple",
-      card_font: String(body.card_font || "inter").trim() || "inter",
+      card_font: sanitizeStoredCardFont(body.card_font),
       horizontal_text_color: String(body.horizontal_text_color || "").trim(),
       vertical_text_color: String(body.vertical_text_color || "").trim(),
       is_branding_finalized: Boolean(body.is_branding_finalized ?? false),

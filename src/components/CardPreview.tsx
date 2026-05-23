@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import QRCode from "qrcode";
 import { CardData, SponsorEntry } from "@/types/card";
+import { cssFontStackForGoogleFamily, parseGoogleFamilyFromStored } from "@/lib/card-fonts";
+import { preloadGoogleCardFontCss } from "@/lib/card-font-runtime";
 
 /** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
 const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
@@ -309,14 +311,22 @@ export function CardPreview({
   const horizontalTextColor = horizontalTextColorOverride || (theme.textColor || "#FFFFFF");
   const verticalTextColor = verticalTextColorOverride || (theme.textColor || "#FFFFFF");
   
-  // Font Mapping
+  const storedFontKey = String(data.fontFamily || "inter").trim() || "inter";
+  const googleFamily = parseGoogleFamilyFromStored(storedFontKey);
+
+  useEffect(() => {
+    void preloadGoogleCardFontCss(storedFontKey);
+  }, [storedFontKey]);
+
   const fontMap: Record<string, string> = {
     inter: "var(--font-inter-tight), sans-serif",
     poppins: "var(--font-poppins), sans-serif",
     outfit: "var(--font-outfit), sans-serif",
     times: "'Times New Roman', Times, serif",
   };
-  const selectedFont = fontMap[data.fontFamily || "inter"] || fontMap.inter;
+  const selectedFont = googleFamily
+    ? cssFontStackForGoogleFamily(googleFamily)
+    : fontMap[storedFontKey] || fontMap.inter;
   const photoUrl = String(data.photo || "").trim();
   const hasRealPhoto =
     Boolean(photoUrl) &&

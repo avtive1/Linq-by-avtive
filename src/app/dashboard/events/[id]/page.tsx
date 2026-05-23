@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
+import { CardTypographyPicker } from "@/components/CardTypographyPicker";
 
 import {
   Users,
@@ -2394,15 +2395,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
                         Typography
                       </span>
-                      <Select
+                      <CardTypographyPicker
                         value={brandingDraft.card_font}
                         onChange={(val) => editBrandingDraft((prev) => ({ ...prev, card_font: val }))}
-                        options={[
-                          { label: "Inter (Default)", value: "inter" },
-                          { label: "Poppins", value: "poppins" },
-                          { label: "Google Sans", value: "outfit" },
-                          { label: "Times New Roman", value: "times" },
-                        ]}
                       />
                     </div>
                   </div>
