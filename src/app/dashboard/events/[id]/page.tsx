@@ -1223,76 +1223,86 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const renderCampaignDescriptionSection = (): ReactNode => {
     if (!eventData || isPreviewMode) return null;
     const trimmed = String(eventData.description || "").trim();
+    const singleLinePreview = trimmed ? String(eventData.description || "").replace(/\s+/g, " ").trim() : "";
     const canEditInline = canManageEvent;
     const showComposer = Boolean(canEditInline && isEditingCampaignDescription);
 
     return (
       <section
         aria-label="Campaign description"
-        className="mt-4 w-full min-w-0 max-w-[min(100%,42rem)] border-0 bg-transparent text-left shadow-none sm:mt-6"
+        className="mt-4 w-full min-w-0 text-left sm:mt-5"
       >
-        {showComposer ? (
-          <div className="flex flex-col gap-2">
-            <textarea
-              value={campaignDescriptionDraft}
-              onChange={(e) => setCampaignDescriptionDraft(e.target.value)}
-              maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
-              rows={4}
-              className="w-full min-h-[100px] resize-y rounded-md border border-border/60 bg-white/95 px-3 py-2.5 text-sm leading-relaxed text-heading outline-none shadow-sm focus:ring-2 focus:ring-primary/30"
-              placeholder="Add a short overview for clients and teammates…"
-              aria-label="Campaign description"
-            />
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-[11px] text-muted">
-                {campaignDescriptionDraft.length}/{CAMPAIGN_DESCRIPTION_MAX_CHARS}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={cancelCampaignDescriptionEdit}
-                  disabled={isSavingCampaignDescription}
-                  className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-muted transition-all duration-150 hover:bg-surface-strong/80 hover:text-heading disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void saveCampaignDescription()}
-                  disabled={isSavingCampaignDescription}
-                  className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isSavingCampaignDescription ? "Saving..." : "Save"}
-                </button>
+        <div
+          className="w-full rounded-sm border bg-linear-to-br from-white/48 via-white/22 to-primary/7 px-3 py-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-xl backdrop-saturate-150 sm:px-4 sm:py-2.5"
+          style={{ borderColor: "rgba(107, 114, 128, 0.7)" }}
+        >
+          {showComposer ? (
+            <div className="flex flex-col gap-2">
+              <textarea
+                value={campaignDescriptionDraft}
+                onChange={(e) => setCampaignDescriptionDraft(e.target.value)}
+                maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
+                rows={4}
+                className="w-full min-h-[100px] resize-y rounded-md border border-border/60 bg-white/95 px-3 py-2.5 text-sm leading-relaxed text-heading outline-none shadow-sm focus:ring-2 focus:ring-primary/30"
+                placeholder="Add a short overview for clients and teammates…"
+                aria-label="Campaign description"
+              />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-[11px] text-muted">
+                  {campaignDescriptionDraft.length}/{CAMPAIGN_DESCRIPTION_MAX_CHARS}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelCampaignDescriptionEdit}
+                    disabled={isSavingCampaignDescription}
+                    className="inline-flex items-center rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-muted transition-all duration-150 hover:bg-surface-strong/80 hover:text-heading disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void saveCampaignDescription()}
+                    disabled={isSavingCampaignDescription}
+                    className="inline-flex items-center rounded-md bg-primary px-2.5 py-1 text-[12px] font-medium text-primary-foreground transition-opacity duration-150 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isSavingCampaignDescription ? "Saving..." : "Save"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="flex w-full min-w-0 items-start gap-3">
-            <p className="m-0 min-w-0 flex-1 whitespace-pre-wrap text-sm leading-relaxed text-heading/80">
-              {trimmed ? (
-                eventData.description
-              ) : (
-                <span className="text-muted italic font-normal">
-                  No campaign description added yet.
-                </span>
-              )}
-            </p>
-            {canEditInline && (
-              <button
-                type="button"
-                onClick={() => {
-                  setCampaignDescriptionDraft(String(eventData.description || ""));
-                  setIsEditingCampaignDescription(true);
-                }}
-                className="-mt-0.5 shrink-0 self-start rounded-md p-1.5 text-muted/70 transition-colors duration-150 hover:bg-primary/[0.07] hover:text-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60"
-                aria-label="Edit campaign description"
-                title="Edit campaign description"
+          ) : (
+            <div className="flex w-full min-w-0 items-center gap-3">
+              <p
+                className="m-0 min-w-0 flex-1 truncate text-sm leading-normal text-heading/80"
+                title={trimmed ? String(eventData.description || "") : undefined}
               >
-                <Pencil size={14} />
-              </button>
-            )}
-          </div>
-        )}
+                {trimmed ? (
+                  singleLinePreview
+                ) : (
+                  <span className="text-muted italic font-normal">
+                    No campaign description added yet.
+                  </span>
+                )}
+              </p>
+              {canEditInline && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCampaignDescriptionDraft(String(eventData.description || ""));
+                    setIsEditingCampaignDescription(true);
+                  }}
+                  className="inline-flex shrink-0 flex-col items-center gap-1 rounded-md p-1.5 text-muted/70 transition-colors duration-150 hover:bg-primary/[0.07] hover:text-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60"
+                  aria-label="Edit campaign description"
+                  title="Edit campaign description"
+                >
+                  <Pencil size={14} className="shrink-0" />
+                  <span className="h-[2px] w-5 shrink-0 bg-muted/80" aria-hidden />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </section>
     );
   };
@@ -1414,7 +1424,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <span className="min-w-0 truncate">{eventData.location}</span>
               </div>
             </div>
-            {renderCampaignDescriptionSection()}
             {isTeamMemberEventMode && (
               <p className="mt-2 text-sm text-heading/75">
                 Team execution mode: you can work inside granted permissions for this campaign.
@@ -1604,6 +1613,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
           </div>
+          {renderCampaignDescriptionSection()}
         </motion.div>
         {!isPreviewMode && !isBrandingFinalized && (
           <div className="mb-6 rounded-md border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-800">
