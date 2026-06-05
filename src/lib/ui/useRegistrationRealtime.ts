@@ -34,7 +34,10 @@ export function useOrgRegistrationStream(
   handlers: OrgRealtimeHandlers,
 ) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
 
   useEffect(() => {
     if (!enabled || !eventId) return;
@@ -96,7 +99,10 @@ export function useRegistrationStatusStream(
   },
 ) {
   const handlersRef = useRef(handlers);
-  handlersRef.current = handlers;
+
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
 
   useEffect(() => {
     if (!enabled || !requestId) return;
