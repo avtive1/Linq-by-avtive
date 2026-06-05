@@ -4,7 +4,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
 
-import { Lock } from "lucide-react";
+import { Clock, Lock, XCircle, CheckCircle2 } from "lucide-react";
+import { useRegistrationStatusStream } from "@/lib/ui/useRegistrationRealtime";
 import { HorizontalPreviewScaler } from "@/components/HorizontalPreviewScaler";
 import { CardPreview } from "@/components/CardPreview";
 import { toast } from "sonner";
@@ -137,6 +138,36 @@ function NewCardForm() {
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [registrationRequestId, setRegistrationRequestId] = useState<string | null>(null);
+  const [registrationStatus, setRegistrationStatus] = useState<"PENDING" | "APPROVED" | "REJECTED" | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [approvedCardId, setApprovedCardId] = useState<string | null>(null);
+  const [approvedShareToken, setApprovedShareToken] = useState<string | null>(null);
+
+  useRegistrationStatusStream(registrationRequestId, registrationStatus === "PENDING", {
+    onStatus: (status) => {
+      setRegistrationStatus(status.status);
+      if (status.rejection_reason) setRejectionReason(status.rejection_reason);
+      if (status.card_id) setApprovedCardId(status.card_id);
+    },
+    onApproved: (payload) => {
+      setRegistrationStatus("APPROVED");
+      if (payload.cardId) setApprovedCardId(payload.cardId);
+      if (payload.shareToken) setApprovedShareToken(payload.shareToken);
+    },
+    onRejected: (payload) => {
+      setRegistrationStatus("REJECTED");
+      if (payload.rejectionReason) setRejectionReason(payload.rejectionReason);
+    },
+  });
+
+  useEffect(() => {
+    if (registrationStatus !== "APPROVED" || !approvedCardId) return;
+    const nextUrl = approvedShareToken
+      ? `/cards/${approvedCardId}?share=true&token=${encodeURIComponent(approvedShareToken)}`
+      : `/cards/${approvedCardId}?share=true`;
+    router.replace(nextUrl);
+  }, [registrationStatus, approvedCardId, approvedShareToken, router]);
 
   const update = (key: string) => (val: string | number) => {
     setForm((f) => ({ ...f, [key]: val }));
@@ -329,68 +360,99 @@ function NewCardForm() {
         custom_fields: attendeeCustomFields,
       };
 
-      const res = await fetch("/api/cards", {
+      const isGuestRegistration = form.cardRole === "guest";
+
+      if (!isGuestRegistration) {
+        const res = await fetch("/api/cards", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(attendeeData),
+        });
+        const body = await readResponsePayload(res);
+        if (!res.ok) {
+          const errorMessage = getPayloadError(body, "Failed to save card. Please try again.");
+          toast.error(errorMessage);
+          throw new Error(errorMessage);
+        }
+
+        const createdId =
+          body && typeof body === "object" && "data" in body
+            ? (body as { data?: { id?: unknown } }).data?.id
+            : undefined;
+        const createdShareToken =
+          body && typeof body === "object" && "shareToken" in body
+            ? (body as { shareToken?: unknown }).shareToken
+            : undefined;
+
+        if (createdId) {
+          try {
+            const { toPng } = await import("html-to-image");
+            const cardId = String(createdId);
+            const uploadVertical = async (
+              node: HTMLDivElement | null,
+              suffix: "vertical-front" | "vertical-back",
+            ) => {
+              if (!node) return;
+              await waitForCardFontsReadyForCapture(String(form.fontFamily || "inter"));
+              const png = await toPng(node, {
+                quality: 1,
+                pixelRatio: 2,
+                backgroundColor: "#ffffff",
+              });
+              if (!png || png.length <= 100) return;
+              const uploadRes = await fetch("/api/media/upload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  dataUrl: png,
+                  folder: `card-previews/${eventId}`,
+                  publicId: `${cardId}-${suffix}`,
+                }),
+              });
+              const uploadPayload = await readResponsePayload(uploadRes);
+              const uploadUrl =
+                uploadPayload && typeof uploadPayload === "object" && "data" in uploadPayload
+                  ? (uploadPayload as { data?: { url?: unknown } }).data?.url
+                  : undefined;
+              if (!uploadRes.ok || !uploadUrl) {
+                throw new Error(getPayloadError(uploadPayload, `Failed to upload ${suffix} preview.`));
+              }
+            };
+            await uploadVertical(verticalFrontRef.current, "vertical-front");
+            await uploadVertical(verticalBackRef.current, "vertical-back");
+          } catch (verticalErr) {
+            console.warn("Vertical preview upload skipped:", verticalErr);
+          }
+          toast.success("Attendee card saved successfully!");
+          const nextUrl = createdShareToken
+            ? `/cards/${String(createdId)}?share=true&token=${encodeURIComponent(String(createdShareToken))}`
+            : `/cards/${String(createdId)}?share=true`;
+          router.push(nextUrl);
+        }
+        return;
+      }
+
+      const res = await fetch(`/api/events/${eventId}/registrations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(attendeeData),
       });
       const body = await readResponsePayload(res);
       if (!res.ok) {
-        const errorMessage = getPayloadError(body, "Failed to save card. Please try again.");
+        const errorMessage = getPayloadError(body, "Failed to submit registration. Please try again.");
         toast.error(errorMessage);
         throw new Error(errorMessage);
       }
 
-      const createdId =
+      const requestId =
         body && typeof body === "object" && "data" in body
           ? (body as { data?: { id?: unknown } }).data?.id
           : undefined;
-      const createdShareToken =
-        body && typeof body === "object" && "shareToken" in body
-          ? (body as { shareToken?: unknown }).shareToken
-          : undefined;
 
-      if (createdId) {
-        try {
-          const { toPng } = await import("html-to-image");
-          const cardId = String(createdId);
-          const uploadVertical = async (node: HTMLDivElement | null, suffix: "vertical-front" | "vertical-back") => {
-            if (!node) return;
-            await waitForCardFontsReadyForCapture(String(form.fontFamily || "inter"));
-            const png = await toPng(node, {
-              quality: 1,
-              pixelRatio: 2,
-              backgroundColor: "#ffffff",
-            });
-            if (!png || png.length <= 100) return;
-            const uploadRes = await fetch("/api/media/upload", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                dataUrl: png,
-                folder: `card-previews/${eventId}`,
-                publicId: `${cardId}-${suffix}`,
-              }),
-            });
-            const uploadPayload = await readResponsePayload(uploadRes);
-            const uploadUrl =
-              uploadPayload && typeof uploadPayload === "object" && "data" in uploadPayload
-                ? (uploadPayload as { data?: { url?: unknown } }).data?.url
-                : undefined;
-            if (!uploadRes.ok || !uploadUrl) {
-              throw new Error(getPayloadError(uploadPayload, `Failed to upload ${suffix} preview.`));
-            }
-          };
-          await uploadVertical(verticalFrontRef.current, "vertical-front");
-          await uploadVertical(verticalBackRef.current, "vertical-back");
-        } catch (verticalErr) {
-          console.warn("Vertical preview upload skipped:", verticalErr);
-        }
-        toast.success("Attendee card saved successfully!");
-        const nextUrl = createdShareToken
-          ? `/cards/${String(createdId)}?share=true&token=${encodeURIComponent(String(createdShareToken))}`
-          : `/cards/${String(createdId)}?share=true`;
-        router.push(nextUrl);
+      if (requestId) {
+        setRegistrationRequestId(String(requestId));
+        setRegistrationStatus("PENDING");
+        toast.success("Guest registration submitted. Awaiting organizer approval.");
       }
     } catch (err: unknown) {
        const message = err instanceof Error ? err.message : "An unexpected error occurred.";
@@ -413,6 +475,71 @@ function NewCardForm() {
           <Button href="/" variant="secondary" className="mt-2">
             Back to home
           </Button>
+        </div>
+      </main>
+    );
+  }
+
+  if (registrationStatus === "PENDING") {
+    return (
+      <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-primary/20">
+          <div className="w-16 h-16 rounded-md bg-primary/10 flex items-center justify-center text-primary-strong">
+            <Clock size={32} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Pending Approval</h2>
+            <p className="text-sm text-muted leading-relaxed">
+              Your request has been sent to the organization. Please wait for approval.
+              We will email you when your registration is reviewed.
+            </p>
+          </div>
+          <div className="w-full h-px bg-border/50" />
+          <p className="text-xs text-muted/70">
+            Event: <span className="font-medium text-heading">{form.eventName || "Your event"}</span>
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  if (registrationStatus === "REJECTED") {
+    return (
+      <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-red-200/60">
+          <div className="w-16 h-16 rounded-md bg-red-50 flex items-center justify-center text-red-600">
+            <XCircle size={32} />
+          </div>
+          <div className="flex flex-col gap-2">
+            <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Request Rejected</h2>
+            <p className="text-sm text-muted leading-relaxed">
+              Your registration for <span className="font-medium text-heading">{form.eventName}</span> was not approved.
+            </p>
+            {rejectionReason ? (
+              <p className="text-sm text-heading bg-red-50/80 border border-red-100 rounded-lg px-4 py-3 mt-2">
+                <span className="font-medium">Reason:</span> {rejectionReason}
+              </p>
+            ) : null}
+          </div>
+          <Button href="/" variant="secondary" fullWidth className="mt-2 w-full">
+            Back to Home
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
+  if (registrationStatus === "APPROVED" && !approvedCardId) {
+    return (
+      <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
+        <GradientBackground />
+        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-emerald-200/60">
+          <div className="w-16 h-16 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
+            <CheckCircle2 size={32} />
+          </div>
+          <p className="text-sm text-muted">Your registration was approved. Loading your card...</p>
         </div>
       </main>
     );
@@ -464,9 +591,13 @@ function NewCardForm() {
               Event Registration
             </h1>
             <p className="text-[15px] text-muted leading-normal">
-              {form.eventName
-                ? `Register for ${form.eventName} and get your attendee card.`
-                : "Register for the event to generate your attendee card."}
+              {form.cardRole === "guest"
+                ? form.eventName
+                  ? `Register as a guest for ${form.eventName}. Your card will be issued after organizer approval.`
+                  : "Register as a guest. Your card will be issued after organizer approval."
+                : form.eventName
+                  ? `Register for ${form.eventName} and get your attendee card instantly.`
+                  : "Register for the event to generate your attendee card."}
             </p>
           </div>
 
@@ -645,7 +776,13 @@ function NewCardForm() {
                  disabled={loading}
                  className="rounded-md h-12 min-w-[160px] px-7 bg-white text-heading border border-border/60 shadow-xl hover:bg-white/95 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
                >
-                 {loading ? "Saving..." : "Save"}
+                 {loading
+                   ? form.cardRole === "guest"
+                     ? "Submitting..."
+                     : "Saving..."
+                   : form.cardRole === "guest"
+                     ? "Submit Guest Registration"
+                     : "Save"}
                </Button>
              </div>
           </div>

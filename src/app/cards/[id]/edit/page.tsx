@@ -120,6 +120,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const [horizontalTextColor, setHorizontalTextColor] = useState("");
   const [verticalTextColor, setVerticalTextColor] = useState("");
   const [existingCustomFields, setExistingCustomFields] = useState<Record<string, unknown>>({});
+  const [identityLocked, setIdentityLocked] = useState(false);
   const isCustomColorSelected = !presetColorNames.has(form.color);
   const isCustomPickerActive = showCustomColorPicker || isCustomColorSelected;
   const previewData = { ...form, horizontalTextColor, verticalTextColor };
@@ -158,8 +159,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         }
         const payload = await resp.json();
         const record = payload.data;
+        const locked = Boolean(payload.identityLocked);
 
         if (!isMounted) return;
+        setIdentityLocked(locked);
         setEventId(record.event_id || null);
         setOriginalPhotoPath(record.photo_url || null);
 
@@ -532,6 +535,11 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             <p className="text-base text-muted leading-[1.55]">
               Update the attendee details below.
             </p>
+            {identityLocked ? (
+              <p className="text-sm text-muted bg-surface/80 border border-border/50 rounded-lg px-3 py-2">
+                Your name, organization, and email are locked after guest approval. Contact the organizer if any of these need to change.
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-col gap-8">
@@ -543,6 +551,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               error={errors.name}
               maxLength={ATTENDEE_FIELD_LIMITS.name}
               onChange={update("name")}
+              readOnly={identityLocked}
             />
             <TextInput
               label="Role/Title"
@@ -561,6 +570,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               error={errors.company}
               maxLength={ATTENDEE_FIELD_LIMITS.company}
               onChange={update("company")}
+              readOnly={identityLocked}
             />
             <TextInput
               label="Email"
@@ -570,6 +580,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               value={form.email}
               error={errors.email}
               onChange={update("email")}
+              readOnly={identityLocked}
             />
             <TextInput
               label="QR Code Link (Optional)"

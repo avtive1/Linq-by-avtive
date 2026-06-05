@@ -57,3 +57,6 @@ next-env.d.ts
 # cloudflare
 .warp/
 cloudflared.exe
+
+# clerk configuration (can include secrets)
+/.clerk/

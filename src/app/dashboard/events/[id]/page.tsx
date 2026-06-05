@@ -33,6 +33,7 @@ import {
   Redo2,
   ShieldCheck,
   Lock,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -40,6 +41,10 @@ import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
+import {
+  useOrgRegistrationStream,
+  type RegistrationRequestSummary,
+} from "@/lib/ui/useRegistrationRealtime";
 import { EventSponsorsForm } from "@/components/EventSponsorsForm";
 import { parseEventSponsors, resolveSponsorRowsToEntries, type SponsorFormRow } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -78,6 +83,7 @@ type ActiveGrant = {
   permission: string;
   created_at: string;
 };
+type PendingRegistrationRequest = RegistrationRequestSummary;
 const CORE_PREVIEW_FIELD_IDS = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
 const BRAND_THEME_COLORS = [
   { name: "purple", start: "#41295a", end: "#2f0743" },
@@ -148,6 +154,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [currentUserId, setCurrentUserId] = useState("");
   const [cards, setCards] = useState<AttendeeCard[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [trackFilter, setTrackFilter] = useState<"all" | "guest" | "visitor">("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isGuestCategoryOpen, setIsGuestCategoryOpen] = useState(false);
@@ -174,6 +183,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isShareOpen]);
+
+  // Close filter menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setIsFilterOpen(false);
+      }
+    };
+    if (isFilterOpen) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [isFilterOpen]);
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -305,6 +327,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [accessRequestNote, setAccessRequestNote] = useState("");
   const [isSubmittingAccessRequest, setIsSubmittingAccessRequest] = useState(false);
   const [pendingAccessRequests, setPendingAccessRequests] = useState<PendingAccessRequest[]>([]);
+  const [pendingRegistrations, setPendingRegistrations] = useState<PendingRegistrationRequest[]>([]);
+  const [pendingRegistrationCount, setPendingRegistrationCount] = useState(0);
+  const [isRegistrationInboxOpen, setIsRegistrationInboxOpen] = useState(false);
+  const [rejectingRegistrationId, setRejectingRegistrationId] = useState<string | null>(null);
+  const [registrationRejectionReason, setRegistrationRejectionReason] = useState("");
+  const [reviewingRegistrationId, setReviewingRegistrationId] = useState<string | null>(null);
   const [isAccessInboxOpen, setIsAccessInboxOpen] = useState(false);
   const [isAccessControlOpen, setIsAccessControlOpen] = useState(false);
   const [activeGrants, setActiveGrants] = useState<ActiveGrant[]>([]);
@@ -319,7 +347,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const { data: session, status: sessionStatus } = useSession();
   const userId = session?.user?.id || "";
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
-  const { refreshTick } = useAutoRefresh(Boolean(userId));
+  const { refreshTick, triggerRefresh } = useAutoRefresh(Boolean(userId));
   /** When only `refreshTick` changes (focus / interval), refetch without full-page skeleton so modals and file pickers are not unmounted mid-interaction. */
   const eventPageLoadKeyRef = useRef<string | null>(null);
 
@@ -469,16 +497,31 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
         if (eventRecord.user_id === viewerId || memberResult) {
           try {
-            const reqRes = await fetch(`/api/access-requests?eventId=${id}`);
+            const [reqRes, registrationRes] = await Promise.all([
+              fetch(`/api/access-requests?eventId=${id}`),
+              fetch(`/api/events/${id}/registrations`),
+            ]);
             const reqPayload = await reqRes.json();
             if (reqRes.ok && reqPayload?.data?.requests) {
               setPendingAccessRequests(reqPayload.data.requests);
             }
+            const registrationPayload = await registrationRes.json();
+            if (registrationRes.ok && registrationPayload?.data?.requests) {
+              setPendingRegistrations(registrationPayload.data.requests);
+              setPendingRegistrationCount(
+                Number(registrationPayload?.pagination?.total ?? registrationPayload.data.requests.length),
+              );
+            } else {
+              setPendingRegistrations([]);
+              setPendingRegistrationCount(0);
+            }
           } catch (err) {
-            console.error("Could not load access requests:", err);
+            console.error("Could not load moderation queues:", err);
           }
         } else {
           setPendingAccessRequests([]);
+          setPendingRegistrations([]);
+          setPendingRegistrationCount(0);
         }
 
       } catch (err: unknown) {
@@ -506,6 +549,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   }, []);
   const isEventOwner = Boolean(eventData?.user && currentUserId && eventData.user === currentUserId);
   const canReviewAccessRequests = isEventOwner;
+  const canReviewRegistrations = isEventOwner || isOrgAdminReviewer;
   const canManageEvent = isEventOwner || grantedPermissions.includes("manage_event");
   const canDeleteEvent = canManageEvent || grantedPermissions.includes("delete_event");
   const canEditCards = canManageEvent || grantedPermissions.includes("edit_cards");
@@ -545,9 +589,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   const filteredCards = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return cards;
+    
+    // Apply track filter first
+    let filtered = cards;
+    if (trackFilter === "guest") {
+      filtered = cards.filter(card => String(card.track || "").toLowerCase() === "guest");
+    } else if (trackFilter === "visitor") {
+      filtered = cards.filter(card => String(card.track || "").toLowerCase() === "visitor");
+    }
+    
+    // Then apply search filter
+    if (!query) return filtered;
 
-    return cards.filter(card => {
+    return filtered.filter(card => {
       const name = (card.name || "").toLowerCase();
       const company = (card.company || "").toLowerCase();
       const role = (card.role || "").toLowerCase();
@@ -555,7 +609,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       const searchBlob = `${name} ${company} ${role}`;
       return searchBlob.includes(query);
     });
-  }, [searchQuery, cards]);
+  }, [searchQuery, cards, trackFilter]);
   const ownerGuestCount = cards.filter((card) => String(card.track || "").toLowerCase() === "guest").length;
   const ownerVisitorCount = cards.filter((card) => String(card.track || "").toLowerCase() === "visitor").length;
   const ownerTopRoles = useMemo(() => {
@@ -1154,6 +1208,69 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
   };
 
+  useOrgRegistrationStream(id, canReviewRegistrations && !isPreviewMode, {
+    onNew: (payload) => {
+      if (payload.request) {
+        setPendingRegistrations((prev) => {
+          if (prev.some((r) => r.id === payload.request!.id)) return prev;
+          return [payload.request!, ...prev];
+        });
+      }
+      if (typeof payload.pendingCount === "number") {
+        setPendingRegistrationCount(payload.pendingCount);
+      }
+    },
+    onPendingCountUpdated: (count) => {
+      setPendingRegistrationCount(count);
+    },
+    onUpdated: (payload) => {
+      if (payload.status && payload.status !== "PENDING") {
+        setPendingRegistrations((prev) => prev.filter((r) => r.id !== payload.requestId));
+      }
+      if (typeof payload.pendingCount === "number") {
+        setPendingRegistrationCount(payload.pendingCount);
+      }
+    },
+  });
+
+  const reviewRegistrationRequest = async (requestId: string, decision: "approve" | "reject", reason?: string) => {
+    if (decision === "reject" && !String(reason || "").trim()) {
+      toast.error("A rejection reason is required.");
+      return;
+    }
+    setReviewingRegistrationId(requestId);
+    try {
+      const res = await fetch(`/api/registration-requests/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          decision,
+          rejectionReason: decision === "reject" ? String(reason || "").trim() : undefined,
+        }),
+      });
+      const payload = await res.json();
+      if (!res.ok) {
+        toast.error(payload?.error || "Could not review registration.");
+        return;
+      }
+      setPendingRegistrations((prev) => prev.filter((r) => r.id !== requestId));
+      setPendingRegistrationCount((prev) => Math.max(0, prev - 1));
+      setRejectingRegistrationId(null);
+      setRegistrationRejectionReason("");
+      if (decision === "approve") {
+        toast.success("Registration approved. Attendee card created.");
+        triggerRefresh();
+      } else {
+        toast.success("Registration rejected.");
+      }
+    } catch (err) {
+      console.error("Review registration error:", err);
+      toast.error("Could not review registration.");
+    } finally {
+      setReviewingRegistrationId((current) => (current === requestId ? null : current));
+    }
+  };
+
   const reviewAccessRequest = async (requestId: string, decision: "approve" | "reject") => {
     try {
       const res = await fetch(`/api/access-requests/${requestId}`, {
@@ -1593,6 +1710,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     Take Access
                   </Button>
                 )}
+                {canReviewRegistrations && (
+                  <Button variant="secondary" onClick={() => setIsRegistrationInboxOpen(true)}>
+                    Pending Registrations ({pendingRegistrationCount})
+                  </Button>
+                )}
                 {canReviewAccessRequests && pendingAccessRequests.length > 0 && (
                   <Button variant="secondary" onClick={() => setIsAccessInboxOpen(true)}>
                     Requests ({pendingAccessRequests.length})
@@ -1919,6 +2041,76 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+          
+          {/* Filter Button and Dropdown */}
+          <div className="relative" ref={filterRef}>
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={`flex items-center justify-center gap-2 h-12 sm:h-14 px-6 rounded-xl border-2 font-semibold text-base transition-all shadow-md ${
+                isFilterOpen || trackFilter !== "all"
+                  ? "border-green-600 bg-green-50 text-green-700"
+                  : "border-border bg-white text-heading hover:border-green-500 hover:bg-green-50/50"
+              }`}
+            >
+              <SlidersHorizontal size={20} className={isFilterOpen || trackFilter !== "all" ? "text-green-700" : "text-muted"} />
+              <span>Filter</span>
+            </button>
+
+            {isFilterOpen && (
+              <div className="absolute right-0 top-full z-[9999] mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white py-4 px-5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] animate-in fade-in slide-in-from-top-2 duration-200">
+  <div className="mb-4">
+    <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
+      LEAD TYPE
+    </h4>
+
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() => setTrackFilter("all")}
+        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+          trackFilter === "all"
+            ? "bg-green-100 text-green-700 border-green-500"
+            : "bg-gray-50 text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600"
+        }`}
+      >
+        All
+      </button>
+
+      <button
+        onClick={() => setTrackFilter("guest")}
+        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+          trackFilter === "guest"
+            ? "bg-green-100 text-green-700 border-green-500"
+            : "bg-gray-50 text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600"
+        }`}
+      >
+        Guest
+      </button>
+
+      <button
+        onClick={() => setTrackFilter("visitor")}
+        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+          trackFilter === "visitor"
+            ? "bg-green-100 text-green-700 border-green-500"
+            : "bg-gray-50 text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600"
+        }`}
+      >
+        Visitor
+      </button>
+    </div>
+  </div>
+
+  <button
+    onClick={() => {
+      setTrackFilter("all");
+      setIsFilterOpen(false);
+    }}
+    className="w-full text-right text-sm text-gray-500 hover:text-green-600 transition-colors"
+  >
+    Reset filters
+  </button>
+</div>
+            )}
+          </div>
         </motion.div>
 
         {/* Cards list */}
@@ -2124,6 +2316,115 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isRegistrationInboxOpen && (
+        <div className={dashboardModalBackdrop}>
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => {
+              setIsRegistrationInboxOpen(false);
+              setRejectingRegistrationId(null);
+              setRegistrationRejectionReason("");
+            }}
+          />
+          <div className="relative w-full max-w-[720px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                  Pending Registration Requests
+                </h3>
+                <p className="text-sm text-muted">Approve or reject guest registrations. Visitors are accepted automatically.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRegistrationInboxOpen(false);
+                  setRejectingRegistrationId(null);
+                  setRegistrationRejectionReason("");
+                }}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
+              {pendingRegistrations.length === 0 ? (
+                <p className="text-sm text-muted py-6 text-center">No pending registration requests.</p>
+              ) : (
+                pendingRegistrations.map((req) => (
+                  <div key={req.id} className="rounded-md border border-border/50 bg-white/80 p-4">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-sm font-semibold text-heading">{req.attendee_name || "Attendee"}</p>
+                      {req.attendee_company ? (
+                        <p className="text-xs text-muted">{req.attendee_company}</p>
+                      ) : null}
+                      {req.attendee_email ? (
+                        <p className="text-xs text-muted">{req.attendee_email}</p>
+                      ) : null}
+                      {req.track ? (
+                        <p className="text-xs text-muted capitalize">Track: {req.track}</p>
+                      ) : null}
+                    </div>
+                    {rejectingRegistrationId === req.id ? (
+                      <div className="mt-3 flex flex-col gap-2">
+                        <TextArea
+                          label="Rejection reason"
+                          required
+                          value={registrationRejectionReason}
+                          onChange={setRegistrationRejectionReason}
+                          placeholder="Explain why this registration was not approved"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => {
+                              setRejectingRegistrationId(null);
+                              setRegistrationRejectionReason("");
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              reviewRegistrationRequest(req.id, "reject", registrationRejectionReason)
+                            }
+                            disabled={reviewingRegistrationId === req.id}
+                          >
+                            {reviewingRegistrationId === req.id ? "Rejecting..." : "Confirm Reject"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          size="sm"
+                          onClick={() => reviewRegistrationRequest(req.id, "approve")}
+                          disabled={reviewingRegistrationId === req.id}
+                        >
+                          {reviewingRegistrationId === req.id ? "Approving..." : "Approve"}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => {
+                            setRejectingRegistrationId(req.id);
+                            setRegistrationRejectionReason("");
+                          }}
+                          disabled={reviewingRegistrationId === req.id}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
       )}

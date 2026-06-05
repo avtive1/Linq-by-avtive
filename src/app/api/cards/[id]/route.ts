@@ -10,6 +10,22 @@ import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
+import { isApprovedGuestCard } from "@/lib/services/registration.service";
+
+const APPROVED_GUEST_LOCKED_FIELDS = ["name", "company", "card_email"] as const;
+
+function preserveApprovedGuestIdentityFields(
+  updatePayload: Record<string, unknown>,
+  existing: Record<string, unknown>,
+) {
+  const next = { ...updatePayload };
+  for (const field of APPROVED_GUEST_LOCKED_FIELDS) {
+    if (field in next) {
+      next[field] = existing[field];
+    }
+  }
+  return next;
+}
 
 function stripBrandingMutations(payload: Record<string, unknown>) {
   const sanitized = { ...payload };
@@ -125,7 +141,8 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       await updateRows("attendees", migrationPatch, { id }, "id");
     }
 
-    return NextResponse.json({ data: secureRecord });
+    const identityLocked = await isApprovedGuestCard(id);
+    return NextResponse.json({ data: secureRecord, identityLocked });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -145,9 +162,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (auth.error) return auth.error;
     const userId = auth.userId!;
 
-    const permittedPayload = auth.tokenAccess
+    const existingAttendee = await queryNeonOne<Record<string, unknown>>(
+      `SELECT * FROM public.attendees WHERE id = $1`,
+      [id],
+    );
+    if (!existingAttendee) {
+      return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
+    }
+    const { row: existingSecure } = decryptAttendeeSensitiveFields(existingAttendee);
+
+    let permittedPayload = auth.tokenAccess
       ? stripBrandingMutations(validation.payload as Record<string, unknown>)
-      : validation.payload;
+      : (validation.payload as Record<string, unknown>);
+
+    if (await isApprovedGuestCard(id)) {
+      permittedPayload = preserveApprovedGuestIdentityFields(permittedPayload, existingSecure);
+    }
+
     const securedPayload = encryptAttendeeSensitiveFields(permittedPayload);
     const data = await updateRows("attendees", securedPayload, { id });
     const updateError = data.length ? null : { message: "No row updated" };
