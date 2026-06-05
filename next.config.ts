@@ -20,7 +20,27 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["argon2"],
   transpilePackages: ["framer-motion"],
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      {
+        source: "/(.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2|woff|ttf))",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/card-assets/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
   },
   images: {
     remotePatterns: [

@@ -616,7 +616,7 @@ export function FilePicker({
         {value ? (
           <div className="flex items-center gap-3 px-4 py-2 flex-1 overflow-hidden">
             <div className="w-8 h-8 rounded-md border border-border/50 overflow-hidden shrink-0 flex items-center justify-center p-1">
-              <img src={value} alt="Preview" className="w-full h-full object-contain rounded-sm" />
+              <img src={value} alt="Preview" className="w-full h-full object-contain rounded-sm" loading="lazy" decoding="async" />
             </div>
             <span className="text-[16px] leading-[1.6] text-heading font-medium truncate">Photo selected</span>
           </div>

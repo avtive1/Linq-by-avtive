@@ -20,6 +20,8 @@ import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { updateRows } from "@/lib/neon-db";
+import { parseJsonBody } from "@/lib/middlewares/validateRequest";
+import { registrationReviewBodySchema } from "@/lib/validators/registration.validator";
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -52,11 +54,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: "Invalid request id." }, { status: 400 });
     }
 
-    const body = (await req.json()) as { decision?: "approve" | "reject"; rejectionReason?: string };
-    const decision = body.decision;
-    if (!decision || !["approve", "reject"].includes(decision)) {
-      return NextResponse.json({ error: "decision must be approve or reject." }, { status: 400 });
-    }
+    const parsed = await parseJsonBody(req, registrationReviewBodySchema);
+    if (!parsed.ok) return parsed.response;
+    const { decision, rejectionReason } = parsed.data;
 
     const cookieStore = await cookies();
     const reviewerUserId = await getServerUserIdFromCookies(cookieStore);
@@ -148,20 +148,14 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       );
     }
 
-    const rejectionReason = String(body.rejectionReason || "").trim();
-    if (!rejectionReason) {
-      return NextResponse.json(
-        { error: "rejectionReason is required when decision is reject." },
-        { status: 400 },
-      );
-    }
+    const trimmedReason = String(rejectionReason || "").trim();
 
     let rejectResult;
     try {
       rejectResult = await rejectRegistrationRequest({
         requestId: id,
         reviewerUserId,
-        reason: rejectionReason,
+        reason: trimmedReason,
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "Failed to reject registration.";
@@ -182,7 +176,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       const emailResult = await sendRegistrationRejectedEmail({
         to: attendeeEmail,
         eventName,
-        rejectionReason,
+        rejectionReason: trimmedReason,
         eventId: request.event_id,
         eventShortId,
       });
@@ -208,7 +202,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       eventId: request.event_id,
       organizationId: request.organization_id,
       status: "REJECTED" as const,
-      rejectionReason,
+      rejectionReason: trimmedReason,
     };
 
     await emitRegistrationUpdatedToOrg({

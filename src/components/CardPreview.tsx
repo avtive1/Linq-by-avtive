@@ -8,6 +8,7 @@ import QRCode from "qrcode";
 import { CardData, SponsorEntry } from "@/types/card";
 import { cssFontStackForGoogleFamily, parseGoogleFamilyFromStored } from "@/lib/card-fonts";
 import { preloadGoogleCardFontCss } from "@/lib/card-font-runtime";
+import { optimizeCdnImageUrl } from "@/lib/utils/cdn-image";
 
 /** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
 const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
@@ -215,7 +216,7 @@ function OrganizationBrand({
     <>
       <div className={`overflow-hidden rounded-md bg-white/95 ${iconClassName}`}>
         {logoUrl ? (
-          <img src={logoUrl} alt={name || "Organization logo"} className="h-full w-full object-cover" />
+          <img src={optimizeCdnImageUrl(logoUrl, { width: 128, quality: "auto" })} alt={name || "Organization logo"} className="h-full w-full object-cover" decoding="async" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs font-bold text-heading/70">
             {name?.trim()?.slice(0, 2).toUpperCase() || "OR"}
@@ -399,7 +400,9 @@ export function CardPreview({
           <img 
             src="/card-assets/buildings-overlay-vertical.png" 
             className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] z-[1] max-w-none" 
-            alt="" 
+            alt=""
+            loading="lazy"
+            decoding="async"
           />
         </div>
 
@@ -585,7 +588,7 @@ export function CardPreview({
       />
 
       {/* Background Overlays */}
-      <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none z-[1]" src="/card-assets/buildings-overlay-horizontal.png" alt="" />
+      <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none z-[1]" src="/card-assets/buildings-overlay-horizontal.png" alt="" loading="lazy" decoding="async" />
       
       <p className="absolute left-[58px] top-[81px] m-0 font-medium text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
         {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}

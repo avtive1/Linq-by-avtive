@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
+import { toCompactShareUrl } from "@/lib/ui/share-short-link";
 import {
   useOrgRegistrationStream,
   type RegistrationRequestSummary,
@@ -1592,8 +1593,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       </button>
 
                       <button
-                        onClick={() => {
-                          const url = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=v`;
+                        onClick={async () => {
+                          const longUrl = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=v`;
+                          const url = await toCompactShareUrl(longUrl);
                           setIsShareOpen(false);
                           openShareActions(url, "visitor");
                         }}
@@ -3022,14 +3024,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
             <form
               className="px-8 pb-8 flex flex-col gap-4"
-              onSubmit={(e) => {
+              onSubmit={async (e) => {
                 e.preventDefault();
                 const value = guestCategoryInput.trim();
                 if (!value) {
                   setGuestCategoryError("Please enter a guest category.");
                   return;
                 }
-                const url = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=g&c=${encodeURIComponent(value)}`;
+                const longUrl = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=g&c=${encodeURIComponent(value)}`;
+                const url = await toCompactShareUrl(longUrl);
                 setIsGuestCategoryOpen(false);
                 openShareActions(url, "guest");
               }}

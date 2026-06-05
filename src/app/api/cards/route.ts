@@ -3,6 +3,8 @@ import { cookies } from "next/headers";
 import { queryNeon } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
+import { parseJsonBody } from "@/lib/middlewares/validateRequest";
+import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
 
 export async function POST(req: Request) {
   try {
@@ -15,7 +17,9 @@ export async function POST(req: Request) {
       console.warn("Skipping attendees.custom_fields runtime schema patch:", schemaErr);
     }
 
-    const payload = (await req.json()) as Record<string, unknown>;
+    const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
+    if (!parsed.ok) return parsed.response;
+    const payload = parsed.data as Record<string, unknown>;
     const cookieStore = await cookies();
     const authUserId = await getServerUserIdFromCookies(cookieStore);
     const authHeader = req.headers.get("authorization") || "";

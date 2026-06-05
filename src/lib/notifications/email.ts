@@ -4,6 +4,7 @@ type AccessRequestEmailInput = {
   to: string;
   subject: string;
   text: string;
+  html?: string;
 };
 
 type SendEmailResult = {
@@ -40,6 +41,7 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
       to: input.to,
       subject: input.subject,
       text: input.text,
+      html: input.html,
     });
 
     return { sent: true };

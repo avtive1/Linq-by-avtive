@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { createPasswordResetToken } from "@/lib/auth-db";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { parseJsonBody } from "@/lib/middlewares/validateRequest";
+import { forgotPasswordBodySchema } from "@/lib/validators/auth.validator";
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { email?: string };
-    const email = String(body.email || "").trim().toLowerCase();
-    if (!email) {
-      return NextResponse.json({ error: "Email is required." }, { status: 400 });
-    }
+    const parsed = await parseJsonBody(req, forgotPasswordBodySchema);
+    if (!parsed.ok) return parsed.response;
+    const { email } = parsed.data;
 
     const token = await createPasswordResetToken(email);
     if (token) {

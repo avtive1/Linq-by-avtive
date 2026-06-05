@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
+import { OptimizedImage } from "@/components/OptimizedImage";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
 import { EventData } from "@/types/card";
@@ -2033,7 +2034,14 @@ function DashboardContent() {
                     <div>
                       {evt.logo_url && (
                         <div className="w-20 h-20 rounded-md bg-white border border-border/40 shadow-md overflow-hidden group-hover:scale-105 transition-transform duration-200 shrink-0">
-                          <img src={evt.logo_url} alt={evt.name} className="w-full h-full object-cover block" />
+                          <OptimizedImage
+                            src={evt.logo_url}
+                            alt={evt.name}
+                            width={80}
+                            height={80}
+                            className="w-full h-full object-cover block"
+                            loading="lazy"
+                          />
                         </div>
                       )}
                     </div>

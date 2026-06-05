@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
 import { resetPasswordWithToken } from "@/lib/auth-db";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
+import { parseJsonBody } from "@/lib/middlewares/validateRequest";
+import { resetPasswordBodySchema } from "@/lib/validators/auth.validator";
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as { token?: string; password?: string };
-    const token = String(body.token || "").trim();
-    const password = String(body.password || "");
-    if (!token || !password) {
-      return NextResponse.json({ error: "Token and password are required." }, { status: 400 });
-    }
+    const parsed = await parseJsonBody(req, resetPasswordBodySchema);
+    if (!parsed.ok) return parsed.response;
+    const { token, password } = parsed.data;
 
     const issues = validatePasswordPolicy(password);
     if (issues.length > 0) {

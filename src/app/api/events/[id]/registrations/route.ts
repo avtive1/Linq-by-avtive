@@ -13,6 +13,8 @@ import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { queryNeonOne } from "@/lib/neon-db";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
+import { parseJsonBody } from "@/lib/middlewares/validateRequest";
+import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -58,7 +60,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
     }
 
-    const payload = (await req.json()) as Record<string, unknown>;
+    const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
+    if (!parsed.ok) return parsed.response;
+    const payload = parsed.data as Record<string, unknown>;
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
 

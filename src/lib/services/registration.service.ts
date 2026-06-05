@@ -3,7 +3,7 @@ import {
   encryptAttendeeSensitiveFields,
 } from "@/lib/security/attendee-sensitive";
 import { deterministicLookupTag } from "@/lib/security/crypto-envelope";
-import { getNeonPool, insertRow, queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { insertRow, queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
 import { ensureRegistrationRequestsSchema } from "@/lib/services/registration-schema";
@@ -305,35 +305,35 @@ export async function approveRegistrationRequest(input: {
     throw new Error("Registration request already reviewed.");
   }
 
-  const pool = getNeonPool();
-  const client = await pool.connect();
-  let updatedRequest: RegistrationRequestRecord;
+  const updated = await updateRows(
+    "registration_requests",
+    {
+      status: "APPROVED",
+      reviewed_by_user_id: input.reviewerUserId,
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { id: input.requestId, status: "PENDING" },
+    "id, user_id, event_id, organization_id, status, rejection_reason, attendee_payload, card_email_lookup_tag, card_id, created_at, updated_at",
+  );
 
-  try {
-    await client.query("BEGIN");
-    const updateResult = await client.query<RegistrationRequestRecord>(
-      `UPDATE public.registration_requests
-       SET status = 'APPROVED',
-           reviewed_by_user_id = $2,
-           reviewed_at = now(),
-           updated_at = now()
-       WHERE id = $1
-         AND status = 'PENDING'
-       RETURNING id, user_id, event_id, organization_id, status, rejection_reason,
-                 attendee_payload, card_email_lookup_tag, card_id, created_at, updated_at`,
-      [input.requestId, input.reviewerUserId],
-    );
-    updatedRequest = updateResult.rows[0];
-    if (!updatedRequest) {
-      throw new Error("Registration request already reviewed.");
+  if (!updated.length) {
+    const latest = await getRegistrationRequestById(input.requestId);
+    if (latest?.status === "APPROVED" && latest.card_id) {
+      const summary = summarizePayload(latest.attendee_payload || {});
+      return {
+        request: latest,
+        cardId: latest.card_id,
+        shareToken: null,
+        attendeeEmail: summary.attendee_email,
+        eventName: event.name,
+        eventShortId: event.short_id,
+      };
     }
-    await client.query("COMMIT");
-  } catch (error) {
-    await client.query("ROLLBACK");
-    throw error;
-  } finally {
-    client.release();
+    throw new Error("Registration request already reviewed.");
   }
+
+  const updatedRequest = updated[0] as unknown as RegistrationRequestRecord;
 
   const { row: attendeePayload } = decryptAttendeeSensitiveFields(
     updatedRequest.attendee_payload || {},

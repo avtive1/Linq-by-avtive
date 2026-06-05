@@ -1,7 +1,7 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { clientIp, getRateLimiters } from "@/lib/rate-limit";
+import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
 const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
 const isAuthRoute = createRouteMatcher(["/login(.*)", "/signup(.*)"]);
@@ -22,9 +22,9 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     const limiters = getRateLimiters();
     if (limiters) {
       const ip = clientIp(request);
-      const isAuth = pathname.startsWith("/api/auth");
-      const limiter = isAuth ? limiters.auth : limiters.general;
-      const { success, reset } = await limiter.limit(ip);
+      const tier = classifyApiRoute(pathname, request.method);
+      const limiter = limiters[tier];
+      const { success, reset, limit, remaining } = await limiter.limit(rateLimitKey(tier, ip));
       if (!success) {
         const retryAfterSec = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
         return new NextResponse(JSON.stringify({ error: "Too many requests. Please try again later." }), {
@@ -32,10 +32,19 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
           headers: {
             "Content-Type": "application/json",
             "Retry-After": String(retryAfterSec),
+            "X-RateLimit-Limit": String(limit),
+            "X-RateLimit-Remaining": String(Math.max(0, remaining)),
+            "X-RateLimit-Reset": String(Math.ceil(reset / 1000)),
             "x-request-id": requestId,
           },
         });
       }
+      const res = NextResponse.next({ request: { headers: reqHeaders } });
+      res.headers.set("X-RateLimit-Limit", String(limit));
+      res.headers.set("X-RateLimit-Remaining", String(Math.max(0, remaining)));
+      res.headers.set("X-RateLimit-Reset", String(Math.ceil(reset / 1000)));
+      res.headers.set("x-request-id", requestId);
+      return res;
     }
     const res = NextResponse.next({ request: { headers: reqHeaders } });
     res.headers.set("x-request-id", requestId);
