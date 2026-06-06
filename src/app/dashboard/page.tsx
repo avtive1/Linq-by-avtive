@@ -754,14 +754,14 @@ function DashboardContent() {
       });
       const payload = await res.json().catch(() => null);
       if (!res.ok) {
-        setOwnerProfileSetupError(payload?.error || "Could not save profile setup.");
+        setOwnerProfileSetupError(payload?.error || "Could not save profile setup. Image size limit should be less than 1MB.");
         return false;
       }
       setUserName(cleaned);
       setIsOwnerProfileSetupModalOpen(false);
       return true;
     } catch {
-      setOwnerProfileSetupError("Could not save profile setup.");
+      setOwnerProfileSetupError("Could not save profile setup. Image size limit should be less than 1MB.");
       return false;
     } finally {
       setIsSavingUsername(false);
@@ -2189,17 +2189,21 @@ function DashboardContent() {
                     onChange={(v) => setEventForm({ ...eventForm, time: v })}
                   />
                 </div>
-                <FilePicker
-                  label="Campaign Logo"
-                  value={eventForm.logo}
-                  onChange={(v) => setEventForm({ ...eventForm, logo: v })}
-                  onError={(msg) => toast.error(msg)}
-                  freeFormCrop={false}
-                  cropAspect={CAMPAIGN_LOGO_CROP_ASPECT}
-                  cropTitle="Crop campaign logo"
-                  cropSubtitle="Adjust the logo within the fixed frame used on cards."
-                  cropApplyLabel="Apply logo"
-                />
+<FilePicker
+  label="Campaign Logo"
+  value={eventForm.logo}
+  onChange={(v) => setEventForm({ ...eventForm, logo: v })}
+  onError={(msg) => toast.error(msg)}
+  freeFormCrop={false}
+  cropAspect={CAMPAIGN_LOGO_CROP_ASPECT}
+  cropTitle="Crop campaign logo"
+  cropSubtitle="Adjust the logo within the fixed frame used on cards."
+  cropApplyLabel="Apply logo"
+/>
+
+<p className="mt-1 text-xs text-red-500">
+  Logo size must be less than 1 MB, otherwise the logo will not be updated.
+</p>
               </div>
 
               {/* Modal Footer */}
