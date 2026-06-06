@@ -9,24 +9,17 @@ const SCENARIOS = [
   { name: "public_event_short", path: "/ev/testslug", method: "GET", expectRedirect: true },
 ];
 
-type Stats = {
-  count: number;
-  errors: number;
-  totalMs: number;
-  latencies: number[];
-};
-
-function createStats(): Stats {
+function createStats() {
   return { count: 0, errors: 0, totalMs: 0, latencies: [] };
 }
 
-function percentile(sorted: number[], p: number): number {
+function percentile(sorted, p) {
   if (!sorted.length) return 0;
   const idx = Math.ceil((p / 100) * sorted.length) - 1;
   return sorted[Math.max(0, idx)];
 }
 
-async function runRequest(scenario: (typeof SCENARIOS)[number]): Promise<number> {
+async function runRequest(scenario) {
   const started = performance.now();
   const res = await fetch(`${BASE}${scenario.path}`, {
     method: scenario.method,
@@ -41,11 +34,7 @@ async function runRequest(scenario: (typeof SCENARIOS)[number]): Promise<number>
   return elapsed;
 }
 
-async function worker(
-  scenario: (typeof SCENARIOS)[number],
-  stats: Stats,
-  endAt: number,
-) {
+async function worker(scenario, stats, endAt) {
   while (performance.now() < endAt) {
     try {
       const ms = await runRequest(scenario);
@@ -61,12 +50,12 @@ async function worker(
 async function main() {
   console.log(`Load test: ${BASE} | ${DURATION_SEC}s | concurrency ${CONCURRENCY}\n`);
   const endAt = performance.now() + DURATION_SEC * 1000;
-  const allStats: Record<string, Stats> = {};
+  const allStats = {};
 
   for (const scenario of SCENARIOS) {
     allStats[scenario.name] = createStats();
     const workers = Array.from({ length: CONCURRENCY }, () =>
-      worker(scenario, allStats[scenario.name], endAt),
+      worker(scenario, allStats[scenario.name], endAt)
     );
     await Promise.all(workers);
   }
