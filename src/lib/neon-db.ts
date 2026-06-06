@@ -1,10 +1,16 @@
+import type { QueryResultRow } from "@neondatabase/serverless";
 import {
-  neon,
-  type NeonQueryFunction,
-  type QueryResultRow,
-} from "@neondatabase/serverless";
+  getConnectionLifecycleReport,
+  getDbPoolConfig,
+  getSqlClient,
+  resetSqlClient,
+} from "@/lib/db/pool";
 
-let sqlClient: NeonQueryFunction<false, false> | null = null;
+export {
+  getConnectionLifecycleReport,
+  getDbPoolConfig,
+  getConnectionString,
+} from "@/lib/db/pool";
 
 const TRANSIENT_DB_ERROR_CODES = [
   "fetch failed",
@@ -35,59 +41,14 @@ export function isTransientDbError(error: unknown): boolean {
 }
 
 /**
- * Prefer pooled Neon URL if available.
- */
-function getConnectionString(): string {
-  let value =
-    process.env.DATABASE_URL ||
-    process.env.DATABASE_URL_DIRECT;
-
-  if (!value) {
-    throw new Error(
-      "Missing DATABASE_URL/DATABASE_URL_DIRECT",
-    );
-  }
-
-  if (
-    value.includes("postgresql://") ||
-    value.includes("postgres://")
-  ) {
-    value = value
-      .replace(/channel_binding=[^&]+&?/g, "")
-      .replace(/\?&/, "?")
-      .replace(/[?&]$/, "");
-
-    if (!value.includes("sslmode=")) {
-      const separator = value.includes("?") ? "&" : "?";
-      value = `${value}${separator}sslmode=require`;
-    } else {
-      value = value.replace(
-        /sslmode=[^&]+/g,
-        "sslmode=require",
-      );
-    }
-  }
-
-  return value;
-}
-
-function getSql() {
-  if (!sqlClient) {
-    sqlClient = neon(getConnectionString());
-  }
-
-  return sqlClient;
-}
-
-/**
- * Compatibility no-op
+ * Compatibility no-op — resets singleton client after transient failures.
  */
 export async function resetNeonPool(): Promise<void> {
-  sqlClient = null;
+  await resetSqlClient();
 }
 
 /**
- * Compatibility wrapper
+ * Compatibility wrapper — delegates to singleton HTTP client (Neon pooler handles TCP pooling).
  */
 export function getNeonPool() {
   return {
@@ -95,7 +56,7 @@ export function getNeonPool() {
       query: string,
       params: unknown[] = [],
     ) => {
-      const result = await getSql().query(query, params);
+      const result = await getSqlClient().query(query, params);
 
       return {
         rows: result as T[],
@@ -107,15 +68,10 @@ export function getNeonPool() {
 async function runQueryWithRetry<T>(
   operation: () => Promise<T>,
 ): Promise<T> {
-  const maxAttempts = 3;
-
+  const { maxRetries, retryBackoffMs } = getDbPoolConfig();
   let lastError: unknown;
 
-  for (
-    let attempt = 1;
-    attempt <= maxAttempts;
-    attempt += 1
-  ) {
+  for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
     try {
       return await operation();
     } catch (error: unknown) {
@@ -123,7 +79,7 @@ async function runQueryWithRetry<T>(
 
       if (
         !isTransientDbError(error) ||
-        attempt === maxAttempts
+        attempt === maxRetries
       ) {
         throw new Error(
           error instanceof Error
@@ -133,8 +89,7 @@ async function runQueryWithRetry<T>(
       }
 
       await resetNeonPool();
-
-      await sleep(150 * attempt);
+      await sleep(retryBackoffMs * attempt);
     }
   }
 
@@ -222,9 +177,7 @@ export async function updateRows(
   const whereSql = whereKeys
     .map(
       (k, i) =>
-        `${qIdent(k)} = $${
-          dataKeys.length + i + 1
-        }`,
+        `${qIdent(k)} = $${dataKeys.length + i + 1}`,
     )
     .join(" AND ");
 
@@ -244,4 +197,19 @@ export async function updateRows(
     sql,
     values,
   );
+}
+
+/**
+ * Run EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) for query plan auditing.
+ * Use only in scripts/diagnostics — executes the query.
+ */
+export async function explainAnalyzeQuery(
+  sql: string,
+  params: unknown[] = [],
+): Promise<unknown> {
+  const rows = await queryNeon<{ "QUERY PLAN": unknown }>(
+    `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${sql}`,
+    params,
+  );
+  return rows[0]?.["QUERY PLAN"] ?? rows;
 }

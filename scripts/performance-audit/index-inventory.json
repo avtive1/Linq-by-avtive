@@ -1,0 +1,310 @@
+{
+  "generatedAt": "2026-06-06T12:38:03.594Z",
+  "indexCount": 53,
+  "indexes": [
+    {
+      "tablename": "access_grants",
+      "indexname": "access_grants_event_id_idx",
+      "indexdef": "CREATE INDEX access_grants_event_id_idx ON public.access_grants USING btree (event_id) WHERE (event_id IS NOT NULL)"
+    },
+    {
+      "tablename": "access_grants",
+      "indexname": "access_grants_granted_by_status_idx",
+      "indexdef": "CREATE INDEX access_grants_granted_by_status_idx ON public.access_grants USING btree (granted_by_user_id, status)"
+    },
+    {
+      "tablename": "access_grants",
+      "indexname": "access_grants_grantee_status_idx",
+      "indexdef": "CREATE INDEX access_grants_grantee_status_idx ON public.access_grants USING btree (grantee_user_id, status)"
+    },
+    {
+      "tablename": "access_grants",
+      "indexname": "access_grants_pkey",
+      "indexdef": "CREATE UNIQUE INDEX access_grants_pkey ON public.access_grants USING btree (id)"
+    },
+    {
+      "tablename": "access_requests",
+      "indexname": "access_requests_event_status_created_idx",
+      "indexdef": "CREATE INDEX access_requests_event_status_created_idx ON public.access_requests USING btree (event_id, status, created_at DESC) WHERE (event_id IS NOT NULL)"
+    },
+    {
+      "tablename": "access_requests",
+      "indexname": "access_requests_owner_status_created_idx",
+      "indexdef": "CREATE INDEX access_requests_owner_status_created_idx ON public.access_requests USING btree (owner_user_id, status, created_at DESC)"
+    },
+    {
+      "tablename": "access_requests",
+      "indexname": "access_requests_pkey",
+      "indexdef": "CREATE UNIQUE INDEX access_requests_pkey ON public.access_requests USING btree (id)"
+    },
+    {
+      "tablename": "access_requests",
+      "indexname": "access_requests_requester_created_idx",
+      "indexdef": "CREATE INDEX access_requests_requester_created_idx ON public.access_requests USING btree (requester_user_id, created_at DESC)"
+    },
+    {
+      "tablename": "attendees",
+      "indexname": "attendees_event_id_created_at_idx",
+      "indexdef": "CREATE INDEX attendees_event_id_created_at_idx ON public.attendees USING btree (event_id, created_at DESC)"
+    },
+    {
+      "tablename": "attendees",
+      "indexname": "attendees_pkey",
+      "indexdef": "CREATE UNIQUE INDEX attendees_pkey ON public.attendees USING btree (id)"
+    },
+    {
+      "tablename": "attendees",
+      "indexname": "attendees_user_id_idx",
+      "indexdef": "CREATE INDEX attendees_user_id_idx ON public.attendees USING btree (user_id) WHERE (user_id IS NOT NULL)"
+    },
+    {
+      "tablename": "auth_users",
+      "indexname": "auth_users_clerk_user_id_uidx",
+      "indexdef": "CREATE UNIQUE INDEX auth_users_clerk_user_id_uidx ON public.auth_users USING btree (clerk_user_id) WHERE (clerk_user_id IS NOT NULL)"
+    },
+    {
+      "tablename": "auth_users",
+      "indexname": "auth_users_email_idx",
+      "indexdef": "CREATE INDEX auth_users_email_idx ON public.auth_users USING btree (email)"
+    },
+    {
+      "tablename": "auth_users",
+      "indexname": "auth_users_email_key",
+      "indexdef": "CREATE UNIQUE INDEX auth_users_email_key ON public.auth_users USING btree (email)"
+    },
+    {
+      "tablename": "auth_users",
+      "indexname": "auth_users_email_lower_idx",
+      "indexdef": "CREATE INDEX auth_users_email_lower_idx ON public.auth_users USING btree (lower(email))"
+    },
+    {
+      "tablename": "auth_users",
+      "indexname": "auth_users_pkey",
+      "indexdef": "CREATE UNIQUE INDEX auth_users_pkey ON public.auth_users USING btree (user_id)"
+    },
+    {
+      "tablename": "auth_users",
+      "indexname": "auth_users_reset_token_hash_idx",
+      "indexdef": "CREATE INDEX auth_users_reset_token_hash_idx ON public.auth_users USING btree (reset_token_hash) WHERE (reset_token_hash IS NOT NULL)"
+    },
+    {
+      "tablename": "events",
+      "indexname": "events_pkey",
+      "indexdef": "CREATE UNIQUE INDEX events_pkey ON public.events USING btree (id)"
+    },
+    {
+      "tablename": "events",
+      "indexname": "events_short_id_idx",
+      "indexdef": "CREATE UNIQUE INDEX events_short_id_idx ON public.events USING btree (short_id)"
+    },
+    {
+      "tablename": "events",
+      "indexname": "events_short_id_unique",
+      "indexdef": "CREATE UNIQUE INDEX events_short_id_unique ON public.events USING btree (short_id)"
+    },
+    {
+      "tablename": "events",
+      "indexname": "events_user_id_created_at_idx",
+      "indexdef": "CREATE INDEX events_user_id_created_at_idx ON public.events USING btree (user_id, created_at DESC)"
+    },
+    {
+      "tablename": "login_email_otp",
+      "indexname": "login_email_otp_pkey",
+      "indexdef": "CREATE UNIQUE INDEX login_email_otp_pkey ON public.login_email_otp USING btree (id)"
+    },
+    {
+      "tablename": "login_email_otp",
+      "indexname": "login_email_otp_user_active_idx",
+      "indexdef": "CREATE INDEX login_email_otp_user_active_idx ON public.login_email_otp USING btree (user_id, expires_at DESC) WHERE (consumed_at IS NULL)"
+    },
+    {
+      "tablename": "login_email_otp",
+      "indexname": "login_email_otp_user_expires_idx",
+      "indexdef": "CREATE INDEX login_email_otp_user_expires_idx ON public.login_email_otp USING btree (user_id, expires_at DESC)"
+    },
+    {
+      "tablename": "organization_join_requests",
+      "indexname": "organization_join_requests_owner_status_created_idx",
+      "indexdef": "CREATE INDEX organization_join_requests_owner_status_created_idx ON public.organization_join_requests USING btree (owner_user_id, status, created_at DESC)"
+    },
+    {
+      "tablename": "organization_join_requests",
+      "indexname": "organization_join_requests_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_join_requests_pkey ON public.organization_join_requests USING btree (id)"
+    },
+    {
+      "tablename": "organization_join_requests",
+      "indexname": "organization_join_requests_requester_created_idx",
+      "indexdef": "CREATE INDEX organization_join_requests_requester_created_idx ON public.organization_join_requests USING btree (requester_user_id, created_at DESC)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_invite_token_hash_idx",
+      "indexdef": "CREATE INDEX organization_members_invite_token_hash_idx ON public.organization_members USING btree (invite_token_hash) WHERE (invite_token_hash IS NOT NULL)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_member_email_idx",
+      "indexdef": "CREATE INDEX organization_members_member_email_idx ON public.organization_members USING btree (member_email) WHERE (member_email IS NOT NULL)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_member_status_idx",
+      "indexdef": "CREATE INDEX organization_members_member_status_idx ON public.organization_members USING btree (member_user_id, status)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_org_owner_created_at_idx",
+      "indexdef": "CREATE INDEX organization_members_org_owner_created_at_idx ON public.organization_members USING btree (org_owner_user_id, created_at DESC)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_owner_email_key",
+      "indexdef": "CREATE UNIQUE INDEX organization_members_owner_email_key ON public.organization_members USING btree (org_owner_user_id, member_email)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_owner_member_status_idx",
+      "indexdef": "CREATE INDEX organization_members_owner_member_status_idx ON public.organization_members USING btree (org_owner_user_id, member_user_id, status)"
+    },
+    {
+      "tablename": "organization_members",
+      "indexname": "organization_members_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_members_pkey ON public.organization_members USING btree (id)"
+    },
+    {
+      "tablename": "organization_role_permission_templates",
+      "indexname": "organization_role_permission_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organization_role_permission_templates_pkey ON public.organization_role_permission_templates USING btree (id)"
+    },
+    {
+      "tablename": "organizations",
+      "indexname": "organizations_organization_name_key_idx",
+      "indexdef": "CREATE INDEX organizations_organization_name_key_idx ON public.organizations USING btree (organization_name_key)"
+    },
+    {
+      "tablename": "organizations",
+      "indexname": "organizations_organization_name_key_key",
+      "indexdef": "CREATE UNIQUE INDEX organizations_organization_name_key_key ON public.organizations USING btree (organization_name_key)"
+    },
+    {
+      "tablename": "organizations",
+      "indexname": "organizations_owner_user_id_idx",
+      "indexdef": "CREATE INDEX organizations_owner_user_id_idx ON public.organizations USING btree (owner_user_id)"
+    },
+    {
+      "tablename": "organizations",
+      "indexname": "organizations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX organizations_pkey ON public.organizations USING btree (id)"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "profiles_organization_name_key_idx",
+      "indexdef": "CREATE INDEX profiles_organization_name_key_idx ON public.profiles USING btree (organization_name_key) WHERE (organization_name_key IS NOT NULL)"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX profiles_pkey ON public.profiles USING btree (id)"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "profiles_username_idx",
+      "indexdef": "CREATE INDEX profiles_username_idx ON public.profiles USING btree (username)"
+    },
+    {
+      "tablename": "profiles",
+      "indexname": "profiles_username_key",
+      "indexdef": "CREATE UNIQUE INDEX profiles_username_key ON public.profiles USING btree (username)"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_card_id_idx",
+      "indexdef": "CREATE INDEX registration_requests_card_id_idx ON public.registration_requests USING btree (card_id) WHERE (card_id IS NOT NULL)"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_event_status_created_idx",
+      "indexdef": "CREATE INDEX registration_requests_event_status_created_idx ON public.registration_requests USING btree (event_id, status, created_at DESC)"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_event_status_idx",
+      "indexdef": "CREATE INDEX registration_requests_event_status_idx ON public.registration_requests USING btree (event_id, status)"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_org_status_idx",
+      "indexdef": "CREATE INDEX registration_requests_org_status_idx ON public.registration_requests USING btree (organization_id, status)"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_pending_email_event_uidx",
+      "indexdef": "CREATE UNIQUE INDEX registration_requests_pending_email_event_uidx ON public.registration_requests USING btree (event_id, card_email_lookup_tag) WHERE ((status = 'PENDING'::text) AND (card_email_lookup_tag IS NOT NULL))"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_pkey",
+      "indexdef": "CREATE UNIQUE INDEX registration_requests_pkey ON public.registration_requests USING btree (id)"
+    },
+    {
+      "tablename": "registration_requests",
+      "indexname": "registration_requests_user_id_idx",
+      "indexdef": "CREATE INDEX registration_requests_user_id_idx ON public.registration_requests USING btree (user_id) WHERE (user_id IS NOT NULL)"
+    },
+    {
+      "tablename": "short_links",
+      "indexname": "short_links_pkey",
+      "indexdef": "CREATE UNIQUE INDEX short_links_pkey ON public.short_links USING btree (id)"
+    },
+    {
+      "tablename": "short_links",
+      "indexname": "short_links_slug_uidx",
+      "indexdef": "CREATE UNIQUE INDEX short_links_slug_uidx ON public.short_links USING btree (slug)"
+    },
+    {
+      "tablename": "short_links",
+      "indexname": "short_links_target_path_idx",
+      "indexdef": "CREATE INDEX short_links_target_path_idx ON public.short_links USING btree (target_path)"
+    }
+  ],
+  "foreignKeys": [
+    {
+      "table_name": "access_grants",
+      "column_name": "event_id",
+      "foreign_table_name": "events",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "access_requests",
+      "column_name": "event_id",
+      "foreign_table_name": "events",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "attendees",
+      "column_name": "event_id",
+      "foreign_table_name": "events",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "auth_users",
+      "column_name": "user_id",
+      "foreign_table_name": "profiles",
+      "foreign_column_name": "id"
+    },
+    {
+      "table_name": "login_email_otp",
+      "column_name": "user_id",
+      "foreign_table_name": "auth_users",
+      "foreign_column_name": "user_id"
+    },
+    {
+      "table_name": "registration_requests",
+      "column_name": "event_id",
+      "foreign_table_name": "events",
+      "foreign_column_name": "id"
+    }
+  ],
+  "missingFkIndexes": []
+}

@@ -16,6 +16,11 @@ let schemaEnsured = false;
 let superAdminEnsured = false;
 let argon2ModulePromise: Promise<typeof import("argon2")> | null = null;
 
+/** Lowercase trimmed email for indexed auth_users lookups. */
+export function normalizeAuthEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 function getArgon2() {
   if (!argon2ModulePromise) {
     argon2ModulePromise = import("argon2");
@@ -50,6 +55,19 @@ export async function ensureAuthSchema() {
   );
   await queryNeon(
     `ALTER TABLE public.auth_users ALTER COLUMN password_hash DROP NOT NULL`,
+  );
+  await queryNeon(
+    `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS email_normalized text`,
+  );
+  await queryNeon(
+    `UPDATE public.auth_users
+     SET email_normalized = lower(email)
+     WHERE email_normalized IS NULL
+        OR email_normalized <> lower(email)`,
+  );
+  await queryNeon(
+    `CREATE INDEX IF NOT EXISTS idx_auth_users_email_norm
+     ON public.auth_users (email_normalized)`,
   );
   // Older Neon DBs may lack these columns; signup + cards expect them.
   await queryNeon(
@@ -95,7 +113,7 @@ async function ensureBootstrapSuperAdmin() {
     const existingAuth = await queryNeonOne<{ user_id: string }>(
       `SELECT user_id
        FROM public.auth_users
-       WHERE lower(email) = lower($1)
+       WHERE email_normalized = $1
        LIMIT 1`,
       [email],
     );
@@ -144,6 +162,7 @@ async function ensureBootstrapSuperAdmin() {
       await queryNeon(
         `UPDATE public.auth_users
          SET email = $1,
+             email_normalized = $1,
              password_hash = $2,
              updated_at = now()
          WHERE user_id = $3`,
@@ -151,8 +170,8 @@ async function ensureBootstrapSuperAdmin() {
       );
     } else {
       await queryNeon(
-        `INSERT INTO public.auth_users (user_id, email, password_hash, created_at, updated_at)
-         VALUES ($1, $2, $3, now(), now())`,
+        `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
+         VALUES ($1, $2, $2, $3, now(), now())`,
         [userId, email, passwordHash],
       );
     }
@@ -177,13 +196,14 @@ async function ensureBootstrapSuperAdmin() {
 export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord | null> {
   await ensureAuthSchema();
   await ensureBootstrapSuperAdmin();
+  const normalizedEmail = normalizeAuthEmail(email);
   return queryNeonOne<AuthUserRecord>(
     `SELECT au.user_id, au.email, au.password_hash, p.role, p.username, p.organization_name
      FROM public.auth_users au
      JOIN public.profiles p ON p.id = au.user_id
-     WHERE lower(au.email) = lower($1)
+     WHERE au.email_normalized = $1
      LIMIT 1`,
-    [email.trim()],
+    [normalizedEmail],
   );
 }
 
@@ -210,14 +230,14 @@ export async function getInternalUserIdByClerkUserId(clerkUserId: string): Promi
  */
 export async function linkAuthUserToClerkUser(clerkUserId: string, email: string): Promise<string | null> {
   await ensureAuthSchema();
-  const normalizedEmail = email.trim().toLowerCase();
+  const normalizedEmail = normalizeAuthEmail(email);
   if (!normalizedEmail) return null;
 
   const already = await getInternalUserIdByClerkUserId(clerkUserId);
   if (already) return already;
 
   const byEmail = await queryNeonOne<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE lower(email) = lower($1) LIMIT 1`,
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [normalizedEmail],
   );
   if (!byEmail?.user_id) return null;
@@ -274,7 +294,7 @@ export async function registerUser(input: {
   linkedin?: string;
 }): Promise<{ userId: string; email: string; role: string }> {
   await ensureAuthSchema();
-  const email = input.email.trim().toLowerCase();
+  const email = normalizeAuthEmail(input.email);
   const username = input.username.trim().toLowerCase();
   const organizationName = normalizeOrganizationName(input.organizationName);
   const organizationKey = toOrganizationKey(organizationName);
@@ -282,7 +302,7 @@ export async function registerUser(input: {
   const linkedin = String(input.linkedin || "").trim();
 
   const existingEmail = await queryNeonOne<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE lower(email) = lower($1) LIMIT 1`,
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [email],
   );
   if (existingEmail?.user_id) {
@@ -308,8 +328,8 @@ export async function registerUser(input: {
   );
 
   await queryNeon(
-    `INSERT INTO public.auth_users (user_id, email, password_hash, created_at, updated_at)
-     VALUES ($1, $2, $3, now(), now())`,
+    `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
+     VALUES ($1, $2, $2, $3, now(), now())`,
     [userId, email, hash],
   );
 
@@ -363,10 +383,10 @@ export async function createOrganizationOwnerByAdmin(input: {
   password: string;
 }): Promise<{ userId: string; email: string; organizationName: string }> {
   await ensureAuthSchema();
-  const email = input.email.trim().toLowerCase();
+  const email = normalizeAuthEmail(input.email);
   if (!email) throw new Error("Email is required.");
   const existingEmail = await queryNeonOne<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE lower(email) = lower($1) LIMIT 1`,
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [email],
   );
   if (existingEmail?.user_id) {
@@ -412,8 +432,8 @@ export async function createOrganizationOwnerByAdmin(input: {
   );
 
   await queryNeon(
-    `INSERT INTO public.auth_users (user_id, email, password_hash, created_at, updated_at)
-     VALUES ($1, $2, $3, now(), now())`,
+    `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
+     VALUES ($1, $2, $2, $3, now(), now())`,
     [userId, email, hash],
   );
 
@@ -433,8 +453,8 @@ function sha256(value: string) {
 export async function createPasswordResetToken(email: string): Promise<string | null> {
   await ensureAuthSchema();
   const user = await queryNeonOne<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE lower(email) = lower($1) LIMIT 1`,
-    [email.trim().toLowerCase()],
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
+    [normalizeAuthEmail(email)],
   );
   if (!user?.user_id) return null;
 

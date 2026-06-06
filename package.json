@@ -10,7 +10,11 @@
     "start": "next start",
     "start:stable": "powershell -ExecutionPolicy Bypass -File ./scripts/run-shadow.ps1 -Mode start",
     "lint": "eslint",
-    "security:reencrypt-attendees": "tsx scripts/reencrypt-attendees.ts"
+    "security:reencrypt-attendees": "tsx scripts/reencrypt-attendees.ts",
+    "db:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/apply-indexes.ts",
+"db:audit:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/audit-indexes.mjs",
+"db:audit:explain": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/explain-queries.mjs",
+    "load-test:smoke": "node scripts/load-test/smoke-load.mjs"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.2",

@@ -1,4 +1,5 @@
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { normalizeAuthEmail } from "@/lib/auth-db";
 
 export async function listAdminUsers() {
   const rows = await queryNeon<{
@@ -60,13 +61,13 @@ export async function getAdminUserById(userId: string) {
 }
 
 export async function getAdminUserByEmail(email: string) {
-  const normalized = email.trim().toLowerCase();
+  const normalized = normalizeAuthEmail(email);
   const row = await queryNeonOne<{ id: string; email: string | null; role: string | null; organization_name: string | null; organization_logo_url: string | null }>(
     `SELECT p.id, au.email, p.role, p.organization_name,
             to_jsonb(p.*)->>'organization_logo_url' AS organization_logo_url
      FROM public.auth_users au
      JOIN public.profiles p ON p.id = au.user_id
-     WHERE lower(au.email) = lower($1)
+     WHERE au.email_normalized = $1
      LIMIT 1`,
     [normalized],
   );
