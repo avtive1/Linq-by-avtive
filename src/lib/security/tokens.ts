@@ -7,6 +7,17 @@ export type AttendeeCardClaims = {
   scope?: string;
 };
 
+export type IssueAttendeeCardTokenOptions = {
+  /** Override default TTL (seconds). Use for email share links. */
+  ttlSeconds?: number;
+};
+
+export function tokenGrantsCardViewAccess(scope: unknown, cardId: string, tokenCardId: unknown): boolean {
+  if (String(tokenCardId || "").trim() !== cardId) return false;
+  const tokenScope = String(scope || "");
+  return tokenScope.includes("card:read") || tokenScope.includes("card:edit");
+}
+
 type TokenKeyPair = {
   kid: string;
   privateKeyPem: string;
@@ -44,10 +55,17 @@ function getPublicKeyByKid(kid: string): TokenKeyPair {
   return pair;
 }
 
-export async function issueAttendeeCardToken(claims: AttendeeCardClaims): Promise<string> {
+export async function issueAttendeeCardToken(
+  claims: AttendeeCardClaims,
+  options?: IssueAttendeeCardTokenOptions,
+): Promise<string> {
   const kp = getActiveKeyPair();
   const privateKey = await importPKCS8(kp.privateKeyPem, "EdDSA");
   const now = Math.floor(Date.now() / 1000);
+  const ttlSeconds = Math.max(
+    60,
+    Number(options?.ttlSeconds ?? TOKEN_TTL_SECONDS) || TOKEN_TTL_SECONDS,
+  );
   return new SignJWT({
     cardId: claims.cardId,
     scope: claims.scope || "card:read",
@@ -59,7 +77,7 @@ export async function issueAttendeeCardToken(claims: AttendeeCardClaims): Promis
     .setAudience(TOKEN_AUDIENCE)
     .setIssuedAt(now)
     .setNotBefore(now - 5)
-    .setExpirationTime(now + TOKEN_TTL_SECONDS)
+    .setExpirationTime(now + ttlSeconds)
     .sign(privateKey);
 }
 

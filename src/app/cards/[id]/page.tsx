@@ -9,7 +9,7 @@ import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitiv
 import { getAdminUserById } from "@/lib/admin";
 import { queryNeonOne } from "@/lib/neon-db";
 import { getServerAuthSession } from "@/auth";
-import { verifyAttendeeCardToken } from "@/lib/security/tokens";
+import { verifyAttendeeCardToken, tokenGrantsCardViewAccess } from "@/lib/security/tokens";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
 import { cookies } from "next/headers";
@@ -140,9 +140,11 @@ export default async function CardViewPage(props: {
     if (!authedUserId && token) {
       try {
         const verified = await verifyAttendeeCardToken(token);
-        hasSignedAccess =
-          String(verified.payload.cardId || "") === id &&
-          String(verified.payload.scope || "").includes("card:read");
+        hasSignedAccess = tokenGrantsCardViewAccess(
+          verified.payload.scope,
+          id,
+          verified.payload.cardId,
+        );
       } catch {
         hasSignedAccess = false;
       }

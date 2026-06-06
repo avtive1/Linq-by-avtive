@@ -124,11 +124,17 @@ export async function createAttendeeCardFromPayload(
         tokenUserId ||
         (isPublicEventRegistration ? "public-registration" : "") ||
         "anonymous";
-      shareToken = await issueAttendeeCardToken({
-        sub: tokenSubject,
-        cardId: createdCardId,
-        scope: "card:edit",
-      });
+      const shareTtlSeconds = isPublicEventRegistration
+        ? Number(process.env.ATTENDEE_SHARE_TOKEN_TTL_SECONDS || 7776000)
+        : undefined;
+      shareToken = await issueAttendeeCardToken(
+        {
+          sub: tokenSubject,
+          cardId: createdCardId,
+          scope: "card:edit",
+        },
+        shareTtlSeconds ? { ttlSeconds: shareTtlSeconds } : undefined,
+      );
     } catch {
       shareToken = null;
     }
