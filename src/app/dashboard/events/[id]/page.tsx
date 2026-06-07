@@ -7,6 +7,7 @@ import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
 import { CardTypographyPicker } from "@/components/CardTypographyPicker";
+import { buildLinkedInFeedShareUrl } from "@/lib/share/linkedin-card-share";
 
 import {
   Users,
@@ -3110,15 +3111,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
                 {shareDraftRole === "visitor" && (
                   <Button
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(shareDraftMessage);
-                        toast.success("Caption copied. Paste it on LinkedIn post.");
-                      } catch {
-                        toast.error("Could not copy caption, but opening LinkedIn.");
-                      }
-                      const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareDraftUrl)}`;
-                      window.open(linkedInUrl, "_blank", "noopener,noreferrer");
+                    onClick={() => {
+                      window.open(
+                        buildLinkedInFeedShareUrl(shareDraftMessage),
+                        "_blank",
+                        "noopener,noreferrer",
+                      );
+                      toast.success("Opening LinkedIn with your post ready to publish.");
                     }}
                   >
                     LinkedIn

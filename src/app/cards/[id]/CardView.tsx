@@ -9,6 +9,7 @@ import { toPng } from "html-to-image";
 import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
+import { openLinkedInCardShare } from "@/lib/share/linkedin-card-share";
 
 export default function CardView({
   card,
@@ -246,20 +247,16 @@ export default function CardView({
   };
 
   const handleShareLinkedIn = () => {
-    setIsDownloading(true);
-    try {
-      toast.success("Opening LinkedIn share...");
-      
-      setTimeout(() => {
-        const shareUrl = encodeURIComponent(window.location.href);
-        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${shareUrl}`, "_blank", "width=800,height=600");
-      }, 500);
-    } catch (err) {
-      console.error("Failed to open LinkedIn:", err);
-      toast.error("Failed to open LinkedIn. Please try again.");
-    } finally {
-      setIsDownloading(false);
-    }
+    openLinkedInCardShare({
+      cardId: card.id,
+      name: card.name,
+      eventName: card.eventName,
+      role: card.role,
+      company: card.company,
+      cardRole: card.cardRole,
+      organizationName: card.organizationName,
+    });
+    toast.success("Opening LinkedIn — caption copied to clipboard.");
   };
 
   return (

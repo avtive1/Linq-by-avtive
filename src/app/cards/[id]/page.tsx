@@ -13,6 +13,7 @@ import { verifyAttendeeCardToken, tokenGrantsCardViewAccess } from "@/lib/securi
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
 import { cookies } from "next/headers";
+import { buildCardOpenGraphMeta, resolveCardOpenGraphImage } from "@/lib/share/card-open-graph";
 
 /** Card branding comes from DB; avoid stale HTML after org logo updates. */
 export const dynamic = "force-dynamic";
@@ -22,7 +23,10 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
   const id = params.id;
   const defaultTitle = "Attendee Card | AVTIVE";
   const defaultDesc = "Digital attendee badge for professional networking.";
-  const fallbackImage = "https://linq.avtive.app/logo-preview.png"; // Make sure this exists or use a real public logo
+  const fallbackImage = resolveCardOpenGraphImage({
+    cardId: id,
+    cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+  });
 
   if (!isValidUuid(id)) {
     return { title: defaultTitle, description: defaultDesc };
@@ -44,46 +48,19 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
     // Name and card_preview_url are Class C (public), no decryption needed
     const attendeeName = String(record.name || "Attendee").trim();
     const eventName = String(record.event_name || "Exclusive Event").trim();
-    
-    const cardTitle = `${attendeeName} Card | AVTIVE`;
-    const cardDesc = `Attendee badge for ${eventName}. Scan to connect and view profile.`;
-    
-    let imageUrl = String(record.card_preview_url || "").trim();
-    if (!imageUrl && process.env.CLOUDINARY_CLOUD_NAME && record.event_id) {
-      imageUrl = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/card-previews/${record.event_id}/${id}-horizontal`;
-    }
-    
-    // Fallback if no image found
-    if (!imageUrl) imageUrl = fallbackImage;
+    const imageUrl = resolveCardOpenGraphImage({
+      cardPreviewUrl: record.card_preview_url,
+      eventId: record.event_id,
+      cardId: id,
+      cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    });
 
-    const shareUrl = `https://linq.avtive.app/cards/${id}`;
-
-    return {
-      title: cardTitle,
-      description: cardDesc,
-      metadataBase: new URL("https://linq.avtive.app"),
-      openGraph: {
-        title: cardTitle,
-        description: cardDesc,
-        url: shareUrl,
-        siteName: "AVTIVE",
-        images: [
-          { 
-            url: imageUrl, 
-            width: 1200, 
-            height: 630,
-            alt: `${attendeeName}'s Badge Preview`,
-          }
-        ],
-        type: "website",
-      },
-      twitter: {
-        card: "summary_large_image",
-        title: cardTitle,
-        description: cardDesc,
-        images: [imageUrl],
-      },
-    };
+    return buildCardOpenGraphMeta({
+      cardId: id,
+      attendeeName,
+      eventName,
+      imageUrl: imageUrl || fallbackImage,
+    });
   } catch (err) {
     console.error("Metadata generation error:", err);
     return { 
