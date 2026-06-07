@@ -85,6 +85,10 @@ export function openLinkedInCardShare(input: {
   company?: string;
   cardId: string;
   origin?: string;
+  /** optional audience role for caption variants */
+  cardRole?: "guest" | "visitor" | "organization";
+  /** optional organization name when org is sharing */
+  organizationName?: string;
 }): void {
   const shareUrl = buildPublicCardShareLandingUrl(input.cardId, input.origin);
   const postText = buildCardLinkedInSharePost({
@@ -93,8 +97,8 @@ export function openLinkedInCardShare(input: {
     role: input.role,
     company: input.company,
     shareUrl,
-    cardRole: (input as any).cardRole,
-    organizationName: (input as any).organizationName,
+    cardRole: input.cardRole,
+    organizationName: input.organizationName,
   });
 
   // Open LinkedIn's share-offsite endpoint so the OG tags on our share landing page are used for preview.
@@ -116,7 +120,7 @@ export function openLinkedInCardShare(input: {
         window.open(buildLinkedInShareOffsiteUrl(shareUrl), "_blank", "noopener,noreferrer");
       } catch {}
     }
-  } catch (err) {
+  } catch {
     // Final fallback: open preview only
     try {
       window.open(buildLinkedInShareOffsiteUrl(shareUrl), "_blank", "noopener,noreferrer");
