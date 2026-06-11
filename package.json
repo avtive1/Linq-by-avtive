@@ -12,9 +12,10 @@
     "lint": "eslint",
     "security:reencrypt-attendees": "tsx scripts/reencrypt-attendees.ts",
     "db:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/apply-indexes.ts",
-"db:audit:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/audit-indexes.mjs",
-"db:audit:explain": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/explain-queries.mjs",
-    "load-test:smoke": "node scripts/load-test/smoke-load.mjs"
+    "db:audit:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/audit-indexes.mjs",
+    "db:audit:explain": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/explain-queries.mjs",
+    "load-test:smoke": "node scripts/load-test/smoke-load.mjs",
+    "prepare": "husky"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.11.2",
@@ -56,6 +57,7 @@
     "autoprefixer": "^10.4.27",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "husky": "^9.1.7",
     "lucide-react": "^1.7.0",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.2",
