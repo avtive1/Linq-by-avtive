@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { logger } from "@/lib/logger-server";
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
 
@@ -189,7 +190,7 @@ async function ensureBootstrapSuperAdmin() {
     superAdminEnsured = true;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Unknown bootstrap error";
-    console.error("SUPERADMIN bootstrap failed:", message);
+    logger.error({ err: error instanceof Error ? error : undefined, message }, "SUPERADMIN bootstrap failed");
   }
 }
 
@@ -362,7 +363,7 @@ export async function registerUser(input: {
           [organizationLogoUrl, userId],
         );
       } catch {
-        console.warn("[registerUser] organization_logo_url not persisted; check profiles schema/columns.");
+        logger.warn("[registerUser] organization_logo_url not persisted; check profiles schema/columns.");
       }
     }
   }

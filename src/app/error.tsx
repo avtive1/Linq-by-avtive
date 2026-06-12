@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { AlertTriangle } from "lucide-react";
+import { logger } from "@/lib/logger-client";
 
 export default function GlobalError({
   error,
@@ -13,7 +14,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Global app error:", error);
+    logger.error({ err: error, digest: error.digest }, "Global app error");
   }, [error]);
 
   return (

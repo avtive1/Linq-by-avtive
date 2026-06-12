@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { logger } from "../lib/logger.mjs";
 
 const BASE = process.env.LOAD_TEST_BASE_URL || "http://localhost:3000";
 const DURATION_SEC = Number(process.env.LOAD_TEST_DURATION_SEC || 30);
@@ -48,7 +49,7 @@ async function worker(scenario, stats, endAt) {
 }
 
 async function main() {
-  console.log(`Load test: ${BASE} | ${DURATION_SEC}s | concurrency ${CONCURRENCY}\n`);
+  logger.info({ base: BASE, durationSec: DURATION_SEC, concurrency: CONCURRENCY }, "Load test started");
   const endAt = performance.now() + DURATION_SEC * 1000;
   const allStats = {};
 
@@ -63,18 +64,19 @@ async function main() {
   for (const [name, stats] of Object.entries(allStats)) {
     const sorted = [...stats.latencies].sort((a, b) => a - b);
     const rps = stats.count / DURATION_SEC;
-    console.log(`[${name}]`);
-    console.log(`  requests: ${stats.count}`);
-    console.log(`  errors:   ${stats.errors}`);
-    console.log(`  rps:      ${rps.toFixed(1)}`);
-    console.log(`  avg ms:   ${stats.count ? (stats.totalMs / stats.count).toFixed(1) : 0}`);
-    console.log(`  p95 ms:   ${percentile(sorted, 95).toFixed(1)}`);
-    console.log(`  p99 ms:   ${percentile(sorted, 99).toFixed(1)}`);
-    console.log("");
+    logger.info({
+      scenario: name,
+      requests: stats.count,
+      errors: stats.errors,
+      rps: Number(rps.toFixed(1)),
+      avgMs: stats.count ? Number((stats.totalMs / stats.count).toFixed(1)) : 0,
+      p95Ms: Number(percentile(sorted, 95).toFixed(1)),
+      p99Ms: Number(percentile(sorted, 99).toFixed(1)),
+    }, "Load test scenario complete");
   }
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error({ err: error }, "Load test failed");
   process.exitCode = 1;
 });

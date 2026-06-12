@@ -1,3 +1,5 @@
+import { logger } from "../lib/logger.mjs";
+
 export const AUDIT_QUERIES = [
   {
     name: "events_by_owner",
@@ -103,7 +105,7 @@ async function main() {
   const outDir = new URL("./", import.meta.url);
   const results = [];
 
-  console.log("Running EXPLAIN ANALYZE audit...\n");
+  logger.info("Running EXPLAIN ANALYZE audit");
 
   for (const q of AUDIT_QUERIES) {
     const params = q.params(env);
@@ -128,9 +130,12 @@ async function main() {
 
       results.push(entry);
 
-      console.log(
-        `[${q.name}] ${Math.round(elapsed)}ms | nodes: ${metrics.nodeTypes.join(" → ")} | seq scan: ${usesSeqScan}`
-      );
+      logger.info({
+        query: q.name,
+        elapsedMs: Math.round(elapsed),
+        nodeTypes: metrics.nodeTypes,
+        usesSeqScan,
+      }, "EXPLAIN ANALYZE query complete");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
@@ -139,7 +144,7 @@ async function main() {
         error: message,
       });
 
-      console.error(`[${q.name}] ERROR: ${message}`);
+      logger.error({ query: q.name, message }, "EXPLAIN ANALYZE query failed");
     }
   }
 
@@ -158,10 +163,10 @@ async function main() {
     )
   );
 
-  console.log(`\nReport written to ${reportPath.pathname}`);
+  logger.info({ reportPath: reportPath.pathname }, "EXPLAIN ANALYZE report written");
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error({ err: error }, "EXPLAIN ANALYZE audit failed");
   process.exitCode = 1;
 });

@@ -9,8 +9,11 @@ import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { loginOtpRequestBodySchema } from "@/lib/validators/auth.validator";
 import { isTransientDbError } from "@/lib/neon-db";
+import { logger } from "@/lib/logger-server";
+import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 
 export async function POST(req: Request) {
+  await enterApiLogContextFromRequest(req);
   try {
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) {
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "Login verification failed.";
-    console.error("Login OTP request failed:", message);
+    logger.error({ err: error instanceof Error ? error : undefined, message }, "Login OTP request failed");
     if (isTransientDbError(error)) {
       return NextResponse.json(
         { error: "Database connection failed. Please try again." },

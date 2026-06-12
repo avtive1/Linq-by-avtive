@@ -43,6 +43,7 @@ import { getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 import { toCompactShareUrl } from "@/lib/ui/share-short-link";
+import { logger } from "@/lib/logger-client";
 import {
   useOrgRegistrationStream,
   type RegistrationRequestSummary,
@@ -518,7 +519,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               setPendingRegistrationCount(0);
             }
           } catch (err) {
-            console.error("Could not load moderation queues:", err);
+            logger.error({ err }, "Could not load moderation queues");
           }
         } else {
           setPendingAccessRequests([]);
@@ -528,7 +529,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : String(err);
-        console.error("Event Fetch Error:", message);
+        logger.error({ message }, "Event Fetch Error");
         if (!silentPoll) {
           toast.error("Failed to load event data.");
         }
@@ -649,7 +650,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.success("Card deleted successfully.");
       router.refresh();
     } catch (err) {
-      console.error("Error deleting card:", err);
+      logger.error({ err }, "Error deleting card");
       toast.error("Failed to delete card.");
     }
   };
@@ -743,7 +744,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       router.refresh();
       setIsEditOpen(false);
     } catch (err) {
-      console.error("Error updating event:", err);
+      logger.error({ err }, "Error updating event");
       toast.error("Failed to update campaign.");
     } finally {
       setIsSavingEdit(false);
@@ -778,7 +779,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.success("Campaign description updated.");
       router.refresh();
     } catch (err) {
-      console.error(err);
+      logger.error({ err }, "Event page operation failed");
       toast.error("Failed to update description.");
     } finally {
       setIsSavingCampaignDescription(false);
@@ -880,7 +881,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       router.push(`/dashboard/events/${String(createdEventId)}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to renew event. Please try again.";
-      console.error("Renewal error:", err);
+      logger.error({ err }, "Renewal error");
       toast.error(message);
     } finally {
       setIsRenewing(false);
@@ -930,7 +931,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         router.push(`/dashboard/events/${String(createdId)}`);
       }
     } catch (err) {
-      console.error("Error duplicating event:", err);
+      logger.error({ err }, "Error duplicating event");
       toast.error("Failed to duplicate event.");
     } finally {
       setIsDuplicating(false);
@@ -976,7 +977,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       router.push("/dashboard");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to delete event.";
-      console.error("Error deleting event:", err);
+      logger.error({ err }, "Error deleting event");
       toast.error(message);
     } finally {
       setIsDeleting(false);
@@ -1008,7 +1009,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setIsSponsorsOpen(false);
       router.refresh();
     } catch (err) {
-      console.error(err);
+      logger.error({ err }, "Event page operation failed");
       toast.error("Could not save sponsors. Check your connection and try again.");
     } finally {
       setIsSavingSponsors(false);
@@ -1087,7 +1088,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setIsBrandingOpen(false);
       router.refresh();
     } catch (err) {
-      console.error("Branding save error:", err);
+      logger.error({ err }, "Branding save error");
       toast.error("Could not save card branding.");
     } finally {
       setIsSavingBranding(false);
@@ -1203,7 +1204,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setAccessRequestNote("");
       setAccessRequestAction("manage_event");
     } catch (err) {
-      console.error("Access request error:", err);
+      logger.error({ err }, "Access request error");
       toast.error("Could not create access request.");
     } finally {
       setIsSubmittingAccessRequest(false);
@@ -1266,7 +1267,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         toast.success("Registration rejected.");
       }
     } catch (err) {
-      console.error("Review registration error:", err);
+      logger.error({ err }, "Review registration error");
       toast.error("Could not review registration.");
     } finally {
       setReviewingRegistrationId((current) => (current === requestId ? null : current));
@@ -1288,7 +1289,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setPendingAccessRequests((prev) => prev.filter((r) => r.id !== requestId));
       toast.success(decision === "approve" ? "Access granted." : "Access request rejected.");
     } catch (err) {
-      console.error("Review access request error:", err);
+      logger.error({ err }, "Review access request error");
       toast.error("Could not review request.");
     }
   };
@@ -1305,7 +1306,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       }
       setActiveGrants(payload?.data || []);
     } catch (err) {
-      console.error("Load grants error:", err);
+      logger.error({ err }, "Load grants error");
       toast.error("Could not load active grants.");
     } finally {
       setIsLoadingGrants(false);
@@ -1324,7 +1325,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setActiveGrants((prev) => prev.filter((g) => g.id !== grantId));
       toast.success("Access revoked.");
     } catch (err) {
-      console.error("Revoke grant error:", err);
+      logger.error({ err }, "Revoke grant error");
       toast.error("Could not revoke grant.");
     } finally {
       setRevokingGrantId((current) => (current === grantId ? null : current));

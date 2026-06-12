@@ -7,8 +7,11 @@ import { getAuthSessionPayloadByUserId } from "@/lib/auth-db";
 import { syncOrgMemberAccessGrantsFromTemplate } from "@/lib/organization/sync-org-member-access-grants";
 import { ensureOrganizationMemberInviteColumns } from "@/lib/organization/member-invite-db";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
+import { logger } from "@/lib/logger-server";
+import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 
 export async function POST(req: Request) {
+  await enterApiLogContextFromRequest(req);
   try {
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
@@ -70,7 +73,7 @@ export async function POST(req: Request) {
     try {
       await syncOrgMemberAccessGrantsFromTemplate(row.org_owner_user_id, userId, row.role_label);
     } catch (e: unknown) {
-      console.error("[accept-invite] grant sync failed:", e);
+      logger.error({ err: e instanceof Error ? e : undefined }, "[accept-invite] grant sync failed");
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import ws from "ws";
 import { Pool, neonConfig } from "@neondatabase/serverless";
+import { logger } from "./lib/logger.mjs";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -28,9 +29,9 @@ function normalizeUrl(raw) {
 const pool = new Pool({ connectionString: normalizeUrl(readEnvUrl("DATABASE_URL")) });
 try {
   const result = await pool.query("SELECT 1 AS ok");
-  console.log("WS POOL SUCCESS", result.rows);
+  logger.info({ rows: result.rows }, "WS pool connection test succeeded");
 } catch (error) {
-  console.error("WS POOL FAIL", error.code || "", error.message);
+  logger.error({ code: error.code, err: error }, "WS pool connection test failed");
 } finally {
   await pool.end();
 }

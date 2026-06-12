@@ -4,6 +4,8 @@ import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { createOrganizationOwnerByAdmin } from "@/lib/auth-db";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { sendOrganizationCreatedWelcomeEmail } from "@/lib/notifications/org-emails";
+import { logger } from "@/lib/logger-server";
+import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>) {
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
@@ -16,6 +18,7 @@ function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>
 }
 
 export async function POST(req: Request) {
+  await enterApiLogContextFromRequest(req);
   try {
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
@@ -50,9 +53,9 @@ export async function POST(req: Request) {
         organizationName: data.organizationName,
         temporaryPassword: password,
       });
-      if (!mail.sent) console.warn("[admin/organizations] welcome email skipped:", mail.error);
+      if (!mail.sent) logger.warn({ error: mail.error }, "[admin/organizations] welcome email skipped");
     } catch (e: unknown) {
-      console.error("[admin/organizations] welcome email failed:", e);
+      logger.error({ err: e instanceof Error ? e : undefined }, "[admin/organizations] welcome email failed");
     }
 
     return NextResponse.json({ data }, { status: 201 });

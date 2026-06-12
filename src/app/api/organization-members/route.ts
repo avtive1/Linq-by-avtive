@@ -8,6 +8,8 @@ import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserByEmail, getAdminUserEmailById } from "@/lib/admin";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
+import { logger } from "@/lib/logger-server";
+import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 
 const EDITABLE_ORG_PERMISSIONS = ["create_event", "manage_event", "edit_cards", "delete_cards"] as const;
 
@@ -17,6 +19,7 @@ async function getCurrentUserId() {
 }
 
 export async function GET(req: Request) {
+  await enterApiLogContextFromRequest(req);
   try {
     const ownerId = await getCurrentUserId();
     if (!ownerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -129,6 +132,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  await enterApiLogContextFromRequest(req);
   try {
     const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
@@ -235,7 +239,7 @@ export async function POST(req: Request) {
       try {
         await syncOrgMemberAccessGrantsFromTemplate(ownerId, target.id, nextRoleLabel);
       } catch (e: unknown) {
-        console.error("Grant sync failed:", e);
+        logger.error({ err: e instanceof Error ? e : undefined }, "Grant sync failed");
       }
     }
 
@@ -265,9 +269,9 @@ export async function POST(req: Request) {
         roleLabel: nextRoleLabel,
         acceptInviteUrl,
       });
-      if (!invRes.sent) console.warn("[organization-members] invitee email skipped:", invRes.error);
+      if (!invRes.sent) logger.warn({ error: invRes.error }, "[organization-members] invitee email skipped");
     } catch (e: unknown) {
-      console.error("[organization-members] invitee email failed:", e);
+      logger.error({ err: e instanceof Error ? e : undefined }, "[organization-members] invitee email failed");
     }
 
     try {
@@ -279,10 +283,10 @@ export async function POST(req: Request) {
           memberEmail: normalizedEmail,
           roleLabel: nextRoleLabel,
         });
-        if (!ownRes.sent) console.warn("[organization-members] owner notice skipped:", ownRes.error);
+        if (!ownRes.sent) logger.warn({ error: ownRes.error }, "[organization-members] owner notice skipped");
       }
     } catch (e: unknown) {
-      console.error("[organization-members] owner notice failed:", e);
+      logger.error({ err: e instanceof Error ? e : undefined }, "[organization-members] owner notice failed");
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

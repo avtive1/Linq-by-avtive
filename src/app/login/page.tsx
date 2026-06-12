@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { ArrowLeft } from "lucide-react";
+import * as Sentry from "@sentry/nextjs"; 
 
 export default function LoginPage() {
   const router = useRouter();
@@ -177,6 +178,16 @@ export default function LoginPage() {
             >
               {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
             </Button>
+
+            <button
+              type="button"
+              className="text-sm text-muted hover:text-heading underline underline-offset-4 mx-auto block"
+              onClick={() => {
+              Sentry.captureException(new Error("Manual Sentry test error from login page"));
+              }}
+            >
+              Test Sentry
+            </button>
             {needsOtpStep ? (
               <button
                 type="button"

@@ -1,3 +1,5 @@
+import { logger } from "../lib/logger.mjs";
+
 /**
  * Lists indexes on public tables and flags likely FK columns without indexes.
  */
@@ -38,26 +40,19 @@ async function main() {
     );
   });
 
-  console.log("=== Public indexes ===\n");
-  let currentTable = "";
+  const indexesByTable = {};
   for (const row of indexes) {
     const tablename = String(row.tablename || "");
-    if (tablename !== currentTable) {
-      currentTable = tablename;
-      console.log(`\n[${currentTable}]`);
-    }
-    console.log(`  ${row.indexname}`);
+    if (!indexesByTable[tablename]) indexesByTable[tablename] = [];
+    indexesByTable[tablename].push(String(row.indexname || ""));
   }
 
-  console.log("\n=== FK columns possibly missing dedicated indexes ===\n");
+  logger.info({ indexesByTable, indexCount: indexes.length }, "Public index inventory");
+
   if (missingFkIndexes.length === 0) {
-    console.log("None detected (or covered by composite indexes).");
+    logger.info("No FK columns missing dedicated indexes detected");
   } else {
-    for (const fk of missingFkIndexes) {
-      console.log(
-        `  ${fk.table_name}.${fk.column_name} -> ${fk.foreign_table_name}.${fk.foreign_column_name}`,
-      );
-    }
+    logger.warn({ missingFkIndexes }, "FK columns possibly missing dedicated indexes");
   }
 
   const outPath = new URL("./index-inventory.json", import.meta.url);
@@ -76,10 +71,10 @@ async function main() {
       2,
     ),
   );
-  console.log(`\nInventory written to ${outPath.pathname}`);
+  logger.info({ outPath: outPath.pathname }, "Index inventory written");
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error({ err: error }, "Index audit failed");
   process.exitCode = 1;
 });

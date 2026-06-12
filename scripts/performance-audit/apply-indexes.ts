@@ -1,12 +1,13 @@
 import { ensurePerformanceIndexes } from "../../src/lib/db/ensure-performance-indexes";
+import { logger } from "../lib/logger";
 
 async function main() {
-  console.log("Applying performance indexes (idempotent)...");
+  logger.info("Applying performance indexes (idempotent)...");
   await ensurePerformanceIndexes();
-  console.log("Done.");
+  logger.info("Performance indexes applied");
 }
 
 main().catch((error) => {
-  console.error(error);
+  logger.error({ err: error instanceof Error ? error : undefined }, "Failed to apply performance indexes");
   process.exitCode = 1;
 });

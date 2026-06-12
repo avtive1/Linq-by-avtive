@@ -1,45 +1,41 @@
-export type StructuredLogLevel = "debug" | "info" | "warn" | "error";
+import { logger } from "@/lib/logger-server";
+import { redactRecord } from "@/lib/logger-redact";
 
-function redactRecord(details?: Record<string, unknown>): Record<string, unknown> | undefined {
-  if (!details) return undefined;
-  const clone: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(details)) {
-    if (/token|secret|key|password|plaintext|cipher/i.test(k)) {
-      clone[k] = "[REDACTED]";
-      continue;
-    }
-    clone[k] = v;
-  }
-  return clone;
-}
+export type StructuredLogLevel = "debug" | "info" | "warn" | "error";
 
 type StructuredLogPayload = {
   message: string;
   level?: StructuredLogLevel;
   requestId?: string;
+  userId?: string;
   details?: Record<string, unknown>;
   channel?: string;
 };
 
 /**
- * JSON lines to stdout for production log aggregation (timestamps, severity, optional request ID).
+ * @deprecated Prefer `logger` from `@/lib/logger-server` directly.
+ * Retained for existing security telemetry call sites.
  */
 export function structuredLog(payload: StructuredLogPayload) {
   const level = payload.level ?? "info";
-  const line = JSON.stringify({
-    ts: new Date().toISOString(),
-    level,
-    message: payload.message,
-    channel: payload.channel,
-    requestId: payload.requestId,
-    details: redactRecord(payload.details),
-  });
+  const meta = {
+    ...(payload.requestId ? { requestId: payload.requestId } : {}),
+    ...(payload.userId ? { userId: payload.userId } : {}),
+    ...(payload.channel ? { channel: payload.channel } : {}),
+    ...redactRecord(payload.details),
+  };
 
-  if (level === "error") {
-    console.error(line);
-  } else if (level === "warn") {
-    console.warn(line);
-  } else {
-    console.log(line);
+  switch (level) {
+    case "error":
+      logger.error(meta, payload.message);
+      break;
+    case "warn":
+      logger.warn(meta, payload.message);
+      break;
+    case "debug":
+      logger.debug(meta, payload.message);
+      break;
+    default:
+      logger.info(meta, payload.message);
   }
 }

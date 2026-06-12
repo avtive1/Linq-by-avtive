@@ -14,11 +14,14 @@ import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
 import { cookies } from "next/headers";
 import { buildCardOpenGraphMeta, resolveCardOpenGraphImage } from "@/lib/share/card-open-graph";
+import { logger } from "@/lib/logger-server";
+import { enterServerLogContext } from "@/lib/request-log-context";
 
 /** Card branding comes from DB; avoid stale HTML after org logo updates. */
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  await enterServerLogContext();
   const params = await props.params;
   const id = params.id;
   const defaultTitle = "Attendee Card | AVTIVE";
@@ -62,7 +65,7 @@ export async function generateMetadata(props: { params: Promise<{ id: string }> 
       imageUrl: imageUrl || fallbackImage,
     });
   } catch (err) {
-    console.error("Metadata generation error:", err);
+    logger.error({ err }, "Metadata generation error");
     return { 
       title: defaultTitle,
       description: defaultDesc,
@@ -78,6 +81,7 @@ export default async function CardViewPage(props: {
   params: Promise<{ id: string }>;
   searchParams: Promise<{ share?: string; token?: string; impersonate?: string }>;
 }) {
+  await enterServerLogContext();
   const appendVersionParam = (url: string, version: string) => {
     const cleanUrl = String(url || "").trim();
     if (!cleanUrl || !version) return cleanUrl;
@@ -219,7 +223,7 @@ export default async function CardViewPage(props: {
                   ? String(userData.publicMetadata.organization_logo_url).trim()
                   : "");
             } catch (brandingErr) {
-              console.error("Branding fetch failed:", brandingErr);
+              logger.error({ err: brandingErr instanceof Error ? brandingErr : undefined }, "Branding fetch failed");
             }
           }
         }
@@ -295,7 +299,7 @@ export default async function CardViewPage(props: {
       };
     }
   } catch (err) {
-    console.error("Server-side fetch error:", err);
+    logger.error({ err }, "Server-side fetch error");
     card = null;
   }
 

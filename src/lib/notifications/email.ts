@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { logger } from "@/lib/logger-server";
 
 type AccessRequestEmailInput = {
   to: string;
@@ -46,7 +47,7 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
 
     return { sent: true };
   } catch (error) {
-    console.error("Email send failed:", error);
+    logger.error({ err: error instanceof Error ? error : undefined }, "Email send failed");
     return { sent: false, error: error instanceof Error ? error.message : "Email send failed." };
   }
 }

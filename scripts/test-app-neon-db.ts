@@ -1,12 +1,16 @@
 import { queryNeon } from "../src/lib/neon-db";
+import { logger } from "./lib/logger";
 
 async function main() {
   try {
     const rows = await queryNeon("SELECT 1 AS ok");
-    console.log("APP DB OK", rows);
+    logger.info({ rows }, "APP DB OK");
   } catch (error: unknown) {
     const err = error as { code?: string; message?: string };
-    console.error("APP DB FAIL", err.code || "", err.message || error);
+    logger.error(
+      { code: err.code, message: err.message || String(error) },
+      "APP DB FAIL",
+    );
     process.exitCode = 1;
   }
 }

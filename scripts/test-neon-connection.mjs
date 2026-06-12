@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import { Pool } from "pg";
 import { neon } from "@neondatabase/serverless";
+import { logger } from "./lib/logger.mjs";
 
 function readEnvUrl(key) {
   const env = fs.readFileSync(".env.local", "utf8");
@@ -31,9 +32,12 @@ async function testPg(label, url) {
   });
   try {
     const result = await pool.query("SELECT 1 AS ok");
-    console.log(`${label} pg: SUCCESS`, result.rows);
+    logger.info({ label, rows: result.rows }, "pg connection test succeeded");
   } catch (error) {
-    console.error(`${label} pg: FAIL`, error.code || "", error.message);
+    logger.error(
+      { label, code: error.code, err: error },
+      "pg connection test failed",
+    );
   } finally {
     await pool.end().catch(() => undefined);
   }
@@ -43,9 +47,9 @@ async function testNeonServerless(label, url) {
   const sql = neon(url);
   try {
     const result = await sql`SELECT 1 AS ok`;
-    console.log(`${label} serverless: SUCCESS`, result);
+    logger.info({ label, result }, "serverless connection test succeeded");
   } catch (error) {
-    console.error(`${label} serverless: FAIL`, error.message);
+    logger.error({ label, err: error }, "serverless connection test failed");
   }
 }
 

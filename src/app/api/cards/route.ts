@@ -5,8 +5,11 @@ import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
+import { logger } from "@/lib/logger-server";
+import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 
 export async function POST(req: Request) {
+  await enterApiLogContextFromRequest(req);
   try {
     try {
       await queryNeon(
@@ -14,7 +17,7 @@ export async function POST(req: Request) {
          ADD COLUMN IF NOT EXISTS custom_fields jsonb NOT NULL DEFAULT '{}'::jsonb`,
       );
     } catch (schemaErr) {
-      console.warn("Skipping attendees.custom_fields runtime schema patch:", schemaErr);
+      logger.warn({ err: schemaErr instanceof Error ? schemaErr : undefined }, "Skipping attendees.custom_fields runtime schema patch");
     }
 
     const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);

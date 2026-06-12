@@ -13,6 +13,7 @@ import { getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
+import { logger } from "@/lib/logger-client";
 import {
   dashboardContentInset,
   dashboardMainTransparent,
@@ -611,7 +612,7 @@ function DashboardContent() {
           onboardingIntentValue: onboardingIntent,
         });
       } catch (bootstrapErr) {
-        console.error("Dashboard bootstrap error:", bootstrapErr);
+        logger.error({ err: bootstrapErr }, "Dashboard bootstrap error");
         if (!isMounted) return;
         setBootstrapError("Failed to initialize dashboard. Please refresh.");
         setIsCheckingAuth(false);
@@ -689,7 +690,7 @@ function DashboardContent() {
       setTopRoles(rankedRoles);
 
     } catch (err: unknown) {
-      console.error("Error fetching dashboard data:", err);
+      logger.error({ err }, "Error fetching dashboard data");
       setTopRoles([]);
       toast.error("Could not load data. Please refresh and try again.");
     }
@@ -842,7 +843,7 @@ function DashboardContent() {
       // Hard redirect to clear next.js client cache immediately and feel responsive
       window.location.href = "/login";
     } catch (err) {
-      console.error("Logout error", err);
+      logger.error({ err }, "Logout error");
       setIsLoggingOut(false);
     }
   };
@@ -892,7 +893,7 @@ function DashboardContent() {
           if (!uploadRes.ok || !uploadPayload?.data?.url) throw new Error(uploadPayload?.error || "Logo upload failed.");
           logoUrl = String(uploadPayload.data.url);
         } catch (uploadErr) {
-          console.error("Logo upload failed:", uploadErr);
+          logger.error({ err: uploadErr }, "Logo upload failed");
           toast.error("Logo upload failed, but creating event anyway...");
         }
       }
@@ -922,7 +923,7 @@ function DashboardContent() {
       setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
       fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId));
     } catch (err: unknown) {
-      console.error(err);
+      logger.error({ err }, "Dashboard operation failed");
       toast.error("Failed to create event. Please try again.");
     } finally {
       setIsSubmittingEvent(false);
@@ -970,7 +971,7 @@ function DashboardContent() {
             logoUrl = String(uploadPayload.data.url);
           }
         } catch (uploadErr) {
-          console.error("Logo upload failed:", uploadErr);
+          logger.error({ err: uploadErr }, "Logo upload failed");
         }
       }
 
@@ -993,7 +994,7 @@ function DashboardContent() {
       setIsUsernameModalOpen(false);
       toast.success("Profile updated.");
     } catch (err) {
-      console.error("Username update failed:", err);
+      logger.error({ err }, "Username update failed");
       setUsernameError("Could not update username.");
     } finally {
       setIsSavingUsername(false);

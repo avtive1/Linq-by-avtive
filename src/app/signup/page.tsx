@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { normalizeOrganizationName } from "@/lib/organization/normalize";
+import { logger } from "@/lib/logger-client";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -160,7 +161,7 @@ export default function SignupPage() {
       }
     } catch (err) {
       if ((err as { name?: string })?.name === "AbortError") return;
-      console.error("Username check error:", err);
+      logger.error({ err }, "Username check error");
       setUsernameStatus(null);
     }
   };

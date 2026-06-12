@@ -2,6 +2,7 @@ import {
   neon,
   type NeonQueryFunction,
 } from "@neondatabase/serverless";
+import { logger } from "@/lib/logger-server";
 
 /**
  * Singleton Neon HTTP client.
@@ -71,7 +72,7 @@ export function getConnectionString(): string {
   }
 
   if (poolConfig.warnOnDirectUrl && !isPoolerUrl(value)) {
-    console.warn(
+    logger.warn(
       "[db] DATABASE_URL is not a Neon pooler URL. Use the `-pooler` endpoint in production to avoid connection exhaustion.",
     );
   }

@@ -4,6 +4,7 @@ import React, { useCallback, useRef, useState } from "react";
 import ReactCrop, { type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check } from "lucide-react";
+import { logger } from "@/lib/logger-client";
 import { Button } from "./ui";
 
 function getCroppedImageDataUrl(image: HTMLImageElement, pixelCrop: PixelCrop): string {
@@ -72,7 +73,7 @@ export function FreeformImageCropModal({
       onCropComplete(dataUrl);
       onClose();
     } catch (e) {
-      console.error(e);
+      logger.error({ err: e instanceof Error ? e : undefined }, "Freeform image crop failed");
     } finally {
       setLoading(false);
     }

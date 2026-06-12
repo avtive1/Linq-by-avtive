@@ -20,6 +20,7 @@ import {
 } from "@/lib/registration-form";
 import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
 import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
+import { logger } from "@/lib/logger-client";
 
 const URL_OR_QUERY_PATTERN = /(https?:\/\/|www\.|[a-z0-9-]+\.[a-z]{2,}(\/|$)|[?=&])/i;
 
@@ -321,14 +322,14 @@ function NewCardForm() {
             } else {
               const reason = String(previewPayload?.error || "Preview upload failed.");
               if (previewRes.status === 403) {
-                console.warn("Preview upload skipped due to folder permission:", reason);
+                logger.warn({ reason }, "Preview upload skipped due to folder permission");
               } else {
-                console.warn("Preview upload skipped:", reason);
+                logger.warn({ reason }, "Preview upload skipped");
               }
             }
           }
         } catch (previewErr) {
-          console.warn("Preview generation skipped:", previewErr);
+          logger.warn({ err: previewErr instanceof Error ? previewErr : undefined }, "Preview generation skipped");
         }
       }
 
@@ -421,7 +422,7 @@ function NewCardForm() {
             await uploadVertical(verticalFrontRef.current, "vertical-front");
             await uploadVertical(verticalBackRef.current, "vertical-back");
           } catch (verticalErr) {
-            console.warn("Vertical preview upload skipped:", verticalErr);
+            logger.warn({ err: verticalErr instanceof Error ? verticalErr : undefined }, "Vertical preview upload skipped");
           }
           toast.success("Attendee card saved successfully!");
           const nextUrl = createdShareToken
@@ -456,7 +457,7 @@ function NewCardForm() {
       }
     } catch (err: unknown) {
        const message = err instanceof Error ? err.message : "An unexpected error occurred.";
-       console.error("Error creating card:", err);
+       logger.error({ err }, "Error creating card");
        toast.error(message);
     } finally {
       setLoading(false);

@@ -11,8 +11,9 @@ import { CustomColorPicker } from "@/components/CustomColorPicker";
 import { toast } from "sonner";
 import { parseEventSponsors } from "@/lib/sponsors";
 import type { SponsorEntry } from "@/types/card";
-import { logSecurityEvent } from "@/lib/security/telemetry";
+import { logSecurityEvent } from "@/lib/security/telemetry-client";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { logger } from "@/lib/logger-client";
 import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
 import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 
@@ -413,7 +414,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             }
             return String(uploadPayload.data.url);
           } catch (verticalCaptureErr) {
-            console.warn(`Preview generation/upload skipped (${suffix}):`, verticalCaptureErr);
+            logger.warn({ err: verticalCaptureErr instanceof Error ? verticalCaptureErr : undefined, suffix }, "Preview generation/upload skipped");
           }
         };
         const horizontalUrl = await uploadPreview(cardRef.current, "horizontal");
@@ -430,7 +431,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           });
         }
       } catch (verticalErr) {
-        console.warn("Preview upload skipped:", verticalErr);
+        logger.warn({ err: verticalErr instanceof Error ? verticalErr : undefined }, "Preview upload skipped");
       }
       toast.success("Card updated successfully.");
       setExistingCustomFields(nextCustomFields);

@@ -10,6 +10,7 @@ import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
 import { openLinkedInCardShare } from "@/lib/share/linkedin-card-share";
+import { logger } from "@/lib/logger-client";
 
 export default function CardView({
   card,
@@ -101,7 +102,7 @@ export default function CardView({
       link.click();
       toast.success("Card downloaded successfully!");
     } catch (err) {
-      console.error("Failed to download card:", err);
+      logger.error({ err }, "Failed to download card");
       toast.error("Failed to generate download. Please try again.");
     } finally {
       setIsDownloading(false);
@@ -139,7 +140,7 @@ export default function CardView({
       doc.save(filename);
       toast.success("Post PDF downloaded successfully!");
     } catch (err) {
-      console.error("Failed to download post PDF:", err);
+      logger.error({ err }, "Failed to download post PDF");
       toast.error("Failed to generate post PDF. Please try again.");
     } finally {
       setIsDownloading(false);
@@ -214,7 +215,7 @@ export default function CardView({
       doc.save(filename);
       toast.success("Badge PDF downloaded successfully!");
     } catch (err) {
-      console.error("Failed to download badge PDF:", err);
+      logger.error({ err }, "Failed to download badge PDF");
       toast.error("Failed to generate badge PDF. Please try again.");
     } finally {
       setIsDownloading(false);
@@ -239,7 +240,7 @@ export default function CardView({
       URL.revokeObjectURL(link.href);
       toast.success("Badge ZIP downloaded successfully!");
     } catch (err) {
-      console.error("Failed to download badge ZIP:", err);
+      logger.error({ err }, "Failed to download badge ZIP");
       toast.error("Failed to generate badge ZIP. Please try again.");
     } finally {
       setIsDownloading(false);

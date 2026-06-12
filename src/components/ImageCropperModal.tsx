@@ -3,6 +3,7 @@ import React, { useState, useCallback, useId } from "react";
 import Cropper, { Area, Point } from "react-easy-crop";
 import { X, ZoomIn, ZoomOut, Check } from "lucide-react";
 import { Button } from "./ui";
+import { logger } from "@/lib/logger-client";
 
 interface ImageCropperModalProps {
   image: string;
@@ -91,7 +92,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
       onCropComplete(croppedImage);
       onClose();
     } catch (e) {
-      console.error(e);
+      logger.error({ err: e instanceof Error ? e : undefined }, "Image crop failed");
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,11 @@
 import { Pool } from "pg";
 import { decryptAttendeeSensitiveFields } from "../src/lib/security/attendee-sensitive";
+import { logger } from "./lib/logger";
 
 const connectionString = process.env.DATABASE_URL_DIRECT || process.env.DATABASE_URL;
 
 if (!connectionString) {
-  console.error("Missing DATABASE_URL/DATABASE_URL_DIRECT.");
+  logger.error("Missing DATABASE_URL/DATABASE_URL_DIRECT.");
   process.exit(1);
 }
 
@@ -38,18 +39,18 @@ async function run() {
         await pool.query(`UPDATE public.attendees SET ${setSql} WHERE id = $${keys.length + 1}`, values);
       } catch (upErr) {
         const message = upErr instanceof Error ? upErr.message : "update_failed";
-        console.error(`failed id=${row.id}`, message);
+        logger.error({ attendeeId: row.id, message }, "Attendee re-encryption update failed");
         continue;
       }
       updated++;
     }
     page++;
   }
-  console.log(`Re-encryption complete. updated=${updated}`);
+  logger.info({ updated }, "Re-encryption complete");
 }
 
 run().catch((err) => {
-  console.error(err);
+  logger.error({ err }, "Re-encryption script failed");
   process.exit(1);
 }).finally(async () => {
   await pool.end();

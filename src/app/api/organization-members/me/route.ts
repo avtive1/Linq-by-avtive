@@ -4,8 +4,11 @@ import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getServerAuthSession } from "@/auth";
 import { syncOrgMemberAccessGrantsFromTemplate } from "@/lib/organization/sync-org-member-access-grants";
+import { logger } from "@/lib/logger-server";
+import { enterServerLogContext } from "@/lib/request-log-context";
 
 export async function GET() {
+  await enterServerLogContext();
   try {
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
@@ -61,7 +64,7 @@ export async function GET() {
           try {
             await syncOrgMemberAccessGrantsFromTemplate(emailMatch.org_owner_user_id, userId, emailMatch.role_label);
           } catch (e: unknown) {
-            console.error("[organization-members/me] grant sync after lazy-link failed:", e);
+            logger.error({ err: e instanceof Error ? e : undefined }, "[organization-members/me] grant sync after lazy-link failed");
           }
         }
       }
