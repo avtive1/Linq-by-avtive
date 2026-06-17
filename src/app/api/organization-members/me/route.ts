@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getServerAuthSession } from "@/auth";
 import { syncOrgMemberAccessGrantsFromTemplate } from "@/lib/organization/sync-org-member-access-grants";
@@ -55,10 +56,11 @@ export async function GET() {
         data = emailMatch;
         // Lazy link: update the UUID if it's missing
         if (!emailMatch.member_user_id) {
-          await updateRows(
+          await updateTenantRows(
             "organization_members",
             { member_user_id: userId },
             { id: emailMatch.id },
+            emailMatch.org_owner_user_id,
             "id",
           );
           try {

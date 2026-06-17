@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { logger } from "@/lib/logger-server";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeonAsSystem, queryNeonOneAsSystem } from "@/lib/neon-db";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
 
 export type AuthUserRecord = {
@@ -31,7 +31,7 @@ function getArgon2() {
 
 export async function ensureAuthSchema() {
   if (schemaEnsured) return;
-  await queryNeon(
+  await queryNeonAsSystem(
     `CREATE TABLE IF NOT EXISTS public.auth_users (
       user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
       email text UNIQUE NOT NULL,
@@ -42,48 +42,48 @@ export async function ensureAuthSchema() {
       updated_at timestamptz NOT NULL DEFAULT now()
     )`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `CREATE INDEX IF NOT EXISTS auth_users_email_idx
      ON public.auth_users (email)`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS clerk_user_id text`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `CREATE UNIQUE INDEX IF NOT EXISTS auth_users_clerk_user_id_uidx
      ON public.auth_users (clerk_user_id)
      WHERE clerk_user_id IS NOT NULL`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.auth_users ALTER COLUMN password_hash DROP NOT NULL`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS email_normalized text`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `UPDATE public.auth_users
      SET email_normalized = lower(email)
      WHERE email_normalized IS NULL
         OR email_normalized <> lower(email)`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `CREATE INDEX IF NOT EXISTS idx_auth_users_email_norm
      ON public.auth_users (email_normalized)`,
   );
   // Older Neon DBs may lack these columns; signup + cards expect them.
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS organization_logo_url text`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_profile_setup_completed_at timestamptz`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
   );
-  await queryNeon(
+  await queryNeonAsSystem(
     `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`,
   );
   schemaEnsured = true;
@@ -111,7 +111,7 @@ async function ensureBootstrapSuperAdmin() {
       String(process.env.SUPERADMIN_USERNAME || email),
     );
 
-    const existingAuth = await queryNeonOne<{ user_id: string }>(
+    const existingAuth = await queryNeonOneAsSystem<{ user_id: string }>(
       `SELECT user_id
        FROM public.auth_users
        WHERE email_normalized = $1
@@ -122,7 +122,7 @@ async function ensureBootstrapSuperAdmin() {
     let userId = existingAuth?.user_id || "";
     if (!userId) userId = crypto.randomUUID();
 
-    const usernameTakenByOther = await queryNeonOne<{ id: string }>(
+    const usernameTakenByOther = await queryNeonOneAsSystem<{ id: string }>(
       `SELECT id
        FROM public.profiles
        WHERE username = $1
@@ -137,12 +137,12 @@ async function ensureBootstrapSuperAdmin() {
     const argon2 = await getArgon2();
     const passwordHash = await argon2.hash(password);
 
-    const existingProfile = await queryNeonOne<{ id: string }>(
+    const existingProfile = await queryNeonOneAsSystem<{ id: string }>(
       `SELECT id FROM public.profiles WHERE id = $1 LIMIT 1`,
       [userId],
     );
     if (existingProfile?.id) {
-      await queryNeon(
+      await queryNeonAsSystem(
         `UPDATE public.profiles
          SET role = 'admin',
              username = $1,
@@ -152,7 +152,7 @@ async function ensureBootstrapSuperAdmin() {
         [username, organizationName, organizationKey || null, userId],
       );
     } else {
-      await queryNeon(
+      await queryNeonAsSystem(
         `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
          VALUES ($1, $2, $3, $4, 'admin', now())`,
         [userId, username, organizationName, organizationKey || null],
@@ -160,7 +160,7 @@ async function ensureBootstrapSuperAdmin() {
     }
 
     if (existingAuth?.user_id) {
-      await queryNeon(
+      await queryNeonAsSystem(
         `UPDATE public.auth_users
          SET email = $1,
              email_normalized = $1,
@@ -170,7 +170,7 @@ async function ensureBootstrapSuperAdmin() {
         [email, passwordHash, userId],
       );
     } else {
-      await queryNeon(
+      await queryNeonAsSystem(
         `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
          VALUES ($1, $2, $2, $3, now(), now())`,
         [userId, email, passwordHash],
@@ -178,7 +178,7 @@ async function ensureBootstrapSuperAdmin() {
     }
 
     if (organizationKey) {
-      await queryNeon(
+      await queryNeonAsSystem(
         `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
          VALUES ($1, $2, $3, now(), now())
          ON CONFLICT (organization_name_key)
@@ -198,7 +198,7 @@ export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord 
   await ensureAuthSchema();
   await ensureBootstrapSuperAdmin();
   const normalizedEmail = normalizeAuthEmail(email);
-  return queryNeonOne<AuthUserRecord>(
+  return queryNeonOneAsSystem<AuthUserRecord>(
     `SELECT au.user_id, au.email, au.password_hash, p.role, p.username, p.organization_name
      FROM public.auth_users au
      JOIN public.profiles p ON p.id = au.user_id
@@ -218,7 +218,7 @@ export async function verifyPassword(email: string, password: string): Promise<A
 
 export async function getInternalUserIdByClerkUserId(clerkUserId: string): Promise<string | null> {
   await ensureAuthSchema();
-  const row = await queryNeonOne<{ user_id: string }>(
+  const row = await queryNeonOneAsSystem<{ user_id: string }>(
     `SELECT user_id FROM public.auth_users WHERE clerk_user_id = $1 LIMIT 1`,
     [clerkUserId],
   );
@@ -237,13 +237,13 @@ export async function linkAuthUserToClerkUser(clerkUserId: string, email: string
   const already = await getInternalUserIdByClerkUserId(clerkUserId);
   if (already) return already;
 
-  const byEmail = await queryNeonOne<{ user_id: string }>(
+  const byEmail = await queryNeonOneAsSystem<{ user_id: string }>(
     `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [normalizedEmail],
   );
   if (!byEmail?.user_id) return null;
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `UPDATE public.auth_users SET clerk_user_id = $1, updated_at = now() WHERE user_id = $2`,
     [clerkUserId, byEmail.user_id],
   );
@@ -258,7 +258,7 @@ export async function getAuthSessionPayloadByUserId(userId: string): Promise<{
   organizationName: string | null;
 } | null> {
   await ensureAuthSchema();
-  const row = await queryNeonOne<{
+  const row = await queryNeonOneAsSystem<{
     userId: string;
     email: string;
     username: string | null;
@@ -302,7 +302,7 @@ export async function registerUser(input: {
   const organizationLogoUrl = String(input.organizationLogoUrl || "").trim();
   const linkedin = String(input.linkedin || "").trim();
 
-  const existingEmail = await queryNeonOne<{ user_id: string }>(
+  const existingEmail = await queryNeonOneAsSystem<{ user_id: string }>(
     `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [email],
   );
@@ -310,7 +310,7 @@ export async function registerUser(input: {
     throw new Error("An account with this email already exists.");
   }
 
-  const existingUsername = await queryNeonOne<{ id: string }>(
+  const existingUsername = await queryNeonOneAsSystem<{ id: string }>(
     `SELECT id FROM public.profiles WHERE username = $1 LIMIT 1`,
     [username],
   );
@@ -322,20 +322,20 @@ export async function registerUser(input: {
   const argon2 = await getArgon2();
   const hash = await argon2.hash(input.password);
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
      VALUES ($1, $2, $3, $4, 'user', now())`,
     [userId, username, organizationName, organizationKey],
   );
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
      VALUES ($1, $2, $2, $3, now(), now())`,
     [userId, email, hash],
   );
 
   if (organizationKey) {
-    const existingOrg = await queryNeonOne<{ id: string; owner_user_id: string | null }>(
+    const existingOrg = await queryNeonOneAsSystem<{ id: string; owner_user_id: string | null }>(
       `SELECT id, owner_user_id
        FROM public.organizations
        WHERE organization_name_key = $1
@@ -350,7 +350,7 @@ export async function registerUser(input: {
   // Optional column support: persist uploaded organization logo if schema has organization_logo_url.
   if (organizationLogoUrl) {
     try {
-      await queryNeon(
+      await queryNeonAsSystem(
         `UPDATE public.profiles
          SET organization_logo_url = $1, updated_at = now()
          WHERE id = $2`,
@@ -358,7 +358,7 @@ export async function registerUser(input: {
       );
     } catch {
       try {
-        await queryNeon(
+        await queryNeonAsSystem(
           `UPDATE public.profiles SET organization_logo_url = $1 WHERE id = $2`,
           [organizationLogoUrl, userId],
         );
@@ -369,7 +369,7 @@ export async function registerUser(input: {
   }
 
   if (linkedin) {
-    await queryNeon(
+    await queryNeonAsSystem(
       `UPDATE public.profiles SET updated_at = now() WHERE id = $1`,
       [userId],
     );
@@ -386,7 +386,7 @@ export async function createOrganizationOwnerByAdmin(input: {
   await ensureAuthSchema();
   const email = normalizeAuthEmail(input.email);
   if (!email) throw new Error("Email is required.");
-  const existingEmail = await queryNeonOne<{ user_id: string }>(
+  const existingEmail = await queryNeonOneAsSystem<{ user_id: string }>(
     `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [email],
   );
@@ -403,7 +403,7 @@ export async function createOrganizationOwnerByAdmin(input: {
     throw new Error("Invalid organization name.");
   }
 
-  const existingOrg = await queryNeonOne<{ id: string }>(
+  const existingOrg = await queryNeonOneAsSystem<{ id: string }>(
     `SELECT id FROM public.organizations WHERE organization_name_key = $1 LIMIT 1`,
     [organizationKey],
   );
@@ -418,7 +418,7 @@ export async function createOrganizationOwnerByAdmin(input: {
     (email.split("@")[0] || "user").toLowerCase().replace(/[^a-z0-9_.]/g, "").slice(0, 18) || "user";
   let pendingUsername = `${requestedBaseUsername}_${userId.replace(/-/g, "").slice(0, 8)}`;
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    const existingUsername = await queryNeonOne<{ id: string }>(
+    const existingUsername = await queryNeonOneAsSystem<{ id: string }>(
       `SELECT id FROM public.profiles WHERE username = $1 LIMIT 1`,
       [pendingUsername],
     );
@@ -426,19 +426,19 @@ export async function createOrganizationOwnerByAdmin(input: {
     pendingUsername = `${requestedBaseUsername}_${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
   }
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
      VALUES ($1, $2, $3, $4, 'user', now())`,
     [userId, pendingUsername, organizationName, organizationKey],
   );
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
      VALUES ($1, $2, $2, $3, now(), now())`,
     [userId, email, hash],
   );
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
      VALUES ($1, $2, $3, now(), now())`,
     [organizationName, organizationKey, userId],
@@ -453,7 +453,7 @@ function sha256(value: string) {
 
 export async function createPasswordResetToken(email: string): Promise<string | null> {
   await ensureAuthSchema();
-  const user = await queryNeonOne<{ user_id: string }>(
+  const user = await queryNeonOneAsSystem<{ user_id: string }>(
     `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
     [normalizeAuthEmail(email)],
   );
@@ -463,7 +463,7 @@ export async function createPasswordResetToken(email: string): Promise<string | 
   const tokenHash = sha256(token);
   const expires = new Date(Date.now() + 1000 * 60 * 30).toISOString();
 
-  await queryNeon(
+  await queryNeonAsSystem(
     `UPDATE public.auth_users
      SET reset_token_hash = $1, reset_token_expires_at = $2, updated_at = now()
      WHERE user_id = $3`,
@@ -476,7 +476,7 @@ export async function createPasswordResetToken(email: string): Promise<string | 
 export async function resetPasswordWithToken(token: string, newPassword: string): Promise<boolean> {
   await ensureAuthSchema();
   const tokenHash = sha256(token);
-  const row = await queryNeonOne<{ user_id: string }>(
+  const row = await queryNeonOneAsSystem<{ user_id: string }>(
     `SELECT user_id
      FROM public.auth_users
      WHERE reset_token_hash = $1
@@ -489,7 +489,7 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
 
   const argon2 = await getArgon2();
   const hash = await argon2.hash(newPassword);
-  await queryNeon(
+  await queryNeonAsSystem(
     `UPDATE public.auth_users
      SET password_hash = $1,
          reset_token_hash = NULL,

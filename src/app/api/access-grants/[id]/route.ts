@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { updateAccessGrantForTenant } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -89,11 +90,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
       );
     }
 
-    // Keep direct id revoke for backward compatibility in case older rows do not match the grouped predicate.
-    await updateRows(
-      "access_grants",
+    await updateAccessGrantForTenant(
+      id,
+      ownerIdForScope,
       { status: "revoked", updated_at: updatedAt },
-      { id },
       "id",
     );
 

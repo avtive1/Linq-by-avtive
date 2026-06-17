@@ -5,12 +5,15 @@ import {
   encryptAttendeeSensitiveFields,
 } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
-import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { queryNeon, queryNeonAsSystem, queryNeonOne, queryNeonOneAsSystem, runWithRlsBypassAsync } from "@/lib/neon-db";
+import { deleteAttendeeForTenant, updateAttendeeForTenant } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { isApprovedGuestCard } from "@/lib/services/registration.service";
+import { resolveOrgTenantIdForUser } from "@/lib/tenant/resolve";
+import { withApiTenantContext } from "@/lib/tenant/api-context";
 
 const APPROVED_GUEST_LOCKED_FIELDS = ["name", "company", "card_email"] as const;
 
@@ -56,7 +59,7 @@ async function getAuthedSessionAndPermission(
       const tokenCanEdit = hasEditScope;
       const tokenAllowed = mode === "read" ? tokenCanRead : tokenCanEdit;
       if (tokenCardId === id && tokenAllowed) {
-        return { userId: String(verified.payload.sub || "").trim() || "token-user", tokenAccess: true as const };
+        return { userId: String(verified.payload.sub || "").trim() || "token-user", tokenAccess: true as const, tenantId: undefined };
       }
     } catch {
       // Fall through to normal session checks.
@@ -67,7 +70,7 @@ async function getAuthedSessionAndPermission(
   const userId = await getServerUserIdFromCookies(cookieStore);
   if (!userId) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
 
-  const attendee = await queryNeonOne<{ event_id: string | null; user_id: string | null }>(
+  const attendee = await queryNeonOneAsSystem<{ event_id: string | null; user_id: string | null }>(
     `SELECT event_id, user_id FROM public.attendees WHERE id = $1`,
     [id],
   );
@@ -79,14 +82,14 @@ async function getAuthedSessionAndPermission(
 
   let canEdit = false;
   if (attendee.event_id) {
-    const event = await queryNeonOne<{ user_id: string | null }>(
+    const event = await queryNeonOneAsSystem<{ user_id: string | null }>(
       `SELECT user_id FROM public.events WHERE id = $1`,
       [attendee.event_id],
     );
     if (event?.user_id === userId) {
       canEdit = true;
     } else {
-      const membership = await queryNeonOne<{ id: string }>(
+      const membership = await queryNeonOneAsSystem<{ id: string }>(
         `SELECT id
          FROM public.organization_members
          WHERE member_user_id = $1
@@ -96,7 +99,7 @@ async function getAuthedSessionAndPermission(
         [userId, String(event?.user_id || "")],
       );
       if (membership?.id) {
-        const grants = await queryNeon<{ permission: string }>(
+        const grants = await queryNeonAsSystem<{ permission: string }>(
           `SELECT permission
            FROM public.access_grants
            WHERE event_id = $1
@@ -117,7 +120,7 @@ async function getAuthedSessionAndPermission(
   if (!canEdit) {
     return { error: NextResponse.json({ error: "Forbidden: You do not have permission to edit this card" }, { status: 403 }) };
   }
-  return { userId, tokenAccess: false as const };
+  return { userId, tokenAccess: false as const, tenantId: await resolveOrgTenantIdForUser(userId) };
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -127,22 +130,38 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const auth = await getAuthedSessionAndPermission(_, id, "read");
     if (auth.error) return auth.error;
 
-    const attendee = await queryNeonOne<Record<string, unknown>>(
-      `SELECT * FROM public.attendees WHERE id = $1`,
-      [id],
-    );
-    const error = attendee ? null : { message: "Not found" };
-    if (error || !attendee) {
-      return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
+    const loadCard = async () => {
+      const attendee = await queryNeonOne<Record<string, unknown>>(
+        `SELECT * FROM public.attendees WHERE id = $1`,
+        [id],
+      );
+      const error = attendee ? null : { message: "Not found" };
+      if (error || !attendee) {
+        return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
+      }
+
+      const { row: secureRecord, migrationPatch } = decryptAttendeeSensitiveFields(attendee);
+      if (Object.keys(migrationPatch).length > 0) {
+        if (auth.tenantId) {
+          await updateAttendeeForTenant(id, auth.tenantId, migrationPatch, "id");
+        } else {
+          await runWithRlsBypassAsync(async () => {
+            const { updateRows } = await import("@/lib/neon-db");
+            await updateRows("attendees", migrationPatch, { id }, "id");
+          });
+        }
+      }
+
+      const identityLocked = await isApprovedGuestCard(id);
+      return NextResponse.json({ data: secureRecord, identityLocked });
+    };
+
+    if (auth.tokenAccess) {
+      return runWithRlsBypassAsync(loadCard);
     }
 
-    const { row: secureRecord, migrationPatch } = decryptAttendeeSensitiveFields(attendee);
-    if (Object.keys(migrationPatch).length > 0) {
-      await updateRows("attendees", migrationPatch, { id }, "id");
-    }
-
-    const identityLocked = await isApprovedGuestCard(id);
-    return NextResponse.json({ data: secureRecord, identityLocked });
+    const cookieStore = await cookies();
+    return withApiTenantContext(cookieStore, loadCard);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -162,39 +181,52 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (auth.error) return auth.error;
     const userId = auth.userId!;
 
-    const existingAttendee = await queryNeonOne<Record<string, unknown>>(
-      `SELECT * FROM public.attendees WHERE id = $1`,
-      [id],
-    );
-    if (!existingAttendee) {
-      return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
+    const applyPatch = async () => {
+      const existingAttendee = await queryNeonOne<Record<string, unknown>>(
+        `SELECT * FROM public.attendees WHERE id = $1`,
+        [id],
+      );
+      if (!existingAttendee) {
+        return NextResponse.json({ error: "Attendee not found" }, { status: 404 });
+      }
+      const { row: existingSecure } = decryptAttendeeSensitiveFields(existingAttendee);
+
+      let permittedPayload = auth.tokenAccess
+        ? stripBrandingMutations(validation.payload as Record<string, unknown>)
+        : (validation.payload as Record<string, unknown>);
+
+      if (await isApprovedGuestCard(id)) {
+        permittedPayload = preserveApprovedGuestIdentityFields(permittedPayload, existingSecure);
+      }
+
+      const securedPayload = encryptAttendeeSensitiveFields(permittedPayload);
+      const data = auth.tenantId
+        ? await updateAttendeeForTenant(id, auth.tenantId, securedPayload)
+        : await (async () => {
+            const { updateRows } = await import("@/lib/neon-db");
+            return updateRows("attendees", securedPayload, { id });
+          })();
+      const updateError = data.length ? null : { message: "No row updated" };
+
+      if (updateError) {
+        logSecurityEvent({
+          event: "security.attendees.api_patch_failed",
+          level: "error",
+          actorId: userId,
+          resourceId: id,
+          details: { reason: updateError.message },
+        });
+        return NextResponse.json({ error: updateError.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ success: true, data });
+    };
+
+    if (auth.tokenAccess) {
+      return runWithRlsBypassAsync(applyPatch);
     }
-    const { row: existingSecure } = decryptAttendeeSensitiveFields(existingAttendee);
-
-    let permittedPayload = auth.tokenAccess
-      ? stripBrandingMutations(validation.payload as Record<string, unknown>)
-      : (validation.payload as Record<string, unknown>);
-
-    if (await isApprovedGuestCard(id)) {
-      permittedPayload = preserveApprovedGuestIdentityFields(permittedPayload, existingSecure);
-    }
-
-    const securedPayload = encryptAttendeeSensitiveFields(permittedPayload);
-    const data = await updateRows("attendees", securedPayload, { id });
-    const updateError = data.length ? null : { message: "No row updated" };
-
-    if (updateError) {
-      logSecurityEvent({
-        event: "security.attendees.api_patch_failed",
-        level: "error",
-        actorId: userId,
-        resourceId: id,
-        details: { reason: updateError.message },
-      });
-      return NextResponse.json({ error: updateError.message }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, data });
+    const cookieStore = await cookies();
+    return withApiTenantContext(cookieStore, applyPatch);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -208,16 +240,29 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     const auth = await getAuthedSessionAndPermission(_, id, "delete");
     if (auth.error) return auth.error;
 
-    const deleted = await queryNeon<{ id: string }>(
-      `DELETE FROM public.attendees WHERE id = $1 RETURNING id`,
-      [id],
-    );
+    const performDelete = async () => {
+      const deleted = auth.tenantId
+        ? await deleteAttendeeForTenant(id, auth.tenantId)
+        : await runWithRlsBypassAsync(async () => {
+            const rows = await queryNeon<{ id: string }>(
+              `DELETE FROM public.attendees WHERE id = $1 RETURNING id`,
+              [id],
+            );
+            return rows.length > 0;
+          });
 
-    if (!deleted.length) {
-      return NextResponse.json({ error: "Attendee not found." }, { status: 404 });
+      if (!deleted) {
+        return NextResponse.json({ error: "Attendee not found." }, { status: 404 });
+      }
+
+      return NextResponse.json({ success: true }, { status: 200 });
+    };
+
+    if (auth.tokenAccess) {
+      return runWithRlsBypassAsync(performDelete);
     }
-
-    return NextResponse.json({ success: true }, { status: 200 });
+    const cookieStore = await cookies();
+    return withApiTenantContext(cookieStore, performDelete);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: message }, { status: 500 });

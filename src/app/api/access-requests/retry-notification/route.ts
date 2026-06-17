@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
-import { queryNeonOne, updateRows } from "@/lib/neon-db";
+import { queryNeonOne } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserEmailById } from "@/lib/admin";
 
@@ -60,18 +61,20 @@ export async function POST(req: Request) {
           `Please review this request in your dashboard.`,
       });
       if (!emailResult.sent) {
-        await updateRows(
+        await updateTenantRows(
           "access_requests",
           { notification_error: emailResult.error || "Retry failed." },
           { id: requestId },
+          requestRow.owner_user_id,
           "id",
         );
         return NextResponse.json({ error: emailResult.error || "Retry failed." }, { status: 500 });
       }
-      await updateRows(
+      await updateTenantRows(
         "access_requests",
         { owner_notified_at: new Date().toISOString(), notification_error: null },
         { id: requestId },
+        requestRow.owner_user_id,
         "id",
       );
       return NextResponse.json({ success: true }, { status: 200 });
@@ -89,18 +92,20 @@ export async function POST(req: Request) {
         `Check your dashboard for updated capabilities.`,
     });
     if (!emailResult.sent) {
-      await updateRows(
+      await updateTenantRows(
         "access_requests",
         { notification_error: emailResult.error || "Retry failed." },
         { id: requestId },
+        requestRow.owner_user_id,
         "id",
       );
       return NextResponse.json({ error: emailResult.error || "Retry failed." }, { status: 500 });
     }
-    await updateRows(
+    await updateTenantRows(
       "access_requests",
       { requester_notified_at: new Date().toISOString(), notification_error: null },
       { id: requestId },
+      requestRow.owner_user_id,
       "id",
     );
     return NextResponse.json({ success: true }, { status: 200 });

@@ -198,8 +198,9 @@ export async function POST(req: Request) {
              role_label = $2,
              status = 'active',
              updated_at = $3
-         WHERE id = $4`,
-        [target?.id || null, nextRoleLabel, timestamp, existingMemberRow.id],
+         WHERE id = $4
+           AND org_owner_user_id = $5`,
+        [target?.id || null, nextRoleLabel, timestamp, existingMemberRow.id, ownerId],
       );
     } else {
       await queryNeon(
@@ -223,8 +224,9 @@ export async function POST(req: Request) {
         `UPDATE public.organization_role_permission_templates
          SET permissions = $1::text[],
              updated_at = $2
-         WHERE id = $3`,
-        [normalizedPermissions, timestamp, existingTemplateRow.id],
+         WHERE id = $3
+           AND org_owner_user_id = $4`,
+        [normalizedPermissions, timestamp, existingTemplateRow.id, ownerId],
       );
     } else {
       await queryNeon(

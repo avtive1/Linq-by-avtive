@@ -19,7 +19,7 @@ import {
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
-import { updateRows } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { registrationReviewBodySchema } from "@/lib/validators/registration.validator";
 
@@ -96,10 +96,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           eventShortId,
         });
         if (emailResult.sent) {
-          await updateRows(
+          await updateTenantRows(
             "registration_requests",
             { attendee_notified_at: new Date().toISOString(), notification_error: null },
             { id },
+            request.organization_id,
             "id",
           );
         } else {
@@ -109,7 +110,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         notifyError = "Attendee email missing; notification skipped.";
       }
       if (notifyError) {
-        await updateRows("registration_requests", { notification_error: notifyError }, { id }, "id");
+        await updateTenantRows(
+          "registration_requests",
+          { notification_error: notifyError },
+          { id },
+          request.organization_id,
+          "id",
+        );
       }
 
       const realtimePayload = {
@@ -181,10 +188,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         eventShortId,
       });
       if (emailResult.sent) {
-        await updateRows(
+        await updateTenantRows(
           "registration_requests",
           { attendee_notified_at: new Date().toISOString(), notification_error: null },
           { id },
+          request.organization_id,
           "id",
         );
       } else {
@@ -194,7 +202,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       notifyError = "Attendee email missing; notification skipped.";
     }
     if (notifyError) {
-      await updateRows("registration_requests", { notification_error: notifyError }, { id }, "id");
+      await updateTenantRows(
+        "registration_requests",
+        { notification_error: notifyError },
+        { id },
+        request.organization_id,
+        "id",
+      );
     }
 
     const realtimePayload = {

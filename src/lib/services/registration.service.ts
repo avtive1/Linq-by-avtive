@@ -3,7 +3,8 @@ import {
   encryptAttendeeSensitiveFields,
 } from "@/lib/security/attendee-sensitive";
 import { deterministicLookupTag } from "@/lib/security/crypto-envelope";
-import { insertRow, queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
 import { ensureRegistrationRequestsSchema } from "@/lib/services/registration-schema";
@@ -305,7 +306,7 @@ export async function approveRegistrationRequest(input: {
     throw new Error("Registration request already reviewed.");
   }
 
-  const updated = await updateRows(
+  const updated = await updateTenantRows(
     "registration_requests",
     {
       status: "APPROVED",
@@ -314,6 +315,7 @@ export async function approveRegistrationRequest(input: {
       updated_at: new Date().toISOString(),
     },
     { id: input.requestId, status: "PENDING" },
+    event.user_id,
     "id, user_id, event_id, organization_id, status, rejection_reason, attendee_payload, card_email_lookup_tag, card_id, created_at, updated_at",
   );
 
@@ -350,10 +352,11 @@ export async function approveRegistrationRequest(input: {
       throw new Error("Failed to create attendee card.");
     }
 
-    await updateRows(
+    await updateTenantRows(
       "registration_requests",
       { card_id: cardId, updated_at: new Date().toISOString() },
       { id: input.requestId },
+      event.user_id,
       "id",
     );
 
@@ -371,7 +374,7 @@ export async function approveRegistrationRequest(input: {
       eventShortId: event.short_id,
     };
   } catch (cardError) {
-    await updateRows(
+    await updateTenantRows(
       "registration_requests",
       {
         status: "PENDING",
@@ -380,6 +383,7 @@ export async function approveRegistrationRequest(input: {
         updated_at: new Date().toISOString(),
       },
       { id: input.requestId, status: "APPROVED" },
+      event.user_id,
       "id",
     );
     throw cardError;
@@ -434,7 +438,7 @@ export async function rejectRegistrationRequest(input: {
     throw new Error("Registration request already reviewed.");
   }
 
-  const updated = await updateRows(
+  const updated = await updateTenantRows(
     "registration_requests",
     {
       status: "REJECTED",
@@ -444,6 +448,7 @@ export async function rejectRegistrationRequest(input: {
       updated_at: new Date().toISOString(),
     },
     { id: input.requestId, status: "PENDING" },
+    event.user_id,
     "id, user_id, event_id, organization_id, status, rejection_reason, attendee_payload, card_email_lookup_tag, card_id, created_at, updated_at",
   );
 

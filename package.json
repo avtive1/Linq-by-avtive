@@ -11,7 +11,7 @@
     "start:stable": "powershell -ExecutionPolicy Bypass -File ./scripts/run-shadow.ps1 -Mode start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "node scripts/prisma-migrate-deploy.mjs",
+    "db:migrate:deploy": "node --env-file=.env scripts/prisma-migrate-deploy.mjs",
     "db:migrate:baseline": "node scripts/prisma-migrate-baseline.mjs",
     "db:generate": "prisma generate",
     "security:reencrypt-attendees": "tsx scripts/reencrypt-attendees.ts",
@@ -19,6 +19,7 @@
     "db:audit:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/audit-indexes.mjs",
     "db:audit:explain": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/explain-queries.mjs",
     "load-test:smoke": "node scripts/load-test/smoke-load.mjs",
+    "test:integration": "vitest run tests/integration",
     "prepare": "husky"
   },
   "dependencies": {
@@ -66,6 +67,7 @@
     "prisma": "^6.19.3",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 import { sanitizeStoredCardFont } from "@/lib/card-fonts";
+import { withApiTenantContext } from "@/lib/tenant/api-context";
 
 function isPastEventDate(dateStr: string) {
   const parsed = new Date(`${dateStr}T00:00:00`);
@@ -71,8 +73,10 @@ async function ensureEventTableSchemaOnce() {
 
 export async function GET(req: Request) {
   try {
-    await ensureEventTableSchemaOnce();
-    const session = await getServerAuthSession();
+    const cookieStore = await cookies();
+    return withApiTenantContext(cookieStore, async () => {
+      await ensureEventTableSchemaOnce();
+      const session = await getServerAuthSession();
     const viewerId = String(session?.user?.id || "").trim();
     if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const sessionRole = String(session?.user?.role || "").toLowerCase();
@@ -136,6 +140,7 @@ export async function GET(req: Request) {
       },
       { status: 200 },
     );
+    }, { allowAdminBypass: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to load events.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -144,8 +149,10 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    await ensureEventTableSchemaOnce();
-    const csrf = validateCsrfOrigin(req);
+    const cookieStore = await cookies();
+    return withApiTenantContext(cookieStore, async () => {
+      await ensureEventTableSchemaOnce();
+      const csrf = validateCsrfOrigin(req);
     if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 
     const session = await getServerAuthSession();
@@ -248,6 +255,7 @@ export async function POST(req: Request) {
     if (!created?.id) return NextResponse.json({ error: "Failed to create event." }, { status: 400 });
 
     return NextResponse.json({ data: { id: String(created.id) } }, { status: 201 });
+    }, { allowAdminBypass: true });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to create event.";
     return NextResponse.json({ error: message }, { status: 500 });

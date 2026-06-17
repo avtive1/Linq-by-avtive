@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 import { seedViewEventGrantsForOrgMember } from "@/lib/organization/seedViewEventGrants";
-import { queryNeonOne, updateRows } from "@/lib/neon-db";
+import { queryNeonOne } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserEmailById } from "@/lib/admin";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -63,7 +64,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     }
 
-    const updatedJoinRequests = await updateRows(
+    const updatedJoinRequests = await updateTenantRows(
       "organization_join_requests",
       {
         status: nextStatus,
@@ -74,6 +75,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         updated_at: new Date().toISOString(),
       },
       { id },
+      requestRow.owner_user_id,
       "id",
     );
     const updateErr = updatedJoinRequests.length ? null : { message: "Failed to update join request." };

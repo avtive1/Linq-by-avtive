@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { updateAttendeeForTenant } from "@/lib/db/tenant-mutations";
 import { getServerAuthSession } from "@/auth";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
-import { queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
+import { withApiTenantContext } from "@/lib/tenant/api-context";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await params;
-    if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
     const cookieStore = await cookies();
-    const viewerUserId = await getServerUserIdFromCookies(cookieStore);
-    if (!viewerUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const session = await getServerAuthSession();
+    return withApiTenantContext(cookieStore, async () => {
+      const { id } = await params;
+      if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
+      const viewerUserId = await getServerUserIdFromCookies(cookieStore);
+      if (!viewerUserId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      const session = await getServerAuthSession();
 
     const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
       .split(",")
@@ -70,7 +73,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       const { row: secure, migrationPatch } = decryptAttendeeSensitiveFields(row);
       if (Object.keys(migrationPatch).length > 0 && row.id) {
         try {
-          await updateRows("attendees", migrationPatch, { id: row.id as string }, "id");
+          await updateAttendeeForTenant(
+            row.id as string,
+            String(event?.user_id || ""),
+            migrationPatch,
+            "id",
+          );
         } catch (migrationError: unknown) {
           const migrationMessage =
             migrationError instanceof Error ? migrationError.message : "Failed to persist attendee migration patch.";
@@ -88,6 +96,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     return NextResponse.json({ data: decrypted });
+    }, { allowAdminBypass: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal Server Error";
     logSecurityEvent({

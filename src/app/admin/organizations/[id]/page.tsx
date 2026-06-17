@@ -1,5 +1,5 @@
 import { getAdminUserById } from "@/lib/admin";
-import { queryNeon } from "@/lib/neon-db";
+import { queryNeon, runWithRlsBypassAsync } from "@/lib/neon-db";
 import { Users, Calendar, ArrowLeft, Mail, Sparkles, Rocket, TrendingUp, Target } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui";
@@ -47,30 +47,34 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
   );
 
   // 2. Fetch Events for this User
-  const events = await queryNeon<{
-    id: string;
-    user_id: string;
-    name: string;
-    date: string;
-    location: string;
-    created_at: string;
-  }>(
-    `SELECT id, user_id, name, date, location, created_at
-     FROM public.events
-     WHERE user_id = $1
-     ORDER BY created_at DESC`,
-    [user.id],
+  const events = await runWithRlsBypassAsync(() =>
+    queryNeon<{
+      id: string;
+      user_id: string;
+      name: string;
+      date: string;
+      location: string;
+      created_at: string;
+    }>(
+      `SELECT id, user_id, name, date, location, created_at
+       FROM public.events
+       WHERE user_id = $1
+       ORDER BY created_at DESC`,
+      [user.id],
+    ),
   );
   const eventIds = events.map(e => e.id);
 
   // 3. Fetch Attendees for these Events
   let attendees: Array<{ id: string; event_id: string; created_at: string }> = [];
   if (eventIds.length > 0) {
-    attendees = await queryNeon<{ id: string; event_id: string; created_at: string }>(
-      `SELECT id, event_id, created_at
-       FROM public.attendees
-       WHERE event_id = ANY($1::uuid[])`,
-      [eventIds],
+    attendees = await runWithRlsBypassAsync(() =>
+      queryNeon<{ id: string; event_id: string; created_at: string }>(
+        `SELECT id, event_id, created_at
+         FROM public.attendees
+         WHERE event_id = ANY($1::uuid[])`,
+        [eventIds],
+      ),
     );
   }
 

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
-import { insertRow, queryNeon, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserEmailById } from "@/lib/admin";
 
@@ -204,10 +205,11 @@ export async function POST(req: Request) {
           `Please review this request in your dashboard.`,
       });
       if (emailResult.sent) {
-        await updateRows(
+        await updateTenantRows(
           "access_requests",
           { owner_notified_at: new Date().toISOString(), notification_error: null },
           { id: requestId },
+          finalOwnerId,
           "id",
         );
       } else {
@@ -217,10 +219,11 @@ export async function POST(req: Request) {
       notifyError = "Owner email missing; notification skipped.";
     }
     if (notifyError) {
-      await updateRows(
+      await updateTenantRows(
         "access_requests",
         { notification_error: notifyError },
         { id: requestId },
+        finalOwnerId,
         "id",
       );
     }

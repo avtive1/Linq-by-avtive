@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
-import { insertRow, queryNeonOne, updateRows } from "@/lib/neon-db";
+import { insertRow, queryNeonOne } from "@/lib/neon-db";
+import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserEmailById } from "@/lib/admin";
 import { getServerAuthSession } from "@/auth";
@@ -54,7 +55,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const nextStatus = decision === "approve" ? "approved" : "rejected";
-    const updatedRequests = await updateRows(
+    const updatedRequests = await updateTenantRows(
       "access_requests",
       {
         status: nextStatus,
@@ -63,6 +64,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         updated_at: new Date().toISOString(),
       },
       { id },
+      requestRow.owner_user_id,
       "id",
     );
     const updateErr = updatedRequests.length ? null : { message: "Failed to update request." };
@@ -111,10 +113,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           `Check your dashboard for updated capabilities.`,
       });
       if (emailResult.sent) {
-        await updateRows(
+        await updateTenantRows(
           "access_requests",
           { requester_notified_at: new Date().toISOString(), notification_error: null },
           { id },
+          requestRow.owner_user_id,
           "id",
         );
       } else {
@@ -124,7 +127,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       notifyError = "Requester email missing; notification skipped.";
     }
     if (notifyError) {
-      await updateRows("access_requests", { notification_error: notifyError }, { id }, "id");
+      await updateTenantRows(
+        "access_requests",
+        { notification_error: notifyError },
+        { id },
+        requestRow.owner_user_id,
+        "id",
+      );
     }
 
     return NextResponse.json({ success: true }, { status: 200 });

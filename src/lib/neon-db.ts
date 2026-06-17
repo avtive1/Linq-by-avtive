@@ -5,6 +5,8 @@ import {
   getSqlClient,
   resetSqlClient,
 } from "@/lib/db/pool";
+import { ensureRlsRuntimeRole, getRlsRuntimeRoleName } from "@/lib/db/ensure-rls-runtime-role";
+import { getTenantContext, runWithTenantContextAsync, type TenantContext } from "@/lib/tenant/context";
 
 export {
   getConnectionLifecycleReport,
@@ -96,6 +98,37 @@ async function runQueryWithRetry<T>(
   throw new Error("Database query failed");
 }
 
+function stripTrailingSemicolon(sql: string): string {
+  return sql.trim().replace(/;\s*$/, "");
+}
+
+function tenantSessionQueries(context: TenantContext, sql: string, params: unknown[]) {
+  const client = getSqlClient();
+  const statement = stripTrailingSemicolon(sql);
+  const rlsRole = getRlsRuntimeRoleName();
+
+  if (context.bypassRls) {
+    return [
+      client.query("SELECT set_config('app.bypass_rls', 'true', true)", []),
+      client.query(statement, params),
+    ];
+  }
+
+  const scoped = [
+    client.query(`SET LOCAL ROLE ${rlsRole}`, []),
+    client.query("SELECT set_config('app.current_tenant', $1, true)", [context.tenantId]),
+  ];
+  if (context.userId) {
+    scoped.push(client.query("SELECT set_config('app.current_user', $1, true)", [context.userId]));
+  }
+  scoped.push(client.query(statement, params));
+  return scoped;
+}
+
+function rowsFromTransactionResult(result: unknown): Record<string, unknown>[] {
+  return Array.isArray(result) ? (result as Record<string, unknown>[]) : [];
+}
+
 export async function queryNeon<
   T extends QueryResultRow = Record<string, unknown>,
 >(
@@ -103,6 +136,20 @@ export async function queryNeon<
   params: unknown[] = [],
 ): Promise<T[]> {
   return runQueryWithRetry(async () => {
+    const context = getTenantContext();
+
+    if (context && (context.bypassRls || context.tenantId)) {
+      if (!context.bypassRls && context.tenantId) {
+        await ensureRlsRuntimeRole();
+      }
+
+      const results = await getSqlClient().transaction(
+        tenantSessionQueries(context, sql, params),
+      );
+      const last = results[results.length - 1];
+      return rowsFromTransactionResult(last) as T[];
+    }
+
     const result = await getNeonPool().query<T>(
       sql,
       params,
@@ -121,6 +168,26 @@ export async function queryNeonOne<
   const rows = await queryNeon<T>(sql, params);
 
   return rows[0] || null;
+}
+
+const SYSTEM_TENANT_CONTEXT = { tenantId: "", userId: "", bypassRls: true as const };
+
+/** Bypass RLS — auth, migrations, and explicitly public token-gated reads only. */
+export async function queryNeonAsSystem<
+  T extends QueryResultRow = Record<string, unknown>,
+>(sql: string, params: unknown[] = []): Promise<T[]> {
+  return runWithTenantContextAsync(SYSTEM_TENANT_CONTEXT, () => queryNeon<T>(sql, params));
+}
+
+export async function queryNeonOneAsSystem<
+  T extends QueryResultRow = Record<string, unknown>,
+>(sql: string, params: unknown[] = []): Promise<T | null> {
+  const rows = await queryNeonAsSystem<T>(sql, params);
+  return rows[0] || null;
+}
+
+export async function runWithRlsBypassAsync<T>(fn: () => Promise<T>): Promise<T> {
+  return runWithTenantContextAsync(SYSTEM_TENANT_CONTEXT, fn);
 }
 
 export async function insertRow(

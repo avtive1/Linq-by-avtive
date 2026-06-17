@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeonAsSystem, queryNeonOneAsSystem } from "@/lib/neon-db";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 import { getPublicAppUrl } from "@/lib/app-url";
 
@@ -7,7 +7,7 @@ let schemaReady = false;
 
 export async function ensureLoginEmailOtpSchema() {
   if (schemaReady) return;
-  await queryNeon(`
+  await queryNeonAsSystem(`
     CREATE TABLE IF NOT EXISTS public.login_email_otp (
       id uuid PRIMARY KEY,
       user_id uuid NOT NULL REFERENCES public.auth_users(user_id) ON DELETE CASCADE,
@@ -17,7 +17,7 @@ export async function ensureLoginEmailOtpSchema() {
       created_at timestamptz NOT NULL DEFAULT now()
     )
   `);
-  await queryNeon(
+  await queryNeonAsSystem(
     `CREATE INDEX IF NOT EXISTS login_email_otp_user_expires_idx ON public.login_email_otp (user_id, expires_at DESC)`,
   );
   schemaReady = true;
@@ -32,7 +32,7 @@ export async function isOrganizationAccountUser(userId: string): Promise<boolean
   await ensureLoginEmailOtpSchema();
 
   // Bypass OTP for the superadmin
-  const user = await queryNeonOne<{ email: string }>(
+  const user = await queryNeonOneAsSystem<{ email: string }>(
     `SELECT email FROM public.auth_users WHERE user_id = $1::uuid LIMIT 1`,
     [userId]
   );
@@ -41,7 +41,7 @@ export async function isOrganizationAccountUser(userId: string): Promise<boolean
     return false;
   }
 
-  const owner = await queryNeonOne<{ setup_completed: string | null }>(
+  const owner = await queryNeonOneAsSystem<{ setup_completed: string | null }>(
     `SELECT p.owner_profile_setup_completed_at AS setup_completed 
      FROM public.organizations o 
      JOIN public.profiles p ON p.id = o.owner_user_id 
@@ -53,7 +53,7 @@ export async function isOrganizationAccountUser(userId: string): Promise<boolean
     return owner.setup_completed == null;
   }
   
-  const member = await queryNeonOne<{ one: string }>(
+  const member = await queryNeonOneAsSystem<{ one: string }>(
     `SELECT '1' AS one
      FROM public.organization_members
      WHERE member_user_id = $1::uuid AND status = 'active'
@@ -72,8 +72,8 @@ export async function createAndEmailLoginOtp(userId: string, email: string): Pro
   const codeHash = crypto.createHash("sha256").update(code).digest("hex");
   const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
   const id = crypto.randomUUID();
-  await queryNeon(`DELETE FROM public.login_email_otp WHERE user_id = $1::uuid AND consumed_at IS NULL`, [userId]);
-  await queryNeon(
+  await queryNeonAsSystem(`DELETE FROM public.login_email_otp WHERE user_id = $1::uuid AND consumed_at IS NULL`, [userId]);
+  await queryNeonAsSystem(
     `INSERT INTO public.login_email_otp (id, user_id, code_hash, expires_at) VALUES ($1::uuid, $2::uuid, $3, $4::timestamptz)`,
     [id, userId, codeHash, expires],
   );
@@ -93,7 +93,7 @@ export async function createAndEmailLoginOtp(userId: string, email: string): Pro
 export async function verifyActiveLoginOtp(userId: string, plainCode: string): Promise<boolean> {
   await ensureLoginEmailOtpSchema();
   const codeHash = crypto.createHash("sha256").update(plainCode.trim()).digest("hex");
-  const row = await queryNeonOne<{ id: string }>(
+  const row = await queryNeonOneAsSystem<{ id: string }>(
     `SELECT id FROM public.login_email_otp
      WHERE user_id = $1::uuid AND code_hash = $2 AND expires_at > now() AND consumed_at IS NULL
      ORDER BY created_at DESC LIMIT 1`,
@@ -105,7 +105,7 @@ export async function verifyActiveLoginOtp(userId: string, plainCode: string): P
 export async function consumeLoginOtp(userId: string, plainCode: string): Promise<void> {
   await ensureLoginEmailOtpSchema();
   const codeHash = crypto.createHash("sha256").update(plainCode.trim()).digest("hex");
-  await queryNeon(
+  await queryNeonAsSystem(
     `UPDATE public.login_email_otp SET consumed_at = now()
      WHERE user_id = $1::uuid AND code_hash = $2 AND consumed_at IS NULL`,
     [userId, codeHash],
