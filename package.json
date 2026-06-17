@@ -11,7 +11,7 @@
     "start:stable": "powershell -ExecutionPolicy Bypass -File ./scripts/run-shadow.ps1 -Mode start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "node --env-file=.env scripts/prisma-migrate-deploy.mjs",
+    "db:migrate:deploy": "node scripts/prisma-migrate-deploy.mjs",
     "db:migrate:baseline": "node scripts/prisma-migrate-baseline.mjs",
     "db:generate": "prisma generate",
     "security:reencrypt-attendees": "tsx scripts/reencrypt-attendees.ts",
