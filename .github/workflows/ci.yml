@@ -31,6 +31,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Unit and edge-case tests
+        run: npm run test:edge
+
       - name: Audit (moderate and above)
         run: npm audit --audit-level=moderate
         continue-on-error: true

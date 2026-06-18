@@ -8,7 +8,7 @@ import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { normalizeRegistrationFormConfig } from "@/lib/registration-form";
 import { sanitizeStoredCardFont } from "@/lib/card-fonts";
-import { withApiTenantContext } from "@/lib/tenant/api-context";
+import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 
 function isPastEventDate(dateStr: string) {
   const parsed = new Date(`${dateStr}T00:00:00`);
@@ -140,8 +140,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       return NextResponse.json({ data: { ...eventRow, isOwner, permissions } }, { status: 200 });
     }, { allowAdminBypass: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to load event.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(error, "Failed to load event.");
   }
 }
 
@@ -224,8 +223,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     return NextResponse.json({ success: true }, { status: 200 });
     }, { allowAdminBypass: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to update event.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(error, "Failed to update event.");
   }
 }
 
@@ -265,7 +263,6 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
       return NextResponse.json({ success: true }, { status: 200 });
     }, { allowAdminBypass: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to delete event.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(error, "Failed to delete event.");
   }
 }

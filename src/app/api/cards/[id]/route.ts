@@ -13,7 +13,7 @@ import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { isApprovedGuestCard } from "@/lib/services/registration.service";
 import { resolveOrgTenantIdForUser } from "@/lib/tenant/resolve";
-import { withApiTenantContext } from "@/lib/tenant/api-context";
+import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 
 const APPROVED_GUEST_LOCKED_FIELDS = ["name", "company", "card_email"] as const;
 
@@ -163,8 +163,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const cookieStore = await cookies();
     return withApiTenantContext(cookieStore, loadCard);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(err, "Internal Server Error");
   }
 }
 
@@ -228,8 +227,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const cookieStore = await cookies();
     return withApiTenantContext(cookieStore, applyPatch);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(err, "Internal Server Error");
   }
 }
 
@@ -264,7 +262,6 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
     const cookieStore = await cookies();
     return withApiTenantContext(cookieStore, performDelete);
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(err, "Internal Server Error");
   }
 }

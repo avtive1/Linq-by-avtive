@@ -1,8 +1,28 @@
+import { NextResponse } from "next/server";
 import { getServerAuthSession } from "@/auth";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { runWithTenantContextAsync, type TenantContext } from "@/lib/tenant/context";
 import { buildTenantContextForUser } from "@/lib/tenant/resolve";
 import type { ReadonlyRequestCookies } from "next/dist/server/web/spec-extension/adapters/request-cookies";
+
+export class ApiUnauthorizedError extends Error {
+  constructor() {
+    super("Unauthorized");
+    this.name = "ApiUnauthorizedError";
+  }
+}
+
+export function isApiUnauthorizedError(error: unknown): boolean {
+  return error instanceof ApiUnauthorizedError;
+}
+
+export function apiRouteErrorResponse(error: unknown, fallbackMessage: string): NextResponse {
+  if (isApiUnauthorizedError(error)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const message = error instanceof Error ? error.message : fallbackMessage;
+  return NextResponse.json({ error: message }, { status: 500 });
+}
 
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>): boolean {
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
@@ -33,7 +53,7 @@ export async function withApiTenantContext<T>(
 ): Promise<T> {
   const context = await resolveTenantContextFromCookies(cookieStore, options);
   if (!context) {
-    throw new Error("Unauthorized");
+    throw new ApiUnauthorizedError();
   }
   return runWithTenantContextAsync(context, fn);
 }

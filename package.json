@@ -19,7 +19,11 @@
     "db:audit:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/audit-indexes.mjs",
     "db:audit:explain": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/explain-queries.mjs",
     "load-test:smoke": "node scripts/load-test/smoke-load.mjs",
+    "test": "vitest run tests",
+    "test:edge": "vitest run tests/edge-cases",
     "test:integration": "vitest run tests/integration",
+    "load-test:k6-smoke": "k6 run tests/load/k6-smoke.js",
+    "load-test:k6": "k6 run tests/load/k6-load.js",
     "prepare": "husky"
   },
   "dependencies": {

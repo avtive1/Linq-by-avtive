@@ -7,7 +7,7 @@ import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitiv
 import { logSecurityEvent } from "@/lib/security/telemetry";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
-import { withApiTenantContext } from "@/lib/tenant/api-context";
+import { apiRouteErrorResponse, isApiUnauthorizedError, withApiTenantContext } from "@/lib/tenant/api-context";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -98,6 +98,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     return NextResponse.json({ data: decrypted });
     }, { allowAdminBypass: true });
   } catch (err) {
+    if (isApiUnauthorizedError(err)) {
+      return apiRouteErrorResponse(err, "Unauthorized");
+    }
     const message = err instanceof Error ? err.message : "Internal Server Error";
     logSecurityEvent({
       event: "security.event_attendees.fetch_failed",

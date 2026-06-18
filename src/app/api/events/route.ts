@@ -5,7 +5,7 @@ import { getServerAuthSession } from "@/auth";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 import { sanitizeStoredCardFont } from "@/lib/card-fonts";
-import { withApiTenantContext } from "@/lib/tenant/api-context";
+import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 
 function isPastEventDate(dateStr: string) {
   const parsed = new Date(`${dateStr}T00:00:00`);
@@ -142,8 +142,7 @@ export async function GET(req: Request) {
     );
     }, { allowAdminBypass: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to load events.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(error, "Failed to load events.");
   }
 }
 
@@ -257,7 +256,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ data: { id: String(created.id) } }, { status: 201 });
     }, { allowAdminBypass: true });
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to create event.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return apiRouteErrorResponse(error, "Failed to create event.");
   }
 }
