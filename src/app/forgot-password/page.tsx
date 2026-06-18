@@ -53,9 +53,9 @@ export default function ForgotPasswordPage() {
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link
           href="/login"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
+          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           </div>
           <span>Back to sign in</span>
@@ -67,10 +67,10 @@ export default function ForgotPasswordPage() {
           </span>
         </div>
 
-        <div className="glass-panel rounded-xl p-8 sm:p-12 shadow-2xl shadow-primary/5">
+        <div className="card-base glass-panel rounded-xl p-8 sm:p-12">
           {sent ? (
             <div className="flex flex-col items-center text-center gap-6 py-6">
-              <div className="w-14 h-14 rounded-sm bg-primary/15 flex items-center justify-center text-primary-strong">
+              <div className="w-14 h-14 rounded-sm bg-brand-yellow/20 flex items-center justify-center text-ink">
                 <Mail size={26} />
               </div>
               <div className="flex flex-col gap-4">
@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
                 variant="primary"
                 fullWidth
                 size="lg"
-                className="mt-2 h-12 text-base shadow-lg shadow-primary/20"
+                className="mt-2 h-12 text-base"
               >
                 Back to sign in
               </Button>
@@ -115,7 +115,7 @@ export default function ForgotPasswordPage() {
                 fullWidth
                 size="lg"
                 disabled={isSubmitting}
-                className="h-12 text-base shadow-lg shadow-primary/20"
+                className="h-12 text-base"
               >
                 {isSubmitting ? "Sending..." : "Send reset link"}
               </Button>
@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
                 <span>Remembered it?</span>
                 <Link
                   href="/login"
-                  className="font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
+                  className="font-semibold text-brand-blue hover:underline underline-offset-4 transition-all"
                 >
                   Sign in
                 </Link>

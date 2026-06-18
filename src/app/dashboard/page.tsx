@@ -74,7 +74,7 @@ const ENABLE_DASHBOARD_BOOTSTRAP = process.env.NEXT_PUBLIC_DASHBOARD_BOOTSTRAP !
 const formatJoinStatus = (status: string) => {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "approved") {
-    return { label: "Approved", className: "text-green-600 bg-green-50 border-green-200" };
+    return { label: "Approved", className: "text-success bg-success/10 border-success/20" };
   }
   if (normalized === "rejected") {
     return { label: "Rejected", className: "text-red-600 bg-red-50 border-red-200" };
@@ -1336,7 +1336,7 @@ function DashboardContent() {
             {isPreviewMode ? (
               <Link
                 href={impersonateId ? `/admin/organizations/${impersonateId}` : "/admin"}
-                className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2 py-1"
+                className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2 py-1"
               >
                 <motion.span {...hoverIconNudge(-2)} className="inline-flex">
                   <ArrowLeft size={16} className="transition-transform" />
@@ -1445,7 +1445,7 @@ function DashboardContent() {
                   onClick={() => {
                     void openTeamAccessModal("list");
                   }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-primary/20 text-heading hover:text-ink hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
                   icon={<Users size={18} />}
                 >
                   Team Access
@@ -1467,7 +1467,7 @@ function DashboardContent() {
                     setOrganizationLogoDraft("");
                     setIsUsernameModalOpen(true);
                   }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-ink hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
                   icon={<Settings size={18} />}
                 >
                   <span>Settings</span>
@@ -1481,7 +1481,7 @@ function DashboardContent() {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 icon={isLoggingOut ? undefined : <LogOut size={18} />}
-                className="justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-primary-strong hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                className="justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-ink hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
               >
                 <span>{isLoggingOut ? "..." : "Logout"}</span>
               </Button>
@@ -1700,7 +1700,7 @@ function DashboardContent() {
                         <Users size={28} />
                      </div>
                      <div className="flex flex-col gap-1">
-                        <span className="text-4xl font-semibold text-heading tracking-tight leading-none group-hover:text-primary-strong transition-colors">
+                        <span className="text-4xl font-semibold text-heading tracking-tight leading-none group-hover:text-ink transition-colors">
                            <AnimatedCounter value={stats.totalAttendees} />
                         </span>
                         <span className="text-xs font-semibold text-muted uppercase tracking-wide">Total Leads</span>
@@ -1878,7 +1878,7 @@ function DashboardContent() {
                 <div key={req.id} className="flex items-center justify-between text-[13px] leading-tight bg-white border border-primary/15 rounded-md px-3 py-2">
                   <span className="text-heading">{req.event_name} • {req.requested_action}</span>
                   <span className={`font-medium ${
-                    req.status === "approved" ? "text-green-600" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
+                    req.status === "approved" ? "text-success" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
                   }`}>
                     {req.status}
                   </span>
@@ -2025,7 +2025,7 @@ function DashboardContent() {
                       ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
                       : isTeamMemberMode || isOrgAdminMode
                         ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/40"
-                      : "glass-panel hover:shadow-2xl hover:shadow-primary/15 hover:border-primary/40"
+                      : "glass-panel hover:shadow-2xl hover:shadow-black/10 hover:border-primary/40"
                   } ${status.label === "Past" ? "opacity-75 grayscale-[0.3]" : ""}`}
                   viewport={presets.viewport}
                   {...staggerItem(idx, 0.05, 0.28, 16, 0.3)}
@@ -2057,7 +2057,7 @@ function DashboardContent() {
                   </div>
                   
                   <div className="flex flex-col grow">
-                    <h3 className="font-semibold text-2xl tracking-[-0.03em] text-heading group-hover:text-primary-strong transition-colors line-clamp-2 leading-[1.15] mb-2">
+                    <h3 className="font-semibold text-2xl tracking-[-0.03em] text-heading group-hover:text-ink transition-colors line-clamp-2 leading-[1.15] mb-2">
                       {evt.name}
                     </h3>
                     
@@ -2077,7 +2077,7 @@ function DashboardContent() {
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-primary-strong hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-primary-strong">
+                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-ink hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-ink">
                     View Campaign
                     <motion.span {...hoverIconNudge(3)} className="inline-flex">
                       <ChevronRight size={20} className="transition-transform duration-200" />
@@ -2221,7 +2221,7 @@ function DashboardContent() {
                   type="submit" 
                   fullWidth 
                   disabled={isSubmittingEvent || (isOrgTeamMember && !hasCreateCampaignPermission)}
-                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}
                 </Button>
@@ -2308,7 +2308,7 @@ function DashboardContent() {
                     type="submit"
                     fullWidth
                     disabled={isSavingUsername}
-                    className="shadow-md shadow-primary/10"
+                    className="shadow-md shadow-black/5"
                   >
                     {isSavingUsername ? "Saving Profile..." : "Save Profile Settings"}
                   </Button>

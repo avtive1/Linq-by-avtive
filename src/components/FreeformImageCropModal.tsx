@@ -136,7 +136,7 @@ export function FreeformImageCropModal({
               fullWidth
               onClick={handleApply}
               disabled={loading || !canApply}
-              className="h-12 text-base rounded-md shadow-primary/20 shadow-xl"
+              className="h-12 text-base rounded-md shadow-black/10 shadow-xl"
               icon={loading ? null : <Check size={18} />}
             >
               {loading ? "Processing..." : applyLabel}

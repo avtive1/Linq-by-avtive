@@ -123,7 +123,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           </div>
           <Link 
             href={`/dashboard?impersonate=${user.id}`}
-            className="inline-flex items-center justify-center gap-2 bg-white border border-border text-heading !no-underline hover:!no-underline hover:text-primary-strong hover:border-primary/60 hover:bg-primary/10 h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+            className="inline-flex items-center justify-center gap-2 bg-white border border-border text-heading !no-underline hover:!no-underline hover:text-ink hover:border-primary/60 hover:bg-primary/10 h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
             <Sparkles size={16} />
             <span>View as Organization</span>
@@ -162,7 +162,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Active Velocity</span>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">{recentEventsCount}</span>
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-ink transition-colors">{recentEventsCount}</span>
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">Recent Campaigns</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">New events successfully launched within the last 30 days.</span>
@@ -182,7 +182,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Network Impact</span>
             </div>
             <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-primary-strong transition-colors">{newAttendeesCount}</span>
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-ink transition-colors">{newAttendeesCount}</span>
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">New Connections</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Newly registered attendees engaged across recent campaigns (30d).</span>

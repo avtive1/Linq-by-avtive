@@ -1412,7 +1412,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     setCampaignDescriptionDraft(String(eventData.description || ""));
                     setIsEditingCampaignDescription(true);
                   }}
-                  className="inline-flex shrink-0 flex-col items-center gap-1 rounded-md p-1.5 text-muted/70 transition-colors duration-150 hover:bg-primary/[0.07] hover:text-primary-strong focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60"
+                  className="inline-flex shrink-0 flex-col items-center gap-1 rounded-md p-1.5 text-muted/70 transition-colors duration-150 hover:bg-primary/[0.07] hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 disabled:opacity-60"
                   aria-label="Edit campaign description"
                   title="Edit campaign description"
                 >
@@ -1506,7 +1506,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               }
               router.push("/dashboard");
             }}
-            className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1.5 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer py-1"
+            className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1.5 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer py-1"
           >
             <motion.span {...hoverIconNudge(-2)} className="inline-flex">
               <ArrowLeft size={16} className="transition-transform" />
@@ -1648,7 +1648,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }} 
                     disabled={!canManageEvent}
                     icon={<RefreshCw size={16} />}
-                    className={`shadow-lg shadow-primary/20 animate-pulse-subtle ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                    className={`shadow-lg shadow-black/10 animate-pulse-subtle ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
                     Renew Event
                   </Button>
@@ -1967,7 +1967,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             className={`relative overflow-hidden p-6 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
               isTeamMemberEventMode
                 ? "bg-linear-to-br from-white to-primary/5 border border-primary/20 shadow-sm"
-                : "bg-linear-to-br from-heading to-[#1e293b] border border-white/10 shadow-md"
+                : "bg-primary border border-white/10 shadow-md"
             }`}
             viewport={presets.viewport}
             {...fadeUp(0.06)}
@@ -1979,7 +1979,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
               <div className={`w-14 h-14 flex items-center justify-center shrink-0 rounded-md shadow-sm transition-all duration-500 group-hover:scale-105 ${
                 isTeamMemberEventMode
-                  ? "bg-primary text-white shadow-primary/20" 
+                  ? "bg-primary text-white shadow-black/10" 
                   : "bg-white/10 text-primary backdrop-blur-md shadow-black/10"
               }`}>
                 <Users size={28} />
@@ -2052,11 +2052,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={`flex items-center justify-center gap-2 h-12 sm:h-14 px-6 rounded-xl border-2 font-semibold text-base transition-all shadow-md ${
                 isFilterOpen || trackFilter !== "all"
-                  ? "border-green-600 bg-green-50 text-green-700"
-                  : "border-border bg-white text-heading hover:border-green-500 hover:bg-green-50/50"
+                  ? "border-primary bg-surface text-ink"
+                  : "border-border bg-white text-heading hover:border-hairline-strong hover:bg-surface"
               }`}
             >
-              <SlidersHorizontal size={20} className={isFilterOpen || trackFilter !== "all" ? "text-green-700" : "text-muted"} />
+              <SlidersHorizontal size={20} className={isFilterOpen || trackFilter !== "all" ? "text-ink" : "text-muted"} />
               <span>Filter</span>
             </button>
 
@@ -2072,8 +2072,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         onClick={() => setTrackFilter("all")}
         className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
           trackFilter === "all"
-            ? "bg-green-100 text-green-700 border-green-500"
-            : "bg-gray-50 text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600"
+            ? "bg-primary/10 text-ink border-primary"
+            : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"
         }`}
       >
         All
@@ -2083,8 +2083,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         onClick={() => setTrackFilter("guest")}
         className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
           trackFilter === "guest"
-            ? "bg-green-100 text-green-700 border-green-500"
-            : "bg-gray-50 text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600"
+            ? "bg-primary/10 text-ink border-primary"
+            : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"
         }`}
       >
         Guest
@@ -2094,8 +2094,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         onClick={() => setTrackFilter("visitor")}
         className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
           trackFilter === "visitor"
-            ? "bg-green-100 text-green-700 border-green-500"
-            : "bg-gray-50 text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600"
+            ? "bg-primary/10 text-ink border-primary"
+            : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"
         }`}
       >
         Visitor
@@ -2108,7 +2108,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       setTrackFilter("all");
       setIsFilterOpen(false);
     }}
-    className="w-full text-right text-sm text-gray-500 hover:text-green-600 transition-colors"
+    className="w-full text-right text-sm text-gray-500 hover:text-success transition-colors"
   >
     Reset filters
   </button>
@@ -2136,7 +2136,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
                     : isTeamMemberEventMode || isOrgAdminEventMode
                       ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
-                    : "glass-panel hover:shadow-xl hover:shadow-primary/5 hover:border-primary/30"
+                    : "glass-panel hover:shadow-xl hover:shadow-black/5 hover:border-primary/30"
                 }`}
                 viewport={presets.viewport}
                 {...staggerItem(idx, 0.04, 0.24, 14, 0.28)}
@@ -2164,7 +2164,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                     <div className="flex flex-col gap-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="font-semibold text-base text-heading group-hover:text-primary-strong transition-colors truncate leading-tight">
+                        <h3 className="font-semibold text-base text-heading group-hover:text-ink transition-colors truncate leading-tight">
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
@@ -2198,7 +2198,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           <ExternalLink size={14} />
                         </motion.span>
                       }
-                      className="shrink-0 rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-primary-strong"
+                      className="shrink-0 rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-ink"
                     >
                       View
                     </Button>
@@ -3176,7 +3176,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <Button
                   type="submit"
                   fullWidth
-                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
                   disabled={isSavingSponsors || isPreviewMode}
                 >
                   {isSavingSponsors ? "Saving..." : "Save sponsors"}
@@ -3312,7 +3312,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="submit"
                   fullWidth
                   disabled={isSavingEdit}
-                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
                 >
                   {isSavingEdit ? "Saving..." : "Save Changes"}
                 </Button>
@@ -3443,7 +3443,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="submit"
                   fullWidth
                   disabled={isRenewing}
-                  className="order-1 sm:order-2 shadow-lg shadow-primary/20"
+                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
                 >
                   {isRenewing ? "Renewing..." : "Renew Event"}
                 </Button>

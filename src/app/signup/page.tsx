@@ -206,9 +206,9 @@ export default function SignupPage() {
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         <Link 
           href="/" 
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
+          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           </div>
           <span>Back to Home</span>
@@ -221,7 +221,7 @@ export default function SignupPage() {
         </div>
 
         {/* Signup Card */}
-        <div className="glass-panel rounded-xl p-6 sm:p-8 shadow-2xl shadow-primary/5">
+        <div className="card-base glass-panel rounded-xl p-6 sm:p-8">
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create your profile</h1>
@@ -300,7 +300,7 @@ export default function SignupPage() {
                 {form.username.length >= 2 && (
                   <div className="absolute right-0 top-0 pt-[28px]">
                     {usernameStatus === "loading" && <div className="text-[13px] leading-tight font-medium text-muted animate-pulse">Checking...</div>}
-                    {usernameStatus === "available" && <div className="text-[13px] leading-tight font-medium text-green-500">Available</div>}
+                    {usernameStatus === "available" && <div className="text-[13px] leading-tight font-medium text-success">Available</div>}
                     {usernameStatus === "taken" && <div className="text-[13px] leading-tight font-medium text-danger">Taken</div>}
                     {usernameStatus === "invalid" && <div className="text-[13px] leading-tight font-medium text-danger">Invalid chars</div>}
                   </div>
@@ -343,7 +343,7 @@ export default function SignupPage() {
                 fullWidth
                 size="lg"
                 onClick={handleContinueToLogoStep}
-                className="h-12 text-base shadow-lg shadow-primary/20"
+                className="h-12 text-base"
               >
                 Continue
               </Button>
@@ -365,7 +365,7 @@ export default function SignupPage() {
                   fullWidth
                   size="lg"
                   disabled={isSubmitting}
-                  className="h-12 text-base shadow-lg shadow-primary/20"
+                  className="h-12 text-base"
                 >
                   {isSubmitting ? "Creating account..." : "Create account"}
                 </Button>
@@ -376,7 +376,7 @@ export default function SignupPage() {
               <span>Already have an account?</span>
               <Link
                 href="/login"
-                className="font-semibold text-primary-strong hover:underline underline-offset-4 transition-all"
+                className="font-semibold text-brand-blue hover:underline underline-offset-4 transition-all"
               >
                 Sign in
               </Link>

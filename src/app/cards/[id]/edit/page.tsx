@@ -521,7 +521,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               router.refresh();
               router.push(target);
             }}
-            className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group bg-transparent border-none cursor-pointer py-1"
+            className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group bg-transparent border-none cursor-pointer py-1"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
             Back
@@ -655,7 +655,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               <Button 
                 onClick={() => handleSubmit()} 
                 disabled={saving}
-                className="rounded-md h-12 min-w-[160px] px-7 shadow-2xl shadow-primary/20 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
+                className="rounded-md h-12 min-w-[160px] px-7 shadow-2xl shadow-black/10 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
               >
                 {saving ? "Saving Changes..." : "Save"}
               </Button>

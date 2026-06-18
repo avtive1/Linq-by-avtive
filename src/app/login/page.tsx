@@ -7,7 +7,6 @@ import { signIn } from "next-auth/react";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { ArrowLeft } from "lucide-react";
-import * as Sentry from "@sentry/nextjs"; 
 
 export default function LoginPage() {
   const router = useRouter();
@@ -124,9 +123,9 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-[520px] min-w-0 px-1 sm:px-0 animate-slide-up">
         <Link
           href="/"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-primary/20 shadow-sm">
+          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
             <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
           </div>
           <span>Back to Home</span>
@@ -136,7 +135,7 @@ export default function LoginPage() {
           <span className="ui-eyebrow text-muted/70">AVTIVE</span>
         </div>
 
-        <div className="glass-panel rounded-xl p-5 sm:p-8 lg:p-10 xl:p-12 shadow-2xl shadow-primary/5">
+        <div className="card-base glass-panel rounded-xl p-5 sm:p-8 lg:p-10 xl:p-12">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
               <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Welcome back</h1>
@@ -174,20 +173,10 @@ export default function LoginPage() {
               fullWidth
               size="lg"
               disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
-              className="h-12 text-base shadow-lg shadow-primary/20"
+              className="h-12 text-base"
             >
               {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
             </Button>
-
-            <button
-              type="button"
-              className="text-sm text-muted hover:text-heading underline underline-offset-4 mx-auto block"
-              onClick={() => {
-              Sentry.captureException(new Error("Manual Sentry test error from login page"));
-              }}
-            >
-              Test Sentry
-            </button>
             {needsOtpStep ? (
               <button
                 type="button"

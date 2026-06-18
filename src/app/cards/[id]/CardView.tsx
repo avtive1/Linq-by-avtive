@@ -281,7 +281,7 @@ export default function CardView({
                       router.push(backHref);
                       router.refresh();
                     }}
-                    className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-primary-strong hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group py-1 cursor-pointer bg-transparent border-none text-left"
+                    className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group py-1 cursor-pointer bg-transparent border-none text-left"
                   >
                     <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                     Back
@@ -365,7 +365,7 @@ export default function CardView({
                   onClick={() => setShowPostDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   icon={<Download size={18} />}
-                  className="shadow-lg shadow-primary/20 flex-1 md:flex-initial h-10 px-4 min-w-[132px]"
+                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial h-10 px-4 min-w-[132px]"
                 >
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>

@@ -272,7 +272,7 @@ export default async function AdminDashboardPage() {
                       {org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}
                     </span>
                   </div>
-                  <h3 className="mt-2 truncate text-sm font-semibold text-heading group-hover:text-primary-strong">
+                  <h3 className="mt-2 truncate text-sm font-semibold text-heading group-hover:text-ink">
                     {org.organizationName || "Unnamed Organization"}
                   </h3>
                   <p className="mt-1 truncate text-xs font-normal text-muted">

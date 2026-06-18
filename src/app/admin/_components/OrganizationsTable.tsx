@@ -154,7 +154,7 @@ export default function OrganizationsTable({ initialOrganizations }: Organizatio
                         )}
                       </div>
                       <div className="flex min-w-0 flex-col gap-0.5">
-                        <span className="truncate text-sm font-semibold text-heading group-hover:text-primary-strong transition-colors">
+                        <span className="truncate text-sm font-semibold text-heading group-hover:text-ink transition-colors">
                           {org.organizationName || `@${org.username}`}
                         </span>
                         <div className="flex items-center gap-1.5 ui-meta truncate">

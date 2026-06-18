@@ -53,7 +53,7 @@ export default function NewOrganizationByAdminPage() {
       <div className="w-full max-w-[620px] rounded-xl border border-primary/20 bg-white/90 p-6 shadow-md sm:p-8">
         <Link
           href="/admin"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-primary-strong"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink"
         >
           <ArrowLeft size={14} />
           Back to Admin

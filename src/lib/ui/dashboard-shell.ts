@@ -16,7 +16,7 @@ export const dashboardMainWhiteCenter =
   "relative flex min-h-dvh w-full flex-col items-center justify-center gap-4 overflow-x-hidden bg-white pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))]";
 
 export const dashboardPreviewBannerOuter =
-  "relative z-100 border-b border-white/20 bg-linear-to-r from-heading via-[#2B4F95] to-heading pb-3 shadow-sm pt-[max(0.75rem,env(safe-area-inset-top))]";
+  "relative z-100 border-b border-hairline-soft bg-primary pb-3 shadow-sm pt-[max(0.75rem,env(safe-area-inset-top))]";
 
 export const dashboardPreviewBannerInner =
   "mx-auto flex w-full max-w-[1480px] min-w-0 flex-col gap-3 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] text-sm font-medium text-white sm:flex-row sm:items-center sm:justify-between";
