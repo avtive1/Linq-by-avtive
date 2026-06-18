@@ -90,7 +90,7 @@ export function FilePicker({
       )}
       <div
         className={cn(
-          "relative flex h-11 items-center overflow-hidden rounded-md border bg-white shadow-sm transition-all duration-200",
+          "relative flex h-11 items-center overflow-hidden rounded-md border bg-white transition-all duration-200",
           error ? "border-destructive" : "border-hairline-strong hover:border-brand-blue/40"
         )}
       >

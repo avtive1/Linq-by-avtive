@@ -1365,7 +1365,7 @@ function DashboardContent() {
                 <span>{userName}</span>
                 {!isPreviewMode && (isOrgOwner || isOrgTeamMember) && (
                   <span
-                    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border ${
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${
                       isOrgOwner
                         ? "bg-primary/10 text-primary-strong border-primary/25"
                         : "bg-surface text-heading/80 border-border/70"
@@ -1593,13 +1593,13 @@ function DashboardContent() {
                           viewport={presets.viewport}
                           {...staggerItem(topIdx, 0.04, 0.2, 8, 0.24)}
                         >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-[11px] font-bold text-primary-strong">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-[11px] font-bold text-primary-strong">
                             {topIdx + 1}
                           </span>
                           <span className="flex-1 truncate text-sm font-medium text-heading leading-tight">
                             {evt.name}
                           </span>
-                          <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
+                          <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
                             {evt.attendeeCount || 0}
                           </span>
                         </motion.div>
@@ -1630,13 +1630,13 @@ function DashboardContent() {
                           viewport={presets.viewport}
                           {...staggerItem(roleIdx, 0.04, 0.2, 8, 0.24)}
                         >
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-primary/25 bg-primary/10 text-[11px] font-bold text-primary-strong">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-[11px] font-bold text-primary-strong">
                             {roleIdx + 1}
                           </span>
                           <span className="flex-1 truncate text-sm font-medium text-heading leading-tight">
                             {entry.role}
                           </span>
-                          <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
+                          <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
                             {entry.count}
                           </span>
                         </motion.div>
@@ -1656,14 +1656,14 @@ function DashboardContent() {
             {...hoverLift(-2, 1.004)}
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
+              <span className="inline-flex items-center rounded-md border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
                 Team Dashboard
               </span>
-              <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
+              <span className="inline-flex items-center rounded-md border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
                 Role: {orgRoleLabel || "Member"}
               </span>
               <span
-                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                className={`inline-flex items-center rounded-md border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                   hasCreateCampaignPermission
                     ? "border-primary/25 bg-primary/10 text-primary-strong"
                     : "border-amber-300/70 bg-amber-50 text-amber-700"
@@ -1843,7 +1843,7 @@ function DashboardContent() {
                 Your Access
               </p>
               <span
-                className={`text-xs px-2 py-1 rounded-full border ${
+                className={`text-xs px-2 py-1 rounded-md border ${
                   hasCreateCampaignPermission
                     ? "text-primary-strong bg-primary/10 border-primary/25"
                     : "text-amber-700 bg-amber-50 border-amber-200"
@@ -1904,7 +1904,7 @@ function DashboardContent() {
                       </span>
                     )}
                   </div>
-                  <span className={`font-medium shrink-0 border px-2 py-1 rounded-full ${formatJoinStatus(req.status).className}`}>
+                  <span className={`font-medium shrink-0 border px-2 py-1 rounded-md ${formatJoinStatus(req.status).className}`}>
                     {formatJoinStatus(req.status).label}
                   </span>
                 </div>

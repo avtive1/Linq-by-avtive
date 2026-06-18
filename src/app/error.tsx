@@ -21,7 +21,7 @@ export default function GlobalError({
     <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
       <GradientBackground />
       <div className="relative z-10 flex flex-col items-center gap-5 card-base glass-panel p-10 rounded-xl max-w-md animate-slide-up">
-        <div className="w-12 h-12 rounded-full bg-danger/15 flex items-center justify-center text-danger">
+        <div className="w-12 h-12 rounded-md bg-danger/15 flex items-center justify-center text-danger">
           <AlertTriangle size={24} />
         </div>
         <div className="flex flex-col gap-2">

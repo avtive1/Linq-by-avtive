@@ -43,7 +43,7 @@ export function Select({
       )}
       <div
         className={cn(
-          "flex h-11 items-center overflow-hidden rounded-md border bg-white shadow-sm transition-all duration-200",
+          "flex h-11 items-center overflow-hidden rounded-md border bg-white transition-all duration-200",
           error ? "border-destructive" : "border-hairline-strong focus-within:border-2 focus-within:border-brand-blue",
           disabled && "cursor-not-allowed bg-surface"
         )}

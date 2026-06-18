@@ -62,7 +62,7 @@ export function TextArea({
         disabled={disabled}
         maxLength={maxLength}
         className={cn(
-          "min-h-[88px] resize-none rounded-md border-hairline-strong bg-white p-4 text-base shadow-sm focus-visible:border-2 focus-visible:border-brand-blue focus-visible:ring-0",
+          "min-h-[88px] resize-none rounded-md border-hairline-strong bg-white p-4 text-base focus-visible:border-2 focus-visible:border-brand-blue focus-visible:ring-0",
           isLocked && "cursor-not-allowed bg-surface text-steel",
           error && "border-destructive"
         )}

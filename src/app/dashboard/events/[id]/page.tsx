@@ -1886,14 +1886,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             {...hoverLift(-2, 1.004)}
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-full border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
+              <span className="inline-flex items-center rounded-md border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
                 Team Member View
               </span>
-              <span className="inline-flex items-center rounded-full border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
+              <span className="inline-flex items-center rounded-md border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
                 Campaign Access
               </span>
               <span
-                className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
+                className={`inline-flex items-center rounded-md border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                   canManageEvent
                     ? "border-primary/25 bg-primary/10 text-primary-strong"
                     : "border-amber-300/70 bg-amber-50 text-amber-700"
@@ -2648,7 +2648,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                               setShowBrandCustomColorPicker(false);
                               editBrandingDraft((prev) => ({ ...prev, card_color: c.name }));
                             }}
-                            className={`w-8 h-8 rounded-full border transition-all ${
+                            className={`w-8 h-8 rounded-md border transition-all ${
                               brandingDraft.card_color === c.name
                                 ? "ring-2 ring-primary ring-offset-2 scale-110 border-transparent"
                                 : "border-white/40 hover:scale-105"

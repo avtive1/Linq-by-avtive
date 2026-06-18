@@ -19,9 +19,9 @@ type ButtonProps = {
 };
 
 const sizeClasses = {
-  sm: "h-10 px-4 text-sm",
-  md: "h-11 px-6 text-sm",
-  lg: "h-11 px-6 text-sm min-h-[44px]",
+  sm: "h-10 px-4 text-button-md",
+  md: "h-11 px-6 text-button-md",
+  lg: "h-11 min-h-[44px] px-6 text-button-md",
 };
 
 export function Button({
@@ -38,14 +38,14 @@ export function Button({
   title,
 }: ButtonProps) {
   const mergedClassName = cn(
-    "inline-flex items-center justify-center gap-2 rounded-full font-medium tracking-normal transition-[background-color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:active:scale-100 no-underline",
+    "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-[background-color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 no-underline",
     sizeClasses[size],
     variant === "primary" &&
-      "bg-primary text-primary-foreground border border-primary hover:bg-charcoal",
+      "bg-primary text-primary-foreground border border-primary hover:bg-charcoal active:bg-charcoal disabled:bg-hairline disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed disabled:active:scale-100",
     variant === "blue" &&
-      "bg-brand-blue text-white border border-brand-blue hover:brightness-95",
+      "bg-brand-blue text-white border border-brand-blue hover:bg-blue-pressed active:bg-blue-pressed disabled:bg-hairline disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed",
     variant === "secondary" &&
-      "bg-transparent border border-hairline-strong text-ink hover:bg-surface",
+      "bg-transparent border border-hairline-strong text-ink hover:bg-surface disabled:bg-transparent disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed",
     fullWidth && "w-full",
     className
   );

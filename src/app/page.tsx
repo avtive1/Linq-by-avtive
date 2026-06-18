@@ -11,12 +11,11 @@ export default function HomePage() {
         {/* Hero Section */}
         <div className="flex flex-col gap-4 min-[480px]:gap-6 animate-slide-up delay-100 w-full min-w-0">
           <h1
-            className="text-[2.125rem] min-[400px]:text-4xl sm:text-5xl md:text-6xl lg:text-[4.75rem] xl:text-[5.75rem] font-black tracking-[-0.04em] text-heading leading-[0.95] text-balance max-w-[1000px] mx-auto px-1"
-            style={{ fontWeight: 900, WebkitTextStroke: "0.2px currentColor", textShadow: "0 0 0.2px currentColor" }}
+            className="text-[2.125rem] min-[400px]:text-[3rem] sm:text-[3.75rem] md:text-[4rem] lg:text-[4rem] xl:text-[5rem] font-medium tracking-[-0.02em] text-ink leading-[1.05] text-balance max-w-[1000px] mx-auto px-1"
           >
             Plan less <span className="bg-gradient-to-r from-ink via-charcoal to-brand-yellow bg-clip-text text-transparent py-2">Linq faster</span>
           </h1>
-          <p className="text-base min-[400px]:text-lg sm:text-xl text-heading/75 leading-[1.6] max-w-[980px] mx-auto text-balance font-normal px-1">
+          <p className="text-base min-[400px]:text-lg sm:text-xl text-slate leading-[1.5] max-w-[980px] mx-auto text-balance font-normal px-1">
             Create your event, share a single registration link, and let attendees
             generate their own beautiful, downloadable conference cards.
           </p>

@@ -67,7 +67,7 @@ export function TextInput({
       )}
       <div
         className={cn(
-          "flex h-11 items-center overflow-hidden rounded-md border bg-white shadow-sm transition-all duration-200",
+          "flex h-11 items-center overflow-hidden rounded-md border bg-white transition-all duration-200",
           error ? "border-destructive" : isLocked ? "border-hairline bg-surface" : "border-hairline-strong focus-within:border-2 focus-within:border-brand-blue",
           isLocked && "cursor-not-allowed"
         )}
@@ -98,7 +98,7 @@ export function TextInput({
           maxLength={maxLength}
           min={min}
           className={cn(
-            "h-full flex-1 border-0 bg-transparent px-4 text-base shadow-none ring-0 focus-visible:ring-0",
+            "h-full flex-1 border-0 bg-transparent px-4 text-base shadow-none ring-0 focus-visible:ring-0 placeholder:text-muted",
             isLocked ? "cursor-not-allowed text-steel" : "text-ink"
           )}
         />

@@ -101,7 +101,7 @@ export function TimeInput({
         aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
         className={cn(
-          "flex h-11 w-full items-center rounded-md border bg-white px-4 text-left shadow-sm transition-all duration-200",
+          "flex h-11 w-full items-center rounded-md border bg-white px-4 text-left transition-all duration-200",
           error ? "border-destructive" : "border-hairline-strong hover:border-brand-blue/50 focus-visible:border-2 focus-visible:border-brand-blue",
           disabled ? "cursor-not-allowed bg-surface" : "cursor-pointer"
         )}
