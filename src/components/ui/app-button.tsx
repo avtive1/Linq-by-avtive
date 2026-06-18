@@ -38,7 +38,7 @@ export function Button({
   title,
 }: ButtonProps) {
   const mergedClassName = cn(
-    "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-[background-color,opacity,transform] duration-150 ease-out active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 no-underline",
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-button-md font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 no-underline",
     sizeClasses[size],
     variant === "primary" &&
       "bg-primary text-primary-foreground border border-primary hover:bg-charcoal active:bg-charcoal disabled:bg-hairline disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed disabled:active:scale-100",

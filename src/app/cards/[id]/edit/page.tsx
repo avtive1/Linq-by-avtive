@@ -655,7 +655,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               <Button 
                 onClick={() => handleSubmit()} 
                 disabled={saving}
-                className="rounded-md h-12 min-w-[160px] px-7 shadow-2xl shadow-black/10 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
+                className="rounded-md h-11 min-w-[160px] px-7 font-medium text-sm tracking-[0.01em]"
               >
                 {saving ? "Saving Changes..." : "Save"}
               </Button>

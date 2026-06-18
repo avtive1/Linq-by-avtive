@@ -348,14 +348,14 @@ export default function SignupPage() {
                 Continue
               </Button>
             ) : (
-              <div className="flex items-center gap-3">
+              <div className="form-actions">
                 <Button
                   type="button"
                   variant="secondary"
                   fullWidth
                   size="lg"
                   onClick={() => setSignupStep(1)}
-                  className="h-12 text-base"
+                  className="h-11"
                 >
                   Back
                 </Button>
@@ -365,7 +365,7 @@ export default function SignupPage() {
                   fullWidth
                   size="lg"
                   disabled={isSubmitting}
-                  className="h-12 text-base"
+                  className="h-11"
                 >
                   {isSubmitting ? "Creating account..." : "Create account"}
                 </Button>

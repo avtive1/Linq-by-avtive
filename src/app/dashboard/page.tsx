@@ -1399,7 +1399,7 @@ function DashboardContent() {
 
           <div className="flex min-w-0 w-full flex-col items-stretch gap-3 max-lg:basis-full lg:w-auto lg:basis-auto lg:flex-row lg:flex-nowrap lg:items-center lg:justify-end">
             {isAdmin && (
-              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
+              <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   href="/admin"
                   variant="secondary"
@@ -1408,15 +1408,10 @@ function DashboardContent() {
                 >
                   Admin Panel
                 </Button>
-              </motion.div>
+              </div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && (
-              <motion.div
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.94 }}
-                transition={{ type: "spring", stiffness: 400, damping: 24 }}
-                className="w-full shrink-0 rounded-md lg:w-auto lg:max-w-fit"
-              >
+              <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1426,34 +1421,30 @@ function DashboardContent() {
                     }
                     setIsEventModalOpen(true);
                   }}
-                  className={`w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-primary/10 border-primary/30 text-primary-strong hover:bg-primary/20 hover:border-primary/45 ${
-                    isOrgTeamMember && !hasCreateCampaignPermission
-                      ? "cursor-help shadow-inner bg-danger/5 border-danger/20 text-danger hover:bg-danger/10 hover:border-danger/30"
-                      : "shadow-sm hover:shadow-md"
-                  }`}
+                  className="h-11 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-surface border-hairline-strong text-ink hover:bg-white"
                   title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
                   icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
                 >
                   <span>New Campaign</span>
                 </Button>
-              </motion.div>
+              </div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && !isOrgTeamMember && (
-              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
+              <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   variant="secondary"
                   onClick={() => {
                     void openTeamAccessModal("list");
                   }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-primary/20 text-heading hover:text-ink hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  className="h-11 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface"
                   icon={<Users size={18} />}
                 >
                   Team Access
                 </Button>
-              </motion.div>
+              </div>
             )}
             {!isPreviewMode && (
-              <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
+              <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <Button
                   variant="secondary"
                   onClick={() => {
@@ -1467,30 +1458,30 @@ function DashboardContent() {
                     setOrganizationLogoDraft("");
                     setIsUsernameModalOpen(true);
                   }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-ink hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                  className="h-11 w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
                   icon={<Settings size={18} />}
                 >
                   <span>Settings</span>
                 </Button>
-              </motion.div>
+              </div>
             )}
-            <motion.div whileHover={{ y: -2, scale: 1.015 }} whileTap={{ scale: 0.97 }} className="w-full shrink-0 lg:w-auto lg:max-w-fit">
+            <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
               <Button
                 variant="secondary"
                 fullWidth
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 icon={isLoggingOut ? undefined : <LogOut size={18} />}
-                className="justify-center whitespace-nowrap lg:w-auto border-primary/20 text-heading hover:text-ink hover:border-primary/45 hover:bg-primary/10 shadow-sm hover:shadow-md"
+                className="h-11 justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
               >
                 <span>{isLoggingOut ? "..." : "Logout"}</span>
               </Button>
-            </motion.div>
+            </div>
           </div>
         </motion.div>
         {isOrgAdminMode && (
           <motion.div
-            className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-4 py-6 shadow-lg min-w-0 lg:px-6"
+            className="mb-8 rounded-md border border-hairline-soft bg-surface px-4 py-6 min-w-0 lg:px-6"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
           >
@@ -1650,7 +1641,7 @@ function DashboardContent() {
         )}
         {isTeamMemberMode && (
           <motion.div
-            className="mb-8 rounded-md border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
+            className="mb-8 rounded-md border border-primary/25 bg-surface border border-hairline-soft px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
             viewport={presets.viewport}
             {...fadeUp(0.05)}
             {...hoverLift(-2, 1.004)}
@@ -1678,11 +1669,9 @@ function DashboardContent() {
           </motion.div>
         )}
         {!isPreviewMode ? null : (
-          <div className="motion-token-enter mb-10 p-7 rounded-2xl border border-heading/10 bg-linear-to-br from-white via-white/40 to-primary/5 shadow-md backdrop-blur-xl ring-1 ring-white/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
-            
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-xl bg-heading/5 flex items-center justify-center text-heading shrink-0 shadow-inner group-hover:scale-105 transition-transform duration-500">
+          <div className="motion-token-enter relative mb-10 overflow-hidden rounded-2xl border border-hairline-soft bg-white p-7 shadow-md">
+            <div className="mb-8 flex items-center gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-surface text-heading shadow-inner">
                 <ShieldCheck size={32} strokeWidth={2.5} />
               </div>
               <div className="flex flex-col">
@@ -1691,12 +1680,11 @@ function DashboardContent() {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 relative z-10">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                {/* Attendee Metric */}
-               <div className="group relative overflow-hidden bg-white/95 p-6 rounded-2xl border border-border/40 flex items-center justify-between shadow-sm transition-all duration-500 hover:shadow-md hover:-translate-y-1">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
-                  <div className="flex items-center gap-5 relative z-10 w-full">
-                     <div className="w-14 h-14 rounded-md bg-primary/15 flex items-center justify-center text-primary-strong shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
+               <div className="flex items-center justify-between rounded-2xl border border-border/40 bg-white p-6 shadow-sm">
+                  <div className="flex w-full items-center gap-5">
+                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-primary/15 text-primary-strong shadow-inner">
                         <Users size={28} />
                      </div>
                      <div className="flex flex-col gap-1">
@@ -1709,10 +1697,9 @@ function DashboardContent() {
                </div>
 
                {/* Campaign Metric */}
-               <div className="group relative overflow-hidden bg-white/95 p-6 rounded-2xl border border-border/40 flex items-center justify-between shadow-sm transition-all duration-500 hover:shadow-md hover:-translate-y-1">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-heading/5 rounded-full -mr-12 -mt-12 blur-xl pointer-events-none" />
-                  <div className="flex items-center gap-5 relative z-10 w-full">
-                     <div className="w-14 h-14 rounded-md bg-heading/10 flex items-center justify-center text-heading shadow-inner group-hover:scale-105 transition-transform duration-500 shrink-0">
+               <div className="flex items-center justify-between rounded-2xl border border-border/40 bg-white p-6 shadow-sm">
+                  <div className="flex w-full items-center gap-5">
+                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md bg-surface text-heading shadow-inner">
                         <Layers3 size={28} />
                      </div>
                      <div className="flex flex-col gap-1">
@@ -1832,7 +1819,7 @@ function DashboardContent() {
 
         {isOrgTeamMember && (
           <motion.div
-            className="p-4 rounded-md mb-6 border border-primary/25 bg-linear-to-r from-primary/8 to-white shadow-sm motion-token-enter motion-token-hover"
+            className="p-4 rounded-md mb-6 border border-primary/25 bg-surface border border-hairline-soft shadow-sm motion-token-enter motion-token-hover"
             viewport={presets.viewport}
             {...fadeUp(0.07)}
             {...hoverLift(-2, 1.004)}
@@ -2020,7 +2007,7 @@ function DashboardContent() {
                 return (
                 <motion.div
                   key={evt.id}
-                  className={`group motion-token-enter motion-token-hover flex flex-col justify-between p-6 rounded-md hover:-translate-y-2 ${
+                  className={`group motion-token-enter motion-token-hover flex flex-col justify-between p-6 rounded-md  ${
                     isPreviewMode
                       ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
                       : isTeamMemberMode || isOrgAdminMode
@@ -2208,12 +2195,12 @@ function DashboardContent() {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-border/50 p-6 flex flex-col sm:flex-row gap-3 mt-auto shrink-0">
+              <div className="sticky bottom-0 left-0 right-0 border-t border-hairline-soft bg-white p-6 form-actions mt-auto shrink-0">
                 <Button 
                   variant="secondary" 
                   fullWidth 
                   onClick={() => setIsEventModalOpen(false)}
-                  className="order-2 sm:order-1"
+                  className="order-2 sm:order-1 h-11"
                 >
                   Cancel
                 </Button>
@@ -2221,7 +2208,7 @@ function DashboardContent() {
                   type="submit" 
                   fullWidth 
                   disabled={isSubmittingEvent || (isOrgTeamMember && !hasCreateCampaignPermission)}
-                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
+                  className="order-1 sm:order-2 h-11"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}
                 </Button>

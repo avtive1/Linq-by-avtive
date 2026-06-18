@@ -1353,7 +1353,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         className="mt-4 w-full min-w-0 text-left sm:mt-5"
       >
         <div
-          className="w-full rounded-sm border bg-linear-to-br from-white/48 via-white/22 to-primary/7 px-3 py-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-xl backdrop-saturate-150 sm:px-4 sm:py-2.5"
+          className="w-full rounded-sm border bg-white border border-hairline-soft px-3 py-2 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.65)] backdrop-blur-xl backdrop-saturate-150 sm:px-4 sm:py-2.5"
           style={{ borderColor: "rgba(107, 114, 128, 0.7)" }}
         >
           {showComposer ? (
@@ -1748,12 +1748,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
 
         {isPreviewMode && (
-          <div className="motion-token-enter mb-8 p-5 rounded-xl border border-primary/20 bg-linear-to-br from-white/95 to-info/5 shadow-xl backdrop-blur-xl relative overflow-hidden ring-1 ring-white/20">
-            {/* Background decorative elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-info/5 rounded-full -ml-12 -mb-12 blur-xl pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col gap-5">
+          <div className="motion-token-enter relative mb-8 overflow-hidden rounded-xl border border-hairline-soft bg-white p-5 shadow-xl">
+            <div className="flex flex-col gap-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                   <div className="flex items-center gap-2 mb-1.5">
@@ -1785,7 +1781,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
         {isOrgAdminEventMode && (
           <motion.div
-            className="mb-8 w-full max-w-full min-w-0 box-border rounded-sm border border-primary/25 bg-linear-to-r from-primary/10 via-white to-info/10 px-4 py-4 shadow-sm motion-token-enter motion-token-hover sm:px-5 overflow-x-auto"
+            className="mb-8 w-full max-w-full min-w-0 box-border rounded-sm border border-primary/25 bg-surface border border-hairline-soft px-4 py-4 shadow-sm motion-token-enter motion-token-hover sm:px-5 overflow-x-auto"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
             {...hoverLift(-2, 1.004)}
@@ -1880,7 +1876,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         )}
         {isTeamMemberEventMode && (
           <motion.div
-            className="mb-8 rounded-sm border border-primary/25 bg-linear-to-r from-primary/8 via-white to-info/8 px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
+            className="mb-8 rounded-sm border border-primary/25 bg-surface border border-hairline-soft px-5 py-4 shadow-sm motion-token-enter motion-token-hover"
             viewport={presets.viewport}
             {...fadeUp(0.05)}
             {...hoverLift(-2, 1.004)}
@@ -1966,21 +1962,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           <motion.div
             className={`relative overflow-hidden p-6 rounded-2xl mb-8 flex flex-col md:flex-row md:items-center justify-between gap-8 group transition-all duration-500 animate-slide-up ${
               isTeamMemberEventMode
-                ? "bg-linear-to-br from-white to-primary/5 border border-primary/20 shadow-sm"
+                ? "bg-white border border-hairline-soft border border-primary/20 shadow-sm"
                 : "bg-primary border border-white/10 shadow-md"
             }`}
             viewport={presets.viewport}
             {...fadeUp(0.06)}
           >
-            {/* Animated Background Decorative Elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl group-hover:bg-primary/20 transition-all duration-700 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-info/5 rounded-full -ml-24 -mb-24 blur-3xl pointer-events-none" />
-            
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-              <div className={`w-14 h-14 flex items-center justify-center shrink-0 rounded-md shadow-sm transition-all duration-500 group-hover:scale-105 ${
+            <div className="relative z-10 flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
+              <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-md shadow-sm ${
                 isTeamMemberEventMode
                   ? "bg-primary text-white shadow-black/10" 
-                  : "bg-white/10 text-primary backdrop-blur-md shadow-black/10"
+                  : "border border-white/20 bg-white/10 text-primary"
               }`}>
                 <Users size={28} />
               </div>
@@ -2016,7 +2008,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     isTeamMemberEventMode
                       ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
                       : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
-                  } ${status.label === "Past" || !canExport ? "opacity-50 grayscale" : "hover:-translate-y-1 active:scale-95"}`}
+                  } ${status.label === "Past" || !canExport ? "opacity-50 grayscale" : " active:scale-95"}`}
                 >
                   Export Registry
                 </Button>
@@ -2131,7 +2123,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               filteredCards.map((card, idx) => (
                 <motion.div
                   key={card.id}
-                className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-md hover:-translate-y-0.5 ${
+                className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-md  ${
                   isPreviewMode
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
                     : isTeamMemberEventMode || isOrgAdminEventMode
@@ -2544,12 +2536,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
           />
           <div
-            className="relative h-full w-full overflow-hidden animate-in fade-in duration-200"
-            style={{
-              background: `linear-gradient(160deg, ${
-                BRAND_THEME_BACKDROPS[brandingDraft.card_color || "purple"]?.start || "#eef0ff"
-              } 0%, ${BRAND_THEME_BACKDROPS[brandingDraft.card_color || "purple"]?.end || "#f7f3ff"} 100%)`,
-            }}
+            className="relative h-full w-full overflow-hidden bg-surface-soft animate-in fade-in duration-200"
           >
             <div className="mx-auto flex min-w-0 h-full w-full max-w-[1540px] flex-col px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:py-6">
               <div className="flex min-w-0 flex-wrap items-start justify-between gap-4 rounded-t-xl border border-border/40 bg-white/90 px-5 pb-4 pt-6 backdrop-blur-sm sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
@@ -3176,7 +3163,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <Button
                   type="submit"
                   fullWidth
-                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
+                  className="order-1 sm:order-2"
                   disabled={isSavingSponsors || isPreviewMode}
                 >
                   {isSavingSponsors ? "Saving..." : "Save sponsors"}
@@ -3299,12 +3286,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-t border-border/50 p-6 flex flex-col sm:flex-row gap-3 mt-auto shrink-0">
+              <div className="sticky bottom-0 left-0 right-0 mt-auto shrink-0 border-t border-border/50 bg-white p-6 form-actions">
                 <Button
                   variant="secondary"
                   fullWidth
                   onClick={() => setIsEditOpen(false)}
-                  className="order-2 sm:order-1"
+                  className="order-2 h-11 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -3312,7 +3299,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="submit"
                   fullWidth
                   disabled={isSavingEdit}
-                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
+                  className="order-1 h-11 sm:order-2"
                 >
                   {isSavingEdit ? "Saving..." : "Save Changes"}
                 </Button>
@@ -3352,13 +3339,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onChange={setDeleteConfirm}
               />
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="form-actions pt-2">
                 <Button
                   variant="secondary"
                   fullWidth
                   onClick={() => setIsDeleteOpen(false)}
                   disabled={isDeleting}
-                  className="order-2 sm:order-1"
+                  className="order-2 h-11 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -3367,7 +3354,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   fullWidth
                   onClick={handleDeleteEvent}
                   disabled={isDeleting || deleteConfirm !== eventData.name}
-                  className="order-1 sm:order-2 bg-red-500! text-white! border-red-500! shadow-lg shadow-red-500/20 hover:bg-red-600! hover:text-white! disabled:opacity-50"
+                  className="order-1 h-11 bg-red-500! text-white! border-red-500! hover:bg-red-600! hover:text-white! disabled:opacity-50 sm:order-2"
                 >
                   {isDeleting ? "Deleting..." : "Delete Forever"}
                 </Button>
@@ -3429,13 +3416,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 />
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="form-actions pt-2">
                 <Button
                   variant="secondary"
                   fullWidth
                   onClick={() => setIsRenewOpen(false)}
                   disabled={isRenewing}
-                  className="order-2 sm:order-1"
+                  className="order-2 h-11 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -3443,7 +3430,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="submit"
                   fullWidth
                   disabled={isRenewing}
-                  className="order-1 sm:order-2 shadow-lg shadow-black/10"
+                  className="order-1 h-11 sm:order-2"
                 >
                   {isRenewing ? "Renewing..." : "Renew Event"}
                 </Button>

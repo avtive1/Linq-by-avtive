@@ -35,7 +35,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
             href="/admin"
             className="group no-link-underline flex min-w-0 flex-1 items-center gap-3 sm:gap-4 rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
-            <div className="shrink-0 overflow-hidden rounded-md border border-white/30 bg-white/95 px-2 py-1 shadow-sm transition-transform duration-200 group-hover:scale-[1.02]">
+            <div className="shrink-0 overflow-hidden rounded-md border border-white/30 bg-white/95 px-2 py-1 shadow-sm">
               <Image src="/avtive-logo.svg" alt="Avtive logo" width={138} height={32} className="h-8 w-auto max-w-[min(138px,calc(100vw-11rem))]" priority />
             </div>
             <div className="flex min-w-0 flex-col">

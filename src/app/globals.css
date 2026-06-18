@@ -212,8 +212,6 @@ small,
 }
 
 .card-primary:hover {
-  box-shadow: rgba(5, 0, 56, 0.06) 0px 4px 12px 0px;
-  transform: translateY(-2px);
   border-color: var(--color-hairline);
 }
 
@@ -227,8 +225,7 @@ small,
 
 .card-secondary:hover {
   background: var(--color-canvas);
-  box-shadow: rgba(5, 0, 56, 0.04) 0px 1px 2px 0px;
-  transform: translateY(-1px);
+  border-color: var(--color-hairline);
 }
 
 .card-base {
@@ -238,13 +235,34 @@ small,
   padding: 24px;
 }
 
+/* Aligned form button rows — equal height, no floating buttons */
+.form-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 12px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+@media (min-width: 640px) {
+  .form-actions {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .form-actions > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+}
+
 /* Above in-app modals (z-100) so file crop never sits under dialogs. */
 @utility z-cropper-overlay {
   z-index: 200;
 }
 
 @utility bg-radial-glow {
-  background: radial-gradient(circle at center, #fafbfc 0%, #f7f8fa 100%);
+  background: var(--color-surface-soft);
 }
 
 @utility text-balance {

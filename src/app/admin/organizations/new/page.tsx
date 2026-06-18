@@ -50,30 +50,29 @@ export default function NewOrganizationByAdminPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-120px)] items-center justify-center px-2 py-6 sm:px-4 sm:py-8 lg:px-6">
-      <div className="w-full max-w-[620px] rounded-xl border border-primary/20 bg-white/90 p-6 shadow-md sm:p-8">
+      <div className="card-base w-full max-w-[620px] p-6 sm:p-8">
         <Link
           href="/admin"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-steel hover:text-ink"
         >
           <ArrowLeft size={14} />
           Back to Admin
         </Link>
-        <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+        <h1 className="text-2xl font-medium text-ink tracking-[-0.03em] leading-[1.15]">
           Create Organization Account
         </h1>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-sm text-steel">
           Super admin can register an organization owner account using email and password.
           Username and profile picture will be mandatory on first login.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="mt-6 flex w-full flex-col gap-4">
           <TextInput
             label="Organization Name"
             required
             placeholder="Enter organization name"
             value={organizationName}
             onChange={setOrganizationName}
-            error={error ? "" : undefined}
           />
           <TextInput
             label="Organization Owner Email"
@@ -82,7 +81,6 @@ export default function NewOrganizationByAdminPage() {
             placeholder="owner@organization.com"
             value={email}
             onChange={setEmail}
-            error={error ? "" : undefined}
           />
           <TextInput
             label="Temporary Password"
@@ -92,12 +90,12 @@ export default function NewOrganizationByAdminPage() {
             value={password}
             onChange={setPassword}
           />
-          {error ? <p className="text-sm text-red-500">{error}</p> : null}
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" fullWidth onClick={() => router.push("/admin")}>
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <div className="form-actions">
+            <Button type="button" variant="secondary" fullWidth className="h-11" onClick={() => router.push("/admin")}>
               Cancel
             </Button>
-            <Button type="submit" fullWidth disabled={isSubmitting}>
+            <Button type="submit" fullWidth className="h-11" disabled={isSubmitting}>
               {isSubmitting ? "Creating..." : "Create Organization"}
             </Button>
           </div>

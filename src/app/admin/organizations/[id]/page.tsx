@@ -121,23 +121,22 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               </p>
             </div>
           </div>
-          <Link 
+          <Button
             href={`/dashboard?impersonate=${user.id}`}
-            className="inline-flex items-center justify-center gap-2 bg-white border border-border text-heading !no-underline hover:!no-underline hover:text-ink hover:border-primary/60 hover:bg-primary/10 h-10 px-4 text-[16px] leading-[1.25] rounded-md font-semibold tracking-[0em] transition-[background-color,opacity,transform,box-shadow] duration-150 ease-out hover:-translate-y-px active:translate-y-0 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+            variant="secondary"
+            className="h-11 w-full justify-center sm:w-auto sm:min-w-[12rem]"
+            icon={<Sparkles size={16} />}
           >
-            <Sparkles size={16} />
-            <span>View as Organization</span>
-          </Link>
+            View as Organization
+          </Button>
         </div>
       </div>
 
 
 
       {/* Premium Event Performance Grid */}
-      <div className="glass-panel p-6 rounded-2xl mb-10 relative overflow-hidden shadow-lg ring-1 ring-primary/10 ring-inset">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -mr-32 -mt-32 blur-3xl pointer-events-none" />
-        
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 relative z-10">
+      <div className="card-base mb-10 p-6">
+        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] flex items-center gap-3">
               <TrendingUp className="text-primary-strong" size={28} />
@@ -154,62 +153,59 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="card-primary group flex flex-col gap-6 p-8">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between relative z-10">
-              <div className="w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong group-hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-md border border-primary/25 bg-primary/12 text-primary-strong">
                 <Rocket size={26} />
               </div>
               <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Active Velocity</span>
             </div>
-            <div className="relative z-10 flex flex-col gap-2">
-              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-ink transition-colors">{recentEventsCount}</span>
+            <div className="flex flex-col gap-2">
+              <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{recentEventsCount}</span>
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">Recent Campaigns</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">New events successfully launched within the last 30 days.</span>
               </div>
             </div>
-            <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
-              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-2/3 animate-pulse" />
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10 mt-2">
+              <div className="h-full bg-primary rounded-full w-2/3 animate-pulse" />
             </div>
           </div>
 
           <div className="card-primary group flex flex-col gap-6 p-8">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-info/10 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between relative z-10">
-              <div className="w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong group-hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-md border border-primary/25 bg-primary/12 text-primary-strong">
                 <TrendingUp size={26} />
               </div>
               <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Network Impact</span>
             </div>
-            <div className="relative z-10 flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-ink transition-colors">{newAttendeesCount}</span>
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">New Connections</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Newly registered attendees engaged across recent campaigns (30d).</span>
               </div>
             </div>
-            <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
-              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-3/4 animate-pulse" />
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10 mt-2">
+              <div className="h-full bg-primary rounded-full w-3/4 animate-pulse" />
             </div>
           </div>
 
           <div className="card-primary group flex flex-col gap-6 p-8">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-heading/5 rounded-full -mr-16 -mt-16 blur-2xl pointer-events-none" />
-            <div className="flex items-center justify-between relative z-10">
-              <div className="w-14 h-14 rounded-md bg-primary/12 border border-primary/25 flex items-center justify-center text-primary-strong group-hover:scale-105 transition-transform duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex h-14 w-14 items-center justify-center rounded-md border border-primary/25 bg-primary/12 text-primary-strong">
                 <Target size={26} />
               </div>
               <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Engagement Core</span>
             </div>
-            <div className="relative z-10 flex flex-col gap-2">
+            <div className="flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{avgGrowthRate}</span>
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted">Avg / Recent Campaign</span>
                 <span className="text-[13px] font-medium text-muted/60 opacity-80 leading-tight">Average attendee acquisition rate per recently launched campaign.</span>
               </div>
             </div>
-            <div className="h-1.5 w-full bg-primary/10 rounded-full overflow-hidden relative z-10 shadow-inner mt-2">
-              <div className="h-full bg-linear-to-r from-primary to-primary-strong rounded-full w-1/2 animate-pulse" />
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10 mt-2">
+              <div className="h-full bg-primary rounded-full w-1/2 animate-pulse" />
             </div>
           </div>
         </div>
@@ -221,7 +217,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           Hosted Events
         </h2>
         
-        <div className="bg-white/60 backdrop-blur-md rounded-2xl border border-border/40 overflow-hidden shadow-md">
+        <div className="overflow-hidden rounded-2xl border border-border/40 bg-white shadow-md">
           <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>

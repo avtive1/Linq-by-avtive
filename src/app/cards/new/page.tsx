@@ -775,7 +775,7 @@ function NewCardForm() {
                  variant="secondary"
                  onClick={() => handleSubmit()}
                  disabled={loading}
-                 className="rounded-md h-12 min-w-[160px] px-7 bg-white text-heading border border-border/60 shadow-xl hover:bg-white/95 hover:-translate-y-1 active:translate-y-0 transition-all font-medium text-sm tracking-[0.01em]"
+                 className="rounded-md h-11 min-w-[160px] px-7 bg-white text-ink border border-hairline-strong font-medium text-sm tracking-[0.01em]"
                >
                  {loading
                    ? form.cardRole === "guest"
