@@ -151,7 +151,7 @@ export function CardTypographyPicker({
     const spaceAbove = r.top - 12;
 
     if (preferBelow) {
-      let maxHeight = Math.min(380, Math.max(140, spaceBelow));
+      const maxHeight = Math.min(380, Math.max(140, spaceBelow));
       let top = belowTop;
       if (top + maxHeight > vh - 12) {
         top = Math.max(12, vh - 12 - maxHeight);
