@@ -7,6 +7,7 @@ import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
 import { Clock, Lock, XCircle, CheckCircle2 } from "lucide-react";
 import { useRegistrationStatusStream } from "@/lib/ui/useRegistrationRealtime";
 import { HorizontalPreviewScaler } from "@/components/HorizontalPreviewScaler";
+import { VerticalPreviewScaler } from "@/components/VerticalPreviewScaler";
 import { CardPreview } from "@/components/CardPreview";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -579,43 +580,45 @@ function NewCardForm() {
       <GradientBackground />
 
       {/* Left Sidebar - Form */}
-      <div className="relative z-10 w-full lg:w-[460px] glass-panel border-r-border/30 p-8 md:p-10 overflow-y-auto lg:h-screen animate-slide-up">
-        <div className="flex items-center gap-4 mb-5">
-          <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/65">
-            Avtive attendee portal
-          </span>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-1.5">
-            <h1 className="text-3xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
-              Event Registration
-            </h1>
-            <p className="text-[15px] text-muted leading-normal">
-              {form.cardRole === "guest"
-                ? form.eventName
-                  ? `Register as a guest for ${form.eventName}. Your card will be issued after organizer approval.`
-                  : "Register as a guest. Your card will be issued after organizer approval."
-                : form.eventName
-                  ? `Register for ${form.eventName} and get your attendee card instantly.`
-                  : "Register for the event to generate your attendee card."}
-            </p>
-          </div>
-
-          {eventLoading && (
-            <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
-              <Lock size={14} />
-              Loading event details...
+      <div className="relative z-10 flex w-full flex-col animate-slide-up lg:h-dvh lg:max-h-dvh lg:w-[460px] glass-panel border-r-border/30">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex-1 overflow-y-auto p-8 md:p-10">
+            <div className="flex items-center gap-4 mb-5">
+              <span className="text-sm font-normal tracking-[0.01em] leading-tight text-muted/65">
+                Avtive attendee portal
+              </span>
             </div>
-          )}
-          {!eventLoading && (
-            <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
-              <Lock size={12} />
-              Event details are pre-filled from the organizer.
-            </div>
-          )}
 
-          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1.5">
+                <h1 className="text-3xl font-semibold text-heading tracking-[-0.03em] leading-[1.1]">
+                  Event Registration
+                </h1>
+                <p className="text-[15px] text-muted leading-normal">
+                  {form.cardRole === "guest"
+                    ? form.eventName
+                      ? `Register as a guest for ${form.eventName}. Your card will be issued after organizer approval.`
+                      : "Register as a guest. Your card will be issued after organizer approval."
+                    : form.eventName
+                      ? `Register for ${form.eventName} and get your attendee card instantly.`
+                      : "Register for the event to generate your attendee card."}
+                </p>
+              </div>
+
+              {eventLoading && (
+                <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+                  <Lock size={14} />
+                  Loading event details...
+                </div>
+              )}
+              {!eventLoading && (
+                <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+                  <Lock size={12} />
+                  Event details are pre-filled from the organizer.
+                </div>
+              )}
+
+              <div className="flex flex-col gap-8">
             {enabledFields.map((field) => {
               if (field.id === "name") {
                 return (
@@ -720,8 +723,26 @@ function NewCardForm() {
               );
             })}
 
+              </div>
+            </div>
           </div>
 
+          <div className="shrink-0 border-t border-border/40 bg-white/95 px-8 py-4 md:px-10">
+            <Button
+              type="submit"
+              fullWidth
+              disabled={loading}
+              className="h-11 rounded-md bg-primary text-primary-foreground border border-primary font-medium text-sm tracking-[0.01em]"
+            >
+              {loading
+                ? form.cardRole === "guest"
+                  ? "Submitting..."
+                  : "Saving..."
+                : form.cardRole === "guest"
+                  ? "Submit Guest Registration"
+                  : "Create Card"}
+            </Button>
+          </div>
         </form>
       </div>
 
@@ -754,7 +775,7 @@ function NewCardForm() {
                 {/* Horizontal Card Preview */}
                 <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 shrink xl:shrink-0">
                    <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
-                   <HorizontalPreviewScaler className="horizontal-preview-frame">
+                   <HorizontalPreviewScaler className="w-full max-w-[780px] mx-auto">
                       <div className="preview-card-capture">
                         <CardPreview data={previewData} preview />
                       </div>
@@ -763,14 +784,14 @@ function NewCardForm() {
 
                 <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 animate-fade-in shrink xl:shrink-0">
                   <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
-                  <div className="vertical-preview-frame mt-1">
-                    <div className="preview-card-capture vertical-preview">
+                  <VerticalPreviewScaler className="w-full max-w-[304px] mx-auto mt-1">
+                    <div className="preview-card-capture">
                       <CardPreview data={previewData} preview isVertical verticalSide={2} />
                     </div>
-                  </div>
+                  </VerticalPreviewScaler>
                 </div>
              </div>
-             <div className="mt-8 flex justify-center">
+             <div className="mt-8 hidden justify-center xl:flex">
                <Button
                  variant="secondary"
                  onClick={() => handleSubmit()}
@@ -831,62 +852,8 @@ function NewCardForm() {
 
       </div>
 
-      {/* Responsive scale styles */}
+      {/* Print-only styles */}
       <style>{`
-        .horizontal-preview-frame {
-          position: relative;
-          width: 780px;
-          max-width: 100%;
-          min-width: 0;
-          box-sizing: border-box;
-          aspect-ratio: 1200 / 628;
-          height: auto;
-          overflow: hidden;
-          display: block;
-          margin-inline: auto;
-        }
-        .vertical-preview-frame {
-          width: 304px;
-          height: 496px;
-          display: flex;
-          justify-content: center;
-          overflow: hidden;
-        }
-        .vertical-preview {
-          position: relative;
-          width: 576px;
-          height: 1024px;
-          transform-origin: top center;
-          transform: scale(0.484);
-        }
-        @media (max-width: 1279px) {
-          .horizontal-preview-frame {
-            position: relative;
-            width: 100%;
-            max-width: 780px;
-            min-width: 0;
-            aspect-ratio: 1200 / 628;
-            height: auto;
-            overflow: hidden;
-            margin-inline: auto;
-          }
-          .vertical-preview-frame {
-            container-type: inline-size;
-            width: min(272px, 100%);
-            aspect-ratio: 576 / 1024;
-            height: auto;
-            display: flex;
-            justify-content: center;
-            overflow: hidden;
-          }
-          .vertical-preview {
-            position: relative;
-            transform-origin: top center;
-            transform: scale(min(0.468, max(0.15, calc((100cqi - 16px) / 576))));
-            width: 576px;
-            height: 1024px;
-          }
-        }
         @media print {
            body { background: white !important; }
            /* Sidebar only — do not use blanket \`p\`/\`h3\` hides or CardPreview text disappears */

@@ -399,6 +399,7 @@ button,
 }
 
 a {
+  cursor: pointer;
   transition: color 120ms ease, text-decoration-color 120ms ease;
 }
 

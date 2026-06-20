@@ -200,7 +200,7 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-transparent">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
@@ -283,7 +283,7 @@ export default function SignupPage() {
                 error={errors.confirmPassword}
                 onChange={update("confirmPassword")}
               />
-              <div className="relative">
+              <div className="flex flex-col gap-1">
                 <TextInput
                   label="Username"
                   required
@@ -298,7 +298,7 @@ export default function SignupPage() {
                   onFocus={() => setUsernameLocked(false)}
                 />
                 {form.username.length >= 2 && (
-                  <div className="absolute right-0 top-0 pt-[28px]">
+                  <div className="text-right">
                     {usernameStatus === "loading" && <div className="text-[13px] leading-tight font-medium text-muted animate-pulse">Checking...</div>}
                     {usernameStatus === "available" && <div className="text-[13px] leading-tight font-medium text-success">Available</div>}
                     {usernameStatus === "taken" && <div className="text-[13px] leading-tight font-medium text-danger">Taken</div>}

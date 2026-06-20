@@ -2,10 +2,10 @@
 
 import type { ReactNode } from "react";
 import { CardArtboardScaler } from "@/components/CardArtboardScaler";
-import { CARD_ARTBOARD_HORIZONTAL } from "@/lib/card-preview-scale";
+import { CARD_ARTBOARD_VERTICAL } from "@/lib/card-preview-scale";
 
-/** Fits a 1200×628 horizontal CardPreview inside its parent width. */
-export function HorizontalPreviewScaler({
+/** Fits a 576×1024 vertical CardPreview inside its parent width. */
+export function VerticalPreviewScaler({
   className,
   children,
   maxScale = 0.65,
@@ -16,8 +16,8 @@ export function HorizontalPreviewScaler({
 }) {
   return (
     <CardArtboardScaler
-      artboardWidth={CARD_ARTBOARD_HORIZONTAL.width}
-      artboardHeight={CARD_ARTBOARD_HORIZONTAL.height}
+      artboardWidth={CARD_ARTBOARD_VERTICAL.width}
+      artboardHeight={CARD_ARTBOARD_VERTICAL.height}
       className={className}
       fitMode="width"
       maxScale={maxScale}

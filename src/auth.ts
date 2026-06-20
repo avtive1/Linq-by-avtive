@@ -1,7 +1,9 @@
+import { cookies } from "next/headers";
 import { getServerSession, type NextAuthOptions } from "next-auth";
 import type { Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { verifyPassword, getAuthSessionPayloadByUserId } from "@/lib/auth-db";
+import { resolveAuthSecret } from "@/lib/auth-secret";
 import { resolveLinkedInternalUserIdFromClerk } from "@/lib/clerk-user-bridge";
 import {
   consumeLoginOtp,
@@ -9,9 +11,18 @@ import {
   isOrgLoginEmailOtpGloballyEnabled,
   verifyActiveLoginOtp,
 } from "@/lib/auth-login-otp";
+import { clearNextAuthSessionCookies, hasNextAuthSessionCookie } from "@/lib/next-auth-cookies";
 
 export const authOptions: NextAuthOptions = {
-  secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+  get secret() {
+    return resolveAuthSecret();
+  },
+  logger: {
+    error(code, metadata) {
+      if (code === "JWT_SESSION_ERROR") return;
+      console.error(`[next-auth][error][${code}]`, metadata);
+    },
+  },
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60,
@@ -78,6 +89,11 @@ export async function getServerAuthSession(): Promise<Session | null> {
   const session = await getServerSession(authOptions);
   const existingUserId = String(session?.user?.id || "").trim();
   if (existingUserId) return session;
+
+  const cookieStore = await cookies();
+  if (hasNextAuthSessionCookie(cookieStore)) {
+    clearNextAuthSessionCookies(cookieStore);
+  }
 
   try {
     const internalId = await resolveLinkedInternalUserIdFromClerk();

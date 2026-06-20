@@ -11,17 +11,6 @@ import { normalizeRegistrationFormConfig } from "@/lib/registration-form";
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     await ensureAuthSchema();
-    await queryNeon(
-      `ALTER TABLE public.events
-       ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb`,
-    );
-    await queryNeon(
-      `ALTER TABLE public.events
-       ADD COLUMN IF NOT EXISTS card_color text NOT NULL DEFAULT 'purple',
-       ADD COLUMN IF NOT EXISTS card_font text NOT NULL DEFAULT 'inter',
-       ADD COLUMN IF NOT EXISTS horizontal_text_color text NOT NULL DEFAULT '',
-       ADD COLUMN IF NOT EXISTS vertical_text_color text NOT NULL DEFAULT ''`,
-    );
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
     const { id } = await params;

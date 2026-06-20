@@ -6,6 +6,7 @@ import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
 import { CardTypographyPicker } from "@/components/CardTypographyPicker";
 import { ArrowLeft } from "lucide-react";
 import { HorizontalPreviewScaler } from "@/components/HorizontalPreviewScaler";
+import { VerticalPreviewScaler } from "@/components/VerticalPreviewScaler";
 import { CardPreview } from "@/components/CardPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import { toast } from "sonner";
@@ -635,7 +636,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               {/* Horizontal Card Preview */}
               <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 shrink xl:shrink-0">
                   <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
-                  <HorizontalPreviewScaler className="horizontal-preview-frame">
+                  <HorizontalPreviewScaler className="w-full max-w-[780px] mx-auto">
                     <div className="preview-card-capture">
                       <CardPreview data={previewData} preview />
                     </div>
@@ -644,11 +645,11 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
               <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 animate-fade-in shrink xl:shrink-0">
                 <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
-                <div className="vertical-preview-frame mt-1">
-                  <div className="preview-card-capture vertical-preview">
+                <VerticalPreviewScaler className="w-full max-w-[304px] mx-auto mt-1">
+                  <div className="preview-card-capture">
                     <CardPreview data={previewData} preview isVertical verticalSide={2} />
                   </div>
-                </div>
+                </VerticalPreviewScaler>
               </div>
             </div>
             <div className="mt-8 flex justify-center">
@@ -821,63 +822,6 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         )}
     </div>
 
-      {/* Responsive scale styles */}
-      <style>{`
-        .horizontal-preview-frame {
-          position: relative;
-          width: 780px;
-          max-width: 100%;
-          min-width: 0;
-          box-sizing: border-box;
-          aspect-ratio: 1200 / 628;
-          height: auto;
-          overflow: hidden;
-          display: block;
-          margin-inline: auto;
-        }
-        .vertical-preview-frame {
-          width: 304px;
-          height: 496px;
-          display: flex;
-          justify-content: center;
-          overflow: hidden;
-        }
-        .vertical-preview {
-          position: relative;
-          width: 576px;
-          height: 1024px;
-          transform-origin: top center;
-          transform: scale(0.484);
-        }
-        @media (max-width: 1279px) {
-          .horizontal-preview-frame {
-            position: relative;
-            width: 100%;
-            max-width: 780px;
-            min-width: 0;
-            aspect-ratio: 1200 / 628;
-            height: auto;
-            overflow: hidden;
-            margin-inline: auto;
-          }
-          .vertical-preview-frame {
-            container-type: inline-size;
-            width: min(272px, 100%);
-            aspect-ratio: 576 / 1024;
-            height: auto;
-            display: flex;
-            justify-content: center;
-            overflow: hidden;
-          }
-          .vertical-preview {
-            position: relative;
-            transform-origin: top center;
-            transform: scale(min(0.468, max(0.15, calc((100cqi - 16px) / 576))));
-            width: 576px;
-            height: 1024px;
-          }
-        }
-      `}</style>
     </main>
   );
 }

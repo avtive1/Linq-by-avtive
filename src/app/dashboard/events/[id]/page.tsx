@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useLayoutEffect, use, useMemo, useCallback, Suspense, useRef, type ReactNode } from "react";
+import { useState, useEffect, use, useMemo, useCallback, Suspense, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -7,6 +7,7 @@ import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
 import { CardTypographyPicker } from "@/components/CardTypographyPicker";
+import { isDeleteConfirmMatch, normalizeDeleteConfirmText } from "@/lib/ui/delete-confirm";
 import { buildLinkedInFeedShareUrl } from "@/lib/share/linkedin-card-share";
 
 import {
@@ -62,6 +63,7 @@ import {
   dashboardModalBackdropTop,
 } from "@/lib/ui/dashboard-shell";
 import { CardPreview } from "@/components/CardPreview";
+import { BrandingDualPreview } from "@/components/BrandingDualPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import {
   type RegistrationFieldDefinition,
@@ -70,6 +72,7 @@ import {
   getEnabledFieldsForRole,
   normalizeRegistrationFormConfig,
 } from "@/lib/registration-form";
+import { asPayloadRecord, getPayloadError, readResponsePayload } from "@/lib/http/read-response-payload";
 
 type AttendeeCard = CardData & { photo_path?: string };
 type PendingAccessRequest = {
@@ -103,8 +106,6 @@ const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
   blue: { start: "#f1f5ff", end: "#f6f8ff" },
 };
 
-/** Default preview scale used on xl+ (side-by-side layout); narrower viewports shrink via ResizeObserver */
-const BRANDING_MODAL_SOCIAL_SCALE = 0.58;
 
 type CardBrandingDraft = {
   card_color: string;
@@ -124,23 +125,6 @@ function cardBrandingDraftsEqual(a: CardBrandingDraft, b: CardBrandingDraft) {
     a.horizontal_text_color === b.horizontal_text_color &&
     a.vertical_text_color === b.vertical_text_color
   );
-}
-
-async function readResponsePayload(res: Response): Promise<unknown> {
-  const contentType = res.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    return res.json().catch(() => null);
-  }
-  const text = await res.text().catch(() => "");
-  return text ? { error: text } : null;
-}
-
-function getPayloadError(payload: unknown, fallback: string): string {
-  if (payload && typeof payload === "object" && "error" in payload) {
-    const value = (payload as { error?: unknown }).error;
-    if (typeof value === "string" && value.trim()) return value.trim();
-  }
-  return fallback;
 }
 
 function EventContent({ params }: { params: Promise<{ id: string }> }) {
@@ -170,9 +154,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [shareDraftMessage, setShareDraftMessage] = useState("");
   const [shareDraftRole, setShareDraftRole] = useState<"guest" | "visitor">("visitor");
   const shareRef = useRef<HTMLDivElement>(null);
-  const brandingSocialSizerRef = useRef<HTMLDivElement>(null);
-  /** Horizontal social preview scale; shrinks when container narrower than intrinsic 1200×628 layout. */
-  const [socialPreviewScale, setSocialPreviewScale] = useState(BRANDING_MODAL_SOCIAL_SCALE);
 
   // Close share menu on outside click
   useEffect(() => {
@@ -211,6 +192,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   // Delete event modal
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Duplicate
@@ -240,52 +222,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [brandingUndoStack, setBrandingUndoStack] = useState<CardBrandingDraft[]>([]);
   const [brandingRedoStack, setBrandingRedoStack] = useState<CardBrandingDraft[]>([]);
   const [isSavingBranding, setIsSavingBranding] = useState(false);
-
-  /** Measure before paint below xl so the first mobile frame isn't clipped while scale was still desktop (0.58). */
-  useLayoutEffect(() => {
-    if (!isBrandingOpen) {
-      setSocialPreviewScale(BRANDING_MODAL_SOCIAL_SCALE);
-      return;
-    }
-    /** Match Tailwind xl — only below this do we auto-shrink previews to fit stacked/narrow layouts */
-    const desktopMq =
-      typeof window !== "undefined" ? window.matchMedia("(min-width: 1280px)") : null;
-    const measure = () => {
-      if (desktopMq?.matches) {
-        setSocialPreviewScale(BRANDING_MODAL_SOCIAL_SCALE);
-        return;
-      }
-      const el = brandingSocialSizerRef.current;
-      let w = el?.clientWidth ?? 0;
-      /** Fresh open / ref clamp: vw minus modal chrome so we don't keep desktop scale during first paint */
-      if (typeof window !== "undefined" && w < 56) {
-        w = Math.max(140, Math.min(window.innerWidth - 48, 1200));
-      }
-      const padded = Math.max(36, w - 20);
-      const next = Math.min(BRANDING_MODAL_SOCIAL_SCALE, Math.max(0.14, padded / 1200));
-      setSocialPreviewScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
-    };
-    measure();
-    desktopMq?.addEventListener?.("change", measure);
-    const ro =
-      typeof ResizeObserver !== "undefined"
-        ? new ResizeObserver(() => {
-            measure();
-          })
-        : null;
-    const el = brandingSocialSizerRef.current;
-    if (el && ro) ro.observe(el);
-    window.addEventListener("resize", measure);
-    window.addEventListener("orientationchange", measure);
-    const id = window.requestAnimationFrame(measure);
-    return () => {
-      desktopMq?.removeEventListener?.("change", measure);
-      ro?.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("orientationchange", measure);
-      window.cancelAnimationFrame(id);
-    };
-  }, [isBrandingOpen]);
 
   const editBrandingDraft = useCallback((recipe: (prev: CardBrandingDraft) => CardBrandingDraft) => {
     setBrandingDraft((prev) => {
@@ -392,7 +328,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         const eventRes = await fetch(
           `/api/events/${id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`,
         );
-        const eventPayload = await eventRes.json();
+        const eventPayload = await readResponsePayload(eventRes);
         if (eventRes.status === 404) {
           if (!silentPoll) {
             toast.error("This campaign no longer exists.");
@@ -400,17 +336,30 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           router.replace(isPreviewMode ? "/admin" : "/dashboard");
           return;
         }
-        if (!eventRes.ok) throw new Error(eventPayload?.error || "Failed to load event.");
-        const eventRecord = eventPayload.data;
+        if (!eventRes.ok) {
+          throw new Error(getPayloadError(eventPayload, "Failed to load event."));
+        }
+        const eventRecord =
+          eventPayload &&
+          typeof eventPayload === "object" &&
+          "data" in eventPayload &&
+          eventPayload.data &&
+          typeof eventPayload.data === "object"
+            ? (eventPayload.data as Record<string, unknown>)
+            : null;
+        if (!eventRecord) {
+          throw new Error("Failed to load event.");
+        }
         if (!isMounted) return;
 
         try {
           const brandingRes = await fetch(`/api/events/${id}/branding`);
-          const brandingPayload = await brandingRes.json().catch(() => null);
-          if (brandingRes.ok && brandingPayload?.data && isMounted) {
+          const brandingPayload = await readResponsePayload(brandingRes);
+          const brandingData = asPayloadRecord(brandingPayload);
+          if (brandingRes.ok && brandingData && isMounted) {
             setOrganizationBranding({
-              name: String(brandingPayload.data.organizationName || ""),
-              logoUrl: String(brandingPayload.data.organizationLogoUrl || ""),
+              name: String(brandingData.organizationName || ""),
+              logoUrl: String(brandingData.organizationLogoUrl || ""),
             });
           }
         } catch {
@@ -418,15 +367,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         }
 
         setEventData({
-          id: eventRecord.id,
-          name: eventRecord.name,
-          description: eventRecord.description || "",
-          location: eventRecord.location,
-          location_type: eventRecord.location_type || "onsite",
-          date: eventRecord.date,
-          time: eventRecord.time || "",
-          user: eventRecord.user_id,
-          logo_url: eventRecord.logo_url || "",
+          id: String(eventRecord.id || ""),
+          name: String(eventRecord.name || ""),
+          description: String(eventRecord.description || ""),
+          location: String(eventRecord.location || ""),
+          location_type: (eventRecord.location_type as "onsite" | "webinar" | undefined) || "onsite",
+          date: String(eventRecord.date || ""),
+          time: String(eventRecord.time || ""),
+          user: String(eventRecord.user_id || ""),
+          logo_url: String(eventRecord.logo_url || ""),
           sponsors: parseEventSponsors(eventRecord.sponsors),
           registration_form_config: normalizeRegistrationFormConfig(eventRecord.registration_form_config),
           card_color: String(eventRecord.card_color || "purple"),
@@ -447,8 +396,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         const [memberResult, attendeeRes] = await Promise.all([
           fetch("/api/organization-members/me")
             .then(async (res) => {
-              const payload = await res.json().catch(() => null);
-              const ownerId = res.ok ? String(payload?.data?.org_owner_user_id || "") : "";
+              const payload = await readResponsePayload(res);
+              const ownerId = res.ok ? String((payload as { data?: { org_owner_user_id?: string } })?.data?.org_owner_user_id || "") : "";
               return Boolean(ownerId && ownerId === String(eventRecord.user_id || ""));
             })
             .catch(() => false),
@@ -460,8 +409,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
         let attendeeRecords: Array<Record<string, unknown>> = [];
         if (!attendeeRes.ok) {
-          const errPayload = await attendeeRes.json().catch(() => null);
-          const errMsg = typeof errPayload?.error === "string" ? errPayload.error : attendeeRes.statusText;
+          const errPayload = await readResponsePayload(attendeeRes);
+          const errMsg = getPayloadError(errPayload, attendeeRes.statusText);
           if (attendeeRes.status === 403) {
             // Team members without card-read grants can still access event shell.
             attendeeRecords = [];
@@ -469,8 +418,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             throw new Error(errMsg || "Failed to fetch decrypted attendees");
           }
         } else {
-          const attendeePayload = await attendeeRes.json();
-          attendeeRecords = attendeePayload.data || [];
+          const attendeePayload = await readResponsePayload(attendeeRes);
+          attendeeRecords = Array.isArray((attendeePayload as { data?: unknown[] })?.data)
+            ? ((attendeePayload as { data: unknown[] }).data as Array<Record<string, unknown>>)
+            : [];
         }
         if (!isMounted) return;
 
@@ -496,7 +447,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
         setCards(mappedCards);
 
-        setGrantedPermissions(Array.isArray(eventPayload?.data?.permissions) ? eventPayload.data.permissions : []);
+        setGrantedPermissions(
+          Array.isArray((eventPayload as { data?: { permissions?: string[] } })?.data?.permissions)
+            ? (eventPayload as { data: { permissions: string[] } }).data.permissions
+            : [],
+        );
 
         if (eventRecord.user_id === viewerId || memberResult) {
           try {
@@ -504,15 +459,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               fetch(`/api/access-requests?eventId=${id}`),
               fetch(`/api/events/${id}/registrations`),
             ]);
-            const reqPayload = await reqRes.json();
-            if (reqRes.ok && reqPayload?.data?.requests) {
-              setPendingAccessRequests(reqPayload.data.requests);
+            const reqPayload = await readResponsePayload(reqRes);
+            if (reqRes.ok && (reqPayload as { data?: { requests?: unknown } })?.data?.requests) {
+              setPendingAccessRequests((reqPayload as { data: { requests: PendingAccessRequest[] } }).data.requests);
             }
-            const registrationPayload = await registrationRes.json();
-            if (registrationRes.ok && registrationPayload?.data?.requests) {
-              setPendingRegistrations(registrationPayload.data.requests);
+            const registrationPayload = await readResponsePayload(registrationRes);
+            if (registrationRes.ok && (registrationPayload as { data?: { requests?: unknown } })?.data?.requests) {
+              const regData = registrationPayload as {
+                data: { requests: PendingRegistrationRequest[] };
+                pagination?: { total?: number };
+              };
+              setPendingRegistrations(regData.data.requests);
               setPendingRegistrationCount(
-                Number(registrationPayload?.pagination?.total ?? registrationPayload.data.requests.length),
+                Number(regData.pagination?.total ?? regData.data.requests.length),
               );
             } else {
               setPendingRegistrations([]);
@@ -643,8 +602,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       }
 
       const deleteRes = await fetch(`/api/cards/${cardId}`, { method: "DELETE" });
-      const deletePayload = await deleteRes.json();
-      if (!deleteRes.ok) throw new Error(deletePayload?.error || "Failed to delete card.");
+      const deletePayload = await readResponsePayload(deleteRes);
+      if (!deleteRes.ok) throw new Error(getPayloadError(deletePayload, "Failed to delete card."));
 
       setCards(prev => prev.filter(c => c.id !== cardId));
       toast.success("Card deleted successfully.");
@@ -943,7 +902,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       toast.error("You cannot delete an event with registered leads.");
       return;
     }
-    if (deleteConfirm.trim() !== (eventData?.name || "").trim()) {
+    if (!isDeleteConfirmMatch(deleteConfirm, deleteConfirmTarget)) {
       toast.error("Event name does not match.");
       return;
     }
@@ -1194,9 +1153,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           note: trimmedNote,
         }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not create access request.");
+        toast.error(getPayloadError(payload, "Could not create access request."));
         return;
       }
       toast.success("Access request sent to organization admin.");
@@ -1251,9 +1210,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           rejectionReason: decision === "reject" ? String(reason || "").trim() : undefined,
         }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not review registration.");
+        toast.error(getPayloadError(payload, "Could not review registration."));
         return;
       }
       setPendingRegistrations((prev) => prev.filter((r) => r.id !== requestId));
@@ -1281,9 +1240,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decision }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not review request.");
+        toast.error(getPayloadError(payload, "Could not review request."));
         return;
       }
       setPendingAccessRequests((prev) => prev.filter((r) => r.id !== requestId));
@@ -1299,12 +1258,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     setIsLoadingGrants(true);
     try {
       const res = await fetch(`/api/access-grants?eventId=${eventData.id}`);
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not load active grants.");
+        toast.error(getPayloadError(payload, "Could not load active grants."));
         return;
       }
-      setActiveGrants(payload?.data || []);
+      setActiveGrants((payload as { data?: ActiveGrant[] })?.data || []);
     } catch (err) {
       logger.error({ err }, "Load grants error");
       toast.error("Could not load active grants.");
@@ -1317,9 +1276,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     setRevokingGrantId(grantId);
     try {
       const res = await fetch(`/api/access-grants/${grantId}`, { method: "DELETE" });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not revoke grant.");
+        toast.error(getPayloadError(payload, "Could not revoke grant."));
         return;
       }
       setActiveGrants((prev) => prev.filter((g) => g.id !== grantId));
@@ -1427,10 +1386,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     );
   };
 
-  const brandingBadgeResponsiveScale = (628 * socialPreviewScale) / 1024;
-  const brandingSocialRenderedHeightPx = 628 * socialPreviewScale;
-  /** Layout clip width matches scaled artwork so the xl row does not reserve max-w-[740px] slack */
-  const brandingSocialRenderedWidthPx = 1200 * socialPreviewScale;
+  const isDeleteConfirmValid = isDeleteConfirmMatch(deleteConfirm, deleteConfirmTarget);
 
   if (isLoading) {
     return (
@@ -1694,6 +1650,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     onClick={() => {
                       if (!canDeleteEvent) return;
                       setDeleteConfirm("");
+                      setDeleteConfirmTarget(normalizeDeleteConfirmText(eventData?.name ?? ""));
                       setIsDeleteOpen(true);
                     }}
                     disabled={cards.length > 0 || !canDeleteEvent}
@@ -1920,35 +1877,37 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-md border border-border/60 bg-white p-4.5">
+                <div className="rounded-md border border-border/60 bg-white p-4.5 flex flex-col">
                   <p className="text-[22px] font-semibold text-heading leading-tight">Guest Form</p>
+                  <p className="mt-1 text-sm text-muted">Preview and customize guest registration fields.</p>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3 h-10! px-4 text-[15px]"
+                    className="mt-4 !h-10 w-fit shrink-0 px-4 text-[15px]"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("guest")}
                     >
                     Preview Form
                   </Button>
                   {!canManageEvent && (
-                    <p className="text-[11px] text-muted -mt-2 mb-2">You need campaign manage access to edit fields.</p>
+                    <p className="text-[11px] text-muted mt-2">You need campaign manage access to edit fields.</p>
                   )}
                   <p className="mt-2 text-sm text-muted">{previewGuestFields.length} fields configured</p>
                 </div>
-                <div className="rounded-md border border-border/60 bg-white p-4.5">
+                <div className="rounded-md border border-border/60 bg-white p-4.5 flex flex-col">
                   <p className="text-[22px] font-semibold text-heading leading-tight">Visitor Form</p>
+                  <p className="mt-1 text-sm text-muted">Preview and customize visitor registration fields.</p>
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="mb-3 h-10! px-4 text-[15px]"
+                    className="mt-4 !h-10 w-fit shrink-0 px-4 text-[15px]"
                     disabled={!canManageEvent}
                     onClick={() => openRegistrationFormModal("visitor")}
                   >
                     Preview Form
                   </Button>
                   {!canManageEvent && (
-                    <p className="text-[11px] text-muted -mt-2 mb-2">You need campaign manage access to edit fields.</p>
+                    <p className="text-[11px] text-muted mt-2">You need campaign manage access to edit fields.</p>
                   )}
                   <p className="mt-2 text-sm text-muted">{previewVisitorFields.length} fields configured</p>
                 </div>
@@ -2280,7 +2239,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <select
                 value={accessRequestAction}
                 onChange={(e) => setAccessRequestAction(e.target.value)}
-                className="w-full rounded-md border border-border/60 bg-white px-3 py-2 text-sm text-heading outline-none focus:border-primary/70"
+                className="h-11 w-full rounded-md border border-border/60 bg-white px-3 text-sm text-heading outline-none focus:border-primary/70"
               >
                 <option value="manage_event">Manage event settings</option>
                 <option value="delete_event">Delete event (only when leads = 0)</option>
@@ -2297,17 +2256,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <p className="text-xs text-muted -mt-1">
                 Your organization admin will review this request and can approve or reject it.
               </p>
-              <div className="flex gap-3 pt-1">
+              <div className="form-actions pt-1">
                 <Button
                   type="button"
                   variant="secondary"
                   fullWidth
                   onClick={() => setIsAccessRequestOpen(false)}
                   disabled={isSubmittingAccessRequest}
+                  className="order-2 h-11 sm:order-1"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" fullWidth disabled={isSubmittingAccessRequest}>
+                <Button type="submit" fullWidth disabled={isSubmittingAccessRequest} className="order-1 h-11 sm:order-2">
                   {isSubmittingAccessRequest ? "Sending..." : "Request Access"}
                 </Button>
               </div>
@@ -2530,16 +2490,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isBrandingOpen && (
-        <div className="fixed inset-0 z-100">
+        <div className="fixed inset-0 z-100 flex h-dvh max-h-dvh flex-col">
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
           />
-          <div
-            className="relative h-full w-full overflow-hidden bg-surface-soft animate-in fade-in duration-200"
-          >
-            <div className="mx-auto flex min-w-0 h-full w-full max-w-[1540px] flex-col px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:py-6">
-              <div className="flex min-w-0 flex-wrap items-start justify-between gap-4 rounded-t-xl border border-border/40 bg-white/90 px-5 pb-4 pt-6 backdrop-blur-sm sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
+          <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1540px] flex-1 flex-col px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:py-4">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/40 bg-white/90 shadow-2xl backdrop-blur-sm">
+              <div className="flex min-w-0 shrink-0 flex-wrap items-start justify-between gap-4 border-b border-border/40 px-5 pb-4 pt-6 sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
                 <div>
                   <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Card Branding</h2>
                   <p className="text-sm text-muted mt-1.5">Finalize branding first, then share guest/visitor links.</p>
@@ -2552,77 +2510,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </button>
               </div>
 
-              <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto border-x border-border/40 bg-white/70 px-5 py-5 sm:px-8 sm:py-6">
-                <div className="flex w-full flex-col gap-12 lg:gap-16">
-                  {/**
-                   * Outer: justify-center centers the shrink-wrapped row.
-                   * Inner must NOT use `w-full` at xl — that defeats `xl:w-fit` and skews previews right.
-                   */}
-                  <div className="flex w-full min-w-0 justify-center">
-                    <div className="flex min-w-0 max-w-full max-xl:w-full flex-col items-center gap-8 xl:w-fit xl:flex-row xl:items-start xl:justify-center xl:gap-6">
-                      <div className="flex min-w-0 max-w-full max-xl:w-full flex-col items-center gap-3 xl:w-fit xl:max-w-none xl:shrink-0 xl:items-start">
-                        <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
-                          Social post layout
-                        </h4>
-                        <div
-                          ref={brandingSocialSizerRef}
-                          className="max-xl:w-full min-w-0 overflow-x-hidden max-xl:overflow-x-auto max-xl:overscroll-x-contain"
-                        >
-                          <div
-                            className="mx-auto"
-                            style={{
-                              width: `${brandingSocialRenderedWidthPx}px`,
-                              maxWidth: "100%",
-                              height: `${brandingSocialRenderedHeightPx}px`,
-                              overflow: "hidden",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: "1200px",
-                                height: "628px",
-                                transform: `scale(${socialPreviewScale})`,
-                                transformOrigin: "top left",
-                              }}
-                            >
-                              <CardPreview data={brandingPreviewData} preview />
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex min-w-0 shrink-0 flex-col items-center gap-3 xl:w-fit xl:items-start">
-                        <h4 className="text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60 xl:self-center">
-                          Event badge layout
-                        </h4>
-                        {/** Match social preview visual height; no nested card chrome */}
-                        <div
-                          className="relative shrink-0 overflow-hidden"
-                          style={{
-                            width: 576 * brandingBadgeResponsiveScale,
-                            height: brandingSocialRenderedHeightPx,
-                          }}
-                        >
-                          <div
-                            style={{
-                              position: "absolute",
-                              top: 0,
-                              left: 0,
-                              width: "576px",
-                              height: "1024px",
-                              transform: `scale(${brandingBadgeResponsiveScale})`,
-                              transformOrigin: "top left",
-                            }}
-                          >
-                            <CardPreview data={brandingPreviewData} preview isVertical verticalSide={2} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+              <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
+                <div className="relative min-h-0 min-w-0 overflow-hidden">
+                  <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden px-3 py-3 sm:px-5 sm:py-4">
+                    <BrandingDualPreview
+                      socialPreview={<CardPreview data={brandingPreviewData} preview />}
+                      badgePreview={
+                        <CardPreview data={brandingPreviewData} preview isVertical verticalSide={1} />
+                      }
+                    />
                   </div>
+                </div>
 
-                  <div className="w-full grid grid-cols-1 gap-y-8 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0 xl:gap-x-12">
-                    <div className="relative flex flex-col gap-2 lg:col-span-4">
+                <div className="relative z-20 min-h-0 shrink-0 overflow-visible border-t border-border/40 bg-white/80 px-5 py-5 sm:px-8">
+                  <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+                    <div className="relative flex flex-col gap-2">
                       <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
                         Theme color
                       </span>
@@ -2690,7 +2592,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       )}
                     </div>
 
-                    <div className="relative flex flex-col gap-2 lg:col-span-4">
+                    <div className="relative flex flex-col gap-2">
                       <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
                         Text color
                       </span>
@@ -2749,20 +2651,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-2 sm:col-span-2 lg:col-span-4">
+                    <div className="relative z-30 flex flex-col gap-2 overflow-visible sm:col-span-2 lg:col-span-1">
                       <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
                         Typography
                       </span>
                       <CardTypographyPicker
                         value={brandingDraft.card_font}
                         onChange={(val) => editBrandingDraft((prev) => ({ ...prev, card_font: val }))}
+                        preferBelow
                       />
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="border border-t-0 border-border/40 rounded-b-xl bg-white/95 px-8 py-4">
+              <div className="shrink-0 border-t border-border/40 bg-white/95 px-5 py-4 sm:px-8">
                 <div className="grid w-full grid-cols-1 items-center gap-3 min-[560px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                   <div className="flex justify-center min-[560px]:justify-start">
                     <Button
@@ -2819,14 +2722,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {isRegistrationFormOpen && (
-        <div className={dashboardModalBackdrop}>
+        <div className={dashboardModalBackdropTop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingRegistrationForm && setIsRegistrationFormOpen(false)}
           />
-          <div className="relative w-full max-w-[780px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-7 pb-4 flex items-start justify-between border-b border-border/40 bg-white/70">
-              <div>
+          <div className="relative my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[780px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel sm:max-h-[calc(100dvh-4rem)]">
+            <div className="flex shrink-0 items-start justify-between border-b border-border/40 bg-white/70 px-6 py-5 sm:px-8 sm:pt-7">
+              <div className="min-w-0 pr-4">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {formBuilderRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
                 </h2>
@@ -2835,15 +2738,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => setIsRegistrationFormOpen(false)}
-                className="w-10 h-10 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-10 h-10 shrink-0 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="px-8 py-6 flex flex-col gap-4 max-h-[68vh] overflow-y-auto bg-white/40">
-              <div className="grid gap-3">
+            <div className="min-h-0 flex-1 overflow-y-auto bg-white/40 px-6 py-5 sm:px-8 sm:py-6">
+              <div className="flex flex-col gap-4">
                 {getEnabledFieldsForRole(registrationFormDraft, formBuilderRole).map((field) => {
                   const isCustomField = !CORE_PREVIEW_FIELD_IDS.has(field.id);
                   if (!isCustomField) {
@@ -2892,7 +2796,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                               }`}
                             />
                           </span>
-                          <span className="min-w-[92px] text-[18px] leading-none text-[#2F4C97] -ml-2">
+                          <span className="min-w-[92px] text-sm font-medium leading-none text-[#2F4C97]">
                             {field.required ? "Required" : "Optional"}
                           </span>
                         </button>
@@ -2972,19 +2876,26 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
             </div>
 
-            <div className="px-8 py-4 border-t border-border/40 flex gap-3 bg-white/80">
-              <Button
-                variant="secondary"
-                fullWidth
-                className="h-11"
-                disabled={isSavingRegistrationForm}
-                onClick={() => setIsRegistrationFormOpen(false)}
-              >
-                Cancel
-              </Button>
-              <Button fullWidth className="h-11" disabled={isSavingRegistrationForm} onClick={saveRegistrationFormConfig}>
-                {isSavingRegistrationForm ? "Saving..." : "Save Form"}
-              </Button>
+            <div className="shrink-0 border-t border-border/40 bg-white/95 px-6 py-4 sm:px-8">
+              <div className="form-actions">
+                <Button
+                  variant="secondary"
+                  fullWidth
+                  className="order-2 h-11 sm:order-1"
+                  disabled={isSavingRegistrationForm}
+                  onClick={() => setIsRegistrationFormOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  fullWidth
+                  className="order-1 h-11 sm:order-2"
+                  disabled={isSavingRegistrationForm}
+                  onClick={saveRegistrationFormConfig}
+                >
+                  {isSavingRegistrationForm ? "Saving..." : "Save Form"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -3038,11 +2949,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }}
               />
               {guestCategoryError && <p className="text-sm font-normal leading-[1.6] text-red-500">{guestCategoryError}</p>}
-              <div className="flex gap-3 pt-2">
-                <Button type="button" variant="secondary" fullWidth onClick={() => setIsGuestCategoryOpen(false)}>
+              <div className="form-actions pt-2">
+                <Button type="button" variant="secondary" fullWidth className="order-2 h-11 sm:order-1" onClick={() => setIsGuestCategoryOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" fullWidth>
+                <Button type="submit" fullWidth className="order-1 h-11 sm:order-2">
                   Save
                 </Button>
               </div>
@@ -3149,25 +3060,27 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   disabled={isSavingSponsors || isPreviewMode}
                 />
               </div>
-              <div className="flex shrink-0 flex-col gap-3 border-t border-border/50 bg-white/80 px-6 py-4 sm:flex-row">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  fullWidth
-                  className="order-2 sm:order-1"
-                  disabled={isSavingSponsors}
-                  onClick={() => setIsSponsorsOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  fullWidth
-                  className="order-1 sm:order-2"
-                  disabled={isSavingSponsors || isPreviewMode}
-                >
-                  {isSavingSponsors ? "Saving..." : "Save sponsors"}
-                </Button>
+              <div className="shrink-0 border-t border-border/50 bg-white/95 px-6 py-4 sm:flex-row">
+                <div className="form-actions w-full">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    fullWidth
+                    className="order-2 h-11 sm:order-1"
+                    disabled={isSavingSponsors}
+                    onClick={() => setIsSponsorsOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    fullWidth
+                    className="order-1 h-11 sm:order-2"
+                    disabled={isSavingSponsors || isPreviewMode}
+                  >
+                    {isSavingSponsors ? "Saving..." : "Save sponsors"}
+                  </Button>
+                </div>
               </div>
             </form>
           </div>
@@ -3196,9 +3109,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleEditSubmit} className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
-              <div className="flex flex-col gap-5 pb-20">
+            {/* Modal Body + Footer */}
+            <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
+              <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
                   <TextInput
                     label="Name of the Campaign"
@@ -3255,7 +3169,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   />
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <TextInput
                     label="Event Date"
                     required
@@ -3284,9 +3198,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   cropApplyLabel="Apply logo"
                 />
               </div>
+              </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 left-0 right-0 mt-auto shrink-0 border-t border-border/50 bg-white p-6 form-actions">
+              <div className="shrink-0 border-t border-border/50 bg-white p-6 form-actions">
                 <Button
                   variant="secondary"
                   fullWidth
@@ -3310,15 +3225,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {/* Delete Event Modal */}
-      {isDeleteOpen && (
+      {isDeleteOpen && eventData && (
         <div className={dashboardModalBackdrop}>
           <div
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isDeleting && setIsDeleteOpen(false)}
           />
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
-              <div className="flex flex-col gap-1">
+            <div className="px-8 pt-8 pb-4 flex items-start justify-between gap-4">
+              <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-red-500 tracking-[-0.03em] leading-[1.15]">Delete event?</h2>
                 <p className="text-sm text-muted">
                   This permanently removes the event, <span className="font-medium text-heading">{cards.length}</span> lead {cards.length === 1 ? "card" : "cards"}, and all uploaded photos. This cannot be undone.
@@ -3334,13 +3249,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
             <div className="p-8 pt-4 flex flex-col gap-6">
               <TextInput
-                label={`Type "${eventData.name}" to confirm`}
+                label={`Type "${deleteConfirmTarget}" to confirm`}
                 value={deleteConfirm}
                 onChange={setDeleteConfirm}
+                autoComplete="off"
               />
 
               <div className="form-actions pt-2">
                 <Button
+                  type="button"
                   variant="secondary"
                   fullWidth
                   onClick={() => setIsDeleteOpen(false)}
@@ -3350,11 +3267,23 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   Cancel
                 </Button>
                 <Button
-                  variant="secondary"
+                  type="button"
+                  variant={isDeleteConfirmValid ? "primary" : "secondary"}
                   fullWidth
-                  onClick={handleDeleteEvent}
-                  disabled={isDeleting || deleteConfirm !== eventData.name}
-                  className="order-1 h-11 bg-red-500! text-white! border-red-500! hover:bg-red-600! hover:text-white! disabled:opacity-50 sm:order-2"
+                  onClick={() => {
+                    if (isDeleting) return;
+                    if (!isDeleteConfirmValid) {
+                      toast.error("Type the campaign name exactly to confirm.");
+                      return;
+                    }
+                    void handleDeleteEvent();
+                  }}
+                  disabled={isDeleting}
+                  className={`order-1 h-11 sm:order-2 ${
+                    isDeleteConfirmValid
+                      ? "bg-red-500! text-white! border-red-500! hover:bg-red-600! hover:text-white!"
+                      : "opacity-60"
+                  }`}
                 >
                   {isDeleting ? "Deleting..." : "Delete Forever"}
                 </Button>

@@ -23,35 +23,6 @@ async function getCurrentUserId() {
   return getServerUserIdFromCookies(cookieStore);
 }
 
-async function ensureEventRegistrationFormColumn() {
-  await queryNeon(
-    `ALTER TABLE public.events
-     ADD COLUMN IF NOT EXISTS registration_form_config jsonb NOT NULL DEFAULT '{}'::jsonb,
-     ADD COLUMN IF NOT EXISTS description text NOT NULL DEFAULT '',
-     ADD COLUMN IF NOT EXISTS short_id text,
-     ADD COLUMN IF NOT EXISTS card_color text NOT NULL DEFAULT 'purple',
-     ADD COLUMN IF NOT EXISTS card_font text NOT NULL DEFAULT 'inter',
-     ADD COLUMN IF NOT EXISTS horizontal_text_color text NOT NULL DEFAULT '',
-     ADD COLUMN IF NOT EXISTS vertical_text_color text NOT NULL DEFAULT '',
-     ADD COLUMN IF NOT EXISTS is_branding_finalized boolean NOT NULL DEFAULT false`,
-  );
-  // Populate missing short_ids for existing events
-  await queryNeon(`UPDATE public.events SET short_id = SUBSTRING(id::text, 1, 8) WHERE short_id IS NULL`);
-  // Ensure uniqueness safely
-  await queryNeon(`CREATE UNIQUE INDEX IF NOT EXISTS events_short_id_idx ON public.events (short_id)`);
-}
-
-let ensureEventRegistrationFormColumnPromise: Promise<void> | null = null;
-async function ensureEventRegistrationFormColumnOnce() {
-  if (!ensureEventRegistrationFormColumnPromise) {
-    ensureEventRegistrationFormColumnPromise = ensureEventRegistrationFormColumn().catch((err) => {
-      ensureEventRegistrationFormColumnPromise = null;
-      throw err;
-    });
-  }
-  await ensureEventRegistrationFormColumnPromise;
-}
-
 function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>>): boolean {
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
@@ -122,8 +93,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
-    return withApiTenantContext(cookieStore, async () => {
-      await ensureEventRegistrationFormColumnOnce();
+    return await withApiTenantContext(cookieStore, async () => {
       const session = await getServerAuthSession();
       const viewerId = await getCurrentUserId();
       if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -147,8 +117,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
-    return withApiTenantContext(cookieStore, async () => {
-      await ensureEventRegistrationFormColumnOnce();
+    return await withApiTenantContext(cookieStore, async () => {
       const csrf = validateCsrfOrigin(req);
       if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 
@@ -230,7 +199,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const cookieStore = await cookies();
-    return withApiTenantContext(cookieStore, async () => {
+    return await withApiTenantContext(cookieStore, async () => {
       const csrf = validateCsrfOrigin(_);
       if (!csrf.ok) return NextResponse.json({ error: csrf.reason || "CSRF validation failed." }, { status: 403 });
 

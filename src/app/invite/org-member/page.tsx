@@ -58,7 +58,7 @@ function InviteOrgMemberInner() {
   const loginHref = `/login?callbackUrl=${encodeURIComponent(`/invite/org-member?t=${encodeURIComponent(token)}`)}`;
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 overflow-x-hidden overflow-y-auto bg-transparent">
       <GradientBackground />
       <div className="relative z-10 w-full max-w-md rounded-xl border border-border bg-white/80 backdrop-blur-md p-8 shadow-xl">
         <h1 className="text-xl font-semibold text-heading mb-2">Organization invitation</h1>
@@ -147,14 +147,14 @@ function InviteOrgMemberInner() {
                 readOnly
                 value={invitedEmail}
                 placeholder="Loading email..."
-                className="w-full rounded-md border border-input bg-muted px-3 py-2 text-sm shadow-sm transition-colors text-muted-foreground focus-visible:outline-none cursor-not-allowed"
+                className="h-11 w-full rounded-md border border-input bg-muted px-3 text-sm shadow-sm transition-colors text-muted-foreground focus-visible:outline-none cursor-not-allowed"
               />
               <input
                 type="text"
                 name="username"
                 required
                 placeholder="Username (e.g. john_doe)"
-                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="h-11 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               />
               <div className="relative">
                 <input
@@ -162,7 +162,7 @@ function InviteOrgMemberInner() {
                   name="password"
                   required
                   placeholder="Password (min 12 chars, upper, lower, number, special)"
-                  className="w-full rounded-md border border-input bg-transparent px-3 py-2 pr-10 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="h-11 w-full rounded-md border border-input bg-transparent px-3 pr-10 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 />
                 <button
                   type="button"

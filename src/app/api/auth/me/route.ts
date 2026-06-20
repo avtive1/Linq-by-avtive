@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { getServerAuthSession } from "@/auth";
+import { resolveAuthSecret } from "@/lib/auth-secret";
 
 export async function GET(req: Request) {
   try {
     const token = await getToken({
       req: req as unknown as Parameters<typeof getToken>[0]["req"],
-      secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
+      secret: resolveAuthSecret(),
       secureCookie: process.env.NODE_ENV === "production",
     });
     let userId = String(token?.uid || token?.sub || "").trim();

@@ -47,7 +47,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-hidden bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-transparent">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">

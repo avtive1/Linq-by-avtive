@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 import { CAMPAIGN_LOGO_CROP_ASPECT } from "@/lib/ui/crop-presets";
 import { logger } from "@/lib/logger-client";
+import { asPayloadRecord, getPayloadError, readResponsePayload } from "@/lib/http/read-response-payload";
 import {
   dashboardContentInset,
   dashboardMainTransparent,
@@ -201,11 +202,12 @@ function DashboardContent() {
       if (isOrgOwner) {
         try {
           const onboardingRes = await fetch("/api/onboarding/organization-owner", { cache: "no-store" });
-          const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
+          const onboardingPayload = onboardingRes.ok ? await readResponsePayload(onboardingRes) : null;
           if (!isMounted) return;
-          const shouldShowOnboarding = Boolean(onboardingPayload?.data?.shouldShowOnboarding);
-          const teamStepCompleted = Boolean(onboardingPayload?.data?.teamStepCompleted);
-          const needsProfileSetup = Boolean(onboardingPayload?.data?.needsProfileSetup);
+          const onboardingData = asPayloadRecord(onboardingPayload);
+          const shouldShowOnboarding = Boolean(onboardingData?.shouldShowOnboarding);
+          const teamStepCompleted = Boolean(onboardingData?.teamStepCompleted);
+          const needsProfileSetup = Boolean(onboardingData?.needsProfileSetup);
           const shouldForceOwnerOnboarding = onboardingIntentValue === "owner" && !teamStepCompleted;
           if (needsProfileSetup) {
             // Prevent draft reset while user is typing in modal.
@@ -228,21 +230,21 @@ function DashboardContent() {
       if (!isMounted) return;
       try {
         if (inboxRes?.ok) {
-          const inboxPayload = await inboxRes.json();
+          const inboxPayload = await readResponsePayload(inboxRes);
           if (!isMounted) return;
           if (Array.isArray(inboxPayload?.data)) setInboxRequests(inboxPayload.data);
         }
       } catch {}
       try {
         if (orgJoinInboxRes?.ok) {
-          const orgJoinInboxPayload = await orgJoinInboxRes.json();
+          const orgJoinInboxPayload = await readResponsePayload(orgJoinInboxRes);
           if (!isMounted) return;
           if (Array.isArray(orgJoinInboxPayload?.data)) setOrgJoinInbox(orgJoinInboxPayload.data);
         }
       } catch {}
       try {
         if (failedRes?.ok) {
-          const failedPayload = await failedRes.json();
+          const failedPayload = await readResponsePayload(failedRes);
           if (!isMounted) return;
           if (Array.isArray(failedPayload?.data)) setFailedNotifications(failedPayload.data);
         }
@@ -252,7 +254,7 @@ function DashboardContent() {
         try {
           const myJoinRes = await fetch("/api/organization-join-requests/mine").catch(() => null);
           if (!isMounted || !myJoinRes?.ok) return;
-          const myJoinPayload = await myJoinRes.json();
+          const myJoinPayload = await readResponsePayload(myJoinRes);
           if (!isMounted) return;
           if (Array.isArray(myJoinPayload?.data)) {
             setMyOrgJoinRequests(myJoinPayload.data);
@@ -267,7 +269,7 @@ function DashboardContent() {
       for (let attempt = 0; attempt < 8; attempt += 1) {
         try {
           const authRes = await fetch("/api/auth/me", { cache: "no-store" });
-          const authPayload = await authRes.json();
+          const authPayload = await readResponsePayload(authRes);
           const resolvedUserId =
             authPayload &&
             typeof authPayload === "object" &&
@@ -390,8 +392,9 @@ function DashboardContent() {
                   body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
                 });
                 if (joinRes.ok) {
-                  const joinPayload = await joinRes.json();
-                  const status = String(joinPayload?.data?.status || "").toLowerCase();
+                  const joinPayload = await readResponsePayload(joinRes);
+                  const joinData = asPayloadRecord(joinPayload);
+                  const status = String(joinData?.status || "").toLowerCase();
                   if (status === "created" || status === "pending_exists" || status === "reapply_later") {
                     gateStatus = "pending";
                   } else if (status === "no_owner_found") {
@@ -490,7 +493,7 @@ function DashboardContent() {
         ]);
         try {
           if (profileRes?.ok) {
-            const profilePayload = await profileRes.json();
+            const profilePayload = await readResponsePayload(profileRes);
             profileRow =
               profilePayload &&
               typeof profilePayload === "object" &&
@@ -509,7 +512,7 @@ function DashboardContent() {
         }
 
         if (memberRes?.ok) {
-          const memberPayload = await memberRes.json();
+          const memberPayload = await readResponsePayload(memberRes);
           const memberData =
             memberPayload &&
             typeof memberPayload === "object" &&
@@ -535,14 +538,14 @@ function DashboardContent() {
               fetch("/api/organization-members"),
               fetch("/api/organization-owner/me"),
             ]);
-            const ownedEventsPayload = ownedEventsRes.ok ? await ownedEventsRes.json() : null;
-            const ownedMembersPayload = ownedMembersRes.ok ? await ownedMembersRes.json() : null;
+            const ownedEventsPayload = ownedEventsRes.ok ? await readResponsePayload(ownedEventsRes) : null;
+            const ownedMembersPayload = ownedMembersRes.ok ? await readResponsePayload(ownedMembersRes) : null;
             const ownedEvents = Array.isArray(ownedEventsPayload?.data) ? ownedEventsPayload.data : [];
             const ownedMembers = Array.isArray(ownedMembersPayload?.data) ? ownedMembersPayload.data : [];
             let ownerByRegistry = false;
             if (ownerStateRes.ok) {
-              const ownerStatePayload = await ownerStateRes.json();
-              ownerByRegistry = Boolean(ownerStatePayload?.data?.isOwner);
+              const ownerStatePayload = await readResponsePayload(ownerStateRes);
+              ownerByRegistry = Boolean(asPayloadRecord(ownerStatePayload)?.isOwner);
             }
             const userIsOrgOwner =
               ownedEvents.length > 0 || ownedMembers.length > 0 || ownerByRegistry;
@@ -560,8 +563,9 @@ function DashboardContent() {
                   body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
                 });
                 if (joinRes.ok) {
-                  const joinPayload = await joinRes.json();
-                  const status = String(joinPayload?.data?.status || "").toLowerCase();
+                  const joinPayload = await readResponsePayload(joinRes);
+                  const joinData = asPayloadRecord(joinPayload);
+                  const status = String(joinData?.status || "").toLowerCase();
                   if (status === "created" || status === "pending_exists" || status === "reapply_later") {
                     gateStatus = "pending";
                   } else if (status === "no_owner_found") {
@@ -573,7 +577,7 @@ function DashboardContent() {
             const myJoinRes = await fetch("/api/organization-join-requests/mine").catch(() => null);
             try {
               if (myJoinRes?.ok) {
-                const myJoinPayload = await myJoinRes.json();
+                const myJoinPayload = await readResponsePayload(myJoinRes);
                 if (Array.isArray(myJoinPayload?.data)) {
                   setMyOrgJoinRequests(myJoinPayload.data);
                   if (
@@ -630,9 +634,9 @@ function DashboardContent() {
     try {
       // 1. Fetch all events owned by this user
       const eventsRes = await fetch(`/api/events?ownerId=${encodeURIComponent(userId)}`);
-      const eventsPayload = await eventsRes.json();
+      const eventsPayload = await readResponsePayload(eventsRes);
       if (!eventsRes.ok) {
-        const message = String(eventsPayload?.error || "Failed to load events.");
+        const message = getPayloadError(eventsPayload, "Failed to load events.");
         // Keep preview/dashboard stable instead of crashing the whole data load on one auth edge case.
         setEvents([]);
         setStats({ totalEvents: 0, totalAttendees: 0 });
@@ -640,7 +644,9 @@ function DashboardContent() {
         toast.error(message);
         return;
       }
-      const mappedEvents: DashboardEventData[] = Array.isArray(eventsPayload?.data) ? eventsPayload.data : [];
+      const mappedEvents: DashboardEventData[] = Array.isArray((eventsPayload as { data?: unknown })?.data)
+        ? ((eventsPayload as { data: DashboardEventData[] }).data)
+        : [];
       
       if (getIsMounted && !getIsMounted()) return;
 
@@ -665,7 +671,7 @@ function DashboardContent() {
               }`,
             );
             if (!attendeesRes.ok) return [];
-            const attendeesPayload = await attendeesRes.json().catch(() => null);
+            const attendeesPayload = await readResponsePayload(attendeesRes);
             return Array.isArray(attendeesPayload?.data) ? attendeesPayload.data : [];
           } catch {
             return [];
@@ -702,7 +708,7 @@ function DashboardContent() {
       const res = await fetch("/api/onboarding/organization-owner", { method: "PATCH" });
       const payload = await res.json().catch(() => null);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not update onboarding state.");
+        toast.error(getPayloadError(payload, "Could not update onboarding state."));
         return false;
       }
       return true;
@@ -734,12 +740,13 @@ function DashboardContent() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ dataUrl: profilePhotoUrl, folder: "organization-logos" }),
         });
-        const uploadPayload = await uploadRes.json();
-        if (!uploadRes.ok || !uploadPayload?.data?.url) {
-          setOwnerProfileSetupError(uploadPayload?.error || "Profile image upload failed.");
+        const uploadPayload = await readResponsePayload(uploadRes);
+        const uploadData = asPayloadRecord(uploadPayload);
+        if (!uploadRes.ok || !uploadData?.url) {
+          setOwnerProfileSetupError(getPayloadError(uploadPayload, "Profile image upload failed."));
           return false;
         }
-        profilePhotoUrl = String(uploadPayload.data.url);
+        profilePhotoUrl = String(uploadData.url);
       }
       const res = await fetch("/api/profile/username", {
         method: "PATCH",
@@ -755,7 +762,7 @@ function DashboardContent() {
       });
       const payload = await res.json().catch(() => null);
       if (!res.ok) {
-        setOwnerProfileSetupError(payload?.error || "Could not save profile setup. Image size limit should be less than 1MB.");
+        setOwnerProfileSetupError(getPayloadError(payload, "Could not save profile setup. Image size limit should be less than 1MB."));
         return false;
       }
       setUserName(cleaned);
@@ -889,9 +896,10 @@ function DashboardContent() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ dataUrl: eventForm.logo, folder: `events/${userId}` }),
           });
-          const uploadPayload = await uploadRes.json();
-          if (!uploadRes.ok || !uploadPayload?.data?.url) throw new Error(uploadPayload?.error || "Logo upload failed.");
-          logoUrl = String(uploadPayload.data.url);
+          const uploadPayload = await readResponsePayload(uploadRes);
+          const uploadData = asPayloadRecord(uploadPayload);
+          if (!uploadRes.ok || !uploadData?.url) throw new Error(getPayloadError(uploadPayload, "Logo upload failed."));
+          logoUrl = String(uploadData.url);
         } catch (uploadErr) {
           logger.error({ err: uploadErr }, "Logo upload failed");
           toast.error("Logo upload failed, but creating event anyway...");
@@ -914,8 +922,8 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const createPayload = await createRes.json();
-      if (!createRes.ok) throw new Error(createPayload?.error || "Failed to create event.");
+      const createPayload = await readResponsePayload(createRes);
+      if (!createRes.ok) throw new Error(getPayloadError(createPayload, "Failed to create event."));
 
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
@@ -966,9 +974,10 @@ function DashboardContent() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ dataUrl: organizationLogoDraft, folder: `organizations/${userId}` }),
           });
-          const uploadPayload = await uploadRes.json();
-          if (uploadRes.ok && uploadPayload?.data?.url) {
-            logoUrl = String(uploadPayload.data.url);
+          const uploadPayload = await readResponsePayload(uploadRes);
+          const uploadData = asPayloadRecord(uploadPayload);
+          if (uploadRes.ok && uploadData?.url) {
+            logoUrl = String(uploadData.url);
           }
         } catch (uploadErr) {
           logger.error({ err: uploadErr }, "Logo upload failed");
@@ -984,13 +993,14 @@ function DashboardContent() {
           ...(logoUrl ? { organizationLogoUrl: logoUrl } : {})
         }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        setUsernameError(payload?.error || "Could not update username.");
+        setUsernameError(getPayloadError(payload, "Could not update username."));
         return;
       }
-      setUserName(payload.data.username);
-      setOrganizationName(payload.data.organizationName);
+      const profileData = asPayloadRecord(payload);
+      setUserName(String(profileData?.username || ""));
+      setOrganizationName(String(profileData?.organizationName || ""));
       setIsUsernameModalOpen(false);
       toast.success("Profile updated.");
     } catch (err) {
@@ -1015,9 +1025,9 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ currentPassword: currentPasswordDraft, newPassword: newPasswordDraft }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        setPasswordError(payload?.error || "Could not update password.");
+        setPasswordError(getPayloadError(payload, "Could not update password."));
         return;
       }
       toast.success("Password updated successfully.");
@@ -1033,9 +1043,9 @@ function DashboardContent() {
   const loadteamMembers = async () => {
     try {
       const res = await fetch("/api/organization-members");
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        setTeamError(payload?.error || "Could not load team.");
+        setTeamError(getPayloadError(payload, "Could not load team."));
         return;
       }
       const rows = Array.isArray(payload?.data) ? payload.data : [];
@@ -1075,7 +1085,7 @@ function DashboardContent() {
     try {
       const res = await fetch("/api/organization-members", { cache: "no-store" });
       if (res.ok) {
-        const payload = await res.json();
+        const payload = await readResponsePayload(res);
         const latestRows: OrgMemberRow[] = Array.isArray(payload?.data) ? payload.data : [];
         if (latestRows.length > 0) {
           setTeamMembers(latestRows);
@@ -1119,9 +1129,9 @@ function DashboardContent() {
           permissions: teamPermissionDraft,
         }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        setTeamError(payload?.error || "Could not add team member.");
+        setTeamError(getPayloadError(payload, "Could not add team member."));
         return;
       }
       toast.success("Team member access updated.");
@@ -1144,9 +1154,9 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decision }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not review request.");
+        toast.error(getPayloadError(payload, "Could not review request."));
         return;
       }
       setInboxRequests((prev) => prev.filter((r) => r.id !== id));
@@ -1165,9 +1175,9 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ requestId, target }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Retry failed.");
+        toast.error(getPayloadError(payload, "Retry failed."));
         return;
       }
       setFailedNotifications((prev) => prev.filter((row) => row.id !== requestId));
@@ -1187,9 +1197,9 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ decision }),
       });
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Could not review organization join request.");
+        toast.error(getPayloadError(payload, "Could not review organization join request."));
         return;
       }
       setOrgJoinInbox((prev) => prev.filter((r) => r.id !== id));
@@ -1222,9 +1232,9 @@ function DashboardContent() {
         }),
       });
 
-      const payload = await res.json();
+      const payload = await readResponsePayload(res);
       if (!res.ok) {
-        toast.error(payload?.error || "Failed to submit request.");
+        toast.error(getPayloadError(payload, "Failed to submit request."));
         return;
       }
 
@@ -1286,7 +1296,7 @@ function DashboardContent() {
             </div>
             <Link
               href="/admin"
-              className="no-link-underline shrink-0 self-start rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[13px] font-medium text-white hover:no-link-underline hover:bg-white/20 sm:self-auto"
+              className="no-link-underline shrink-0 self-start cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[13px] font-medium text-white hover:no-link-underline hover:bg-white/20 sm:self-auto"
             >
               Exit Preview
             </Link>
@@ -1336,7 +1346,7 @@ function DashboardContent() {
             {isPreviewMode ? (
               <Link
                 href={impersonateId ? `/admin/organizations/${impersonateId}` : "/admin"}
-                className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2 py-1"
+                className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1 group -ml-1 sm:-ml-2 py-1 cursor-pointer"
               >
                 <motion.span {...hoverIconNudge(-2)} className="inline-flex">
                   <ArrowLeft size={16} className="transition-transform" />
@@ -1740,7 +1750,7 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setIsEventFilterOpen((prev) => !prev)}
-              className={`h-11 w-full min-h-11 rounded-md border px-6 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:w-auto ${
+              className={`h-12 min-h-12 w-full rounded-md border px-6 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:min-h-14 sm:w-auto ${
                 isEventFilterOpen
                   ? "bg-primary/10 border-primary/30 text-primary-strong"
                   : "bg-white/92 border-primary/20 text-heading hover:bg-white hover:border-primary/30"
@@ -1806,7 +1816,7 @@ function DashboardContent() {
                         setEventStatusFilter("all");
                         setEventLocationFilter("all");
                       }}
-                      className="text-xs font-medium text-muted hover:text-heading underline-offset-4 hover:underline"
+                      className="cursor-pointer text-xs font-medium text-muted hover:text-heading underline-offset-4 hover:underline"
                     >
                       Reset filters
                     </button>
@@ -2090,7 +2100,7 @@ function DashboardContent() {
           <div 
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
           />
-          <div className="relative w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[480px] max-h-[92dvh] min-h-0 flex flex-col glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="px-8 pt-6 pb-3 flex items-center justify-between border-b border-border/50 shrink-0">
               <div className="flex flex-col gap-1">
@@ -2100,9 +2110,10 @@ function DashboardContent() {
               <button onClick={() => setIsEventModalOpen(false)} className="text-muted hover:text-heading p-1"><X size={20}/></button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleEventSubmit} className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
-              <div className="flex flex-col gap-5 pb-20">
+            {/* Modal Body + Footer */}
+            <form onSubmit={handleEventSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
+              <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
                   <TextInput
                     label="Name of the Campaign"
@@ -2161,7 +2172,7 @@ function DashboardContent() {
                   />
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <TextInput
                   label="Campaign Date"
                     required
@@ -2193,9 +2204,10 @@ function DashboardContent() {
   Logo size must be less than 1 MB, otherwise the logo will not be updated.
 </p>
               </div>
+              </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 left-0 right-0 border-t border-hairline-soft bg-white p-6 form-actions mt-auto shrink-0">
+              <div className="shrink-0 border-t border-hairline-soft bg-white p-6 form-actions">
                 <Button 
                   variant="secondary" 
                   fullWidth 
@@ -2224,8 +2236,8 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
           />
-          <div className="relative w-full max-w-[480px] glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+          <div className="relative w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 pt-8 pb-4 flex items-center justify-between shrink-0">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Account Settings</h2>
                 <p className="text-sm text-muted">Manage your profile, organization, and security preferences.</p>
@@ -2239,7 +2251,7 @@ function DashboardContent() {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-8 pt-4 flex flex-col gap-8 max-h-[75vh] overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto p-8 pt-4 flex flex-col gap-8">
               <form onSubmit={handleSaveUsername} className="flex flex-col gap-4">
                 <h3 className="font-semibold text-heading text-lg leading-none mb-1">Profile & Organization</h3>
                 <TextInput
@@ -2338,8 +2350,8 @@ function DashboardContent() {
       {isOwnerProfileSetupModalOpen && !isPreviewMode && isOrgOwner && (
         <div className={dashboardModalBackdrop}>
           <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
-          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-10 pt-10 pb-7 border-b border-border/10">
+          <div className="relative w-full max-w-[560px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-10 pt-10 pb-7 border-b border-border/10 shrink-0">
               <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                 Complete your profile
               </h2>
@@ -2347,7 +2359,7 @@ function DashboardContent() {
                 Username is required. Organization logo is optional and can be added anytime from Account Settings.
               </p>
             </div>
-            <div className="px-10 py-8 flex flex-col gap-4">
+            <div className="min-h-0 flex-1 overflow-y-auto px-10 py-8 flex flex-col gap-4">
               <TextInput
                 label="Username"
                 required
@@ -2383,8 +2395,8 @@ function DashboardContent() {
                   const ok = await saveMandatoryOwnerProfileSetup();
                   if (!ok) return;
                   const onboardingRes = await fetch("/api/onboarding/organization-owner", { cache: "no-store" });
-                  const onboardingPayload = onboardingRes.ok ? await onboardingRes.json() : null;
-                  setIsOwnerOnboardingModalOpen(Boolean(onboardingPayload?.data?.shouldShowOnboarding));
+                  const onboardingPayload = onboardingRes.ok ? await readResponsePayload(onboardingRes) : null;
+                  setIsOwnerOnboardingModalOpen(Boolean(asPayloadRecord(onboardingPayload)?.shouldShowOnboarding));
                 }}
               >
                 {isSavingUsername ? "Saving..." : "Continue"}
@@ -2449,9 +2461,9 @@ function DashboardContent() {
             className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
             onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
           />
-          <div className="relative w-full max-w-[660px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="relative w-full max-w-[660px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Header */}
-            <div className="flex flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
+            <div className="flex shrink-0 flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {teamModalView === "list" && "Organization Team"}
@@ -2474,7 +2486,7 @@ function DashboardContent() {
               </button>
             </div>
 
-            <div className="px-4 py-6 sm:px-8 sm:py-8">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
               {teamModalView === "list" && (
                 <div className="flex flex-col gap-8">
                   {!isOrgTeamMember && (
@@ -2575,11 +2587,12 @@ function DashboardContent() {
                   
                   {teamError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-100">{teamError}</p>}
                   
-                  <div className="flex gap-3 pt-2">
+                  <div className="form-actions pt-2">
                     <Button 
                       type="button" 
                       variant="secondary" 
                       fullWidth 
+                      className="order-2 h-11 sm:order-1"
                       onClick={() => {
                         setTeamModalView("list");
                         setIsTeamModalOpen(false);
@@ -2590,6 +2603,7 @@ function DashboardContent() {
                     <Button 
                       type="submit" 
                       fullWidth 
+                      className="order-1 h-11 sm:order-2"
                     >
                       Next: Set Permissions
                     </Button>
@@ -2657,11 +2671,12 @@ function DashboardContent() {
 
                   {teamError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-100">{teamError}</p>}
 
-                  <div className="flex gap-3 pt-2">
+                  <div className="form-actions pt-2">
                     <Button 
                       type="button" 
                       variant="secondary" 
                       fullWidth 
+                      className="order-2 h-11 sm:order-1"
                       onClick={() => setTeamModalView("list")}
                     >
                       Back
@@ -2670,6 +2685,7 @@ function DashboardContent() {
                       type="submit" 
                       fullWidth 
                       disabled={isSubmittingTeamInvite}
+                      className="order-1 h-11 sm:order-2"
                     >
                       {isSubmittingTeamInvite ? "Saving..." : "Update Permissions"}
                     </Button>
@@ -2684,8 +2700,8 @@ function DashboardContent() {
       {/* Request Permission Modal */}
       {isRequestPermissionModalOpen && (
         <div className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] backdrop-blur-sm animate-in fade-in duration-200 sm:p-6">
-          <div className="bg-white/95 border border-border/40 w-full max-w-[500px] rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/2">
+          <div className="bg-white/95 border border-border/40 w-full max-w-[500px] max-h-[92dvh] flex flex-col rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/2 shrink-0">
               <div className="flex items-center gap-2">
                 <AlertCircle className="text-danger" size={20} />
                 <h2 className="text-xl font-semibold text-heading tracking-tight">Request Creation Access</h2>
@@ -2695,7 +2711,7 @@ function DashboardContent() {
               </button>
             </div>
             
-            <div className="p-6">
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">
               <p className="text-sm text-muted mb-6 leading-[1.6]">
                 You currently don&apos;t have permission to create campaigns. To get access, please send a request to your organization admin with a short reason.
               </p>
@@ -2712,11 +2728,11 @@ function DashboardContent() {
                   />
                 </div>
                 
-                <div className="flex gap-3">
-                  <Button type="button" variant="secondary" fullWidth onClick={() => setIsRequestPermissionModalOpen(false)}>
+                <div className="form-actions">
+                  <Button type="button" variant="secondary" fullWidth className="order-2 h-11 sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest}>
+                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest} className="order-1 h-11 sm:order-2">
                     {isSubmittingPermissionRequest ? "Sending..." : "Send Request"}
                   </Button>
                 </div>

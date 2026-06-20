@@ -1,6 +1,11 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { resolveAuthSecret } from "@/lib/auth-secret";
+import {
+  clearNextAuthSessionCookies,
+  hasNextAuthSessionCookie,
+} from "@/lib/next-auth-cookies";
 import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
 const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
@@ -52,11 +57,18 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   }
 
   const secureCookie = process.env.NODE_ENV === "production";
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET,
-    secureCookie,
-  });
+  let token: Awaited<ReturnType<typeof getToken>> = null;
+  try {
+    token = await getToken({
+      req: request,
+      secret: resolveAuthSecret(),
+      secureCookie,
+    });
+  } catch {
+    token = null;
+  }
+
+  const hasStaleSessionCookie = hasNextAuthSessionCookie(request.cookies) && !token;
   const { userId: clerkUserId } = await auth();
   const nextAuthUserId = token?.uid || token?.sub;
   const userId = nextAuthUserId || clerkUserId || undefined;
@@ -69,29 +81,29 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     .filter(Boolean);
   const isAdminUser = tokenRole === "admin" || Boolean(tokenEmail && adminEmails.includes(tokenEmail));
 
+  const withRequestId = (response: NextResponse) => {
+    response.headers.set("x-request-id", requestId);
+    if (hasStaleSessionCookie) clearNextAuthSessionCookies(response.cookies);
+    return response;
+  };
+
   if (isProtectedRoute.test(pathname) && !userId) {
-    const r = NextResponse.redirect(new URL("/login", request.url));
-    r.headers.set("x-request-id", requestId);
-    return r;
+    return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
   }
   if (pathname.startsWith("/dashboard") && userId && isAdminUser && !url.searchParams.get("impersonate")) {
-    const r = NextResponse.redirect(new URL("/admin", request.url));
-    r.headers.set("x-request-id", requestId);
-    return r;
+    return withRequestId(NextResponse.redirect(new URL("/admin", request.url)));
   }
   if (isAuthRoute(request) && userId) {
-    const r = NextResponse.redirect(new URL(isAdminUser ? "/admin" : "/dashboard", request.url));
-    r.headers.set("x-request-id", requestId);
-    return r;
+    return withRequestId(
+      NextResponse.redirect(new URL(isAdminUser ? "/admin" : "/dashboard", request.url)),
+    );
   }
 
-  const res = NextResponse.next({ request: { headers: reqHeaders } });
-  res.headers.set("x-request-id", requestId);
-  return res;
+  return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
 });
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|monitoring|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

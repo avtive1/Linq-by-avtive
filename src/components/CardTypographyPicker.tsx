@@ -62,11 +62,14 @@ export function CardTypographyPicker({
   onChange,
   disabled,
   buttonClassName = "",
+  preferBelow = true,
 }: {
   value: string;
   onChange: (next: string) => void;
   disabled?: boolean;
   buttonClassName?: string;
+  /** When true, anchor the menu directly below the trigger (default). */
+  preferBelow?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -142,16 +145,19 @@ export function CardTypographyPicker({
     const vh = typeof window !== "undefined" ? window.innerHeight : 800;
     const width = Math.min(Math.max(r.width, 288), vw - 16);
     const left = Math.min(Math.max(8, r.left), vw - width - 8);
-    const below = r.bottom + 8;
-    const spaceBelow = vh - below - 12;
+    const belowTop = r.bottom + 6;
+    const spaceBelow = vh - belowTop - 12;
     const spaceAbove = r.top - 12;
-    const maxHeight = Math.min(380, Math.max(200, Math.max(spaceBelow, spaceAbove)));
-    let top = below;
-    if (spaceBelow < 160 && spaceAbove > spaceBelow) {
-      top = Math.max(8, r.top - maxHeight - 8);
+
+    if (preferBelow) {
+      const maxHeight = Math.min(380, Math.max(140, spaceBelow));
+      setPanelRect({ top: belowTop, left, width, maxHeight });
+      return;
     }
-    setPanelRect({ top, left, width, maxHeight });
-  }, []);
+
+    const maxHeight = Math.min(380, Math.max(160, spaceAbove - 8));
+    setPanelRect({ top: Math.max(8, r.top - maxHeight - 6), left, width, maxHeight });
+  }, [preferBelow]);
 
   useEffect(() => {
     if (!open) return;

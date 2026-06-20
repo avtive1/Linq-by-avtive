@@ -292,6 +292,7 @@ function resolveTheme(color?: string): ColorTheme {
 
 export function CardPreview({
   data,
+  preview = false,
   id,
   isVertical = false,
   verticalSide = 1,
@@ -307,6 +308,9 @@ export function CardPreview({
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
   const sessionTimeLabel = formatSessionTimeWithZone(data.sessionTime);
   const isCustomTheme = !COLOR_THEMES[String(data.color || "").trim()];
+  const surfaceMotionClass = preview
+    ? ""
+    : "animate-fade-in will-change-transform transition-all duration-500 group";
 
   const theme = resolveTheme(data.color);
   const horizontalTextColorOverride = String(data.horizontalTextColor || "").trim();
@@ -377,7 +381,7 @@ export function CardPreview({
   if (isVertical) {
     return (
       <div 
-        className="relative overflow-hidden shadow-2xl bg-[#141414] animate-fade-in"
+        className={`relative overflow-hidden shadow-2xl bg-[#141414] ${surfaceMotionClass}`}
         style={{ 
           width: "576px", 
           height: "1024px", 
@@ -446,29 +450,33 @@ export function CardPreview({
           </div>
         )}
 
-        <p className="absolute left-[31px] top-[131px] m-0 text-[30px] font-medium tracking-[3px] uppercase leading-none z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
-          {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
-        </p>
-
-        <h1 
-          className="absolute left-[27px] top-[166px] m-0 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px] z-20"
-          style={{ 
-            color: hasVerticalTextOverride ? verticalTextColor : "#000000",
-            fontFamily: selectedFont,
-            letterSpacing: "-2.99px"
-          }}
+        <div
+          className="absolute left-[24px] top-[124px] z-20 max-w-[528px] rounded-md bg-white/95 px-3 py-2 shadow-sm"
         >
-          {data.eventName?.split("<br />").map((t, i) => <span key={i} className="block">{t}</span>) || 
-            (<>
-              <span className="block">Pakistan Tech</span>
-              <span className="block">Summit</span>
-            </>)}
-          {data.cardRole === "guest" && data.guestCategory && (
-            <span className="block text-[35px] font-bold tracking-[1px] uppercase mt-[16px] leading-none" style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.accent === "#000000" ? "#000000" : theme.accent || "#000000") }}>
-              AS {data.guestCategory}
-            </span>
-          )}
-        </h1>
+          <p className="m-0 text-[30px] font-medium tracking-[3px] uppercase leading-none" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
+            {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
+          </p>
+
+          <h1
+            className="m-0 mt-2 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]"
+            style={{
+              color: hasVerticalTextOverride ? verticalTextColor : "#000000",
+              fontFamily: selectedFont,
+              letterSpacing: "-2.99px",
+            }}
+          >
+            {data.eventName?.split("<br />").map((t, i) => <span key={i} className="block">{t}</span>) ||
+              (<>
+                <span className="block">Pakistan Tech</span>
+                <span className="block">Summit</span>
+              </>)}
+            {data.cardRole === "guest" && data.guestCategory && (
+              <span className="block text-[35px] font-bold tracking-[1px] uppercase mt-[16px] leading-none" style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.accent === "#000000" ? "#000000" : theme.accent || "#000000") }}>
+                AS {data.guestCategory}
+              </span>
+            )}
+          </h1>
+        </div>
 
 
         {/* Meta Info - Precisely positioned per provided CSS */}
@@ -521,24 +529,26 @@ export function CardPreview({
         )}
 
         {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
-        <p
-          className="absolute left-0 top-[820px] w-full text-center z-4 m-0 text-[35px] font-bold leading-none"
-          style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
-        >
-          {data.name || "Full Name"}
-        </p>
-        <p
-          className="absolute left-0 top-[869px] w-full text-center z-4 m-0 text-[21px] font-medium leading-none"
-          style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
-        >
-          {data.role || "Role/Title"}
-        </p>
-        <p
-          className="absolute left-0 top-[900px] w-full text-center z-4 m-0 text-[21px] font-medium leading-none"
-          style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
-        >
-          {data.company || "Organization"}
-        </p>
+        <div className="absolute left-1/2 top-[808px] z-4 w-[92%] max-w-[520px] -translate-x-1/2 rounded-lg bg-heading/40 px-4 py-3 text-center backdrop-blur-sm">
+          <p
+            className="m-0 text-[35px] font-bold leading-none"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
+          >
+            {data.name || "Full Name"}
+          </p>
+          <p
+            className="m-0 mt-2 text-[21px] font-medium leading-none"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
+          >
+            {data.role || "Role/Title"}
+          </p>
+          <p
+            className="m-0 mt-2 text-[21px] font-medium leading-none"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
+          >
+            {data.company || "Organization"}
+          </p>
+        </div>
 
 
         {/* Partners / sponsors */}
@@ -574,7 +584,7 @@ export function CardPreview({
     <div
       id={id}
       key={data.designType}
-      className="relative overflow-hidden shadow-2xl poster animate-fade-in will-change-transform transition-all duration-500 group bg-[#141414]"
+      className={`relative overflow-hidden shadow-2xl poster bg-[#141414] ${surfaceMotionClass}`}
       style={posterStyle}
     >
       {/* Premium Atmospheric Spotlights & Noise */}
@@ -630,22 +640,24 @@ export function CardPreview({
         <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
       </div>
 
-      <div className="absolute right-[78px] top-[70px] flex items-center gap-2">
+      <div className="absolute right-[58px] top-[70px] z-20 max-w-[262px] overflow-hidden">
         {hasOrganizationBranding ? (
-          <OrganizationBrand
-            name={data.organizationName || "Organization"}
-            logoUrl={data.organizationLogoUrl}
-            iconClassName="h-[63px] w-[63px]"
-            nameBoxClassName="h-[48px] w-[165px]"
-            nameTextClassName="text-[31px] leading-none"
-            textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : undefined}
-            nameTextStyle={hasHorizontalTextOverride ? { color: horizontalTextColor } : undefined}
-          />
+          <div className="flex items-center justify-end gap-2">
+            <OrganizationBrand
+              name={data.organizationName || "Organization"}
+              logoUrl={data.organizationLogoUrl}
+              iconClassName="h-[63px] w-[63px] shrink-0"
+              nameBoxClassName="h-[48px] min-w-0 max-w-[165px]"
+              nameTextClassName="text-[31px] leading-none"
+              textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : undefined}
+              nameTextStyle={hasHorizontalTextOverride ? { color: horizontalTextColor } : undefined}
+            />
+          </div>
         ) : (
-          <>
-            <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" className="h-[59px] w-[59px] object-contain" alt="" />
-            <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" className="h-[48px] w-[165px] object-contain" alt="" />
-          </>
+          <div className="flex items-center justify-end gap-2">
+            <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" className="h-[59px] w-[59px] shrink-0 object-contain" alt="" />
+            <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" className="h-[48px] w-[165px] shrink-0 object-contain" alt="" />
+          </div>
         )}
       </div>
 

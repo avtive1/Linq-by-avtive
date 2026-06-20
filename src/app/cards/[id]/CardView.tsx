@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { CardPreview } from "@/components/CardPreview";
+import { CardArtboardScaler } from "@/components/CardArtboardScaler";
+import { CARD_ARTBOARD_HORIZONTAL, CARD_ARTBOARD_VERTICAL } from "@/lib/card-preview-scale";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
@@ -28,6 +30,7 @@ export default function CardView({
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
+  const [badgeSide, setBadgeSide] = useState<1 | 2>(1);
   const [horizontalPreviewFailed, setHorizontalPreviewFailed] = useState(false);
   const [verticalFrontPreviewFailed, setVerticalFrontPreviewFailed] = useState(false);
   const [verticalBackPreviewFailed, setVerticalBackPreviewFailed] = useState(false);
@@ -69,6 +72,9 @@ export default function CardView({
 
   const changeViewMode = (mode: "horizontal" | "vertical") => {
     setViewMode(mode);
+    if (mode === "vertical") {
+      setBadgeSide(1);
+    }
     try {
       window.localStorage.setItem("cardViewMode", mode);
       document.cookie = `cardViewMode=${mode}; Path=/; Max-Age=31536000; SameSite=Lax`;
@@ -261,7 +267,7 @@ export default function CardView({
   };
 
   return (
-    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-12 md:py-16 px-2 sm:px-4 lg:px-6 overflow-x-hidden print:p-0">
+    <main className="relative min-h-screen w-full bg-transparent flex flex-col items-center py-12 md:py-16 px-2 sm:px-4 lg:px-6 print:p-0">
       <GradientBackground />
 
       <div className="no-print relative z-10 w-full max-w-[860px] flex flex-col gap-8 md:gap-10 animate-slide-up">
@@ -420,35 +426,52 @@ export default function CardView({
 
         <div className="w-full flex flex-col items-center gap-6">
           {viewMode === "horizontal" ? (
-            <div className="card-scale-wrapper w-full">
-              <div className="card-capture" style={{ width: "1200px", height: "628px" }}>
-                {horizontalPreviewUrl && !horizontalPreviewFailed ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- Remote preview URL from storage; next/image would need allowlist churn
-                  <img
-                    src={horizontalPreviewUrl}
-                    alt="Horizontal card preview"
-                    className="h-full w-full object-contain"
-                    loading="eager"
-                    onError={() => setHorizontalPreviewFailed(true)}
-                  />
-                ) : (
-                  <CardPreview data={card} isVertical={false} />
-                )}
-              </div>
-            </div>
+            <CardArtboardScaler
+              artboardWidth={CARD_ARTBOARD_HORIZONTAL.width}
+              artboardHeight={CARD_ARTBOARD_HORIZONTAL.height}
+              className="w-full max-w-[860px]"
+              maxScale={0.82}
+            >
+              {horizontalPreviewUrl && !horizontalPreviewFailed ? (
+                // eslint-disable-next-line @next/next/no-img-element -- Remote preview URL from storage; next/image would need allowlist churn
+                <img
+                  src={horizontalPreviewUrl}
+                  alt="Horizontal card preview"
+                  className="h-full w-full object-contain"
+                  loading="eager"
+                  onError={() => setHorizontalPreviewFailed(true)}
+                />
+              ) : (
+                <CardPreview data={card} isVertical={false} />
+              )}
+            </CardArtboardScaler>
           ) : (
-            <div className="vertical-pair-wrapper">
-              <div className="vertical-card-frame">
-                <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  <CardPreview data={card} isVertical verticalSide={1} />
-                </div>
+            <>
+              <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setBadgeSide(1)}
+                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${badgeSide === 1 ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                >
+                  Front
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBadgeSide(2)}
+                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${badgeSide === 2 ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                >
+                  Back
+                </button>
               </div>
-              <div className="vertical-card-frame">
-                <div className="card-capture card-capture-vertical" style={{ width: "576px", height: "1024px" }}>
-                  <CardPreview data={card} isVertical verticalSide={2} />
-                </div>
-              </div>
-            </div>
+              <CardArtboardScaler
+                artboardWidth={CARD_ARTBOARD_VERTICAL.width}
+                artboardHeight={CARD_ARTBOARD_VERTICAL.height}
+                className="w-full max-w-[395px]"
+                maxScale={0.72}
+              >
+                <CardPreview data={card} isVertical verticalSide={badgeSide} />
+              </CardArtboardScaler>
+            </>
           )}
         </div>
 
@@ -485,88 +508,23 @@ export default function CardView({
         }
         @media print {
            @page { margin: 0; size: A4 portrait; }
-           
-           /* Force hide EVERYTHING that shouldn't be printed */
            .no-print, .no-print * { display: none !important; }
-           
-           /* Force show ONLY the physical print layout */
            .print-only {
               display: flex !important;
               flex-direction: row;
               justify-content: center;
               align-items: flex-start;
            }
-
-           /* Bruteforce exact colors so the purple background renders on paper */
            * {
               -webkit-print-color-adjust: exact !important;
               color-adjust: exact !important;
               print-color-adjust: exact !important;
            }
-
-           body, main { 
-              margin: 0 !important; 
-              padding: 0 !important; 
-              background: white !important; 
+           body, main {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: white !important;
            }
-        }
-        .card-scale-wrapper {
-          display: flex;
-          justify-content: center;
-          overflow: visible;
-        }
-        .vertical-pair-wrapper {
-          width: 100%;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-          gap: 120px;
-          margin-top: -10px;
-        }
-        .vertical-card-frame {
-          width: 395px;
-          overflow: visible;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-        }
-        .card-capture {
-          transform-origin: top center;
-        }
-        .card-capture-vertical {
-          transform-origin: top center;
-        }
-        @media (max-width: 1024px) {
-          .card-scale-wrapper { overflow: hidden; }
-          .vertical-pair-wrapper {
-            gap: 16px;
-            overflow-x: auto;
-            justify-content: flex-start;
-            padding-bottom: 6px;
-            margin-top: -4px;
-          }
-          .vertical-card-frame {
-            width: 300px;
-            flex: 0 0 auto;
-          }
-          .card-capture {
-            transform: scale(calc((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"}));
-            margin-bottom: calc((${viewMode === "horizontal" ? "628px" : "1024px"} * ((100vw - 32px) / ${viewMode === "horizontal" ? "1200" : "576"})) - ${viewMode === "horizontal" ? "628px" : "1024px"});
-          }
-          .card-capture-vertical {
-            transform: scale(0.45);
-            margin-bottom: -566px;
-          }
-        }
-        @media (min-width: 1025px) {
-          .card-capture {
-            transform: scale(${viewMode === "horizontal" ? "0.82" : "0.72"});
-            margin-bottom: ${viewMode === "horizontal" ? "-113px" : "-287px"};
-          }
-          .card-capture-vertical {
-            transform: scale(0.68);
-            margin-bottom: -328px;
-          }
         }
       `}</style>
     </main>
