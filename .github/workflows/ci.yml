@@ -40,3 +40,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          # Required for NextAuth during `next build` prerender (NODE_ENV=production).
+          NEXTAUTH_SECRET: ci-build-placeholder-not-used-in-production
+          NEXTAUTH_URL: http://localhost:3000
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
