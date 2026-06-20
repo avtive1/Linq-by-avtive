@@ -1655,7 +1655,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }}
                     disabled={cards.length > 0 || !canDeleteEvent}
                     icon={<Trash2 size={16} />}
-                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${cards.length > 0 || !canDeleteEvent ? "opacity-50 grayscale cursor-not-allowed" : ""}`}
+                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${
+                      cards.length > 0 || !canDeleteEvent
+                        ? "cursor-not-allowed disabled:opacity-70 disabled:text-red-400 disabled:border-red-200/55 disabled:hover:bg-transparent disabled:hover:text-red-400 disabled:hover:border-red-200/55"
+                        : ""
+                    }`}
                   >
                     Delete
                   </Button>
@@ -2129,10 +2133,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           </span>
                         )}
                       </div>
-                      <div className="flex flex-wrap items-center gap-2 ui-meta mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs font-medium leading-[1.5] text-heading/75">
                         <span className="flex items-center">{card.role}</span>
                         {card.email && (
-                          <span className="hidden sm:inline-flex items-center gap-1 opacity-70">
+                          <span className="hidden sm:inline-flex items-center gap-1 text-heading/60">
                             • {card.email}
                           </span>
                         )}

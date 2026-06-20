@@ -48,6 +48,10 @@ function presetLabel(key: CardFontPreset): string {
   }
 }
 
+const SEARCH_HEADER_PX = 52;
+const PANEL_MIN_HEIGHT_PX = 160;
+const PANEL_MAX_HEIGHT_PX = 380;
+
 const SKIP_IN_POPULAR = new Set([
   "Noto Color Emoji",
   "Noto Emoji",
@@ -151,7 +155,10 @@ export function CardTypographyPicker({
     const spaceAbove = r.top - 12;
 
     if (preferBelow) {
-      const maxHeight = Math.min(380, Math.max(140, spaceBelow));
+      const maxHeight = Math.min(
+        PANEL_MAX_HEIGHT_PX,
+        Math.max(PANEL_MIN_HEIGHT_PX, spaceBelow),
+      );
       let top = belowTop;
       if (top + maxHeight > vh - 12) {
         top = Math.max(12, vh - 12 - maxHeight);
@@ -160,7 +167,7 @@ export function CardTypographyPicker({
       return;
     }
 
-    const maxHeight = Math.min(380, Math.max(160, spaceAbove - 8));
+    const maxHeight = Math.min(PANEL_MAX_HEIGHT_PX, Math.max(PANEL_MIN_HEIGHT_PX, spaceAbove - 8));
     setPanelRect({ top: Math.max(8, r.top - maxHeight - 6), left, width, maxHeight });
   }, [preferBelow]);
 
@@ -184,21 +191,22 @@ export function CardTypographyPicker({
     setQuery("");
   };
 
+  const listMaxHeight = Math.max(96, panelRect.maxHeight - SEARCH_HEADER_PX);
+
   const panel =
     open && typeof document !== "undefined" ? (
       <div
         ref={panelRef}
         role="listbox"
-        className="fixed z-[200] rounded-md border border-border/70 bg-white py-2 shadow-xl"
+        className="fixed z-[200] flex flex-col overflow-hidden rounded-md border border-border/70 bg-white py-2 shadow-xl"
         style={{
           top: panelRect.top,
           left: panelRect.left,
           width: panelRect.width,
           maxHeight: panelRect.maxHeight,
-          overflow: "hidden",
         }}
       >
-        <div className="border-b border-border/50 px-2 pb-2">
+        <div className="shrink-0 border-b border-border/50 px-2 pb-2">
           <div className="flex h-9 items-center gap-2 rounded-md border border-border/60 bg-surface px-2">
             <Search size={16} className="shrink-0 text-muted/80" aria-hidden />
             <input
@@ -211,7 +219,10 @@ export function CardTypographyPicker({
           </div>
         </div>
 
-        <div className="max-h-[calc(100%-52px)] overflow-y-auto overflow-x-hidden px-2 pt-2">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2"
+          style={{ maxHeight: listMaxHeight }}
+        >
           {query.trim().length === 0 ? (
             <>
               <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
