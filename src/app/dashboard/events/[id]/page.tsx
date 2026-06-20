@@ -2512,7 +2512,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
               <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
                 <div className="relative min-h-0 min-w-0 overflow-hidden">
-                  <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden px-3 py-3 sm:px-5 sm:py-4">
+                  <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden px-2 py-2 sm:px-4 sm:py-3">
                     <BrandingDualPreview
                       socialPreview={<CardPreview data={brandingPreviewData} preview />}
                       badgePreview={
@@ -2525,7 +2525,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div className="relative z-20 min-h-0 shrink-0 overflow-visible border-t border-border/40 bg-white/80 px-5 py-5 sm:px-8">
                   <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
                     <div className="relative flex flex-col gap-2">
-                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
+                      <span className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Theme color
                       </span>
                       <div className="flex h-11 items-center gap-2">
@@ -2593,7 +2593,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
 
                     <div className="relative flex flex-col gap-2">
-                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
+                      <span className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Text color
                       </span>
                       <div className="flex h-11 w-fit items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
@@ -2652,7 +2652,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
 
                     <div className="relative z-30 flex flex-col gap-2 overflow-visible sm:col-span-2 lg:col-span-1">
-                      <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">
+                      <span className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Typography
                       </span>
                       <CardTypographyPicker

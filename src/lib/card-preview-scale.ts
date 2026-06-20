@@ -89,9 +89,9 @@ export function resolveBrandingDualPreviewScale(
   const { width: sw, height: sh } = CARD_ARTBOARD_HORIZONTAL;
   const { width: bw, height: bh } = CARD_ARTBOARD_VERTICAL;
 
-  const dual = scaleDualCardPreviews(containerWidth, containerHeight, layout, gap, 8, {
+  const dual = scaleDualCardPreviews(containerWidth, containerHeight, layout, gap, 4, {
     chromeHeightPx: layout === "row" ? BRANDING_LABEL_CHROME_PX : BRANDING_LABEL_CHROME_PX * 2 + gap,
-    safetyFactor: 0.88,
+    safetyFactor: 0.96,
   });
 
   let cap = dual;
@@ -101,15 +101,15 @@ export function resolveBrandingDualPreviewScale(
     const cardAreaHeight = Math.max(1, containerHeight - BRANDING_LABEL_CHROME_PX);
     cap = Math.min(
       cap,
-      scaleCardToFitBox(sw, sh, columnWidth, cardAreaHeight, 6),
-      scaleCardToFitBox(bw, bh, columnWidth, cardAreaHeight, 6),
+      scaleCardToFitBox(sw, sh, columnWidth, cardAreaHeight, 4),
+      scaleCardToFitBox(bw, bh, columnWidth, cardAreaHeight, 4),
     );
   } else {
     const cardAreaHeight = Math.max(1, (containerHeight - BRANDING_LABEL_CHROME_PX * 2 - gap) / 2);
     cap = Math.min(
       cap,
-      scaleCardToFitBox(sw, sh, containerWidth, cardAreaHeight, 6),
-      scaleCardToFitBox(bw, bh, containerWidth, cardAreaHeight, 6),
+      scaleCardToFitBox(sw, sh, containerWidth, cardAreaHeight, 4),
+      scaleCardToFitBox(bw, bh, containerWidth, cardAreaHeight, 4),
     );
   }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Search } from "lucide-react";
 import {
   CARD_FONT_PRESETS,
@@ -150,8 +151,12 @@ export function CardTypographyPicker({
     const spaceAbove = r.top - 12;
 
     if (preferBelow) {
-      const maxHeight = Math.min(380, Math.max(140, spaceBelow));
-      setPanelRect({ top: belowTop, left, width, maxHeight });
+      let maxHeight = Math.min(380, Math.max(140, spaceBelow));
+      let top = belowTop;
+      if (top + maxHeight > vh - 12) {
+        top = Math.max(12, vh - 12 - maxHeight);
+      }
+      setPanelRect({ top, left, width, maxHeight });
       return;
     }
 
@@ -178,6 +183,120 @@ export function CardTypographyPicker({
     setOpen(false);
     setQuery("");
   };
+
+  const panel =
+    open && typeof document !== "undefined" ? (
+      <div
+        ref={panelRef}
+        role="listbox"
+        className="fixed z-[200] rounded-md border border-border/70 bg-white py-2 shadow-xl"
+        style={{
+          top: panelRect.top,
+          left: panelRect.left,
+          width: panelRect.width,
+          maxHeight: panelRect.maxHeight,
+          overflow: "hidden",
+        }}
+      >
+        <div className="border-b border-border/50 px-2 pb-2">
+          <div className="flex h-9 items-center gap-2 rounded-md border border-border/60 bg-surface px-2">
+            <Search size={16} className="shrink-0 text-muted/80" aria-hidden />
+            <input
+              autoFocus
+              placeholder="Search all Google Fonts…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="h-full min-w-0 flex-1 border-none bg-transparent text-[14px] text-heading outline-none placeholder:text-muted/50"
+            />
+          </div>
+        </div>
+
+        <div className="max-h-[calc(100%-52px)] overflow-y-auto overflow-x-hidden px-2 pt-2">
+          {query.trim().length === 0 ? (
+            <>
+              <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                Built-in fonts
+              </p>
+              {CARD_FONT_PRESETS.map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  role="option"
+                  aria-selected={selected === k}
+                  onClick={() => {
+                    onChange(k);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full rounded-md px-2 py-2 text-left text-[14px] hover:bg-primary/10 ${
+                    selected === k ? "bg-primary/12 font-semibold text-heading" : "text-heading/90"
+                  }`}
+                >
+                  {presetLabel(k)}
+                </button>
+              ))}
+
+              <p className="mt-2 px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                Popular on Google Fonts
+              </p>
+              {popular.length === 0 ? (
+                <p className="px-2 py-2 text-[13px] text-muted">Loading catalog…</p>
+              ) : (
+                popular.map((row) => {
+                  const token = googleCardFontToken(row.family);
+                  const isSel = selected === token;
+                  return (
+                    <button
+                      key={row.family}
+                      type="button"
+                      role="option"
+                      aria-selected={isSel}
+                      onClick={() => pickGoogle(row.family)}
+                      className={`flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-primary/10 ${
+                        isSel ? "bg-primary/12" : ""
+                      }`}
+                    >
+                      <span className={`text-[14px] ${isSel ? "font-semibold" : ""}`}>{row.family}</span>
+                      {row.c ? (
+                        <span className="text-[11px] text-muted/80">{row.c}</span>
+                      ) : null}
+                    </button>
+                  );
+                })
+              )}
+            </>
+          ) : (
+            <>
+              <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
+                Search results
+              </p>
+              {searchHits.length === 0 ? (
+                <p className="px-2 py-3 text-[13px] text-muted">No fonts match that search.</p>
+              ) : (
+                searchHits.map((row) => {
+                  const token = googleCardFontToken(row.family);
+                  const isSel = selected === token;
+                  return (
+                    <button
+                      key={row.family}
+                      type="button"
+                      role="option"
+                      aria-selected={isSel}
+                      onClick={() => pickGoogle(row.family)}
+                      className={`flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-primary/10 ${
+                        isSel ? "bg-primary/12" : ""
+                      }`}
+                    >
+                      <span className={`text-[14px] ${isSel ? "font-semibold" : ""}`}>{row.family}</span>
+                      {row.c ? <span className="text-[11px] text-muted/80">{row.c}</span> : null}
+                    </button>
+                  );
+                })
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    ) : null;
 
   return (
     <div ref={wrapRef} className={`relative w-full ${disabled ? "opacity-60 pointer-events-none" : ""}`}>
@@ -215,118 +334,7 @@ export function CardTypographyPicker({
         </svg>
       </button>
 
-      {open ? (
-        <div
-          ref={panelRef}
-          role="listbox"
-          className="fixed z-110 rounded-md border border-border/70 bg-white py-2 shadow-xl"
-          style={{
-            top: panelRect.top,
-            left: panelRect.left,
-            width: panelRect.width,
-            maxHeight: panelRect.maxHeight,
-            overflow: "hidden",
-          }}
-        >
-          <div className="border-b border-border/50 px-2 pb-2">
-            <div className="flex h-9 items-center gap-2 rounded-md border border-border/60 bg-surface px-2">
-              <Search size={16} className="shrink-0 text-muted/80" aria-hidden />
-              <input
-                autoFocus
-                placeholder="Search all Google Fonts…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="h-full min-w-0 flex-1 border-none bg-transparent text-[14px] text-heading outline-none placeholder:text-muted/50"
-              />
-            </div>
-          </div>
-
-          <div className="max-h-[calc(100%-52px)] overflow-y-auto overflow-x-hidden px-2 pt-2">
-            {query.trim().length === 0 ? (
-              <>
-                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Built-in fonts
-                </p>
-                {CARD_FONT_PRESETS.map((k) => (
-                  <button
-                    key={k}
-                    type="button"
-                    role="option"
-                    aria-selected={selected === k}
-                    onClick={() => {
-                      onChange(k);
-                      setOpen(false);
-                    }}
-                    className={`flex w-full rounded-md px-2 py-2 text-left text-[14px] hover:bg-primary/10 ${
-                      selected === k ? "bg-primary/12 font-semibold text-heading" : "text-heading/90"
-                    }`}
-                  >
-                    {presetLabel(k)}
-                  </button>
-                ))}
-
-                <p className="mt-2 px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Popular on Google Fonts
-                </p>
-                {popular.length === 0 ? (
-                  <p className="px-2 py-2 text-[13px] text-muted">Loading catalog…</p>
-                ) : (
-                  popular.map((row) => {
-                    const token = googleCardFontToken(row.family);
-                    const isSel = selected === token;
-                    return (
-                      <button
-                        key={row.family}
-                        type="button"
-                        role="option"
-                        aria-selected={isSel}
-                        onClick={() => pickGoogle(row.family)}
-                        className={`flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-primary/10 ${
-                          isSel ? "bg-primary/12" : ""
-                        }`}
-                      >
-                        <span className={`text-[14px] ${isSel ? "font-semibold" : ""}`}>{row.family}</span>
-                        {row.c ? (
-                          <span className="text-[11px] text-muted/80">{row.c}</span>
-                        ) : null}
-                      </button>
-                    );
-                  })
-                )}
-              </>
-            ) : (
-              <>
-                <p className="px-1 pb-1 text-[11px] font-semibold uppercase tracking-wide text-muted/60">
-                  Search results
-                </p>
-                {searchHits.length === 0 ? (
-                  <p className="px-2 py-3 text-[13px] text-muted">No fonts match that search.</p>
-                ) : (
-                  searchHits.map((row) => {
-                    const token = googleCardFontToken(row.family);
-                    const isSel = selected === token;
-                    return (
-                      <button
-                        key={row.family}
-                        type="button"
-                        role="option"
-                        aria-selected={isSel}
-                        onClick={() => pickGoogle(row.family)}
-                        className={`flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-primary/10 ${
-                          isSel ? "bg-primary/12" : ""
-                        }`}
-                      >
-                        <span className={`text-[14px] ${isSel ? "font-semibold" : ""}`}>{row.family}</span>
-                        {row.c ? <span className="text-[11px] text-muted/80">{row.c}</span> : null}
-                      </button>
-                    );
-                  })
-                )}
-              </>
-            )}
-          </div>
-        </div>
-      ) : null}
+      {panel ? createPortal(panel, document.body) : null}
     </div>
   );
 }

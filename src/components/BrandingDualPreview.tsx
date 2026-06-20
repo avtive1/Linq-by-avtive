@@ -15,6 +15,8 @@ type BrandingDualPreviewProps = {
 };
 
 const ROW_BREAKPOINT_PX = 1024;
+const PREVIEW_LABEL_CLASS =
+  "shrink-0 text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75";
 
 function ScaledPreviewTile({
   label,
@@ -22,21 +24,26 @@ function ScaledPreviewTile({
   artboardHeight,
   scale,
   children,
+  className,
 }: {
   label: string;
   artboardWidth: number;
   artboardHeight: number;
   scale: number;
   children: ReactNode;
+  className?: string;
 }) {
   const boxWidth = artboardWidth * scale;
   const boxHeight = artboardHeight * scale;
 
   return (
-    <div className="flex min-h-0 min-w-0 max-w-full shrink-0 flex-col items-center gap-2">
-      <span className="shrink-0 text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/60">
-        {label}
-      </span>
+    <div
+      className={cn(
+        "flex min-h-0 min-w-0 flex-1 basis-0 flex-col items-center justify-start gap-2",
+        className,
+      )}
+    >
+      <span className={PREVIEW_LABEL_CLASS}>{label}</span>
       <div
         className="relative shrink-0 overflow-hidden rounded-sm"
         style={{ width: boxWidth, height: boxHeight }}
@@ -131,9 +138,9 @@ export function BrandingDualPreview({
     >
       <div
         className={cn(
-          "flex max-h-full max-w-full min-h-0 min-w-0",
+          "flex h-full w-full max-h-full min-h-0 min-w-0 max-w-full",
           isRowLayout
-            ? "flex-row items-start justify-center gap-5 min-[1024px]:gap-7"
+            ? "flex-row items-start justify-center gap-4 sm:gap-6 min-[1024px]:gap-8"
             : "flex-col items-center justify-center gap-5",
         )}
       >

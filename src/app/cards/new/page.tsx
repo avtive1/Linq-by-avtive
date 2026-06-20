@@ -768,23 +768,23 @@ function NewCardForm() {
       </div>
 
         {/* Right Content - Preview */}
-        <div className="flex-1 flex min-w-0 flex-col items-stretch py-12 px-6 sm:px-8 lg:px-12 lg:h-screen min-h-[500px] lg:min-h-0 overflow-x-hidden overflow-y-auto animate-slide-up delay-100">
+        <div className="flex min-h-[500px] min-w-0 flex-1 flex-col items-stretch overflow-x-hidden overflow-y-auto px-6 py-12 sm:px-8 lg:h-screen lg:min-h-0 lg:px-12 animate-slide-up delay-100">
 
-          <div className="flex w-full min-w-0 flex-1 flex-col items-stretch justify-start px-4 sm:px-6 xl:px-8 pt-8">
-             <div className="flex w-full min-w-0 max-w-[1320px] flex-col xl:flex-row gap-8 xl:gap-12 items-center xl:items-start justify-center mx-auto min-h-max">
+          <div className="flex w-full min-w-0 flex-1 flex-col items-stretch justify-start px-2 sm:px-4 xl:px-6 pt-6">
+             <div className="mx-auto flex min-h-max w-full min-w-0 max-w-[1480px] flex-col items-stretch justify-center gap-10 xl:flex-row xl:items-start xl:gap-12">
                 {/* Horizontal Card Preview */}
-                <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 shrink xl:shrink-0">
-                   <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Social post layout</h3>
-                   <HorizontalPreviewScaler className="w-full max-w-[780px] mx-auto">
+                <div className="flex w-full min-w-0 shrink-0 flex-col items-center gap-3 xl:flex-1">
+                   <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">Social post layout</h3>
+                   <HorizontalPreviewScaler className="w-full max-w-[960px] xl:max-w-none" maxScale={1}>
                       <div className="preview-card-capture">
                         <CardPreview data={previewData} preview />
                       </div>
                    </HorizontalPreviewScaler>
                 </div>
 
-                <div className="flex min-w-0 max-w-full w-full xl:w-auto flex-col items-center gap-8 animate-fade-in shrink xl:shrink-0">
-                  <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
-                  <VerticalPreviewScaler className="w-full max-w-[304px] mx-auto mt-1">
+                <div className="flex w-full min-w-0 shrink-0 flex-col items-center gap-3 animate-fade-in xl:flex-1">
+                  <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">Event badge layout</h3>
+                  <VerticalPreviewScaler className="mx-auto w-full max-w-[420px] xl:max-w-[480px]" maxScale={1}>
                     <div className="preview-card-capture">
                       <CardPreview data={previewData} preview isVertical verticalSide={2} />
                     </div>
