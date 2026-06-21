@@ -82,7 +82,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: message }, { status });
       }
 
-      const { request, cardId, shareToken, attendeeEmail, eventName, eventShortId } = result;
+      const { request, cardId, shareToken, attendeeEmail, eventName, eventShortId, attendanceCode } = result;
       const pendingCount = await countPendingRegistrationsForEvent(request.event_id);
 
       let notifyError: string | null = null;
@@ -94,6 +94,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           shareToken,
           eventId: request.event_id,
           eventShortId,
+          attendanceCode,
         });
         if (emailResult.sent) {
           await updateTenantRows(

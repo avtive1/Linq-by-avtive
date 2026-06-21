@@ -1,5 +1,10 @@
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 import { toPublicCompactUrl } from "@/lib/services/shortLink.service";
+import {
+  appendAttendanceCodeToApprovedEmailHtml,
+  appendAttendanceCodeToApprovedEmailText,
+  generateVisitorAttendanceCodeEmailHtml,
+} from "@/lib/email-templates/attendance-code";
 import { generateRegistrationApprovedEmailHtml, generateRegistrationRejectedEmailHtml } from "@/lib/email-templates/registration-approved";
 
 function buildCardTargetPath(cardId: string, shareToken?: string | null) {
@@ -23,27 +28,56 @@ export async function sendRegistrationApprovedEmail(input: {
   shareToken?: string | null;
   eventId: string;
   eventShortId?: string | null;
+  attendanceCode?: string | null;
 }) {
   const [cardLink, eventLink] = await Promise.all([
     toPublicCompactUrl(buildCardTargetPath(input.cardId, input.shareToken)),
     toPublicCompactUrl(buildEventTargetPath(input.eventId, input.eventShortId)),
   ]);
   
-  const text =
+  let text =
     `Your event registration for "${input.eventName}" is approved!\n\n` +
     `View your attendee card:\n${cardLink}\n\n` +
     `Event page:\n${eventLink}\n\n` +
     `We look forward to seeing you at the event.`;
   
-  const html = generateRegistrationApprovedEmailHtml({
+  let html = generateRegistrationApprovedEmailHtml({
     eventName: input.eventName,
     cardLink,
     eventLink,
   });
+
+  const attendanceCode = String(input.attendanceCode || "").trim();
+  if (attendanceCode) {
+    text = appendAttendanceCodeToApprovedEmailText(text, attendanceCode);
+    html = appendAttendanceCodeToApprovedEmailHtml(html, attendanceCode);
+  }
   
   return sendTransactionalEmail({
     to: input.to,
     subject: "🎉 Your Event Registration is Approved!",
+    text,
+    html,
+  });
+}
+
+export async function sendVisitorAttendanceCodeEmail(input: {
+  to: string;
+  eventName: string;
+  attendanceCode: string;
+}) {
+  const text =
+    `Your attendance code for "${input.eventName}" is: ${input.attendanceCode}\n\n` +
+    `Present this code at the event entrance.`;
+
+  const html = generateVisitorAttendanceCodeEmailHtml({
+    eventName: input.eventName,
+    attendanceCode: input.attendanceCode,
+  });
+
+  return sendTransactionalEmail({
+    to: input.to,
+    subject: `Your attendance code for ${input.eventName}`,
     text,
     html,
   });

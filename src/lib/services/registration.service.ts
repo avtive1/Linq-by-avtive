@@ -7,6 +7,7 @@ import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
+import { assignAttendanceCodeIfMissing } from "@/lib/services/attendance.service";
 import { ensureRegistrationRequestsSchema } from "@/lib/services/registration-schema";
 import type { RegistrationRequestSummary, RegistrationStatus } from "@/lib/services/realtime.service";
 
@@ -269,6 +270,7 @@ export async function approveRegistrationRequest(input: {
   attendeeEmail: string;
   eventName: string;
   eventShortId: string | null;
+  attendanceCode: string | null;
 }> {
   await ensureRegistrationRequestsSchema();
 
@@ -292,6 +294,10 @@ export async function approveRegistrationRequest(input: {
 
   if (existing.status === "APPROVED" && existing.card_id) {
     const summary = summarizePayload(existing.attendee_payload || {});
+    const attendanceCode = await assignAttendanceCodeIfMissing({
+      attendeeId: existing.card_id,
+      eventId: existing.event_id,
+    });
     return {
       request: existing,
       cardId: existing.card_id,
@@ -299,6 +305,7 @@ export async function approveRegistrationRequest(input: {
       attendeeEmail: summary.attendee_email,
       eventName: event.name,
       eventShortId: event.short_id,
+      attendanceCode,
     };
   }
 
@@ -323,6 +330,10 @@ export async function approveRegistrationRequest(input: {
     const latest = await getRegistrationRequestById(input.requestId);
     if (latest?.status === "APPROVED" && latest.card_id) {
       const summary = summarizePayload(latest.attendee_payload || {});
+      const attendanceCode = await assignAttendanceCodeIfMissing({
+        attendeeId: latest.card_id,
+        eventId: latest.event_id,
+      });
       return {
         request: latest,
         cardId: latest.card_id,
@@ -330,6 +341,7 @@ export async function approveRegistrationRequest(input: {
         attendeeEmail: summary.attendee_email,
         eventName: event.name,
         eventShortId: event.short_id,
+        attendanceCode,
       };
     }
     throw new Error("Registration request already reviewed.");
@@ -360,6 +372,11 @@ export async function approveRegistrationRequest(input: {
       "id",
     );
 
+    const attendanceCode = await assignAttendanceCodeIfMissing({
+      attendeeId: cardId,
+      eventId: existing.event_id,
+    });
+
     const finalRequest: RegistrationRequestRecord = {
       ...updatedRequest,
       card_id: cardId,
@@ -372,6 +389,7 @@ export async function approveRegistrationRequest(input: {
       attendeeEmail: String(attendeePayload.card_email || "").trim(),
       eventName: event.name,
       eventShortId: event.short_id,
+      attendanceCode,
     };
   } catch (cardError) {
     await updateTenantRows(

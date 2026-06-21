@@ -38,3 +38,10 @@ export const attendeeRegistrationBodySchema = z
     custom_fields: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
+
+export const markAttendanceBodySchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{6}$/, "Attendance code must be a 6-digit number."),
+});

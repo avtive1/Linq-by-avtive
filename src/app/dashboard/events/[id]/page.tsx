@@ -74,7 +74,11 @@ import {
 } from "@/lib/registration-form";
 import { asPayloadRecord, getPayloadError, readResponsePayload } from "@/lib/http/read-response-payload";
 
-type AttendeeCard = CardData & { photo_path?: string };
+type AttendeeCard = CardData & {
+  photo_path?: string;
+  attended?: boolean;
+  hasAttendanceCode?: boolean;
+};
 type PendingAccessRequest = {
   id: string;
   requester_user_id: string;
@@ -272,6 +276,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [rejectingRegistrationId, setRejectingRegistrationId] = useState<string | null>(null);
   const [registrationRejectionReason, setRegistrationRejectionReason] = useState("");
   const [reviewingRegistrationId, setReviewingRegistrationId] = useState<string | null>(null);
+  const [attendanceModalCardId, setAttendanceModalCardId] = useState<string | null>(null);
+  const [attendanceCodeInput, setAttendanceCodeInput] = useState("");
+  const [markingAttendanceId, setMarkingAttendanceId] = useState<string | null>(null);
   const [isAccessInboxOpen, setIsAccessInboxOpen] = useState(false);
   const [isAccessControlOpen, setIsAccessControlOpen] = useState(false);
   const [activeGrants, setActiveGrants] = useState<ActiveGrant[]>([]);
@@ -442,6 +449,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             event_id: String(secure.event_id || ""),
             photo: typeof secure.photo_url === "string" && secure.photo_url ? secure.photo_url : undefined,
             photo_path: typeof secure.photo_url === "string" ? secure.photo_url : undefined,
+            attended: Boolean(secure.attended),
+            hasAttendanceCode: Boolean(secure.attendance_code),
           };
         });
 
@@ -611,6 +620,51 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     } catch (err) {
       logger.error({ err }, "Error deleting card");
       toast.error("Failed to delete card.");
+    }
+  };
+
+  const closeAttendanceModal = () => {
+    setAttendanceModalCardId(null);
+    setAttendanceCodeInput("");
+  };
+
+  const submitAttendance = async () => {
+    if (!attendanceModalCardId) return;
+    const code = attendanceCodeInput.trim();
+    if (!/^\d{6}$/.test(code)) {
+      toast.error("Enter a valid 6-digit attendance code.");
+      return;
+    }
+
+    setMarkingAttendanceId(attendanceModalCardId);
+    try {
+      const res = await fetch(`/api/events/${id}/attendees/${attendanceModalCardId}/attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const body = await readResponsePayload(res);
+      if (!res.ok) {
+        throw new Error(getPayloadError(body, "Failed to mark attendance."));
+      }
+
+      const alreadyAttended =
+        body &&
+        typeof body === "object" &&
+        "data" in body &&
+        Boolean((body as { data?: { alreadyAttended?: boolean } }).data?.alreadyAttended);
+
+      setCards((prev) =>
+        prev.map((card) =>
+          card.id === attendanceModalCardId ? { ...card, attended: true } : card,
+        ),
+      );
+      toast.success(alreadyAttended ? "Already marked as attended." : "Attendance marked successfully.");
+      closeAttendanceModal();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to mark attendance.");
+    } finally {
+      setMarkingAttendanceId(null);
     }
   };
 
@@ -2132,6 +2186,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             {card.company}
                           </span>
                         )}
+                        <span
+                          className={`text-[11px] font-semibold px-2 py-0.5 rounded-inline border shrink-0 ${
+                            card.attended
+                              ? "bg-success/10 text-success border-success/25"
+                              : "bg-surface text-steel border-hairline"
+                          }`}
+                        >
+                          {card.attended ? "Attended" : "Not attended"}
+                        </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs font-medium leading-[1.5] text-heading/75">
                         <span className="flex items-center">{card.role}</span>
@@ -2145,6 +2208,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
+                    {isEventOwner && !isPreviewMode && card.hasAttendanceCode && !card.attended && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<ShieldCheck size={14} />}
+                        onClick={() => {
+                          setAttendanceModalCardId(card.id);
+                          setAttendanceCodeInput("");
+                        }}
+                        disabled={markingAttendanceId === card.id}
+                        className="shrink-0 rounded-md bg-white/60 border-white/60"
+                      >
+                        Mark attended
+                      </Button>
+                    )}
                     <Button
                       href={`/cards/${card.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`}
                       variant="secondary"
@@ -2276,6 +2354,54 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {attendanceModalCardId && (
+        <div className={dashboardModalBackdrop}>
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={closeAttendanceModal}
+          />
+          <div className="relative w-full max-w-[420px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                  Mark attended
+                </h3>
+                <p className="text-sm text-muted mt-1">
+                  Enter the 6-digit code the guest or visitor received by email.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAttendanceModal}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <div className="px-6 pb-6 flex flex-col gap-4">
+              <TextInput
+                label="Attendance code"
+                value={attendanceCodeInput}
+                onChange={setAttendanceCodeInput}
+                placeholder="000000"
+                maxLength={6}
+              />
+              <div className="flex gap-2 justify-end">
+                <Button variant="secondary" onClick={closeAttendanceModal}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => void submitAttendance()}
+                  disabled={markingAttendanceId === attendanceModalCardId}
+                >
+                  {markingAttendanceId === attendanceModalCardId ? "Verifying..." : "Confirm"}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

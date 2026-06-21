@@ -126,6 +126,8 @@ model Attendee {
   linkedin              String?
   card_email_lookup_tag String?
   custom_fields         Json      @default("{}")
+  attendance_code       String?
+  attended              Boolean   @default(false)
   created_at            DateTime  @default(now()) @db.Timestamptz(6)
   updated_at            DateTime? @db.Timestamptz(6)
 

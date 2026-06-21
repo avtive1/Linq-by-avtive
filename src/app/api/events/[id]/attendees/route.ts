@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { updateAttendeeForTenant } from "@/lib/db/tenant-mutations";
 import { getServerAuthSession } from "@/auth";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";

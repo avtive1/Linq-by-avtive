@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeon } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
+import { assignAttendanceCodeIfMissing } from "@/lib/services/attendance.service";
+import { sendVisitorAttendanceCodeEmail } from "@/lib/services/email.service";
+import { isGuestRegistrationTrack } from "@/lib/services/registration.service";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
 import { logger } from "@/lib/logger-server";
@@ -35,6 +38,41 @@ export async function POST(req: Request) {
       authUserId,
       bearerToken,
     });
+
+    const createdCardId = String(data?.id || "").trim();
+    const eventId = String(payload.event_id || "").trim();
+    const track = String(payload.track || "visitor").trim().toLowerCase();
+    if (createdCardId && eventId && !isGuestRegistrationTrack(track)) {
+      try {
+        const attendanceCode = await assignAttendanceCodeIfMissing({
+          attendeeId: createdCardId,
+          eventId,
+        });
+        const attendeeEmail = String(payload.card_email || "").trim();
+        if (attendanceCode && attendeeEmail) {
+          const eventRow = await queryNeonOne<{ name: string }>(
+            `SELECT name FROM public.events WHERE id = $1`,
+            [eventId],
+          );
+          const emailResult = await sendVisitorAttendanceCodeEmail({
+            to: attendeeEmail,
+            eventName: String(eventRow?.name || "the event"),
+            attendanceCode,
+          });
+          if (!emailResult.sent) {
+            logger.warn(
+              { attendeeId: createdCardId, eventId, error: emailResult.error },
+              "Visitor attendance code email failed",
+            );
+          }
+        }
+      } catch (attendanceErr) {
+        logger.warn(
+          { err: attendanceErr instanceof Error ? attendanceErr : undefined, attendeeId: createdCardId },
+          "Visitor attendance code assignment skipped",
+        );
+      }
+    }
 
     return NextResponse.json({ data, shareToken });
   } catch (err) {
