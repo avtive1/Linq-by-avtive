@@ -74,8 +74,6 @@ async function runQueryWithRetry<T>(
     try {
       return await operation();
     } catch (error: unknown) {
-      lastError = error;
-
       if (
         !isTransientDbError(error) ||
         attempt === maxRetries
