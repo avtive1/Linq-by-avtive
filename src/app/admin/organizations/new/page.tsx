@@ -92,10 +92,10 @@ export default function NewOrganizationByAdminPage() {
           />
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <div className="form-actions">
-            <Button type="button" variant="secondary" fullWidth className="h-12" onClick={() => router.push("/admin")}>
+            <Button type="button" variant="secondary" fullWidth onClick={() => router.push("/admin")}>
               Cancel
             </Button>
-            <Button type="submit" fullWidth className="h-12" disabled={isSubmitting}>
+            <Button type="submit" fullWidth disabled={isSubmitting}>
               {isSubmitting ? "Creating..." : "Create Organization"}
             </Button>
           </div>

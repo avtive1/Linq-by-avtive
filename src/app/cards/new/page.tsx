@@ -732,7 +732,7 @@ function NewCardForm() {
               type="submit"
               fullWidth
               disabled={loading}
-              className="h-12 rounded-md bg-primary text-primary-foreground border border-primary font-medium text-sm tracking-[0.01em]"
+              className="rounded-md"
             >
               {loading
                 ? form.cardRole === "guest"
@@ -796,7 +796,7 @@ function NewCardForm() {
                  variant="secondary"
                  onClick={() => handleSubmit()}
                  disabled={loading}
-                 className="rounded-md h-12 min-w-[160px] px-7 bg-white text-ink border border-hairline-strong font-medium text-sm tracking-[0.01em]"
+                 className="rounded-md min-w-[160px] bg-white text-ink border border-hairline-strong"
                >
                  {loading
                    ? form.cardRole === "guest"

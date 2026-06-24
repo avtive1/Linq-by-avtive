@@ -43,7 +43,8 @@ export default {
         "teal-light": "#c3faf5",
       },
       fontFamily: {
-        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui"],
+        sans: ["var(--font-sans)", "Plus Jakarta Sans", "ui-sans-serif", "system-ui"],
+        display: ["var(--font-display)", "Space Grotesk", "ui-sans-serif", "system-ui"],
       },
       borderRadius: {
         xs: "2px",

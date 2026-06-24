@@ -1431,7 +1431,7 @@ function DashboardContent() {
                     }
                     setIsEventModalOpen(true);
                   }}
-                  className="h-12 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-surface border-hairline-strong text-ink hover:bg-white"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-surface border-hairline-strong text-ink hover:bg-white"
                   title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
                   icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
                 >
@@ -1446,7 +1446,7 @@ function DashboardContent() {
                   onClick={() => {
                     void openTeamAccessModal("list");
                   }}
-                  className="h-12 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface"
                   icon={<Users size={18} />}
                 >
                   Team Access
@@ -1468,7 +1468,7 @@ function DashboardContent() {
                     setOrganizationLogoDraft("");
                     setIsUsernameModalOpen(true);
                   }}
-                  className="h-12 w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
                   icon={<Settings size={18} />}
                 >
                   <span>Settings</span>
@@ -1482,7 +1482,7 @@ function DashboardContent() {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 icon={isLoggingOut ? undefined : <LogOut size={18} />}
-                className="h-12 justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
+                className="justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
               >
                 <span>{isLoggingOut ? "..." : "Logout"}</span>
               </Button>
@@ -2212,7 +2212,7 @@ function DashboardContent() {
                   variant="secondary" 
                   fullWidth 
                   onClick={() => setIsEventModalOpen(false)}
-                  className="order-2 sm:order-1 h-12"
+                  className="order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -2220,7 +2220,7 @@ function DashboardContent() {
                   type="submit" 
                   fullWidth 
                   disabled={isSubmittingEvent || (isOrgTeamMember && !hasCreateCampaignPermission)}
-                  className="order-1 sm:order-2 h-12"
+                  className="order-1 sm:order-2"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}
                 </Button>
@@ -2592,7 +2592,7 @@ function DashboardContent() {
                       type="button" 
                       variant="secondary" 
                       fullWidth 
-                      className="order-2 h-12 sm:order-1"
+                      className="order-2 sm:order-1"
                       onClick={() => {
                         setTeamModalView("list");
                         setIsTeamModalOpen(false);
@@ -2603,7 +2603,7 @@ function DashboardContent() {
                     <Button 
                       type="submit" 
                       fullWidth 
-                      className="order-1 h-12 sm:order-2"
+                      className="order-1 sm:order-2"
                     >
                       Next: Set Permissions
                     </Button>
@@ -2676,7 +2676,7 @@ function DashboardContent() {
                       type="button" 
                       variant="secondary" 
                       fullWidth 
-                      className="order-2 h-12 sm:order-1"
+                      className="order-2 sm:order-1"
                       onClick={() => setTeamModalView("list")}
                     >
                       Back
@@ -2685,7 +2685,7 @@ function DashboardContent() {
                       type="submit" 
                       fullWidth 
                       disabled={isSubmittingTeamInvite}
-                      className="order-1 h-12 sm:order-2"
+                      className="order-1 sm:order-2"
                     >
                       {isSubmittingTeamInvite ? "Saving..." : "Update Permissions"}
                     </Button>
@@ -2729,10 +2729,10 @@ function DashboardContent() {
                 </div>
                 
                 <div className="form-actions">
-                  <Button type="button" variant="secondary" fullWidth className="order-2 h-12 sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
+                  <Button type="button" variant="secondary" fullWidth className="order-2 sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest} className="order-1 h-12 sm:order-2">
+                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest} className="order-1 sm:order-2">
                     {isSubmittingPermissionRequest ? "Sending..." : "Send Request"}
                   </Button>
                 </div>

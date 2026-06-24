@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from "react";
-import Image from "next/image";
 import ReactCrop, { type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check } from "lucide-react";
@@ -129,7 +128,7 @@ export function FreeformImageCropModal({
               fullWidth
               onClick={onClose}
               disabled={loading}
-              className="h-14 text-base rounded-md"
+              className="rounded-md"
             >
               Cancel
             </Button>
@@ -138,7 +137,7 @@ export function FreeformImageCropModal({
               fullWidth
               onClick={handleApply}
               disabled={loading || !canApply}
-              className="h-12 text-base rounded-md shadow-black/10 shadow-xl"
+              className="rounded-md shadow-black/10 shadow-xl"
               icon={loading ? null : <Check size={18} />}
             >
               {loading ? "Processing..." : applyLabel}

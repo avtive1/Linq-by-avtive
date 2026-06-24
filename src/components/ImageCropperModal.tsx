@@ -157,7 +157,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               fullWidth 
               onClick={onClose}
               disabled={loading}
-              className="order-2 h-12 text-base rounded-md sm:order-1"
+              className="order-2 rounded-md sm:order-1"
             >
               Cancel
             </Button>
@@ -166,7 +166,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               fullWidth 
               onClick={handleApply}
               disabled={loading}
-              className="order-1 h-12 text-base rounded-md shadow-black/10 shadow-xl sm:order-2"
+              className="order-1 rounded-md shadow-black/10 shadow-xl sm:order-2"
               icon={loading ? null : <Check size={18} />}
             >
               {loading ? "Processing..." : applyLabel}

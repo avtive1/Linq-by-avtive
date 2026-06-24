@@ -88,7 +88,6 @@ export function resolveBrandingDualPreviewScale(
   const gap = layout === "row" ? BRANDING_ROW_GAP_PX : BRANDING_COLUMN_GAP_PX;
   const { width: sw, height: sh } = CARD_ARTBOARD_HORIZONTAL;
   const { width: bw, height: bh } = CARD_ARTBOARD_VERTICAL;
-
   const dual = scaleDualCardPreviews(containerWidth, containerHeight, layout, gap, 4, {
     chromeHeightPx: layout === "row" ? BRANDING_LABEL_CHROME_PX : BRANDING_LABEL_CHROME_PX * 2 + gap,
     safetyFactor: 0.96,

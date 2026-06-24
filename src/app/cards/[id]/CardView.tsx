@@ -319,7 +319,7 @@ export default function CardView({
               <Button
                 href={`/cards/${card.id}/edit?share=true&token=${encodeURIComponent(shareToken)}`}
                 variant="secondary"
-                className="shadow-lg flex-1 md:flex-initial h-12 px-4 min-w-[116px]"
+                className="shadow-lg flex-1 md:flex-initial min-w-[116px]"
               >
                 Edit
               </Button>
@@ -330,7 +330,7 @@ export default function CardView({
                 disabled={isDownloading}
                 variant="blue"
                 icon={<Share2 size={16} />}
-                className="shadow-lg flex-1 md:flex-initial h-12 px-4 min-w-[116px]"
+                className="shadow-lg flex-1 md:flex-initial min-w-[116px]"
               >
                 Share
               </Button>
@@ -342,7 +342,7 @@ export default function CardView({
                   disabled={isDownloading}
                   variant="secondary"
                   icon={<Download size={18} />}
-                  className="shadow-lg flex-1 md:flex-initial h-12 px-4 min-w-[132px]"
+                  className="shadow-lg flex-1 md:flex-initial min-w-[132px]"
                 >
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>
@@ -371,7 +371,7 @@ export default function CardView({
                   onClick={() => setShowPostDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   icon={<Download size={18} />}
-                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial h-12 px-4 min-w-[132px]"
+                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial min-w-[132px]"
                 >
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>

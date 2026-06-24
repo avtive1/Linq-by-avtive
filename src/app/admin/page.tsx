@@ -234,7 +234,7 @@ export default async function AdminDashboardPage() {
                 href="/admin/organizations/new"
                 variant="primary"
                 size="md"
-                className="h-12 w-full justify-center sm:w-auto sm:min-w-[11rem]"
+                className="w-full justify-center sm:w-auto sm:min-w-[11rem]"
               >
                 Create Organization
               </Button>

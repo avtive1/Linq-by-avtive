@@ -2013,7 +2013,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   onClick={handleExport}
                   disabled={status.label === "Past" || !canExport}
                   icon={<Download size={20} />}
-                  className={`h-14 px-7 rounded-md font-semibold text-sm shadow-sm transition-all duration-300 ${
+                  className={`rounded-md shadow-sm transition-all duration-300 ${
                     isTeamMemberEventMode
                       ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
                       : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
@@ -2337,11 +2337,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   fullWidth
                   onClick={() => setIsAccessRequestOpen(false)}
                   disabled={isSubmittingAccessRequest}
-                  className="order-2 h-12 sm:order-1"
+                  className="order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
-                <Button type="submit" fullWidth disabled={isSubmittingAccessRequest} className="order-1 h-12 sm:order-2">
+                <Button type="submit" fullWidth disabled={isSubmittingAccessRequest} className="order-1 sm:order-2">
                   {isSubmittingAccessRequest ? "Sending..." : "Request Access"}
                 </Button>
               </div>
@@ -2791,7 +2791,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <div className="grid w-full grid-cols-1 items-center gap-3 min-[560px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                   <div className="flex justify-center min-[560px]:justify-start">
                     <Button
-                      className="h-12 w-full min-[560px]:w-auto shrink-0 px-7 sm:min-w-[132px]"
+                      className="w-full min-[560px]:w-auto shrink-0 sm:min-w-[132px]"
                       disabled={isSavingBranding}
                       onClick={saveBrandingConfig}
                     >
@@ -2802,7 +2802,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <Button
                       type="button"
                       variant="secondary"
-                      className="h-12 shrink-0 px-6"
+                      className="shrink-0"
                       disabled={isSavingBranding || brandingUndoStack.length === 0}
                       onClick={undoBrandingEdit}
                       title="Undo the last theme, text color, or typography change"
@@ -2815,7 +2815,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     <Button
                       type="button"
                       variant="secondary"
-                      className="h-12 shrink-0 px-6"
+                      className="shrink-0"
                       disabled={isSavingBranding || brandingRedoStack.length === 0}
                       onClick={redoBrandingEdit}
                       title="Redo a change you undid"
@@ -2829,7 +2829,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <div className="flex justify-center min-[560px]:justify-end">
                     <Button
                       variant="secondary"
-                      className="h-12 w-full min-[560px]:w-auto shrink-0 px-7 sm:min-w-[112px]"
+                      className="w-full min-[560px]:w-auto shrink-0 sm:min-w-[112px]"
                       disabled={isSavingBranding}
                       onClick={() => setIsBrandingOpen(false)}
                     >
@@ -3003,7 +3003,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <Button
                   variant="secondary"
                   fullWidth
-                  className="order-2 h-12 sm:order-1"
+                  className="order-2 sm:order-1"
                   disabled={isSavingRegistrationForm}
                   onClick={() => setIsRegistrationFormOpen(false)}
                 >
@@ -3011,7 +3011,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
                 <Button
                   fullWidth
-                  className="order-1 h-12 sm:order-2"
+                  className="order-1 sm:order-2"
                   disabled={isSavingRegistrationForm}
                   onClick={saveRegistrationFormConfig}
                 >
@@ -3072,10 +3072,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               />
               {guestCategoryError && <p className="text-sm font-normal leading-[1.6] text-red-500">{guestCategoryError}</p>}
               <div className="form-actions pt-2">
-                <Button type="button" variant="secondary" fullWidth className="order-2 h-12 sm:order-1" onClick={() => setIsGuestCategoryOpen(false)}>
+                <Button type="button" variant="secondary" fullWidth className="order-2 sm:order-1" onClick={() => setIsGuestCategoryOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" fullWidth className="order-1 h-12 sm:order-2">
+                <Button type="submit" fullWidth className="order-1 sm:order-2">
                   Save
                 </Button>
               </div>
@@ -3188,7 +3188,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     type="button"
                     variant="secondary"
                     fullWidth
-                    className="order-2 h-12 sm:order-1"
+                    className="order-2 sm:order-1"
                     disabled={isSavingSponsors}
                     onClick={() => setIsSponsorsOpen(false)}
                   >
@@ -3197,7 +3197,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <Button
                     type="submit"
                     fullWidth
-                    className="order-1 h-12 sm:order-2"
+                    className="order-1 sm:order-2"
                     disabled={isSavingSponsors || isPreviewMode}
                   >
                     {isSavingSponsors ? "Saving..." : "Save sponsors"}
@@ -3328,7 +3328,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   variant="secondary"
                   fullWidth
                   onClick={() => setIsEditOpen(false)}
-                  className="order-2 h-12 sm:order-1"
+                  className="order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -3336,7 +3336,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="submit"
                   fullWidth
                   disabled={isSavingEdit}
-                  className="order-1 h-12 sm:order-2"
+                  className="order-1 sm:order-2"
                 >
                   {isSavingEdit ? "Saving..." : "Save Changes"}
                 </Button>
@@ -3384,7 +3384,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   fullWidth
                   onClick={() => setIsDeleteOpen(false)}
                   disabled={isDeleting}
-                  className="order-2 h-12 sm:order-1"
+                  className="order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -3401,7 +3401,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     void handleDeleteEvent();
                   }}
                   disabled={isDeleting}
-                  className={`order-1 h-12 sm:order-2 ${
+                  className={`order-1 sm:order-2 ${
                     isDeleteConfirmValid
                       ? "bg-red-500! text-white! border-red-500! hover:bg-red-600! hover:text-white!"
                       : "opacity-60"
@@ -3473,7 +3473,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   fullWidth
                   onClick={() => setIsRenewOpen(false)}
                   disabled={isRenewing}
-                  className="order-2 h-12 sm:order-1"
+                  className="order-2 sm:order-1"
                 >
                   Cancel
                 </Button>
@@ -3481,7 +3481,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   type="submit"
                   fullWidth
                   disabled={isRenewing}
-                  className="order-1 h-12 sm:order-2"
+                  className="order-1 sm:order-2"
                 >
                   {isRenewing ? "Renewing..." : "Renew Event"}
                 </Button>

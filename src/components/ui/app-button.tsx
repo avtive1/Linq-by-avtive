@@ -18,11 +18,25 @@ type ButtonProps = {
   title?: string;
 };
 
-const sizeClasses = {
-  sm: "h-11 px-5 text-button-md",
-  md: "h-12 px-7 text-button-md",
-  lg: "h-12 min-h-[48px] px-7 text-button-md",
-};
+/** DESIGN-discord.md button padding + type scale; colors stay DESIGN-miro. */
+function getDiscordButtonSizeClasses(
+  variant: NonNullable<ButtonProps["variant"]>,
+  size: NonNullable<ButtonProps["size"]>,
+) {
+  if (size === "sm") {
+    return "min-h-[44px] py-3 px-8 text-button-sm";
+  }
+
+  if (variant === "secondary") {
+    return "min-h-[58px] px-6 py-4 text-button-md";
+  }
+
+  if (variant === "blue") {
+    return "min-h-[48px] py-3 px-6 text-button-lg";
+  }
+
+  return "min-h-[58px] py-5 px-6 text-button-lg";
+}
 
 export function Button({
   children,
@@ -38,8 +52,8 @@ export function Button({
   title,
 }: ButtonProps) {
   const mergedClassName = cn(
-    "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-button-md font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 no-underline",
-    sizeClasses[size],
+    "inline-flex h-auto shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 no-underline",
+    getDiscordButtonSizeClasses(variant, size),
     variant === "primary" &&
       "bg-primary text-primary-foreground border border-primary hover:bg-charcoal active:bg-charcoal disabled:bg-hairline disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed disabled:active:scale-100",
     variant === "blue" &&

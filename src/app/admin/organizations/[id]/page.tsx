@@ -124,7 +124,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           <Button
             href={`/dashboard?impersonate=${user.id}`}
             variant="secondary"
-            className="h-12 w-full justify-center sm:w-auto sm:min-w-[12rem]"
+            className="w-full justify-center sm:w-auto sm:min-w-[12rem]"
             icon={<Sparkles size={16} />}
           >
             View as Organization

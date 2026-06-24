@@ -173,7 +173,6 @@ export default function LoginPage() {
               fullWidth
               size="lg"
               disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
-              className="h-14 text-base"
             >
               {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
             </Button>

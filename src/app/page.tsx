@@ -23,10 +23,10 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full max-w-md sm:max-w-none mt-2 sm:mt-4 animate-slide-up delay-200 px-1">
-          <Button href="/login" variant="primary" size="lg" className="w-full sm:w-auto min-h-14 px-6 text-base justify-center">
+          <Button href="/login" variant="primary" size="lg" className="w-full sm:w-auto justify-center">
             Get started
           </Button>
-          <Button href="/login" variant="secondary" size="lg" className="w-full sm:w-auto min-h-14 card-base hover:bg-surface px-6 text-base justify-center">
+          <Button href="/login" variant="secondary" size="lg" className="w-full sm:w-auto card-base hover:bg-surface justify-center">
             Log in
           </Button>
         </div>
