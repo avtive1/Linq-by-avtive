@@ -37,7 +37,7 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
       },
     });
 
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: from,
       to: input.to,
       subject: input.subject,

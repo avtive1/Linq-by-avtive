@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { execSync } = require("child_process");
 
 console.log("🔍 Running TruffleHog scan...");
@@ -50,7 +51,7 @@ for (const line of lines) {
     console.log(`❌ REAL SECRET FOUND: ${filePath}`);
     hasRealSecret = true;
 
-  } catch (e) {
+  } catch {
     // ignore invalid JSON lines
   }
 }

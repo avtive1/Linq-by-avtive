@@ -103,14 +103,6 @@ const BRAND_THEME_COLORS = [
 ];
 const BRAND_PRESET_THEME_NAMES = new Set(BRAND_THEME_COLORS.map((c) => c.name));
 
-const BRAND_THEME_BACKDROPS: Record<string, { start: string; end: string }> = {
-  purple: { start: "#eef0ff", end: "#f7f3ff" },
-  red: { start: "#fff1f1", end: "#fdf2ff" },
-  pink: { start: "#fff3f8", end: "#fff8f0" },
-  blue: { start: "#f1f5ff", end: "#f6f8ff" },
-};
-
-
 type CardBrandingDraft = {
   card_color: string;
   card_font: string;

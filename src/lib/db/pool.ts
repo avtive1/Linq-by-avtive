@@ -112,7 +112,6 @@ export function getConnectionLifecycleReport(): {
   config: DbPoolConfig;
 } {
   const pooler = process.env.DATABASE_URL?.trim();
-  const direct = process.env.DATABASE_URL_DIRECT?.trim();
   let usingPoolerUrl = false;
   try {
     usingPoolerUrl = isPoolerUrl(getConnectionString());

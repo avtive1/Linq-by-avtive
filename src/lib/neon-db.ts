@@ -1,6 +1,5 @@
 import type { QueryResultRow } from "@neondatabase/serverless";
 import {
-  getConnectionLifecycleReport,
   getDbPoolConfig,
   getSqlClient,
   resetSqlClient,
@@ -71,8 +70,6 @@ async function runQueryWithRetry<T>(
   operation: () => Promise<T>,
 ): Promise<T> {
   const { maxRetries, retryBackoffMs } = getDbPoolConfig();
-  let lastError: unknown;
-
   for (let attempt = 1; attempt <= maxRetries; attempt += 1) {
     try {
       return await operation();

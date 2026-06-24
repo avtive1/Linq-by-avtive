@@ -39,7 +39,7 @@ export default function SignupPage() {
       .split("/")[0]; // takeee first segment after /in/ if any
   };
 
-  const validate = (step: 1 | 2 = signupStep) => {
+  const validate = () => {
     const newErrors: Record<string, string> = {};
     
     // Email
@@ -75,7 +75,7 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate(2)) return;
+    if (!validate()) return;
     
     setIsSubmitting(true);
     const cleanHandle = extractLinkedInHandle(form.linkedin);
@@ -195,7 +195,7 @@ export default function SignupPage() {
   };
 
   const handleContinueToLogoStep = () => {
-    if (!validate(1)) return;
+    if (!validate()) return;
     setSignupStep(2);
   };
 

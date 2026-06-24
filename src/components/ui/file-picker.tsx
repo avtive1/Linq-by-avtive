@@ -97,7 +97,8 @@ export function FilePicker({
         <input id={inputId} name={inputName} type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 z-10 cursor-pointer opacity-0" />
         {value ? (
           <div className="flex flex-1 items-center gap-3 overflow-hidden px-4 py-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline p-1">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline p-1">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={value} alt="Preview" className="h-full w-full rounded-sm object-contain" loading="lazy" decoding="async" />
             </div>
             <span className="truncate text-base font-medium text-ink">Photo selected</span>

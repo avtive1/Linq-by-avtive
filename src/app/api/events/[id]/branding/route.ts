@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserById } from "@/lib/admin";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeonOne } from "@/lib/neon-db";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
