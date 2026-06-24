@@ -183,7 +183,7 @@ export default function OrganizationsTable({ initialOrganizations, toolbarAction
                   <td className="py-5 px-6 text-right">
                     <Link
                       href={`/admin/organizations/${org.id}`}
-                      className="no-underline ml-auto inline-flex h-11 items-center justify-center gap-1.5 rounded-md border border-hairline-strong bg-white px-4 text-xs font-semibold leading-none text-ink transition-colors hover:bg-surface"
+                      className="no-underline ml-auto inline-flex h-12 items-center justify-center gap-1.5 rounded-md border border-hairline-strong bg-white px-5 text-xs font-semibold leading-none text-ink transition-colors hover:bg-surface"
                     >
                       Deep Dive <ChevronRight size={13} />
                     </Link>

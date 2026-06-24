@@ -343,7 +343,7 @@ export default function SignupPage() {
                 fullWidth
                 size="lg"
                 onClick={handleContinueToLogoStep}
-                className="h-12 text-base"
+                className="h-14 text-base"
               >
                 Continue
               </Button>
@@ -355,7 +355,7 @@ export default function SignupPage() {
                   fullWidth
                   size="lg"
                   onClick={() => setSignupStep(1)}
-                  className="h-11"
+                  className="h-12"
                 >
                   Back
                 </Button>
@@ -365,7 +365,7 @@ export default function SignupPage() {
                   fullWidth
                   size="lg"
                   disabled={isSubmitting}
-                  className="h-11"
+                  className="h-12"
                 >
                   {isSubmitting ? "Creating account..." : "Create account"}
                 </Button>

@@ -127,7 +127,7 @@ export function FreeformImageCropModal({
               fullWidth
               onClick={onClose}
               disabled={loading}
-              className="h-12 text-base rounded-md"
+              className="h-14 text-base rounded-md"
             >
               Cancel
             </Button>

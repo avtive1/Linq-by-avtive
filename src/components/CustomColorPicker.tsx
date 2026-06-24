@@ -355,7 +355,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
+            className="!h-7 min-h-0 px-2.5 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
             onClick={onConfirm}
           >
             Confirm
@@ -363,7 +363,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
           <Button
             type="button"
             variant="secondary"
-            className="!h-6 min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
+            className="!h-7 min-h-0 px-2.5 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
             onClick={onCancel}
           >
             Cancel
@@ -372,7 +372,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         <Button
           type="button"
           variant="secondary"
-          className="!h-6 w-[104px] min-h-0 px-2 text-[12px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
+          className="!h-7 w-[112px] min-h-0 px-2.5 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
           onClick={() => updateSwatchSlot(selectedSlot, currentHex)}
         >
           Replace

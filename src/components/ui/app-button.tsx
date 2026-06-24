@@ -19,9 +19,9 @@ type ButtonProps = {
 };
 
 const sizeClasses = {
-  sm: "h-10 px-4 text-button-md",
-  md: "h-11 px-6 text-button-md",
-  lg: "h-11 min-h-[44px] px-6 text-button-md",
+  sm: "h-11 px-5 text-button-md",
+  md: "h-12 px-7 text-button-md",
+  lg: "h-12 min-h-[48px] px-7 text-button-md",
 };
 
 export function Button({

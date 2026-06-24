@@ -234,7 +234,7 @@ export default async function AdminDashboardPage() {
                 href="/admin/organizations/new"
                 variant="primary"
                 size="md"
-                className="h-11 w-full justify-center sm:w-auto sm:min-w-[11rem]"
+                className="h-12 w-full justify-center sm:w-auto sm:min-w-[11rem]"
               >
                 Create Organization
               </Button>
@@ -279,7 +279,7 @@ export default async function AdminDashboardPage() {
                     <span className="truncate text-xs font-normal text-muted">{org.email}</span>
                     <Link
                       href={`/admin/organizations/${org.id}`}
-                      className="inline-flex h-11 items-center gap-1 rounded-md border border-hairline-strong bg-white px-2 text-[11px] font-semibold leading-none text-ink transition-colors hover:bg-surface"
+                      className="inline-flex h-12 items-center gap-1 rounded-md border border-hairline-strong bg-white px-3 text-xs font-semibold leading-none text-ink transition-colors hover:bg-surface"
                     >
                       Open Org <ChevronRight size={10} />
                     </Link>

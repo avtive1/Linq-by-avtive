@@ -52,6 +52,15 @@ typography:
     fontWeight: 500
     lineHeight: 1.05
     letterSpacing: -2px
+  hero-display-linq:
+    fontFamily: Public Sans
+    fontSize: 80px
+    fontWeight: 600
+    lineHeight: 1.05
+    letterSpacing: -0.02em
+    accentColor: "{colors.brand-yellow}"
+    copy: "Plan less Linq faster"
+    implementation: "src/app/page.tsx"
   display-lg:
     fontFamily: Roobert PRO
     fontSize: 60px
@@ -133,7 +142,7 @@ typography:
     letterSpacing: 0.5px
   button-md:
     fontFamily: Roobert PRO
-    fontSize: 14px
+    fontSize: 16px
     fontWeight: 500
     lineHeight: 1.30
   stat-display:
@@ -173,7 +182,7 @@ components:
     textColor: "{colors.on-primary}"
     typography: "{typography.button-md}"
     rounded: "{rounded.md}"
-    padding: "12px 24px"
+    padding: "14px 28px"
   button-primary-pressed:
     backgroundColor: "{colors.charcoal}"
     textColor: "{colors.on-primary}"
@@ -185,32 +194,32 @@ components:
     textColor: "{colors.primary}"
     typography: "{typography.button-md}"
     rounded: "{rounded.md}"
-    padding: "12px 24px"
+    padding: "14px 28px"
   button-blue:
     backgroundColor: "{colors.brand-blue}"
     textColor: "{colors.on-primary}"
     typography: "{typography.button-md}"
     rounded: "{rounded.md}"
-    padding: "12px 24px"
+    padding: "14px 28px"
   button-secondary:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
     typography: "{typography.button-md}"
     rounded: "{rounded.md}"
-    padding: "12px 24px"
+    padding: "14px 28px"
     border: "1px solid {colors.hairline-strong}"
   button-on-dark:
     backgroundColor: "{colors.on-dark}"
     textColor: "{colors.primary}"
     typography: "{typography.button-md}"
     rounded: "{rounded.md}"
-    padding: "12px 24px"
+    padding: "14px 28px"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
     typography: "{typography.button-md}"
     rounded: "{rounded.md}"
-    padding: "8px 12px"
+    padding: "10px 16px"
   button-link:
     backgroundColor: "transparent"
     textColor: "{colors.brand-blue}"
@@ -220,7 +229,7 @@ components:
     backgroundColor: "{colors.canvas}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
-    size: 36px
+    size: 40px
     border: "1px solid {colors.hairline}"
   card-base:
     backgroundColor: "{colors.canvas}"
@@ -400,6 +409,15 @@ components:
     typography: "{typography.hero-display}"
     rounded: "0"
     padding: "{spacing.hero}"
+  linq-homepage-hero:
+    backgroundColor: "{colors.canvas}"
+    textColor: "{colors.ink}"
+    typography: "{typography.hero-display-linq}"
+    accentText: "Linq faster"
+    accentColor: "{colors.brand-yellow}"
+    subtitleTypography: "{typography.subtitle}"
+    maxWidth: 1100px
+    implementation: "src/app/page.tsx"
   cta-banner-dark:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.on-primary}"
@@ -507,6 +525,7 @@ Roobert PRO — Miro's custom display face — anchors every typographic surface
 | Token | Size | Weight | Line Height | Letter Spacing | Use |
 |---|---|---|---|---|---|
 | `{typography.hero-display}` | 80px | 500 | 1.05 | -2px | Marketing hero ("See how teams get great done with Miro") |
+| `{typography.hero-display-linq}` | 34–80px (responsive) | **600** | 1.05 | -0.02em | Linq landing hero — "Plan less **Linq faster**" (`text-brand-yellow` on accent) · `src/app/page.tsx` |
 | `{typography.display-lg}` | 60px | 500 | 1.10 | -1.5px | Major section openers |
 | `{typography.heading-1}` | 48px | 500 | 1.15 | -1px | Page-level headlines |
 | `{typography.heading-2}` | 36px | 500 | 1.20 | -0.5px | Subsection headlines |
@@ -522,7 +541,7 @@ Roobert PRO — Miro's custom display face — anchors every typographic surface
 | `{typography.caption-bold}` | 13px | 600 | 1.40 | 0 | Badge labels, tag chips |
 | `{typography.micro}` | 12px | 500 | 1.40 | 0 | Footer microcopy |
 | `{typography.micro-uppercase}` | 11px | 600 | 1.40 | 0.5px | Section dividers in tables |
-| `{typography.button-md}` | 14px | 500 | 1.30 | 0 | Button labels |
+| `{typography.button-md}` | 16px | 500 | 1.30 | 0 | Button labels |
 | `{typography.stat-display}` | 64px | 500 | 1.10 | -1.5px | "100M+ users" stat callouts |
 
 ### Principles
@@ -592,30 +611,32 @@ The system runs predominantly flat with strategic depth on hero mockups.
 
 ### Buttons
 
+Linq implementation (`src/components/ui/app-button.tsx`): `sm` = 44px height · `md` = 48px height · `lg` = 48px min-height with wider padding. Label typography uses `{typography.button-md}` (16px) via `.text-button-md` in `src/app/globals.css`.
+
 **`button-primary`** — Black soft-rounded primary CTA, the dominant action ("Get started free").
-- Background `{colors.primary}`, text `{colors.on-primary}`, typography `{typography.button-md}`, padding `12px 24px`, rounded `{rounded.md}`.
+- Background `{colors.primary}`, text `{colors.on-primary}`, typography `{typography.button-md}`, padding `14px 28px`, rounded `{rounded.md}`.
 - Pressed state `button-primary-pressed` lifts to `{colors.charcoal}`.
 - Disabled state `button-primary-disabled` uses `{colors.hairline}` background and `{colors.muted}` text.
 
 **`button-yellow`** — Brand-yellow soft-rounded button for moments of brand emphasis.
-- Background `{colors.brand-yellow}`, text `{colors.primary}`, typography `{typography.button-md}`, padding `12px 24px`, rounded `{rounded.md}`.
+- Background `{colors.brand-yellow}`, text `{colors.primary}`, typography `{typography.button-md}`, padding `14px 28px`, rounded `{rounded.md}`.
 
 **`button-blue`** — Brand-blue soft-rounded button for inline action callouts.
-- Background `{colors.brand-blue}`, text `{colors.on-primary}`, typography `{typography.button-md}`, padding `12px 24px`, rounded `{rounded.md}`.
+- Background `{colors.brand-blue}`, text `{colors.on-primary}`, typography `{typography.button-md}`, padding `14px 28px`, rounded `{rounded.md}`.
 
 **`button-secondary`** — Outlined soft-rounded button for secondary actions ("Book a demo").
-- Background transparent, text `{colors.ink}`, border `1px solid {colors.hairline-strong}`, typography `{typography.button-md}`, padding `12px 24px`, rounded `{rounded.md}`.
+- Background transparent, text `{colors.ink}`, border `1px solid {colors.hairline-strong}`, typography `{typography.button-md}`, padding `14px 28px`, rounded `{rounded.md}`.
 
 **`button-on-dark`** — White soft-rounded button for dark CTA banners.
-- Background `{colors.on-dark}`, text `{colors.primary}`, typography `{typography.button-md}`, padding `12px 24px`, rounded `{rounded.md}`.
+- Background `{colors.on-dark}`, text `{colors.primary}`, typography `{typography.button-md}`, padding `14px 28px`, rounded `{rounded.md}`.
 
 **`button-ghost`** — Quieter rectangular ghost button.
-- Background transparent, text `{colors.ink}`, typography `{typography.button-md}`, padding `8px 12px`, rounded `{rounded.md}`.
+- Background transparent, text `{colors.ink}`, typography `{typography.button-md}`, padding `10px 16px`, rounded `{rounded.md}`.
 
 **`button-link`** — Inline text link.
 - Background transparent, text `{colors.brand-blue}`, typography `{typography.body-sm-medium}`, padding `0`.
 
-**`button-icon-circular`** — 36×36px circular utility button.
+**`button-icon-circular`** — 40×40px circular utility button.
 - Background `{colors.canvas}`, text `{colors.ink}`, border `1px solid {colors.hairline}`, rounded `{rounded.md}`.
 
 ### Cards & Containers
@@ -743,6 +764,15 @@ The system runs predominantly flat with strategic depth on hero mockups.
 - Background `{colors.canvas}`, padding `{spacing.hero}`.
 - Layout: centered headline in `{typography.hero-display}`, centered subtitle, centered button row, then whiteboard mockup illustration below.
 
+**`linq-homepage-hero`** — Linq app landing hero (`src/app/page.tsx`).
+- Headline copy: **Plan less** + **Linq faster** (accent span uses `{colors.brand-yellow}` / `text-brand-yellow`).
+- Typography: `{typography.hero-display-linq}` — **semibold (600)**, not medium (500), for stronger marketing weight.
+- Tailwind: `font-semibold tracking-[-0.02em] leading-[1.05] text-ink`.
+- Responsive scale: 34px (default) → 48px (≥400px) → 60px (`sm`) → 64px (`md`/`lg`) → 80px (`xl`).
+- Subtitle: `{typography.subtitle}` — `text-slate`, `font-normal`, max-width 980px.
+- CTAs: `button-primary` "Get started" + `button-secondary` "Log in".
+- Footer line: "Powered by AVTIVE" in `{colors.heading}` at 65% opacity.
+
 **`cta-banner-dark`** — Dark CTA banner at the bottom of feature pages.
 - Background `{colors.primary}`, text `{colors.on-primary}`, rounded `{rounded.feature}`, padding `{spacing.section}`. Centered headline + subtitle + `button-on-dark` "Get started free".
 
@@ -785,8 +815,8 @@ The system runs predominantly flat with strategic depth on hero mockups.
 | Wide Desktop | ≥ 1280px | Full hero presentation, 80px hero display. |
 
 ### Touch Targets
-- Buttons render at 40–44px effective height — at WCAG AAA floor
-- Circular icon buttons: 36×36px desktop → 44×44px mobile
+- Buttons render at 44–48px effective height — at WCAG AAA floor
+- Circular icon buttons: 40×40px desktop → 48×48px mobile
 - Form inputs render at 44px height
 - Filter dropdowns render at ~36px tall — bumps to 44px on mobile
 
@@ -796,7 +826,7 @@ The system runs predominantly flat with strategic depth on hero mockups.
 - **Hero band**: 2-column hero collapses to stacked at < 1024px
 - **Pricing comparison**: 4-column tiers → 2-column tablet → 1-column mobile; comparison table becomes horizontal-scroll
 - **Customer story grid**: 2-up → 1-up at < 768px
-- **Hero typography**: 80px → 60px tablet → 48px mobile-large → 36px mobile-small
+- **Hero typography**: 80px → 60px tablet → 48px mobile-large → 34px mobile-small (Linq landing: see `{typography.hero-display-linq}` in `src/app/page.tsx`)
 - **Footer**: 6-column desktop → 3-column tablet → 2-column mobile → accordion at small mobile
 
 ### Image Behavior

@@ -1431,7 +1431,7 @@ function DashboardContent() {
                     }
                     setIsEventModalOpen(true);
                   }}
-                  className="h-11 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-surface border-hairline-strong text-ink hover:bg-white"
+                  className="h-12 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-surface border-hairline-strong text-ink hover:bg-white"
                   title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
                   icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
                 >
@@ -1446,7 +1446,7 @@ function DashboardContent() {
                   onClick={() => {
                     void openTeamAccessModal("list");
                   }}
-                  className="h-11 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface"
+                  className="h-12 w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface"
                   icon={<Users size={18} />}
                 >
                   Team Access
@@ -1468,7 +1468,7 @@ function DashboardContent() {
                     setOrganizationLogoDraft("");
                     setIsUsernameModalOpen(true);
                   }}
-                  className="h-11 w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
+                  className="h-12 w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
                   icon={<Settings size={18} />}
                 >
                   <span>Settings</span>
@@ -1482,7 +1482,7 @@ function DashboardContent() {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 icon={isLoggingOut ? undefined : <LogOut size={18} />}
-                className="h-11 justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
+                className="h-12 justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
               >
                 <span>{isLoggingOut ? "..." : "Logout"}</span>
               </Button>
@@ -1727,7 +1727,7 @@ function DashboardContent() {
         {/* Search Bar + Filters */}
         <motion.div className="flex min-w-0 flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
           <div
-            className={`flex min-h-12 w-full min-w-0 flex-1 items-center gap-3 rounded-md border px-5 shadow-sm transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40 sm:h-14 sm:min-h-14 sm:gap-4 sm:px-7 ${
+            className={`flex h-12 min-h-12 w-full min-w-0 flex-1 items-center gap-3 rounded-md border px-5 shadow-sm transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40 sm:h-14 sm:min-h-14 sm:gap-4 sm:px-7 ${
               isPreviewMode
                 ? "border-heading/20 bg-white/90 focus-within:bg-white"
                 : isTeamMemberMode || isOrgAdminMode
@@ -1750,7 +1750,7 @@ function DashboardContent() {
             <button
               type="button"
               onClick={() => setIsEventFilterOpen((prev) => !prev)}
-              className={`h-12 min-h-12 w-full rounded-md border px-6 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:min-h-14 sm:w-auto ${
+              className={`h-12 min-h-12 w-full rounded-md border px-7 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:min-h-14 sm:w-auto ${
                 isEventFilterOpen
                   ? "bg-primary/10 border-primary/30 text-primary-strong"
                   : "bg-white/92 border-primary/20 text-heading hover:bg-white hover:border-primary/30"
@@ -2212,7 +2212,7 @@ function DashboardContent() {
                   variant="secondary" 
                   fullWidth 
                   onClick={() => setIsEventModalOpen(false)}
-                  className="order-2 sm:order-1 h-11"
+                  className="order-2 sm:order-1 h-12"
                 >
                   Cancel
                 </Button>
@@ -2220,7 +2220,7 @@ function DashboardContent() {
                   type="submit" 
                   fullWidth 
                   disabled={isSubmittingEvent || (isOrgTeamMember && !hasCreateCampaignPermission)}
-                  className="order-1 sm:order-2 h-11"
+                  className="order-1 sm:order-2 h-12"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}
                 </Button>
@@ -2246,7 +2246,7 @@ function DashboardContent() {
                 onClick={() => {
                   if (!isSavingUsername && !isSavingPassword) setIsUsernameModalOpen(false);
                 }}
-                className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-12 h-12 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
               </button>
@@ -2479,7 +2479,7 @@ function DashboardContent() {
               <button
                 type="button"
                 onClick={() => setIsTeamModalOpen(false)}
-                className="w-11 h-11 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-12 h-12 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
                 aria-label="Close modal"
               >
                 <X size={20} />
@@ -2592,7 +2592,7 @@ function DashboardContent() {
                       type="button" 
                       variant="secondary" 
                       fullWidth 
-                      className="order-2 h-11 sm:order-1"
+                      className="order-2 h-12 sm:order-1"
                       onClick={() => {
                         setTeamModalView("list");
                         setIsTeamModalOpen(false);
@@ -2603,7 +2603,7 @@ function DashboardContent() {
                     <Button 
                       type="submit" 
                       fullWidth 
-                      className="order-1 h-11 sm:order-2"
+                      className="order-1 h-12 sm:order-2"
                     >
                       Next: Set Permissions
                     </Button>
@@ -2676,7 +2676,7 @@ function DashboardContent() {
                       type="button" 
                       variant="secondary" 
                       fullWidth 
-                      className="order-2 h-11 sm:order-1"
+                      className="order-2 h-12 sm:order-1"
                       onClick={() => setTeamModalView("list")}
                     >
                       Back
@@ -2685,7 +2685,7 @@ function DashboardContent() {
                       type="submit" 
                       fullWidth 
                       disabled={isSubmittingTeamInvite}
-                      className="order-1 h-11 sm:order-2"
+                      className="order-1 h-12 sm:order-2"
                     >
                       {isSubmittingTeamInvite ? "Saving..." : "Update Permissions"}
                     </Button>
@@ -2729,10 +2729,10 @@ function DashboardContent() {
                 </div>
                 
                 <div className="form-actions">
-                  <Button type="button" variant="secondary" fullWidth className="order-2 h-11 sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
+                  <Button type="button" variant="secondary" fullWidth className="order-2 h-12 sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
                     Cancel
                   </Button>
-                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest} className="order-1 h-11 sm:order-2">
+                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest} className="order-1 h-12 sm:order-2">
                     {isSubmittingPermissionRequest ? "Sending..." : "Send Request"}
                   </Button>
                 </div>

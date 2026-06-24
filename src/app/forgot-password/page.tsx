@@ -84,7 +84,7 @@ export default function ForgotPasswordPage() {
                 variant="primary"
                 fullWidth
                 size="lg"
-                className="mt-2 h-12 text-base"
+                className="mt-2 h-14 text-base"
               >
                 Back to sign in
               </Button>
@@ -115,7 +115,7 @@ export default function ForgotPasswordPage() {
                 fullWidth
                 size="lg"
                 disabled={isSubmitting}
-                className="h-12 text-base"
+                className="h-14 text-base"
               >
                 {isSubmitting ? "Sending..." : "Send reset link"}
               </Button>

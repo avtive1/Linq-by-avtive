@@ -125,7 +125,7 @@ function ResetPasswordContent() {
               fullWidth
               size="lg"
               disabled={isSubmitting || !hasRecoverySession}
-              className="h-12 text-base"
+              className="h-14 text-base"
             >
               {isSubmitting ? "Updating..." : "Update password"}
             </Button>

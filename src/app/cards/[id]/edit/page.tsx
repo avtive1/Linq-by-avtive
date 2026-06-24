@@ -656,7 +656,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               <Button 
                 onClick={() => handleSubmit()} 
                 disabled={saving}
-                className="rounded-md h-11 min-w-[160px] px-7 font-medium text-sm tracking-[0.01em]"
+                className="rounded-md h-12 min-w-[160px] px-7 font-medium text-sm tracking-[0.01em]"
               >
                 {saving ? "Saving Changes..." : "Save"}
               </Button>
@@ -808,7 +808,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                 <CardTypographyPicker
                   value={form.fontFamily}
                   onChange={(val) => update("fontFamily")(val)}
-                  buttonClassName="min-h-[44px]"
+                  buttonClassName="min-h-[48px]"
                 />
             </div>
         </div>

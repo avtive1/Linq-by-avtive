@@ -300,14 +300,14 @@ export default function CardView({
                 <button
                   type="button"
                   onClick={() => changeViewMode("horizontal")}
-                  className={`h-10 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </button>
                 <button
                   type="button"
                   onClick={() => changeViewMode("vertical")}
-                  className={`h-10 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
                 </button>
@@ -319,7 +319,7 @@ export default function CardView({
               <Button
                 href={`/cards/${card.id}/edit?share=true&token=${encodeURIComponent(shareToken)}`}
                 variant="secondary"
-                className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
+                className="shadow-lg flex-1 md:flex-initial h-12 px-4 min-w-[116px]"
               >
                 Edit
               </Button>
@@ -330,7 +330,7 @@ export default function CardView({
                 disabled={isDownloading}
                 variant="blue"
                 icon={<Share2 size={16} />}
-                className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[116px]"
+                className="shadow-lg flex-1 md:flex-initial h-12 px-4 min-w-[116px]"
               >
                 Share
               </Button>
@@ -342,7 +342,7 @@ export default function CardView({
                   disabled={isDownloading}
                   variant="secondary"
                   icon={<Download size={18} />}
-                  className="shadow-lg flex-1 md:flex-initial h-10 px-4 min-w-[132px]"
+                  className="shadow-lg flex-1 md:flex-initial h-12 px-4 min-w-[132px]"
                 >
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>
@@ -371,7 +371,7 @@ export default function CardView({
                   onClick={() => setShowPostDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   icon={<Download size={18} />}
-                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial h-10 px-4 min-w-[132px]"
+                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial h-12 px-4 min-w-[132px]"
                 >
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>

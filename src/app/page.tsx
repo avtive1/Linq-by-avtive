@@ -11,7 +11,7 @@ export default function HomePage() {
         {/* Hero Section */}
         <div className="flex flex-col gap-4 min-[480px]:gap-6 animate-slide-up delay-100 w-full min-w-0">
           <h1
-            className="text-[2.125rem] min-[400px]:text-[3rem] sm:text-[3.75rem] md:text-[4rem] lg:text-[4rem] xl:text-[5rem] font-medium tracking-[-0.02em] text-ink leading-[1.05] text-balance max-w-[1000px] mx-auto px-1"
+            className="text-[2.125rem] min-[400px]:text-[3rem] sm:text-[3.75rem] md:text-[4rem] lg:text-[4rem] xl:text-[5rem] font-semibold tracking-[-0.02em] text-ink leading-[1.05] text-balance max-w-[1000px] mx-auto px-1"
           >
             Plan less <span className="text-brand-yellow">Linq faster</span>
           </h1>
@@ -23,10 +23,10 @@ export default function HomePage() {
 
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 w-full max-w-md sm:max-w-none mt-2 sm:mt-4 animate-slide-up delay-200 px-1">
-          <Button href="/login" variant="primary" size="lg" className="w-full sm:w-auto min-h-12 px-5 text-base justify-center">
+          <Button href="/login" variant="primary" size="lg" className="w-full sm:w-auto min-h-14 px-6 text-base justify-center">
             Get started
           </Button>
-          <Button href="/login" variant="secondary" size="lg" className="w-full sm:w-auto min-h-12 card-base hover:bg-surface px-5 text-base justify-center">
+          <Button href="/login" variant="secondary" size="lg" className="w-full sm:w-auto min-h-14 card-base hover:bg-surface px-6 text-base justify-center">
             Log in
           </Button>
         </div>
