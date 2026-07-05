@@ -9,7 +9,7 @@ export async function sendOrganizationCreatedWelcomeEmail(input: {
 }): Promise<{ sent: boolean; error?: string }> {
   const appUrl = getPublicAppUrl();
   const loginUrl = `${appUrl}/login`;
-  const logoUrl = `${appUrl}/avtive-logo.svg`;
+  const logoUrl = `${appUrl}/avtive-logo.png`;
   const body =
     `Hi there,\n\n` +
     `Your organization "${input.organizationName}" has been created on AVTIVE.\n\n` +
