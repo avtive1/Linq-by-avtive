@@ -1,22 +1,34 @@
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 import { getPublicAppUrl } from "@/lib/app-url";
+import { generateOrganizationCreatedWelcomeEmailHtml } from "@/lib/email-templates/organization-created";
 
 export async function sendOrganizationCreatedWelcomeEmail(input: {
   to: string;
   organizationName: string;
   temporaryPassword: string;
 }): Promise<{ sent: boolean; error?: string }> {
-  const loginUrl = `${getPublicAppUrl()}/login`;
+  const appUrl = getPublicAppUrl();
+  const loginUrl = `${appUrl}/login`;
+  const logoUrl = `${appUrl}/avtive-logo.svg`;
   const body =
+    `Hi there,\n\n` +
     `Your organization "${input.organizationName}" has been created on AVTIVE.\n\n` +
-    `You can sign in with this email address and the temporary password below.\n` +
+    `Use this email address (${input.to}) along with the temporary password below to log in.\n` +
     `Change your password after first login (Profile / security).\n\n` +
+    `Login email: ${input.to}\n` +
     `Temporary password: ${input.temporaryPassword}\n\n` +
-    `Sign in: ${loginUrl}\n`;
+    `Go to Login: ${loginUrl}\n`;
   return sendTransactionalEmail({
     to: input.to,
     subject: `Your organization "${input.organizationName}" is ready on AVTIVE`,
     text: body,
+    html: generateOrganizationCreatedWelcomeEmailHtml({
+      organizationName: input.organizationName,
+      loginEmail: input.to,
+      temporaryPassword: input.temporaryPassword,
+      loginUrl,
+      logoUrl,
+    }),
   });
 }
 
