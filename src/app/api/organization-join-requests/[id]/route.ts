@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { getPublicAppUrl } from "@/lib/app-url";
+import { generateOrgJoinRequestDecisionEmailHtml } from "@/lib/email-templates/org-join-emails";
 import { seedViewEventGrantsForOrgMember } from "@/lib/organization/seedViewEventGrants";
 import { queryNeonOne } from "@/lib/neon-db";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
@@ -134,14 +136,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     if (requesterEmail) {
-      await sendTransactionalEmail({
+      const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
+      await sendBrandedTransactionalEmail({
         to: requesterEmail,
         subject: `Organization join request ${nextStatus}`,
         text:
+          `Hi there,\n\n` +
           `Your request to join organization "${requestRow.requested_org_name}" was ${nextStatus}.\n\n` +
           (nextStatus === "approved"
-            ? "You can now continue in the dashboard as an organization member."
+            ? `You can now continue in the dashboard as an organization member:\n${dashboardUrl}`
             : "If this seems incorrect, contact your organization admin."),
+        html: generateOrgJoinRequestDecisionEmailHtml({
+          organizationName: requestRow.requested_org_name,
+          status: nextStatus,
+          dashboardUrl,
+          approved: nextStatus === "approved",
+        }),
       });
     }
 

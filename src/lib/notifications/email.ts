@@ -6,6 +6,7 @@ type AccessRequestEmailInput = {
   subject: string;
   text: string;
   html?: string;
+  attachments?: nodemailer.SendMailOptions["attachments"];
 };
 
 type SendEmailResult = {
@@ -43,6 +44,7 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
       subject: input.subject,
       text: input.text,
       html: input.html,
+      attachments: input.attachments,
     });
 
     return { sent: true };

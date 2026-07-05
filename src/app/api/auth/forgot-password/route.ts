@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createPasswordResetToken } from "@/lib/auth-db";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { generatePasswordResetEmailHtml } from "@/lib/email-templates/account-emails";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { forgotPasswordBodySchema } from "@/lib/validators/auth.validator";
 
@@ -14,10 +15,14 @@ export async function POST(req: Request) {
     if (token) {
       const url = new URL(req.url);
       const resetUrl = `${url.origin}/reset-password?token=${encodeURIComponent(token)}`;
-      await sendTransactionalEmail({
+      await sendBrandedTransactionalEmail({
         to: email,
         subject: "Reset your AVTIVE password",
-        text: `Reset your password using this link:\n\n${resetUrl}\n\nThis link expires in 30 minutes.`,
+        text:
+          `Hi there,\n\n` +
+          `Reset your password using this link:\n\n${resetUrl}\n\n` +
+          `This link expires in 30 minutes.`,
+        html: generatePasswordResetEmailHtml({ resetUrl }),
       }).catch(() => null);
     }
     return NextResponse.json({ data: { ok: true } }, { status: 200 });

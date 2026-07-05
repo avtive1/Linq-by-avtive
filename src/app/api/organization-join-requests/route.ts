@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { getPublicAppUrl } from "@/lib/app-url";
+import { generateOrgJoinRequestOwnerEmailHtml } from "@/lib/email-templates/org-join-emails";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
 import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
@@ -138,14 +140,22 @@ export async function POST(req: Request) {
     ]);
 
     if (ownerEmail) {
-      await sendTransactionalEmail({
+      const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
+      await sendBrandedTransactionalEmail({
         to: ownerEmail,
         subject: `Organization verification request (${requestedOrgName})`,
         text:
+          `Hi there,\n\n` +
           `A user requested to join your organization: ${requestedOrgName}.\n\n` +
           `Requester email: ${requesterEmail || "unknown"}\n` +
           `Join request ID: ${String(data.id)}\n\n` +
-          `Please review this request in your dashboard inbox.`,
+          `Please review this request in your dashboard inbox:\n${dashboardUrl}`,
+        html: generateOrgJoinRequestOwnerEmailHtml({
+          organizationName: requestedOrgName,
+          requesterEmail: requesterEmail || "unknown",
+          requestId: String(data.id),
+          dashboardUrl,
+        }),
       });
     }
 

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { getPublicAppUrl } from "@/lib/app-url";
+import {
+  generateAccessRequestDecisionEmailHtml,
+  generateAccessRequestOwnerEmailHtml,
+} from "@/lib/email-templates/access-request-emails";
 import { queryNeonOne } from "@/lib/neon-db";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
@@ -47,18 +52,28 @@ export async function POST(req: Request) {
     const eventName = requestRow.event_id
       ? String(eventData?.name || "your campaign")
       : "Organization Workspace";
+    const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
 
     if (target === "owner") {
       if (!ownerEmail) return NextResponse.json({ error: "Owner email missing." }, { status: 400 });
-      const emailResult = await sendTransactionalEmail({
+      const safeRequesterEmail = requesterEmail || "unknown";
+      const emailResult = await sendBrandedTransactionalEmail({
         to: ownerEmail,
         subject: `Access request for ${eventName}`,
         text:
+          `Hi there,\n\n` +
           `A team member requested access for ${eventName}.\n\n` +
-          `Requester: ${requesterEmail || "unknown"}\n` +
+          `Requester: ${safeRequesterEmail}\n` +
           `Action: ${requestRow.requested_action}\n` +
           `Reason: ${requestRow.note || "N/A"}\n\n` +
-          `Please review this request in your dashboard.`,
+          `Please review this request in your dashboard:\n${dashboardUrl}`,
+        html: generateAccessRequestOwnerEmailHtml({
+          eventName,
+          requesterEmail: safeRequesterEmail,
+          requestedAction: requestRow.requested_action,
+          note: requestRow.note || "N/A",
+          dashboardUrl,
+        }),
       });
       if (!emailResult.sent) {
         await updateTenantRows(
@@ -82,14 +97,21 @@ export async function POST(req: Request) {
 
     if (!requesterEmail) return NextResponse.json({ error: "Requester email missing." }, { status: 400 });
     const decisionLabel = requestRow.status === "approved" ? "approved" : requestRow.status === "rejected" ? "rejected" : "updated";
-    const emailResult = await sendTransactionalEmail({
+    const emailResult = await sendBrandedTransactionalEmail({
       to: requesterEmail,
       subject: `Access request ${decisionLabel} for ${eventName}`,
       text:
+        `Hi there,\n\n` +
         `Your access request for ${eventName} was ${decisionLabel}.\n\n` +
         `Requested action: ${requestRow.requested_action}\n` +
         `Status: ${String(decisionLabel).toUpperCase()}\n\n` +
-        `Check your dashboard for updated capabilities.`,
+        `Check your dashboard for updated capabilities:\n${dashboardUrl}`,
+      html: generateAccessRequestDecisionEmailHtml({
+        eventName,
+        decisionLabel,
+        requestedAction: requestRow.requested_action,
+        dashboardUrl,
+      }),
     });
     if (!emailResult.sent) {
       await updateTenantRows(

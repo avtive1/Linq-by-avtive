@@ -1,7 +1,8 @@
 import crypto from "node:crypto";
 import { queryNeonAsSystem, queryNeonOneAsSystem } from "@/lib/neon-db";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
 import { getPublicAppUrl } from "@/lib/app-url";
+import { generateLoginOtpEmailHtml } from "@/lib/email-templates/account-emails";
 
 let schemaReady = false;
 
@@ -78,14 +79,16 @@ export async function createAndEmailLoginOtp(userId: string, email: string): Pro
     [id, userId, codeHash, expires],
   );
   const loginUrl = `${getPublicAppUrl()}/login`;
-  const result = await sendTransactionalEmail({
+  const result = await sendBrandedTransactionalEmail({
     to: email,
     subject: "Your AVTIVE sign-in verification code",
     text:
+      `Hi there,\n\n` +
       `You are signing in to an organization account on AVTIVE.\n\n` +
       `Verification code (valid 10 minutes): ${code}\n\n` +
       `Enter this code on the login screen to finish signing in.\n\n` +
       `Didn't try to sign in? Secure your account: ${loginUrl}\n`,
+    html: generateLoginOtpEmailHtml({ code, loginUrl }),
   });
   return result.sent ? { ok: true } : { ok: false, error: result.error };
 }

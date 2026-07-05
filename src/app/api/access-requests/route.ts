@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { getPublicAppUrl } from "@/lib/app-url";
+import { generateAccessRequestOwnerEmailHtml } from "@/lib/email-templates/access-request-emails";
 import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
@@ -194,15 +196,24 @@ export async function POST(req: Request) {
     const safeRequesterEmail = requesterEmail || "unknown";
     let notifyError: string | null = null;
     if (ownerEmail) {
-      const emailResult = await sendTransactionalEmail({
+      const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
+      const emailResult = await sendBrandedTransactionalEmail({
         to: ownerEmail,
         subject: `Access request for ${eventName}`,
         text:
+          `Hi there,\n\n` +
           `A team member requested access for ${eventName}.\n\n` +
           `Requester: ${safeRequesterEmail}\n` +
           `Action: ${requestedAction}\n` +
           `Reason: ${(note || "").trim() || "N/A"}\n\n` +
-          `Please review this request in your dashboard.`,
+          `Please review this request in your dashboard:\n${dashboardUrl}`,
+        html: generateAccessRequestOwnerEmailHtml({
+          eventName,
+          requesterEmail: safeRequesterEmail,
+          requestedAction,
+          note: (note || "").trim() || "N/A",
+          dashboardUrl,
+        }),
       });
       if (emailResult.sent) {
         await updateTenantRows(

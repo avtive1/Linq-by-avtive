@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendTransactionalEmail } from "@/lib/notifications/email";
+import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { getPublicAppUrl } from "@/lib/app-url";
+import { generateAccessRequestDecisionEmailHtml } from "@/lib/email-templates/access-request-emails";
 import { insertRow, queryNeonOne } from "@/lib/neon-db";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
@@ -103,14 +105,22 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       : "Organization Workspace";
     let notifyError: string | null = null;
     if (requesterEmail) {
-      const emailResult = await sendTransactionalEmail({
+      const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
+      const emailResult = await sendBrandedTransactionalEmail({
         to: requesterEmail,
         subject: `Access request ${decision} for ${eventName}`,
         text:
+          `Hi there,\n\n` +
           `Your access request for ${eventName} was ${decision}.\n\n` +
           `Requested action: ${requestRow.requested_action}\n` +
           `Status: ${decision.toUpperCase()}\n\n` +
-          `Check your dashboard for updated capabilities.`,
+          `Check your dashboard for updated capabilities:\n${dashboardUrl}`,
+        html: generateAccessRequestDecisionEmailHtml({
+          eventName,
+          decisionLabel: decision,
+          requestedAction: requestRow.requested_action,
+          dashboardUrl,
+        }),
       });
       if (emailResult.sent) {
         await updateTenantRows(
