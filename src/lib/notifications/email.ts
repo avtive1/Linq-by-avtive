@@ -38,13 +38,23 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
       },
     });
 
+    const inlineAttachments = input.attachments?.map((attachment) => {
+      if (!attachment || typeof attachment !== "object" || !("cid" in attachment) || !attachment.cid) {
+        return attachment;
+      }
+      return {
+        ...attachment,
+        contentDisposition: "inline" as const,
+      };
+    });
+
     await transporter.sendMail({
       from: from,
       to: input.to,
       subject: input.subject,
       text: input.text,
       html: input.html,
-      attachments: input.attachments,
+      attachments: inlineAttachments,
     });
 
     return { sent: true };
