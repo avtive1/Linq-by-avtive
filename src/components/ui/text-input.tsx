@@ -59,26 +59,36 @@ export function TextInput({
     <div className={cn("flex w-full flex-col gap-2", className)}>
       {label && (
         <div className="flex items-center gap-1">
-          <Label htmlFor={inputId} className={cn("text-sm font-medium", isLocked ? "text-steel" : "text-ink")}>
+          <Label
+            htmlFor={inputId}
+            className={cn(
+              "font-mono text-[10px] font-normal uppercase tracking-[0.14em]",
+              isLocked ? "text-text-xmuted" : "text-text-xmuted",
+            )}
+          >
             {label}
           </Label>
-          {required && <span className="text-sm font-semibold text-ink">*</span>}
+          {required && <span className="text-[10px] font-mono text-text-xmuted">*</span>}
         </div>
       )}
       <div
         className={cn(
-          "flex h-11 items-center overflow-hidden rounded-md border bg-white transition-all duration-200",
-          error ? "border-destructive" : isLocked ? "border-hairline bg-surface" : "border-hairline-strong focus-within:border-2 focus-within:border-brand-blue",
+          "flex h-11 items-center overflow-hidden rounded-lg border bg-canvas transition-all duration-200",
+          error
+            ? "border-destructive"
+            : isLocked
+              ? "border-border bg-surface"
+              : "border-border focus-within:border-royal-indigo/70 focus-within:ring-4 focus-within:ring-royal-indigo/10",
           isLocked && "cursor-not-allowed"
         )}
       >
         {prefix && (
-          <span className="flex h-full items-center whitespace-nowrap bg-surface px-4 text-sm font-medium text-steel">
+          <span className="flex h-full items-center whitespace-nowrap bg-surface px-4 text-sm font-medium text-text-muted">
             {prefix}
           </span>
         )}
         {icon && (
-          <div className="shrink-0 pl-4 text-steel">
+          <div className="shrink-0 pl-4 text-text-muted">
             {icon === "email" && <Mail size={18} />}
             {icon === "lock" && <Lock size={18} />}
             {icon === "user" && <User size={18} />}
@@ -98,15 +108,15 @@ export function TextInput({
           maxLength={maxLength}
           min={min}
           className={cn(
-            "h-full flex-1 border-0 bg-transparent px-4 text-base shadow-none ring-0 focus-visible:ring-0 placeholder:text-muted",
-            isLocked ? "cursor-not-allowed text-steel" : "text-ink"
+            "h-full flex-1 border-0 bg-transparent px-4 text-[15px] leading-[1.65] shadow-none ring-0 focus-visible:ring-0 placeholder:text-text-xmuted",
+            isLocked ? "cursor-not-allowed text-text-muted" : "text-text-primary"
           )}
         />
         {isPassword && (
           <button
             type="button"
             onClick={() => setShowPass(!showPass)}
-            className="p-2 text-steel transition-colors hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-blue/40"
+            className="p-2 text-text-muted transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30"
           >
             {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>

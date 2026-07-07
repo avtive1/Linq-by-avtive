@@ -45,10 +45,16 @@ export function TextArea({
     <div className={cn("flex w-full flex-col gap-2", className)}>
       {label && (
         <div className="flex items-center gap-1">
-          <Label htmlFor={inputId} className={cn("text-sm font-medium", isLocked ? "text-steel" : "text-ink")}>
+          <Label
+            htmlFor={inputId}
+            className={cn(
+              "font-mono text-[10px] font-normal uppercase tracking-[0.14em] text-text-xmuted",
+              isLocked && "text-text-xmuted",
+            )}
+          >
             {label}
           </Label>
-          {required && <span className="text-sm font-semibold text-ink">*</span>}
+          {required && <span className="text-[10px] font-mono text-text-xmuted">*</span>}
         </div>
       )}
       <Textarea
@@ -62,13 +68,18 @@ export function TextArea({
         disabled={disabled}
         maxLength={maxLength}
         className={cn(
-          "min-h-[88px] resize-none rounded-md border-hairline-strong bg-white p-4 text-base focus-visible:border-2 focus-visible:border-brand-blue focus-visible:ring-0",
-          isLocked && "cursor-not-allowed bg-surface text-steel",
+          "min-h-[88px] resize-none rounded-lg border border-border bg-canvas p-4 text-[15px] leading-[1.65] text-text-primary focus-visible:border-royal-indigo/70 focus-visible:ring-4 focus-visible:ring-royal-indigo/10",
+          isLocked && "cursor-not-allowed bg-surface text-text-muted",
           error && "border-destructive"
         )}
       />
       {maxLength && (
-        <p className={cn("mt-1 text-right text-xs font-medium", String(value || "").length >= maxLength ? "text-yellow-dark" : "text-steel")}>
+        <p
+          className={cn(
+            "mt-1 text-right text-xs font-medium",
+            String(value || "").length >= maxLength ? "text-text-muted" : "text-text-xmuted",
+          )}
+        >
           {String(value || "").length}/{maxLength}
         </p>
       )}

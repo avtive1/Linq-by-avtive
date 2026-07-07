@@ -66,37 +66,37 @@ function ResetPasswordContent() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-surface">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link
           href="/login"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+          className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
           </div>
           <span>Back to sign in</span>
         </Link>
 
-        <div className="mb-8 flex justify-center">
-          <span className="ui-eyebrow text-muted/70">
-            AVTIVE
-          </span>
+        <div className="mb-6 flex justify-center">
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-xmuted">AVTIVE</span>
         </div>
 
-        <div className="card-base glass-panel rounded-xl p-8 sm:p-12">
+        <div className="rounded-lg border border-border bg-canvas p-8 sm:p-12 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
-              <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Set a new password</h1>
-              <p className="text-base text-muted leading-[1.55]">
+              <h1 className="text-[32px] font-medium text-text-primary tracking-[-0.01em] leading-[1.15]">
+                Set a new password
+              </h1>
+              <p className="text-[15px] text-text-muted leading-[1.65]">
                 {hasRecoverySession
                   ? "Choose a strong password you'll remember."
                   : "Request a fresh reset code from forgot password."}
               </p>
             </div>
-            {errors.token ? <p className="text-sm text-red-500">{errors.token}</p> : null}
+            {errors.token ? <p className="text-[13px] text-error">{errors.token}</p> : null}
 
             <TextInput
               label="New Password"

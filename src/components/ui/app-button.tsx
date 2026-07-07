@@ -18,24 +18,24 @@ type ButtonProps = {
   title?: string;
 };
 
-/** DESIGN-discord.md button padding + type scale; colors stay DESIGN-miro. */
+/** Linq button padding + type scale; colors follow design-linq.md. */
 function getDiscordButtonSizeClasses(
   variant: NonNullable<ButtonProps["variant"]>,
   size: NonNullable<ButtonProps["size"]>,
 ) {
   if (size === "sm") {
-    return "min-h-[44px] py-3 px-8 text-button-sm";
+    return "min-h-[44px] py-3 px-6 text-[13px] font-medium";
   }
 
   if (variant === "secondary") {
-    return "min-h-[58px] px-6 py-4 text-button-md";
+    return "min-h-[52px] px-6 py-4 text-[15px] font-medium";
   }
 
   if (variant === "blue") {
-    return "min-h-[48px] py-3 px-6 text-button-lg";
+    return "min-h-[48px] py-3 px-6 text-[15px] font-medium";
   }
 
-  return "min-h-[58px] py-5 px-6 text-button-lg";
+  return "min-h-[52px] py-4 px-6 text-[15px] font-medium";
 }
 
 export function Button({
@@ -52,14 +52,14 @@ export function Button({
   title,
 }: ButtonProps) {
   const mergedClassName = cn(
-    "inline-flex h-auto shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md font-medium transition-colors duration-150 ease-out focus-visible:ring-2 focus-visible:ring-brand-blue/40 focus-visible:ring-offset-2 no-underline",
+    "inline-flex h-auto shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full border font-medium transition-all duration-150 ease-out focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 focus-visible:ring-offset-surface no-underline motion-token-hover",
     getDiscordButtonSizeClasses(variant, size),
     variant === "primary" &&
-      "bg-primary text-primary-foreground border border-primary hover:bg-charcoal active:bg-charcoal disabled:bg-hairline disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed disabled:active:scale-100",
+      "bg-royal-indigo text-soft-white border-royal-indigo hover:bg-[color-mix(in_oklab,#5A4FCF_85%,black_15%)] active:bg-[color-mix(in_oklab,#5A4FCF_75%,black_25%)] disabled:bg-border disabled:text-text-xmuted disabled:border-border disabled:cursor-not-allowed disabled:active:scale-100",
     variant === "blue" &&
-      "bg-brand-blue text-white border border-brand-blue hover:bg-blue-pressed active:bg-blue-pressed disabled:bg-hairline disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed",
+      "bg-royal-indigo text-soft-white border-royal-indigo hover:bg-[color-mix(in_oklab,#5A4FCF_85%,black_15%)] active:bg-[color-mix(in_oklab,#5A4FCF_75%,black_25%)] disabled:bg-border disabled:text-text-xmuted disabled:border-border disabled:cursor-not-allowed",
     variant === "secondary" &&
-      "bg-transparent border border-hairline-strong text-ink hover:bg-surface disabled:bg-transparent disabled:text-muted disabled:border-hairline disabled:cursor-not-allowed",
+      "bg-canvas border-border text-text-primary hover:bg-surface disabled:bg-canvas disabled:text-text-xmuted disabled:border-border disabled:cursor-not-allowed",
     fullWidth && "w-full",
     className
   );

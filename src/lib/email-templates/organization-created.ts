@@ -1,6 +1,5 @@
 import {
   emailDetailBox,
-  emailHighlightBox,
   emailLinkFallback,
   emailParagraph,
   emailPrimaryButton,

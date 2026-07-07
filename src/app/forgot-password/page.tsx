@@ -47,36 +47,36 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-surface">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link
           href="/login"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-[4px] group"
+          className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
           </div>
           <span>Back to sign in</span>
         </Link>
 
-        <div className="mb-8 flex justify-center">
-          <span className="ui-eyebrow text-muted/70">
-            AVTIVE
-          </span>
+        <div className="mb-6 flex justify-center">
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-xmuted">AVTIVE</span>
         </div>
 
-        <div className="card-base glass-panel rounded-xl p-8 sm:p-12">
+        <div className="rounded-lg border border-border bg-canvas p-8 sm:p-12 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
           {sent ? (
             <div className="flex flex-col items-center text-center gap-6 py-6">
-              <div className="w-14 h-14 rounded-sm bg-brand-yellow/20 flex items-center justify-center text-ink">
+              <div className="w-14 h-14 rounded-lg bg-royal-indigo/10 flex items-center justify-center text-text-primary">
                 <Mail size={26} />
               </div>
               <div className="flex flex-col gap-4">
-                <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Check your inbox</h1>
-                <p className="text-base text-muted leading-[1.55] max-w-[320px]">
-                  If an account exists for <span className="font-semibold text-heading">{email}</span>, we sent a reset link. Click it to set a new password.
+                <h1 className="text-[32px] font-medium text-text-primary tracking-[-0.01em] leading-[1.15]">
+                  Check your inbox
+                </h1>
+                <p className="text-[15px] text-text-muted leading-[1.65] max-w-[360px]">
+                  If an account exists for <span className="font-medium text-text-primary">{email}</span>, we sent a reset link. Click it to set a new password.
                 </p>
               </div>
               <Button
@@ -92,8 +92,10 @@ export default function ForgotPasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-8">
               <div className="flex flex-col gap-4">
-                <h1 className="text-2xl font-bold text-heading tracking-tight leading-tight">Reset your password</h1>
-                <p className="text-base text-muted leading-[1.55]">
+                <h1 className="text-[32px] font-medium text-text-primary tracking-[-0.01em] leading-[1.15]">
+                  Reset your password
+                </h1>
+                <p className="text-[15px] text-text-muted leading-[1.65]">
                   Enter your email and we&apos;ll send you a link to reset it.
                 </p>
               </div>
@@ -119,11 +121,11 @@ export default function ForgotPasswordPage() {
                 {isSubmitting ? "Sending..." : "Send reset link"}
               </Button>
 
-              <div className="flex items-center justify-center gap-1 text-sm text-muted">
+              <div className="flex items-center justify-center gap-1 text-[13px] text-text-muted">
                 <span>Remembered it?</span>
                 <Link
                   href="/login"
-                  className="font-semibold text-brand-blue hover:underline underline-offset-4 transition-all"
+                  className="font-medium text-royal-indigo hover:underline underline-offset-4 transition-all"
                 >
                   Sign in
                 </Link>

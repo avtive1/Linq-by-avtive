@@ -118,28 +118,32 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-dvh w-full flex items-center justify-center overflow-x-hidden overflow-y-auto bg-transparent py-8 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] pt-[max(2rem,env(safe-area-inset-top))] pb-[max(2rem,env(safe-area-inset-bottom))] sm:py-12 sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] lg:pl-[max(1.5rem,env(safe-area-inset-left))] lg:pr-[max(1.5rem,env(safe-area-inset-right))]">
+    <main className="relative min-h-dvh w-full flex items-center justify-center overflow-x-hidden overflow-y-auto bg-surface py-10 px-[max(0.75rem,env(safe-area-inset-left))] sm:px-[max(1.5rem,env(safe-area-inset-left))]">
       <GradientBackground />
       <div className="relative z-10 w-full max-w-[520px] min-w-0 px-1 sm:px-0 animate-slide-up">
         <Link
           href="/"
-          className="mb-4 inline-flex items-center gap-2 text-sm font-normal text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group"
+          className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
           </div>
           <span>Back to Home</span>
         </Link>
 
-        <div className="mb-8 flex justify-center">
-          <span className="ui-eyebrow text-muted/70">AVTIVE</span>
+        <div className="mb-6 flex justify-center">
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-xmuted">AVTIVE</span>
         </div>
 
-        <div className="card-base glass-panel rounded-xl p-5 sm:p-8 lg:p-10 xl:p-12">
+        <div className="rounded-lg border border-border bg-canvas p-6 sm:p-8 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="flex flex-col gap-4">
-              <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Welcome back</h1>
-              <p className="text-base text-muted leading-[1.55]">Please enter your details to sign in.</p>
+              <h1 className="text-[32px] font-medium tracking-[-0.01em] leading-[1.15] text-text-primary">
+                Welcome back
+              </h1>
+              <p className="text-[15px] leading-[1.65] text-text-muted">
+                Please enter your details to sign in.
+              </p>
             </div>
 
             <div className="flex flex-col gap-6">
@@ -160,12 +164,12 @@ export default function LoginPage() {
             </div>
 
             {needsOtpStep ? (
-              <p className="text-sm text-muted leading-relaxed">
+              <p className="text-[13px] text-text-muted leading-relaxed">
                 We sent a code to your email. Enter it to finish signing in to your organization account.
               </p>
             ) : null}
 
-            {error && <p className="text-sm text-red-500 font-medium text-center">{error}</p>}
+            {error && <p className="text-[13px] text-error font-medium text-center">{error}</p>}
 
             <Button
               type="submit"
@@ -179,7 +183,7 @@ export default function LoginPage() {
             {needsOtpStep ? (
               <button
                 type="button"
-                className="text-sm text-muted hover:text-heading underline underline-offset-4 mx-auto block"
+                className="text-[13px] text-text-muted hover:text-text-primary underline underline-offset-4 mx-auto block"
                 onClick={() => {
                   setNeedsOtpStep(false);
                   setOtp("");

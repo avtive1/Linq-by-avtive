@@ -200,32 +200,32 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-surface">
       <GradientBackground />
 
       <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
         <Link 
           href="/" 
-          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-muted hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline group"
+          className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
         >
-          <div className="w-8 h-8 rounded-sm bg-white/60 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-white group-hover:border-hairline-strong shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
+          <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
+            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
           </div>
           <span>Back to Home</span>
         </Link>
         {/* Card Header Label */}
         <div className="mb-6 flex justify-center">
-          <span className="ui-eyebrow text-muted/70">
-            AVTIVE
-          </span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-xmuted">AVTIVE</span>
         </div>
 
         {/* Signup Card */}
-        <div className="card-base glass-panel rounded-xl p-6 sm:p-8">
+        <div className="rounded-lg border border-border bg-canvas p-6 sm:p-8 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
           <form onSubmit={handleSubmit} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <h1 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Create your profile</h1>
-              <p className="text-base text-muted leading-[1.55]">
+              <h1 className="text-[32px] font-medium tracking-[-0.01em] leading-[1.15] text-text-primary">
+                Create your profile
+              </h1>
+              <p className="text-[15px] leading-[1.65] text-text-muted">
                 {signupStep === 1
                   ? "Step 1 of 2: Set up your account and organization."
                   : "Step 2 of 2: Optionally upload your organization logo, then create your account."}
@@ -299,10 +299,10 @@ export default function SignupPage() {
                 />
                 {form.username.length >= 2 && (
                   <div className="text-right">
-                    {usernameStatus === "loading" && <div className="text-[13px] leading-tight font-medium text-muted animate-pulse">Checking...</div>}
-                    {usernameStatus === "available" && <div className="text-[13px] leading-tight font-medium text-success">Available</div>}
-                    {usernameStatus === "taken" && <div className="text-[13px] leading-tight font-medium text-danger">Taken</div>}
-                    {usernameStatus === "invalid" && <div className="text-[13px] leading-tight font-medium text-danger">Invalid chars</div>}
+                    {usernameStatus === "loading" && <div className="text-[12px] leading-tight font-medium text-text-muted animate-pulse">Checking…</div>}
+                    {usernameStatus === "available" && <div className="text-[12px] leading-tight font-medium text-royal-indigo">Available</div>}
+                    {usernameStatus === "taken" && <div className="text-[12px] leading-tight font-medium text-error">Taken</div>}
+                    {usernameStatus === "invalid" && <div className="text-[12px] leading-tight font-medium text-error">Invalid chars</div>}
                   </div>
                 )}
               </div>
@@ -373,7 +373,7 @@ export default function SignupPage() {
               <span>Already have an account?</span>
               <Link
                 href="/login"
-                className="font-semibold text-brand-blue hover:underline underline-offset-4 transition-all"
+                className="font-medium text-royal-indigo hover:underline underline-offset-4 transition-all"
               >
                 Sign in
               </Link>

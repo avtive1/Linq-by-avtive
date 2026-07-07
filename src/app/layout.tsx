@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
+import { DM_Mono, DM_Sans } from "next/font/google";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -7,16 +7,16 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["300", "400", "500", "600", "700"],
   variable: "--font-sans",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const dmMono = DM_Mono({
   subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-display",
+  weight: ["400", "500"],
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -32,8 +32,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${plusJakartaSans.variable} ${spaceGrotesk.variable} font-sans`}>
-      <body className={plusJakartaSans.className}>
+    <html lang="en" className={`${dmSans.variable} ${dmMono.variable} font-sans`}>
+      <body className={dmSans.className}>
         <ClerkProvider>
           <AuthSessionProvider>
             <Toaster position="top-center" richColors />

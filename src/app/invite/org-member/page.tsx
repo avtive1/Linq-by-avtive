@@ -58,11 +58,11 @@ function InviteOrgMemberInner() {
   const loginHref = `/login?callbackUrl=${encodeURIComponent(`/invite/org-member?t=${encodeURIComponent(token)}`)}`;
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 overflow-x-hidden overflow-y-auto bg-transparent">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 overflow-x-hidden overflow-y-auto bg-surface">
       <GradientBackground />
-      <div className="relative z-10 w-full max-w-md rounded-xl border border-border bg-white/80 backdrop-blur-md p-8 shadow-xl">
-        <h1 className="text-xl font-semibold text-heading mb-2">Organization invitation</h1>
-        <p className="text-sm text-muted mb-6 leading-relaxed">
+      <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-canvas p-8 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
+        <h1 className="text-[20px] font-medium text-text-primary mb-2">Organization invitation</h1>
+        <p className="text-[13px] text-text-muted mb-6 leading-relaxed">
           Accept this invitation while signed in with the same email address the invite was sent to.
         </p>
         {!token ? (
@@ -147,14 +147,14 @@ function InviteOrgMemberInner() {
                 readOnly
                 value={invitedEmail}
                 placeholder="Loading email..."
-                className="h-11 w-full rounded-md border border-input bg-muted px-3 text-sm shadow-sm transition-colors text-muted-foreground focus-visible:outline-none cursor-not-allowed"
+                className="h-11 w-full rounded-lg border border-border bg-surface px-3 text-[13px] text-text-muted shadow-sm transition-colors focus-visible:outline-none cursor-not-allowed"
               />
               <input
                 type="text"
                 name="username"
                 required
                 placeholder="Username (e.g. john_doe)"
-                className="h-11 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="h-11 w-full rounded-lg border border-border bg-canvas px-3 text-[13px] text-text-primary shadow-sm transition-colors placeholder:text-text-xmuted focus-visible:outline-none focus-visible:border-royal-indigo/70 focus-visible:ring-4 focus-visible:ring-royal-indigo/10"
               />
               <div className="relative">
                 <input
@@ -162,12 +162,12 @@ function InviteOrgMemberInner() {
                   name="password"
                   required
                   placeholder="Password (min 12 chars, upper, lower, number, special)"
-                  className="h-11 w-full rounded-md border border-input bg-transparent px-3 pr-10 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  className="h-11 w-full rounded-lg border border-border bg-canvas px-3 pr-10 text-[13px] text-text-primary shadow-sm transition-colors placeholder:text-text-xmuted focus-visible:outline-none focus-visible:border-royal-indigo/70 focus-visible:ring-4 focus-visible:ring-royal-indigo/10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary focus:outline-none"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -179,20 +179,20 @@ function InviteOrgMemberInner() {
               </Button>
             </form>
             <div className="mt-2 text-center text-sm">
-              <span className="text-muted">Already have an account? </span>
-              <Link href={loginHref} className="text-primary hover:underline font-medium">
+              <span className="text-text-muted">Already have an account? </span>
+              <Link href={loginHref} className="text-royal-indigo hover:underline font-medium">
                 Sign in
               </Link>
             </div>
           </div>
         ) : session?.user?.email?.trim().toLowerCase() !== invitedEmail?.trim().toLowerCase() && invitedEmail ? (
           <div className="flex flex-col gap-4">
-            <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
-              <p className="text-sm text-yellow-800 leading-relaxed">
+            <div className="rounded-lg bg-surface p-4 border border-border">
+              <p className="text-[13px] text-text-primary leading-relaxed">
                 You are currently signed in as <strong className="break-all">{session.user.email}</strong>, but this invitation was sent to <strong className="break-all">{invitedEmail}</strong>.
               </p>
             </div>
-            <p className="text-sm text-muted leading-relaxed">
+            <p className="text-[13px] text-text-muted leading-relaxed">
               Please sign out of your current account to accept this invitation using the correct email address.
             </p>
             <Button
@@ -211,7 +211,7 @@ function InviteOrgMemberInner() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <p className="text-xs text-muted break-all">Signed in as {session.user.email}</p>
+            <p className="text-xs text-text-xmuted break-all">Signed in as {session.user.email}</p>
             {message ? <p className="text-sm text-red-600">{message}</p> : null}
             <Button variant="primary" fullWidth size="lg" disabled={busy} onClick={() => void accept()}>
               {busy ? "Working…" : "Accept invitation"}
