@@ -39,34 +39,6 @@ export default function HomePage() {
               let attendees generate beautiful, scannable cards, and keep every
               introduction in one place.
             </p>
-
-            {/* Hero metadata row */}
-            <dl className="mt-4 grid gap-4 text-[12px] text-text-xmuted sm:grid-cols-4">
-              <div className="space-y-1">
-                <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-text-xmuted">
-                  Category
-                </dt>
-                <dd className="text-text-muted">Digital networking</dd>
-              </div>
-              <div className="space-y-1">
-                <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-text-xmuted">
-                  Aesthetic
-                </dt>
-                <dd className="text-text-muted">Refined indigo</dd>
-              </div>
-              <div className="space-y-1">
-                <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-text-xmuted">
-                  Brand tone
-                </dt>
-                <dd className="text-text-muted">Confident, human, warm</dd>
-              </div>
-              <div className="space-y-1">
-                <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-text-xmuted">
-                  Last updated
-                </dt>
-                <dd className="text-text-muted">2026</dd>
-              </div>
-            </dl>
           </div>
 
           {/* CTAs */}
