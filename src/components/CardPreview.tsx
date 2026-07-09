@@ -586,7 +586,10 @@ export function CardPreview({
         )}
 
         {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
-        <div className="absolute left-1/2 top-[808px] z-4 w-[92%] max-w-[520px] -translate-x-1/2 rounded-lg bg-heading/40 px-4 py-3 text-center backdrop-blur-sm">
+        <div
+          className="absolute left-1/2 top-[808px] z-4 w-[92%] max-w-[520px] -translate-x-1/2 text-center"
+          style={{ background: "transparent", backdropFilter: "none", boxShadow: "none" }}
+        >
           <p
             className="m-0 text-[35px] font-bold leading-none"
             style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
