@@ -683,8 +683,8 @@ function NewCardForm() {
                     key={field.id}
                     label={field.label}
                     required={field.required}
-                    type="url"
-                    placeholder={field.placeholder || "https://"}
+                    type="text"
+                    placeholder={field.placeholder || "linkedin.com/in/username or https://yoursite.com"}
                     value={form.linkedin}
                     error={errors.linkedin}
                     onChange={update("linkedin")}
