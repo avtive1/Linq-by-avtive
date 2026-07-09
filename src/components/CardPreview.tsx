@@ -9,6 +9,7 @@ import { CardData, SponsorEntry } from "@/types/card";
 import { cssFontStackForGoogleFamily, parseGoogleFamilyFromStored } from "@/lib/card-fonts";
 import { preloadGoogleCardFontCss } from "@/lib/card-font-runtime";
 import { optimizeCdnImageUrl } from "@/lib/utils/cdn-image";
+import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 
 /** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
 const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
@@ -215,8 +216,13 @@ function OrganizationBrand({
   return (
     <>
       <div className={`overflow-hidden rounded-md bg-white/95 ${iconClassName}`}>
-        {logoUrl ? (
-          <img src={optimizeCdnImageUrl(logoUrl, { width: 128, quality: "auto" })} alt={name || "Organization logo"} className="h-full w-full object-cover" decoding="async" />
+        {logoUrl && (!logoUrl.startsWith("data:") || isValidImageDataUrl(logoUrl)) ? (
+          <img
+            src={logoUrl.startsWith("data:") ? logoUrl : optimizeCdnImageUrl(logoUrl, { width: 128, quality: "auto" })}
+            alt={name || "Organization logo"}
+            className="h-full w-full object-cover"
+            decoding="async"
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-xs font-bold text-heading/70">
             {name?.trim()?.slice(0, 2).toUpperCase() || "OR"}
@@ -388,7 +394,8 @@ export function CardPreview({
   const hasRealPhoto =
     Boolean(photoUrl) &&
     !photoUrl.endsWith("/default-avatar-placeholder.svg") &&
-    photoUrl !== "/default-avatar-placeholder.svg";
+    photoUrl !== "/default-avatar-placeholder.svg" &&
+    (!photoUrl.startsWith("data:") || isValidImageDataUrl(photoUrl));
 
   const rawQrInput = data.linkedin?.trim() || "";
   let finalQrUrl = "";

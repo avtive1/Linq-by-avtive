@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 
 async function canUploadToFolder(userId: string, folder: string): Promise<boolean> {
   const normalized = folder.trim().replace(/^\/+|\/+$/g, "");
@@ -85,9 +86,9 @@ export async function POST(req: Request) {
       folder?: string;
       publicId?: string;
     };
-    const dataUrl = String(body.dataUrl || "");
-    if (!dataUrl.startsWith("data:")) {
-      return NextResponse.json({ error: "Invalid upload payload." }, { status: 400 });
+    const dataUrl = String(body.dataUrl || "").trim();
+    if (!isValidImageDataUrl(dataUrl)) {
+      return NextResponse.json({ error: "Invalid or empty image data." }, { status: 400 });
     }
     const folder = String(body.folder || "");
     if (!folder) {

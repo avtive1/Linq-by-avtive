@@ -1,14 +1,16 @@
 "use client";
 import React, { useState, useCallback, useId } from "react";
-import Cropper, { Area, Point } from "react-easy-crop";
+import Cropper, { Area, MediaSize, Point } from "react-easy-crop";
 import { X, ZoomIn, ZoomOut, Check } from "lucide-react";
 import { Button } from "./ui";
 import { logger } from "@/lib/logger-client";
+import { cropImageAreaToDataUrl, isValidPixelCrop } from "@/lib/utils/crop-image";
 
 interface ImageCropperModalProps {
   image: string;
   onCropComplete: (croppedImage: string) => void;
   onClose: () => void;
+  onError?: (message: string) => void;
   /** Width ÷ height of the crop frame (default 1 = square, e.g. portrait photos). */
   aspect?: number;
   minZoom?: number;
@@ -18,47 +20,11 @@ interface ImageCropperModalProps {
   applyLabel?: string;
 }
 
-const getCroppedImg = async (imageSrc: string, pixelCrop: Area): Promise<string> => {
-  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.addEventListener("load", () => resolve(img));
-    img.addEventListener("error", (error) => reject(error));
-    img.setAttribute("crossOrigin", "anonymous");
-    img.src = imageSrc;
-  });
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-
-  if (!ctx) {
-    throw new Error("No 2d context");
-  }
-
-  // set canvas size to match the pixel crop
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
-
-  // draw the cropped image onto the canvas
-  ctx.drawImage(
-    image,
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-    0,
-    0,
-    pixelCrop.width,
-    pixelCrop.height
-  );
-
-  // PNG preserves transparency for logos and PNG uploads; JPEG would show black where alpha was.
-  return canvas.toDataURL("image/png");
-};
-
 export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   image,
   onCropComplete,
   onClose,
+  onError,
   aspect = 1,
   minZoom = 1,
   maxZoom = 3,
@@ -70,6 +36,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [mediaLoaded, setMediaLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const onCropChange = (crop: Point) => {
@@ -80,19 +47,37 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
     setZoom(zoom);
   };
 
-  const onCropCompleteCallback = useCallback((_: Area, pixelCrop: Area) => {
-    setCroppedAreaPixels(pixelCrop);
+  const onCropAreaChange = useCallback((_: Area, pixelCrop: Area) => {
+    if (isValidPixelCrop(pixelCrop)) {
+      setCroppedAreaPixels(pixelCrop);
+    }
   }, []);
 
+  const onMediaLoaded = useCallback((mediaSize: MediaSize) => {
+    if (mediaSize.naturalWidth > 0 && mediaSize.naturalHeight > 0) {
+      setMediaLoaded(true);
+    }
+  }, []);
+
+  const canApply = mediaLoaded;
+
   const handleApply = async () => {
-    if (!croppedAreaPixels) return;
+    if (!mediaLoaded) {
+      onError?.("Image is still loading. Please wait a moment.");
+      return;
+    }
     setLoading(true);
     try {
-      const croppedImage = await getCroppedImg(image, croppedAreaPixels);
+      const cropArea = isValidPixelCrop(croppedAreaPixels)
+        ? croppedAreaPixels
+        : { x: 0, y: 0, width: 0, height: 0 };
+      const croppedImage = await cropImageAreaToDataUrl(image, cropArea, "image/png", 0.92, aspect);
       onCropComplete(croppedImage);
       onClose();
     } catch (e) {
-      logger.error({ err: e instanceof Error ? e : undefined }, "Image crop failed");
+      const errMessage = e instanceof Error ? e.message : String(e);
+      logger.error({ errMessage }, "Image crop failed");
+      onError?.("Could not process the image. Please try another photo.");
     } finally {
       setLoading(false);
     }
@@ -125,7 +110,8 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             minZoom={minZoom}
             maxZoom={maxZoom}
             onCropChange={onCropChange}
-            onCropComplete={onCropCompleteCallback}
+            onCropAreaChange={onCropAreaChange}
+            onMediaLoaded={onMediaLoaded}
             onZoomChange={onZoomChange}
             objectFit="contain"
             showGrid
@@ -165,7 +151,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               variant="primary" 
               fullWidth 
               onClick={handleApply}
-              disabled={loading}
+              disabled={loading || !canApply}
               className="order-1 rounded-md shadow-black/10 shadow-xl sm:order-2"
               icon={loading ? null : <Check size={18} />}
             >

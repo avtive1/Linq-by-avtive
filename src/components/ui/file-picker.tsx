@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useId } from "react";
+import { useEffect, useState, useId } from "react";
 import { ImageCropperModal } from "../ImageCropperModal";
 import { FreeformImageCropModal } from "../FreeformImageCropModal";
 import { Label } from "./label";
 import { cn } from "@/lib/utils";
+import { isAcceptedImageFile } from "@/lib/utils/crop-image";
+import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const ACCEPTED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export function FilePicker({
   label,
@@ -48,11 +49,29 @@ export function FilePicker({
   const [cropperOpen, setCropperOpen] = useState(false);
   const [tempImage, setTempImage] = useState<string | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (tempImage?.startsWith("blob:")) {
+        URL.revokeObjectURL(tempImage);
+      }
+    };
+  }, [tempImage]);
+
+  const closeCropper = () => {
+    setCropperOpen(false);
+    setTempImage((current) => {
+      if (current?.startsWith("blob:")) {
+        URL.revokeObjectURL(current);
+      }
+      return null;
+    });
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!ACCEPTED_PHOTO_TYPES.includes(file.type)) {
+    if (!isAcceptedImageFile(file)) {
       onError?.("Please upload a JPEG, PNG, or WebP image.");
       e.target.value = "";
       return;
@@ -63,19 +82,21 @@ export function FilePicker({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setTempImage(reader.result as string);
-      setCropperOpen(true);
-      e.target.value = "";
-    };
-    reader.readAsDataURL(file);
+    // Blob URLs are lighter and more reliable for crop previews than huge data URLs.
+    const objectUrl = URL.createObjectURL(file);
+    setTempImage(objectUrl);
+    setCropperOpen(true);
+    e.target.value = "";
   };
 
   const handleCropComplete = (croppedBase64: string) => {
+    if (!isValidImageDataUrl(croppedBase64)) {
+      onError?.("Could not process the image. Please try another photo.");
+      closeCropper();
+      return;
+    }
     onChange(croppedBase64);
-    setCropperOpen(false);
-    setTempImage(null);
+    closeCropper();
   };
 
   return (
@@ -94,7 +115,14 @@ export function FilePicker({
           error ? "border-destructive" : "border-hairline-strong hover:border-brand-blue/40"
         )}
       >
-        <input id={inputId} name={inputName} type="file" accept="image/*" onChange={handleFileChange} className="absolute inset-0 z-10 cursor-pointer opacity-0" />
+        <input
+          id={inputId}
+          name={inputName}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+          onChange={handleFileChange}
+          className="absolute inset-0 z-10 cursor-pointer opacity-0"
+        />
         {value ? (
           <div className="flex flex-1 items-center gap-3 overflow-hidden px-4 py-2">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline p-1">
@@ -115,10 +143,8 @@ export function FilePicker({
           <FreeformImageCropModal
             image={tempImage}
             onCropComplete={handleCropComplete}
-            onClose={() => {
-              setCropperOpen(false);
-              setTempImage(null);
-            }}
+            onError={onError}
+            onClose={closeCropper}
             title={cropTitle ?? "Crop image"}
             subtitle={cropSubtitle ?? "Drag the corners or edges to adjust the crop."}
             applyLabel={cropApplyLabel ?? "Apply"}
@@ -127,10 +153,8 @@ export function FilePicker({
           <ImageCropperModal
             image={tempImage}
             onCropComplete={handleCropComplete}
-            onClose={() => {
-              setCropperOpen(false);
-              setTempImage(null);
-            }}
+            onError={onError}
+            onClose={closeCropper}
             aspect={cropAspect ?? 1}
             minZoom={cropMinZoom ?? 1}
             maxZoom={cropMaxZoom ?? 3}

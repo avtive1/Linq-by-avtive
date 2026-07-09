@@ -1,35 +1,33 @@
 "use client";
 
 import React, { useCallback, useRef, useState } from "react";
-import ReactCrop, { type PixelCrop } from "react-image-crop";
+import ReactCrop, { type PixelCrop as ReactImagePixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { X, Check } from "lucide-react";
 import { logger } from "@/lib/logger-client";
 import { Button } from "./ui";
+import { cropLoadedImageElementToDataUrl, type PixelCrop } from "@/lib/utils/crop-image";
 
-function getCroppedImageDataUrl(image: HTMLImageElement, pixelCrop: PixelCrop): string {
-  const scaleX = image.naturalWidth / image.width;
-  const scaleY = image.naturalHeight / image.height;
-  const sx = pixelCrop.x * scaleX;
-  const sy = pixelCrop.y * scaleY;
-  const sWidth = pixelCrop.width * scaleX;
-  const sHeight = pixelCrop.height * scaleY;
+function toNaturalPixelCrop(image: HTMLImageElement, pixelCrop: ReactImagePixelCrop): PixelCrop {
+  const scaleX = (image.naturalWidth || image.width) / image.width;
+  const scaleY = (image.naturalHeight || image.height) / image.height;
+  return {
+    x: pixelCrop.x * scaleX,
+    y: pixelCrop.y * scaleY,
+    width: pixelCrop.width * scaleX,
+    height: pixelCrop.height * scaleY,
+  };
+}
 
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.max(1, Math.round(sWidth));
-  canvas.height = Math.max(1, Math.round(sHeight));
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("No 2d context");
-
-  ctx.drawImage(image, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
-  // PNG keeps alpha; JPEG would flatten transparency to black on the card.
-  return canvas.toDataURL("image/png");
+function getCroppedImageDataUrl(image: HTMLImageElement, pixelCrop: ReactImagePixelCrop): Promise<string> {
+  return cropLoadedImageElementToDataUrl(image, toNaturalPixelCrop(image, pixelCrop), "image/png");
 }
 
 export type FreeformImageCropModalProps = {
   image: string;
   onCropComplete: (croppedImage: string) => void;
   onClose: () => void;
+  onError?: (message: string) => void;
   title?: string;
   subtitle?: string;
   applyLabel?: string;
@@ -45,12 +43,13 @@ export function FreeformImageCropModal({
   image,
   onCropComplete,
   onClose,
+  onError,
   title = "Crop image",
   subtitle = "Drag the corners or edges to choose any size.",
   applyLabel = "Apply",
 }: FreeformImageCropModalProps) {
   const imgRef = useRef<HTMLImageElement>(null);
-  const [crop, setCrop] = useState<PixelCrop>();
+  const [crop, setCrop] = useState<ReactImagePixelCrop>();
   const [loading, setLoading] = useState(false);
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
@@ -69,11 +68,13 @@ export function FreeformImageCropModal({
     if (!el || !crop || crop.width < 2 || crop.height < 2) return;
     setLoading(true);
     try {
-      const dataUrl = getCroppedImageDataUrl(el, crop);
+      const dataUrl = await getCroppedImageDataUrl(el, crop);
       onCropComplete(dataUrl);
       onClose();
     } catch (e) {
-      logger.error({ err: e instanceof Error ? e : undefined }, "Freeform image crop failed");
+      const errMessage = e instanceof Error ? e.message : String(e);
+      logger.error({ errMessage }, "Freeform image crop failed");
+      onError?.("Could not process the image. Please try another photo.");
     } finally {
       setLoading(false);
     }
