@@ -175,6 +175,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         let resolvedSessionDate = String(record.session_date || "");
         let resolvedSessionTime = String(record.session_time || "");
         let resolvedLocation = String(record.location || "");
+        let resolvedCardColor = String(record.card_color || "").trim();
+        let resolvedCardFont = String(record.card_font || "").trim();
         if (record.event_id) {
           try {
             const brandingRes = await fetch(`/api/events/${record.event_id}/branding`);
@@ -188,6 +190,12 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               resolvedSessionDate = String(brandingPayload.data.eventDate || resolvedSessionDate);
               resolvedSessionTime = String(brandingPayload.data.eventTime || resolvedSessionTime);
               resolvedLocation = String(brandingPayload.data.eventLocation || resolvedLocation);
+              if (!resolvedCardColor) {
+                resolvedCardColor = String(brandingPayload.data.cardColor || "").trim();
+              }
+              if (!resolvedCardFont) {
+                resolvedCardFont = String(brandingPayload.data.cardFont || "").trim();
+              }
             }
           } catch {
           }
@@ -207,10 +215,10 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           year: record.year || new Date().getFullYear().toString(),
           linkedin: record.linkedin || "",
           designType: "design1",
-          color: record.card_color || "purple",
+          color: resolvedCardColor || "purple",
           horizontalTextColor: "",
           verticalTextColor: "",
-          fontFamily: "inter",
+          fontFamily: resolvedCardFont || "inter",
           sponsors,
           organizationName,
           organizationLogoUrl,

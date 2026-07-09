@@ -1,7 +1,7 @@
 import { encryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { logSecurityEvent } from "@/lib/security/telemetry";
 import { issueAttendeeCardToken, verifyAttendeeCardToken } from "@/lib/security/tokens";
-import { insertRow } from "@/lib/neon-db";
+import { insertRow, queryNeonOne } from "@/lib/neon-db";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 
 function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
@@ -21,6 +21,48 @@ function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
     sanitized.custom_fields = nextCustomFields;
   }
   return sanitized;
+}
+
+async function applyEventBrandingToAttendeePayload(
+  payload: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const eventId = String(payload.event_id || "").trim();
+  if (!eventId) return payload;
+
+  const event = await queryNeonOne<{
+    card_color: string | null;
+    card_font: string | null;
+    horizontal_text_color: string | null;
+    vertical_text_color: string | null;
+  }>(
+    `SELECT card_color, card_font, horizontal_text_color, vertical_text_color
+     FROM public.events
+     WHERE id = $1`,
+    [eventId],
+  );
+  if (!event) return payload;
+
+  const next = { ...payload };
+  const cardColor = String(event.card_color || "").trim();
+  const cardFont = String(event.card_font || "").trim();
+  if (cardColor) next.card_color = cardColor;
+  if (cardFont) next.card_font = cardFont;
+
+  const horizontalTextColor = String(event.horizontal_text_color || "").trim();
+  const verticalTextColor = String(event.vertical_text_color || "").trim();
+  if (horizontalTextColor || verticalTextColor) {
+    const existing =
+      next.custom_fields &&
+      typeof next.custom_fields === "object" &&
+      !Array.isArray(next.custom_fields)
+        ? { ...(next.custom_fields as Record<string, unknown>) }
+        : {};
+    if (horizontalTextColor) existing.__horizontal_text_color = horizontalTextColor;
+    if (verticalTextColor) existing.__vertical_text_color = verticalTextColor;
+    next.custom_fields = existing;
+  }
+
+  return next;
 }
 
 export type CreateAttendeeCardInput = {
@@ -74,9 +116,12 @@ export async function createAttendeeCardFromPayload(
   }
 
   const shouldRestrictBranding = isPublicEventRegistration || (!!tokenUserId && !authUserId);
-  const writePayload = shouldRestrictBranding
+  let writePayload = shouldRestrictBranding
     ? stripAttendeeBrandingFields(sanitizedPayload as Record<string, unknown>)
     : sanitizedPayload;
+  if (shouldRestrictBranding) {
+    writePayload = await applyEventBrandingToAttendeePayload(writePayload);
+  }
   const securePayload = encryptAttendeeSensitiveFields(writePayload) as Record<string, unknown>;
   if (isPublicEventRegistration && !securePayload.user_id) {
     securePayload.user_id = null;

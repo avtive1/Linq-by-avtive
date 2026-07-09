@@ -168,6 +168,8 @@ export default async function CardViewPage(props: {
       /** Per-attendee overrides (edit flow). Event-level branding lives on `events` — must merge or Badge View falls back to hardcoded black on the white panel. */
       let eventHorizontalTextColor = "";
       let eventVerticalTextColor = "";
+      let eventCardColor = "";
+      let eventCardFont = "";
       let sponsors = undefined as CardData["sponsors"];
       let organizationName = "";
       let organizationLogoUrl = "";
@@ -178,8 +180,10 @@ export default async function CardViewPage(props: {
           logo_url: string | null;
           horizontal_text_color: string | null;
           vertical_text_color: string | null;
+          card_color: string | null;
+          card_font: string | null;
         }>(
-          `SELECT sponsors, user_id, logo_url, horizontal_text_color, vertical_text_color
+          `SELECT sponsors, user_id, logo_url, horizontal_text_color, vertical_text_color, card_color, card_font
            FROM public.events
            WHERE id = $1`,
           [secureRecord.event_id],
@@ -187,6 +191,8 @@ export default async function CardViewPage(props: {
         if (ev) {
           eventHorizontalTextColor = readString(ev.horizontal_text_color);
           eventVerticalTextColor = readString(ev.vertical_text_color);
+          eventCardColor = readString(ev.card_color);
+          eventCardFont = readString(ev.card_font);
           sponsors = parseEventSponsors(ev.sponsors);
           const campaignLogoUrl = String(ev.logo_url || "").trim();
           
@@ -240,7 +246,7 @@ export default async function CardViewPage(props: {
         readString(secureRecord.name),
         readString(secureRecord.role),
         readString(secureRecord.company),
-        readString(secureRecord.card_color),
+        readString(secureRecord.card_color) || eventCardColor,
         horizontalTextColor,
         verticalTextColor,
         readString(secureRecord.linkedin),
@@ -265,10 +271,10 @@ export default async function CardViewPage(props: {
         linkedin: readString(secureRecord.linkedin),
         photo: readString(secureRecord.photo_url) || undefined,
         designType: readString(secureRecord.design_type),
-        color: readString(secureRecord.card_color),
+        color: readString(secureRecord.card_color) || eventCardColor || undefined,
         horizontalTextColor: horizontalTextColor || undefined,
         verticalTextColor: verticalTextColor || undefined,
-        fontFamily: readString(secureRecord.card_font) || undefined,
+        fontFamily: readString(secureRecord.card_font) || eventCardFont || undefined,
         cardRole: readString(secureRecord.track) as "guest" | "visitor",
         guestCategory: readString(secureRecord.guest_category),
         sponsors,

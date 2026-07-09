@@ -274,6 +274,54 @@ const COLOR_THEMES: Record<string, ColorTheme> = {
   },
 };
 
+function longestEventNameLineLength(eventName?: string): number {
+  const raw = String(eventName || "").trim();
+  if (!raw) return 0;
+  const lines = raw
+    .split(/<br\s*\/?>/i)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (!lines.length) return 0;
+  return Math.max(...lines.map((line) => line.length));
+}
+
+function getHorizontalEventTitleStyle(baseStyle: React.CSSProperties, eventName?: string): React.CSSProperties {
+  const len = longestEventNameLineLength(eventName);
+  if (len <= 12) {
+    return { ...baseStyle, fontSize: "100px", lineHeight: "0.91", letterSpacing: "-0.04em", maxWidth: "750px" };
+  }
+  if (len <= 16) {
+    return { ...baseStyle, fontSize: "82px", lineHeight: "0.92", letterSpacing: "-0.035em", maxWidth: "720px" };
+  }
+  if (len <= 20) {
+    return { ...baseStyle, fontSize: "68px", lineHeight: "0.93", letterSpacing: "-0.03em", maxWidth: "680px" };
+  }
+  if (len <= 24) {
+    return { ...baseStyle, fontSize: "56px", lineHeight: "0.94", letterSpacing: "-0.025em", maxWidth: "640px" };
+  }
+  return { ...baseStyle, fontSize: "46px", lineHeight: "0.95", letterSpacing: "-0.02em", maxWidth: "600px" };
+}
+
+function getVerticalEventTitleStyle(
+  baseStyle: React.CSSProperties,
+  eventName?: string,
+): React.CSSProperties {
+  const len = longestEventNameLineLength(eventName);
+  if (len <= 12) {
+    return { ...baseStyle, fontSize: "74.67px", lineHeight: "69.33px", letterSpacing: "-2.99px" };
+  }
+  if (len <= 16) {
+    return { ...baseStyle, fontSize: "58px", lineHeight: "1.02", letterSpacing: "-2px" };
+  }
+  if (len <= 20) {
+    return { ...baseStyle, fontSize: "48px", lineHeight: "1.04", letterSpacing: "-1.5px" };
+  }
+  if (len <= 24) {
+    return { ...baseStyle, fontSize: "40px", lineHeight: "1.06", letterSpacing: "-1px" };
+  }
+  return { ...baseStyle, fontSize: "34px", lineHeight: "1.08", letterSpacing: "-0.5px" };
+}
+
 function resolveTheme(color?: string): ColorTheme {
   const raw = String(color || "").trim();
   if (!raw) return COLOR_THEMES.purple;
@@ -458,12 +506,14 @@ export function CardPreview({
           </p>
 
           <h1
-            className="m-0 mt-2 text-[74.67px] font-bold leading-[69.33px] tracking-[-2.99px]"
-            style={{
-              color: hasVerticalTextOverride ? verticalTextColor : "#000000",
-              fontFamily: selectedFont,
-              letterSpacing: "-2.99px",
-            }}
+            className="m-0 mt-2 font-bold"
+            style={getVerticalEventTitleStyle(
+              {
+                color: hasVerticalTextOverride ? verticalTextColor : "#000000",
+                fontFamily: selectedFont,
+              },
+              data.eventName,
+            )}
           >
             {data.eventName?.split("<br />").map((t, i) => <span key={i} className="block">{t}</span>) ||
               (<>
@@ -570,12 +620,13 @@ export function CardPreview({
     color: hasHorizontalTextOverride ? horizontalTextColor : theme.accent,
   };
 
-  const titleStyle: React.CSSProperties = {
-    color: hasHorizontalTextOverride ? horizontalTextColor : (theme.titleColor || theme.textColor || "white"),
-    lineHeight: "0.91",
-    letterSpacing: "-0.04em",
-    fontWeight: "800",
-  };
+  const titleStyle = getHorizontalEventTitleStyle(
+    {
+      color: hasHorizontalTextOverride ? horizontalTextColor : (theme.titleColor || theme.textColor || "white"),
+      fontWeight: "800",
+    },
+    data.eventName,
+  );
 
   const metaTextColor = { color: hasHorizontalTextOverride ? horizontalTextColor : (theme.textColor || "white") };
 
@@ -604,7 +655,7 @@ export function CardPreview({
         {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
       </p>
       
-      <h1 className="absolute left-[50px] top-[116px] m-0 text-[100px] tracking-[-4px] max-w-[750px] flex flex-col" style={titleStyle}>
+      <h1 className="absolute left-[50px] top-[116px] m-0 flex flex-col" style={titleStyle}>
         {data.eventName ? (
           data.eventName.split("<br />").map((text, i) => <span key={i} className="block">{text}</span>)
         ) : (
