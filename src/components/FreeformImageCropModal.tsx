@@ -123,13 +123,13 @@ export function FreeformImageCropModal({
         </div>
 
         <div className="shrink-0 px-5 py-5 sm:px-6 flex flex-col gap-6">
-          <div className="flex gap-3">
+          <div className="form-actions">
             <Button
               variant="secondary"
               fullWidth
               onClick={onClose}
               disabled={loading}
-              className="rounded-md"
+              className="order-2 rounded-md sm:order-1"
             >
               Cancel
             </Button>
@@ -138,7 +138,7 @@ export function FreeformImageCropModal({
               fullWidth
               onClick={handleApply}
               disabled={loading || !canApply}
-              className="rounded-md shadow-black/10 shadow-xl"
+              className="order-1 rounded-md shadow-black/10 shadow-xl sm:order-2"
               icon={loading ? null : <Check size={18} />}
             >
               {loading ? "Processing..." : applyLabel}
