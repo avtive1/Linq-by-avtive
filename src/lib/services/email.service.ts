@@ -8,6 +8,8 @@ import {
   generateRegistrationApprovedEmailHtml,
   generateRegistrationRejectedEmailHtml,
 } from "@/lib/email-templates/registration-approved";
+import { escapeHtml, emailParagraph, wrapAvtiveEmailLayout } from "@/lib/email-templates/layout";
+
 
 function buildCardTargetPath(cardId: string, shareToken?: string | null) {
   const path = `/cards/${encodeURIComponent(cardId)}?share=true`;
@@ -116,6 +118,30 @@ export async function sendRegistrationRejectedEmail(input: {
     to: input.to,
     subject: "Registration Update for " + input.eventName,
     text,
+    html,
+  });
+}
+
+export async function sendCustomAttendeeEmail(input: {
+  to: string;
+  subject: string;
+  body: string;
+}) {
+  const bodyHtml = input.body
+    .split(/\n{2,}/)
+    .map((para) => emailParagraph(escapeHtml(para).replace(/\n/g, "<br />")))
+    .join("");
+
+  const html = wrapAvtiveEmailLayout({
+    pageTitle: input.subject,
+    headline: input.subject,
+    bodyHtml,
+  });
+
+  return sendBrandedTransactionalEmail({
+    to: input.to,
+    subject: input.subject,
+    text: input.body,
     html,
   });
 }

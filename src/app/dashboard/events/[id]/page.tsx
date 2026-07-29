@@ -36,6 +36,7 @@ import {
   ShieldCheck,
   Lock,
   SlidersHorizontal,
+  MoreVertical,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -151,6 +152,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [shareDraftRole, setShareDraftRole] = useState<"guest" | "visitor">("visitor");
   const shareRef = useRef<HTMLDivElement>(null);
 
+  // Custom Email Modal and Menu states
+  const [activeMenuAttendeeId, setActiveMenuAttendeeId] = useState<string | null>(null);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailModalAttendee, setEmailModalAttendee] = useState<AttendeeCard | null>(null);
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailBody, setEmailBody] = useState("");
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+
   // Close share menu on outside click
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -176,6 +185,20 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isFilterOpen]);
+
+  // Close attendee ellipsis menu on outside click
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".attendee-menu-container")) {
+        setActiveMenuAttendeeId(null);
+      }
+    };
+    if (activeMenuAttendeeId) {
+      document.addEventListener("mousedown", handleClick);
+    }
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [activeMenuAttendeeId]);
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -618,6 +641,40 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const closeAttendanceModal = () => {
     setAttendanceModalCardId(null);
     setAttendanceCodeInput("");
+  };
+
+  const handleSendCustomEmail = async () => {
+    if (!emailModalAttendee) return;
+    const subject = emailSubject.trim();
+    const body = emailBody.trim();
+
+    if (!subject || !body) {
+      toast.error("Please fill in both the Subject and Email Body.");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const response = await fetch(`/api/events/${id}/attendees/${emailModalAttendee.id}/email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ subject, body }),
+      });
+
+      const payload = await readResponsePayload(response);
+      if (!response.ok) {
+        throw new Error(getPayloadError(payload, "Failed to send email."));
+      }
+
+      toast.success("Email sent successfully.");
+      setIsEmailModalOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to send email.");
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const submitAttendance = async () => {
@@ -2269,6 +2326,36 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <Trash2 size={16} />
                       </Button>
                     )}
+                    <div className="attendee-menu-container relative">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => {
+                          setActiveMenuAttendeeId(activeMenuAttendeeId === card.id ? null : card.id);
+                        }}
+                        className="w-12 h-12 p-0 rounded-inline transition-all shrink-0 bg-white/50 border-white/60 hover:bg-surface"
+                        title="More actions"
+                      >
+                        <MoreVertical size={16} />
+                      </Button>
+                      {activeMenuAttendeeId === card.id && (
+                        <div className="absolute right-0 top-full z-[9999] mt-1 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-1 duration-100">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEmailModalAttendee(card);
+                              setEmailSubject("");
+                              setEmailBody("");
+                              setIsEmailModalOpen(true);
+                              setActiveMenuAttendeeId(null);
+                            }}
+                            className="flex w-full items-center px-4 py-2 text-left text-sm text-heading hover:bg-surface transition-colors font-medium"
+                          >
+                            Send Custom Email
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                   </div>
                 </motion.div>
@@ -2394,6 +2481,74 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isEmailModalOpen && emailModalAttendee && (
+        <div className={dashboardModalBackdrop}>
+          <div
+            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
+            onClick={() => !isSendingEmail && setIsEmailModalOpen(false)}
+          />
+          <div className="relative w-full max-w-[480px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                  Send Custom Email
+                </h3>
+                <p className="text-sm text-muted mt-1">
+                  Send a message directly to {emailModalAttendee.name} ({emailModalAttendee.email}).
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSendingEmail && setIsEmailModalOpen(false)}
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form
+              className="px-6 pb-6 flex flex-col gap-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleSendCustomEmail();
+              }}
+            >
+              <TextInput
+                label="Subject"
+                required
+                placeholder="Enter email subject"
+                value={emailSubject}
+                onChange={setEmailSubject}
+                disabled={isSendingEmail}
+              />
+              <TextArea
+                label="Email Body"
+                required
+                placeholder="Write your email content here..."
+                value={emailBody}
+                onChange={setEmailBody}
+                rows={6}
+                disabled={isSendingEmail}
+              />
+              <div className="form-actions pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  fullWidth
+                  onClick={() => setIsEmailModalOpen(false)}
+                  disabled={isSendingEmail}
+                  className="order-2 sm:order-1"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" fullWidth disabled={isSendingEmail} className="order-1 sm:order-2">
+                  {isSendingEmail ? "Sending..." : "Send Email"}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}
