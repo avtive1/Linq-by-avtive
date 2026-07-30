@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # CI placeholders only; production runtime uses real deployment secrets.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEON_AUTH_BASE_URL: https://ci-build-placeholder.neon-auth.invalid
+      NEON_AUTH_COOKIE_SECRET: ci-build-placeholder-neon-auth-cookie-secret-minimum-32-chars
 
     steps:
       - uses: actions/checkout@v4
@@ -24,8 +29,6 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run db:generate
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
 
       # Warnings only (e.g. next/image suggestions); errors fail the job.
       - name: Lint
@@ -40,8 +43,3 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          # Required for NextAuth during `next build` prerender (NODE_ENV=production).
-          NEXTAUTH_SECRET: ci-build-placeholder-not-used-in-production
-          NEXTAUTH_URL: http://localhost:3000
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
