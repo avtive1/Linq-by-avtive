@@ -8,11 +8,13 @@ export async function POST(req: Request) {
       email?: string;
       password?: string;
       username?: string;
+      neonAuthUserId?: string;
     };
 
     const email = String(body.email || "").trim().toLowerCase();
     const password = String(body.password || "");
     const username = String(body.username || "").trim().toLowerCase();
+    const neonAuthUserId = String(body.neonAuthUserId || "").trim();
 
     if (!email || !password || !username) {
       return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
@@ -29,7 +31,7 @@ export async function POST(req: Request) {
     }
 
     // Pass empty organizationName so it doesn't create a new org
-    const data = await registerUser({ email, password, username, organizationName: "" });
+    const data = await registerUser({ email, password, username, organizationName: "", neonAuthUserId });
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Registration failed.";

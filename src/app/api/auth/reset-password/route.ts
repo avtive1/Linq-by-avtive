@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { resetPasswordWithToken } from "@/lib/auth-db";
+import { neonAuth } from "@/auth";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { resetPasswordBodySchema } from "@/lib/validators/auth.validator";
@@ -15,9 +15,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: issues[0] }, { status: 400 });
     }
 
-    const ok = await resetPasswordWithToken(token, password);
-    if (!ok) {
-      return NextResponse.json({ error: "Invalid or expired reset token." }, { status: 400 });
+    const result = await neonAuth.resetPassword({
+      token,
+      newPassword: password,
+    } as Parameters<typeof neonAuth.resetPassword>[0]);
+    if (result.error) {
+      return NextResponse.json(
+        { error: result.error.message || "Invalid or expired reset token." },
+        { status: result.error.status || 400 },
+      );
     }
     return NextResponse.json({ data: { ok: true } }, { status: 200 });
   } catch (error: unknown) {

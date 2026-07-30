@@ -1,120 +1,65 @@
-import { cookies } from "next/headers";
-import { getServerSession, type NextAuthOptions } from "next-auth";
-import type { Session } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import { verifyPassword, getAuthSessionPayloadByUserId } from "@/lib/auth-db";
-import { resolveAuthSecret } from "@/lib/auth-secret";
-import { resolveLinkedInternalUserIdFromClerk } from "@/lib/clerk-user-bridge";
+import { neonAuth } from "@/lib/auth/neon";
 import {
-  consumeLoginOtp,
-  isOrganizationAccountUser,
-  isOrgLoginEmailOtpGloballyEnabled,
-  verifyActiveLoginOtp,
-} from "@/lib/auth-login-otp";
-import { clearNextAuthSessionCookies, hasNextAuthSessionCookie } from "@/lib/next-auth-cookies";
+  getAuthSessionPayloadByUserId,
+  linkAuthUserToNeonAuthUser,
+} from "@/lib/auth-db";
 
-export const authOptions: NextAuthOptions = {
-  get secret() {
-    return resolveAuthSecret();
-  },
-  logger: {
-    error(code, metadata) {
-      if (code === "JWT_SESSION_ERROR") return;
-      console.error(`[next-auth][error][${code}]`, metadata);
-    },
-  },
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-    updateAge: 24 * 60 * 60,
-  },
-  providers: [
-    Credentials({
-      name: "credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-        otp: { label: "Verification code", type: "text" },
-      },
-      async authorize(credentials) {
-        const email = String(credentials?.email || "").trim().toLowerCase();
-        const password = String(credentials?.password || "");
-        const otp = String(credentials?.otp || "").trim();
-        if (!email || !password) return null;
-
-        const user = await verifyPassword(email, password);
-        if (!user) return null;
-
-        const requireEmailOtp =
-          isOrgLoginEmailOtpGloballyEnabled() && (await isOrganizationAccountUser(user.user_id));
-        if (requireEmailOtp) {
-          if (!otp || !(await verifyActiveLoginOtp(user.user_id, otp))) return null;
-          await consumeLoginOtp(user.user_id, otp);
-        }
-
-        return {
-          id: user.user_id,
-          email: user.email,
-          name: user.username || user.email,
-          role: user.role || "user",
-          organizationName: user.organization_name || "",
-        };
-      },
-    }),
-  ],
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.uid = user.id;
-        token.role = (user as { role?: string }).role || "user";
-        token.organizationName = (user as { organizationName?: string }).organizationName || "";
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = String(token.uid || "");
-        session.user.role = String(token.role || "user");
-        session.user.organizationName = String(token.organizationName || "");
-      }
-      return session;
-    },
-  },
+export type AppAuthSession = {
+  expires: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: string;
+    organizationName: string;
+  };
 };
 
-export async function getServerAuthSession(): Promise<Session | null> {
-  const session = await getServerSession(authOptions);
-  const existingUserId = String(session?.user?.id || "").trim();
-  if (existingUserId) return session;
+type NeonSessionUser = {
+  id?: string;
+  email?: string;
+  name?: string | null;
+};
 
-  const cookieStore = await cookies();
-  if (hasNextAuthSessionCookie(cookieStore)) {
-    clearNextAuthSessionCookies(cookieStore);
-  }
-
-  try {
-    const internalId = await resolveLinkedInternalUserIdFromClerk();
-    if (!internalId) return session ?? null;
-
-    const payload = await getAuthSessionPayloadByUserId(internalId);
-    if (!payload) return session ?? null;
-
-    const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-    return {
-      expires,
-      user: {
-        id: payload.userId,
-        email: payload.email,
-        name: payload.username || payload.email,
-        role: payload.role,
-        organizationName: payload.organizationName || "",
-      },
-    };
-  } catch {
-    return session ?? null;
-  }
+function isAdminEmail(email: string) {
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return adminEmails.includes(email.trim().toLowerCase());
 }
+
+export async function getServerAuthSession(): Promise<AppAuthSession | null> {
+  const { data: session } = await neonAuth.getSession();
+  const neonUser = session?.user as NeonSessionUser | undefined;
+  const neonAuthUserId = String(neonUser?.id || "").trim();
+  const email = String(neonUser?.email || "").trim().toLowerCase();
+
+  if (!neonAuthUserId || !email) return null;
+
+  const internalUserId = await linkAuthUserToNeonAuthUser(neonAuthUserId, email);
+  if (!internalUserId) return null;
+
+  const payload = await getAuthSessionPayloadByUserId(internalUserId);
+  if (!payload) return null;
+
+  const role = isAdminEmail(payload.email) ? "admin" : payload.role || "user";
+  const expiresAt = session?.session?.expiresAt;
+  const expires =
+    expiresAt instanceof Date
+      ? expiresAt.toISOString()
+      : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  return {
+    expires,
+    user: {
+      id: payload.userId,
+      email: payload.email,
+      name: payload.username || neonUser?.name || payload.email,
+      role,
+      organizationName: payload.organizationName || "",
+    },
+  };
+}
+
+export { neonAuth };

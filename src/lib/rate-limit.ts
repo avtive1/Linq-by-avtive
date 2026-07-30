@@ -58,9 +58,9 @@ export function getRateLimiters(): Limiters | null {
 const SENSITIVE_AUTH_PATHS = new Set([
   "/api/auth/register",
   "/api/auth/register-invited",
+  "/api/auth/migrate-legacy-login",
   "/api/auth/forgot-password",
   "/api/auth/reset-password",
-  "/api/auth/request-login-otp",
 ]);
 
 export function classifyApiRoute(pathname: string, method: string): RateLimitTier {

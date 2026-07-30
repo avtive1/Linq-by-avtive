@@ -16,6 +16,7 @@ export async function POST(req: Request) {
       organizationName,
       organizationLogoUrl = "",
       linkedin = "",
+      neonAuthUserId = "",
     } = parsed.data;
 
     const passwordIssues = validatePasswordPolicy(password);
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: passwordIssues[0] }, { status: 400 });
     }
 
-    const data = await registerUser({ email, password, username, organizationName, organizationLogoUrl, linkedin });
+    const data = await registerUser({ email, password, username, organizationName, organizationLogoUrl, linkedin, neonAuthUserId });
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Registration failed.";

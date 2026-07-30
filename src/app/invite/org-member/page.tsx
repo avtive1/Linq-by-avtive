@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession, signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
 import GradientBackground from "@/components/GradientBackground";
 import { Button } from "@/components/ui";
 import { Eye, EyeOff } from "lucide-react";
@@ -11,7 +11,7 @@ import { Eye, EyeOff } from "lucide-react";
 function InviteOrgMemberInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = authClient.useSession();
   const token = searchParams.get("t") || "";
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,7 +67,7 @@ function InviteOrgMemberInner() {
         </p>
         {!token ? (
           <p className="text-sm text-red-600">{message}</p>
-        ) : status === "loading" ? (
+        ) : isPending ? (
           <p className="text-sm text-muted">Checking session…</p>
         ) : !session?.user ? (
           <div className="flex flex-col gap-4">
@@ -84,28 +84,30 @@ function InviteOrgMemberInner() {
                 setBusy(true);
                 setMessage("");
                 try {
+                  const signUpRes = await authClient.signUp.email({
+                    email: email.trim().toLowerCase(),
+                    password,
+                    name: username.trim().toLowerCase(),
+                  });
+                  if (signUpRes.error) {
+                    setMessage(signUpRes.error.message || "Could not create account.");
+                    setBusy(false);
+                    return;
+                  }
+
                   const res = await fetch("/api/auth/register-invited", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email, username, password }),
+                    body: JSON.stringify({
+                      email,
+                      username,
+                      password,
+                      neonAuthUserId: String(signUpRes.data?.user?.id || ""),
+                    }),
                   });
                   const payload = await res.json().catch(() => ({}));
                   if (!res.ok) {
                     setMessage(String(payload?.error || "Could not create account."));
-                    setBusy(false);
-                    return;
-                  }
-                  
-                  // Now sign in automatically
-                  const nextAuth = await import("next-auth/react");
-                  const signInRes = await nextAuth.signIn("credentials", {
-                    email,
-                    password,
-                    redirect: false,
-                  });
-                  
-                  if (!signInRes || signInRes.error) {
-                    setMessage("Account created, but sign-in failed. Please sign in manually.");
                     setBusy(false);
                     return;
                   }
@@ -202,7 +204,7 @@ function InviteOrgMemberInner() {
               disabled={busy}
               onClick={async () => {
                 setBusy(true);
-                await signOut({ redirect: false });
+                await authClient.signOut();
                 setBusy(false);
               }}
             >

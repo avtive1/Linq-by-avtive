@@ -50,9 +50,17 @@ export async function ensureAuthSchema() {
     `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS clerk_user_id text`,
   );
   await queryNeonAsSystem(
+    `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS neon_auth_user_id text`,
+  );
+  await queryNeonAsSystem(
     `CREATE UNIQUE INDEX IF NOT EXISTS auth_users_clerk_user_id_uidx
      ON public.auth_users (clerk_user_id)
      WHERE clerk_user_id IS NOT NULL`,
+  );
+  await queryNeonAsSystem(
+    `CREATE UNIQUE INDEX IF NOT EXISTS auth_users_neon_auth_user_id_uidx
+     ON public.auth_users (neon_auth_user_id)
+     WHERE neon_auth_user_id IS NOT NULL`,
   );
   await queryNeonAsSystem(
     `ALTER TABLE public.auth_users ALTER COLUMN password_hash DROP NOT NULL`,
@@ -286,6 +294,36 @@ export async function getAuthSessionPayloadByUserId(userId: string): Promise<{
   };
 }
 
+export async function getInternalUserIdByNeonAuthUserId(neonAuthUserId: string): Promise<string | null> {
+  await ensureAuthSchema();
+  const row = await queryNeonOneAsSystem<{ user_id: string }>(
+    `SELECT user_id FROM public.auth_users WHERE neon_auth_user_id = $1 LIMIT 1`,
+    [neonAuthUserId],
+  );
+  return row?.user_id ?? null;
+}
+
+export async function linkAuthUserToNeonAuthUser(neonAuthUserId: string, email: string): Promise<string | null> {
+  await ensureAuthSchema();
+  const normalizedEmail = normalizeAuthEmail(email);
+  if (!neonAuthUserId || !normalizedEmail) return null;
+
+  const already = await getInternalUserIdByNeonAuthUserId(neonAuthUserId);
+  if (already) return already;
+
+  const byEmail = await queryNeonOneAsSystem<{ user_id: string }>(
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
+    [normalizedEmail],
+  );
+  if (!byEmail?.user_id) return null;
+
+  await queryNeonAsSystem(
+    `UPDATE public.auth_users SET neon_auth_user_id = $1, updated_at = now() WHERE user_id = $2`,
+    [neonAuthUserId, byEmail.user_id],
+  );
+  return byEmail.user_id;
+}
+
 export async function registerUser(input: {
   email: string;
   password: string;
@@ -293,6 +331,7 @@ export async function registerUser(input: {
   organizationName: string;
   organizationLogoUrl?: string;
   linkedin?: string;
+  neonAuthUserId?: string;
 }): Promise<{ userId: string; email: string; role: string }> {
   await ensureAuthSchema();
   const email = normalizeAuthEmail(input.email);
@@ -319,8 +358,8 @@ export async function registerUser(input: {
   }
 
   const userId = crypto.randomUUID();
-  const argon2 = await getArgon2();
-  const hash = await argon2.hash(input.password);
+  const hash = input.password ? (await getArgon2()).hash(input.password) : Promise.resolve(null);
+  const passwordHash = await hash;
 
   await queryNeonAsSystem(
     `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
@@ -329,9 +368,9 @@ export async function registerUser(input: {
   );
 
   await queryNeonAsSystem(
-    `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
-     VALUES ($1, $2, $2, $3, now(), now())`,
-    [userId, email, hash],
+    `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, neon_auth_user_id, created_at, updated_at)
+     VALUES ($1, $2, $2, $3, $4, now(), now())`,
+    [userId, email, passwordHash, input.neonAuthUserId || null],
   );
 
   if (organizationKey) {

@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { createPasswordResetToken } from "@/lib/auth-db";
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
-import { generatePasswordResetEmailHtml } from "@/lib/email-templates/account-emails";
+import { neonAuth } from "@/auth";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { forgotPasswordBodySchema } from "@/lib/validators/auth.validator";
 
@@ -11,19 +9,13 @@ export async function POST(req: Request) {
     if (!parsed.ok) return parsed.response;
     const { email } = parsed.data;
 
-    const token = await createPasswordResetToken(email);
-    if (token) {
-      const url = new URL(req.url);
-      const resetUrl = `${url.origin}/reset-password?token=${encodeURIComponent(token)}`;
-      await sendBrandedTransactionalEmail({
-        to: email,
-        subject: "Reset your AVTIVE password",
-        text:
-          `Hi there,\n\n` +
-          `Reset your password using this link:\n\n${resetUrl}\n\n` +
-          `This link expires in 30 minutes.`,
-        html: generatePasswordResetEmailHtml({ resetUrl }),
-      }).catch(() => null);
+    const url = new URL(req.url);
+    const result = await neonAuth.requestPasswordReset({
+      email,
+      redirectTo: `${url.origin}/reset-password`,
+    } as Parameters<typeof neonAuth.requestPasswordReset>[0]);
+    if (result.error) {
+      return NextResponse.json({ error: result.error.message }, { status: result.error.status || 400 });
     }
     return NextResponse.json({ data: { ok: true } }, { status: 200 });
   } catch (error: unknown) {

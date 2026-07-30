@@ -2,7 +2,8 @@
 import { useState, useEffect, useMemo, Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signOut, useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
+import { useInternalUserId } from "@/lib/auth/use-internal-user-id";
 import GradientBackground from "@/components/GradientBackground";
 import { OptimizedImage } from "@/components/OptimizedImage";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
@@ -169,8 +170,8 @@ function DashboardContent() {
   const [isRequestPermissionModalOpen, setIsRequestPermissionModalOpen] = useState(false);
   const [permissionRequestReason, setPermissionRequestReason] = useState("");
   const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
-  const { data: session } = useSession();
-  const userId = session?.user?.id || "";
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(session?.user), isSessionPending);
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick } = useAutoRefresh(Boolean(userId));
 
@@ -264,8 +265,7 @@ function DashboardContent() {
     };
 
     const resolveAuthedUserIdWithRetry = async () => {
-      const sessionUserId = String(session?.user?.id || "").trim();
-      if (sessionUserId) return sessionUserId;
+      if (userId) return userId;
       for (let attempt = 0; attempt < 8; attempt += 1) {
         try {
           const authRes = await fetch("/api/auth/me", { cache: "no-store" });
@@ -316,6 +316,7 @@ function DashboardContent() {
     };
 
     const checkUser = async () => {
+      if (isSessionPending || isInternalUserLoading || (session?.user && !userId)) return;
       try {
         setBootstrapError("");
         const userId = await resolveAuthedUserIdWithRetry();
@@ -628,7 +629,7 @@ function DashboardContent() {
     checkUser();
     return () => { isMounted = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap on auth/URL gate; fetchData intentionally omitted to avoid loops
-  }, [router, impersonateId, onboardingIntent, session, userId, refreshTick]);
+  }, [router, impersonateId, onboardingIntent, session?.user, userId, refreshTick, isSessionPending, isInternalUserLoading]);
 
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
@@ -846,7 +847,7 @@ function DashboardContent() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await signOut({ redirect: false });
+      await authClient.signOut();
       // Hard redirect to clear next.js client cache immediately and feel responsive
       window.location.href = "/login";
     } catch (err) {

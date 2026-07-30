@@ -4,7 +4,6 @@ import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { AuthSessionProvider } from "@/components/AuthSessionProvider";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -35,12 +34,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${dmSans.variable} ${dmMono.variable} font-sans`}>
       <body className={dmSans.className}>
         <ClerkProvider>
-          <AuthSessionProvider>
-            <Toaster position="top-center" richColors />
-            {children}
-            <Analytics />
-            <SpeedInsights />
-          </AuthSessionProvider>
+          <Toaster position="top-center" richColors />
+          {children}
+          <Analytics />
+          <SpeedInsights />
         </ClerkProvider>
       </body>
     </html>

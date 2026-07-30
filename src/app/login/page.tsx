@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { ArrowLeft } from "lucide-react";
@@ -22,6 +22,93 @@ export default function LoginPage() {
     return "Incorrect email or password.";
   };
 
+  const resolvePostLoginTarget = async () => {
+    let target = "/dashboard";
+    try {
+      const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
+      const adminPayload = await adminRes.json().catch(() => ({}));
+      const isAdmin = Boolean(adminRes.ok && adminPayload?.data?.isAdmin);
+      target = isAdmin ? "/admin" : "/dashboard";
+    } catch {
+      target = "/dashboard";
+    }
+    const rawCb = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("callbackUrl") : null;
+    const safeCb = rawCb && rawCb.startsWith("/") && !rawCb.startsWith("//") ? rawCb : null;
+    return safeCb || target;
+  };
+
+  const finishLogin = async () => {
+    const target = await resolvePostLoginTarget();
+    router.replace(target);
+    router.refresh();
+  };
+
+  const tryLegacyMigrationLogin = async (trimmedEmail: string) => {
+    let migrationRes: Response;
+    try {
+      migrationRes = await fetch("/api/auth/migrate-legacy-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmedEmail, password }),
+      });
+    } catch {
+      setError("Could not check your previous password. Please try again.");
+      return true;
+    }
+    const migrationPayload = await migrationRes.json().catch(() => ({}));
+    if (!migrationRes.ok || migrationPayload?.data?.canMigrate !== true) {
+      if (migrationRes.status !== 401) {
+        setError(String(migrationPayload?.error || "Could not migrate your previous login. Please try again."));
+        return true;
+      }
+      return false;
+    }
+
+    const signupResult = await authClient.signUp.email({
+      email: trimmedEmail,
+      password,
+      name: String(migrationPayload.data.name || trimmedEmail),
+    });
+    if (signupResult.error) {
+      setError(
+        signupResult.error.message?.toLowerCase().includes("already")
+          ? "Your old password was verified, but this email already exists in Neon Auth. Please use password reset once to sync it."
+          : signupResult.error.message ||
+              "Your old password was verified, but the Neon Auth account could not be created. Please reset your password.",
+      );
+      return true;
+    }
+    const signInResult = await authClient.signIn.email({
+      email: trimmedEmail,
+      password,
+    });
+    if (signInResult.error) {
+      setError(
+        signInResult.error.message ||
+          "Your account was migrated, but sign-in failed. Please try signing in again.",
+      );
+      return true;
+    }
+    await finishLogin();
+    return true;
+  };
+
+  const signInWithNeon = async (trimmedEmail: string) => {
+    try {
+      return await authClient.signIn.email({
+        email: trimmedEmail,
+        password,
+      });
+    } catch (err: unknown) {
+      return {
+        data: null,
+        error: {
+          message: err instanceof Error ? err.message : "Neon Auth sign-in failed.",
+        },
+      };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -35,78 +122,28 @@ export default function LoginPage() {
           setError("Enter the verification code from your email.");
           return;
         }
-        const result = await signIn("credentials", {
-          email: trimmedEmail,
-          password,
-          otp: code,
-          callbackUrl: "/",
-          redirect: false,
-        });
+        const result = await signInWithNeon(trimmedEmail);
         if (result?.error) {
-          setError("Incorrect email, password, or verification code.");
+          const migrated = await tryLegacyMigrationLogin(trimmedEmail);
+          if (!migrated) setError("Incorrect email, password, or verification code.");
           return;
         }
-        if (result?.ok) {
-          let target = "/dashboard";
-          try {
-            const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
-            const adminPayload = await adminRes.json().catch(() => ({}));
-            const isAdmin = Boolean(adminRes.ok && adminPayload?.data?.isAdmin);
-            target = isAdmin ? "/admin" : "/dashboard";
-          } catch {
-            target = "/dashboard";
-          }
-          const rawCb = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("callbackUrl") : null;
-          const safeCb = rawCb && rawCb.startsWith("/") && !rawCb.startsWith("//") ? rawCb : null;
-          router.replace(safeCb || target);
-          router.refresh();
+        if (result?.data) {
+          await finishLogin();
           return;
         }
         setError("Sign-in failed. Please try again.");
         return;
       }
 
-      const pre = await fetch("/api/auth/request-login-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, password }),
-      });
-      const prePayload = await pre.json().catch(() => ({}));
-      if (!pre.ok) {
-        setError(String(prePayload?.error || "Invalid email or password."));
-        return;
-      }
-      if (prePayload?.needsOtp === true) {
-        setNeedsOtpStep(true);
-        setOtp("");
-        return;
-      }
-
-      const result = await signIn("credentials", {
-        email: trimmedEmail,
-        password,
-        otp: "",
-        callbackUrl: "/",
-        redirect: false,
-      });
+      const result = await signInWithNeon(trimmedEmail);
       if (result?.error) {
-        setError("Incorrect email or password.");
+        const migrated = await tryLegacyMigrationLogin(trimmedEmail);
+        if (!migrated) setError(result.error.message || "Incorrect email or password.");
         return;
       }
-      if (result?.ok) {
-        let target = "/dashboard";
-        try {
-          const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
-          const adminPayload = await adminRes.json().catch(() => ({}));
-          const isAdmin = Boolean(adminRes.ok && adminPayload?.data?.isAdmin);
-          target = isAdmin ? "/admin" : "/dashboard";
-        } catch {
-          target = "/dashboard";
-        }
-        const rawCb = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("callbackUrl") : null;
-        const safeCb = rawCb && rawCb.startsWith("/") && !rawCb.startsWith("//") ? rawCb : null;
-        router.replace(safeCb || target);
-        router.refresh();
+      if (result?.data) {
+        await finishLogin();
         return;
       }
       setError("Sign-in failed. Please try again.");

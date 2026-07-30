@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
 import { ArrowLeft } from "lucide-react";
 
 export default function ExitAdminButton() {
@@ -17,7 +17,7 @@ export default function ExitAdminButton() {
         if (isExiting) return;
         setIsExiting(true);
         try {
-          await signOut({ redirect: false });
+          await authClient.signOut();
         } finally {
           router.replace("/login");
           router.refresh();

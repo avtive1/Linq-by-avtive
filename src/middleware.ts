@@ -1,11 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
-import { resolveAuthSecret } from "@/lib/auth-secret";
-import {
-  clearNextAuthSessionCookies,
-  hasNextAuthSessionCookie,
-} from "@/lib/next-auth-cookies";
+import { neonAuth } from "@/lib/auth/neon";
 import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
 const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
@@ -56,25 +51,19 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return res;
   }
 
-  const secureCookie = process.env.NODE_ENV === "production";
-  let token: Awaited<ReturnType<typeof getToken>> = null;
+  let session: Awaited<ReturnType<typeof neonAuth.getSession>>["data"] = null;
   try {
-    token = await getToken({
-      req: request,
-      secret: resolveAuthSecret(),
-      secureCookie,
-    });
+    session = (await neonAuth.getSession()).data;
   } catch {
-    token = null;
+    session = null;
   }
 
-  const hasStaleSessionCookie = hasNextAuthSessionCookie(request.cookies) && !token;
   const { userId: clerkUserId } = await auth();
-  const nextAuthUserId = token?.uid || token?.sub;
-  const userId = nextAuthUserId || clerkUserId || undefined;
+  const neonUserId = String(session?.user?.id || "").trim();
+  const userId = neonUserId || clerkUserId || undefined;
 
-  const tokenRole = String(token?.role || "").toLowerCase();
-  const tokenEmail = String(token?.email || "").trim().toLowerCase();
+  const tokenRole = String(session?.user?.role || "").toLowerCase();
+  const tokenEmail = String(session?.user?.email || "").trim().toLowerCase();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
@@ -83,7 +72,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   const withRequestId = (response: NextResponse) => {
     response.headers.set("x-request-id", requestId);
-    if (hasStaleSessionCookie) clearNextAuthSessionCookies(response.cookies);
     return response;
   };
 

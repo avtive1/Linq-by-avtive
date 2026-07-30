@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button, FilePicker } from "@/components/ui";
 import { toast } from "sonner";
@@ -98,6 +98,16 @@ export default function SignupPage() {
         organizationLogoUrl = String(uploadPayload.data.url);
       }
 
+      const signUpResult = await authClient.signUp.email({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        name: form.username.toLowerCase(),
+      });
+      if (signUpResult.error) {
+        throw new Error(signUpResult.error.message || "Failed to create account.");
+      }
+
+      const neonAuthUserId = String(signUpResult.data?.user?.id || "");
       const registerRes = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,6 +118,7 @@ export default function SignupPage() {
           organizationName: normalizedOrganizationName,
           organizationLogoUrl,
           linkedin: cleanHandle,
+          neonAuthUserId,
         }),
       });
       const registerPayload = await registerRes.json().catch(() => ({}));
@@ -115,14 +126,6 @@ export default function SignupPage() {
         throw new Error(registerPayload?.error || "Failed to create account.");
       }
 
-      const result = await signIn("credentials", {
-        email: form.email,
-        password: form.password,
-        redirect: false,
-      });
-      if (result?.error || !result?.ok) {
-        throw new Error("Account created, but sign-in failed. Please sign in manually.");
-      }
       toast.success("Account created successfully!");
       router.refresh();
       router.push("/dashboard?onboarding=owner");

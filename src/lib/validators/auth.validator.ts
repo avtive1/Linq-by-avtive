@@ -14,6 +14,7 @@ export const registerBodySchema = z.object({
   organizationName: z.string().trim().min(1, "Organization name is required.").max(120),
   organizationLogoUrl: z.string().trim().max(2048).optional(),
   linkedin: z.string().trim().max(2048).optional(),
+  neonAuthUserId: z.string().trim().max(256).optional(),
 });
 
 export const loginOtpRequestBodySchema = z.object({

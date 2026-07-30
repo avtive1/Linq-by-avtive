@@ -2,7 +2,8 @@
 import { useState, useEffect, use, useMemo, useCallback, Suspense, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { authClient } from "@/lib/auth/client";
+import { useInternalUserId } from "@/lib/auth/use-internal-user-id";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
 import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
@@ -305,8 +306,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     name: "",
     logoUrl: "",
   });
-  const { data: session, status: sessionStatus } = useSession();
-  const userId = session?.user?.id || "";
+  const { data: session, isPending: isSessionPending } = authClient.useSession();
+  const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(session?.user), isSessionPending);
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick, triggerRefresh } = useAutoRefresh(Boolean(userId));
   /** When only `refreshTick` changes (focus / interval), refetch without full-page skeleton so modals and file pickers are not unmounted mid-interaction. */
@@ -314,7 +315,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let isMounted = true;
-    if (sessionStatus === "loading") return;
+    if (isSessionPending || isInternalUserLoading || (session?.user && !userId)) return;
 
     const loadKey = `${id}|${userId}|${String(impersonateId ?? "")}|${isPreviewMode}`;
     const loadKeyChanged = eventPageLoadKeyRef.current !== loadKey;
@@ -525,7 +526,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode, userId, refreshTick, sessionStatus, isBrandingOpen]);
+  }, [id, router, impersonateId, isPreviewMode, session?.user, userId, refreshTick, isSessionPending, isInternalUserLoading, isBrandingOpen]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const minCampaignDate = useMemo(() => {
