@@ -13,7 +13,6 @@ export type AuthUserRecord = {
   organization_name: string | null;
 };
 
-let schemaEnsured = false;
 let superAdminEnsured = false;
 let argon2ModulePromise: Promise<typeof import("argon2")> | null = null;
 
@@ -30,71 +29,9 @@ function getArgon2() {
 }
 
 export async function ensureAuthSchema() {
-  if (schemaEnsured) return;
-  await queryNeonAsSystem(
-    `CREATE TABLE IF NOT EXISTS public.auth_users (
-      user_id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
-      email text UNIQUE NOT NULL,
-      password_hash text NOT NULL,
-      reset_token_hash text NULL,
-      reset_token_expires_at timestamptz NULL,
-      created_at timestamptz NOT NULL DEFAULT now(),
-      updated_at timestamptz NOT NULL DEFAULT now()
-    )`,
-  );
-  await queryNeonAsSystem(
-    `CREATE INDEX IF NOT EXISTS auth_users_email_idx
-     ON public.auth_users (email)`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS clerk_user_id text`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS neon_auth_user_id text`,
-  );
-  await queryNeonAsSystem(
-    `CREATE UNIQUE INDEX IF NOT EXISTS auth_users_clerk_user_id_uidx
-     ON public.auth_users (clerk_user_id)
-     WHERE clerk_user_id IS NOT NULL`,
-  );
-  await queryNeonAsSystem(
-    `CREATE UNIQUE INDEX IF NOT EXISTS auth_users_neon_auth_user_id_uidx
-     ON public.auth_users (neon_auth_user_id)
-     WHERE neon_auth_user_id IS NOT NULL`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.auth_users ALTER COLUMN password_hash DROP NOT NULL`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.auth_users ADD COLUMN IF NOT EXISTS email_normalized text`,
-  );
-  await queryNeonAsSystem(
-    `UPDATE public.auth_users
-     SET email_normalized = lower(email)
-     WHERE email_normalized IS NULL
-        OR email_normalized <> lower(email)`,
-  );
-  await queryNeonAsSystem(
-    `CREATE INDEX IF NOT EXISTS idx_auth_users_email_norm
-     ON public.auth_users (email_normalized)`,
-  );
-  // Older Neon DBs may lack these columns; signup + cards expect them.
-  await queryNeonAsSystem(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS organization_logo_url text`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_profile_setup_completed_at timestamptz`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
-  );
-  await queryNeonAsSystem(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now()`,
-  );
-  schemaEnsured = true;
+  // Schema is owned exclusively by Prisma migrations. Retained as a no-op while
+  // legacy call sites are removed, but it must never mutate production at request time.
+  return;
 }
 
 function normalizeBootstrapUsername(email: string) {

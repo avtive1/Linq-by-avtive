@@ -5,6 +5,22 @@ import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib
 
 const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
 const isAuthRoute = createRouteMatcher(["/login(.*)", "/signup(.*)"]);
+const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function isSameOriginMutation(request: NextRequest) {
+  const expectedOrigin = new URL(request.url).origin;
+  const origin = request.headers.get("origin");
+  const referer = request.headers.get("referer");
+
+  try {
+    if (origin) return new URL(origin).origin === expectedOrigin;
+    if (referer) return new URL(referer).origin === expectedOrigin;
+  } catch {
+    return false;
+  }
+
+  return false;
+}
 
 function createRouteMatcher(patterns: string[]) {
   const regexes = patterns.map((p) => new RegExp(`^${p.replace(/\(\.\*\)/g, ".*")}$`));
@@ -19,6 +35,22 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   reqHeaders.set("x-request-id", requestId);
 
   if (pathname.startsWith("/api/")) {
+    // Neon Auth owns its callback protocol. All product API mutations are
+    // browser-origin checked here so individual routes cannot forget CSRF protection.
+    if (
+      unsafeMethods.has(request.method) &&
+      !pathname.startsWith("/api/auth/") &&
+      !isSameOriginMutation(request)
+    ) {
+      return new NextResponse(JSON.stringify({ error: "Invalid request origin." }), {
+        status: 403,
+        headers: {
+          "Content-Type": "application/json",
+          "x-request-id": requestId,
+        },
+      });
+    }
+
     const limiters = getRateLimiters();
     if (limiters) {
       const ip = clientIp(request);

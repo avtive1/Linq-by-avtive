@@ -22,6 +22,8 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
   const from = process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@avtive.app";
+  const host = process.env.SMTP_HOST || "smtp.gmail.com";
+  const port = Number(process.env.SMTP_PORT || "587");
 
   if (!user || !pass) {
     return { sent: false, error: "Email provider not configured. Please set SMTP_USER and SMTP_PASS." };
@@ -29,9 +31,13 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
 
   try {
     const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 587,
-      secure: false, // true for 465, false for other ports
+      host,
+      port: Number.isFinite(port) && port > 0 ? port : 587,
+      secure: port === 465,
+      connectionTimeout: 10_000,
+      greetingTimeout: 10_000,
+      socketTimeout: 30_000,
+      tls: { minVersion: "TLSv1.2" },
       auth: {
         user: user,
         pass: pass,

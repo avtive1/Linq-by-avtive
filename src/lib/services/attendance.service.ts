@@ -4,7 +4,6 @@ import {
   generateSixDigitAttendanceCode,
   isValidAttendanceCodeFormat,
 } from "@/lib/attendance-code";
-import { ensureAttendeeAttendanceSchema } from "@/lib/services/attendance-schema";
 
 const MAX_ASSIGN_ATTEMPTS = 12;
 
@@ -37,7 +36,6 @@ export async function assignAttendanceCodeIfMissing(input: {
   attendeeId: string;
   eventId: string;
 }): Promise<string | null> {
-  await ensureAttendeeAttendanceSchema();
 
   const existing = await readAttendanceCode(input.attendeeId, input.eventId);
   if (existing) return existing;
@@ -75,7 +73,6 @@ export async function markAttendeeAttended(input: {
   code: string;
   ownerUserId: string;
 }): Promise<{ attended: boolean; alreadyAttended: boolean }> {
-  await ensureAttendeeAttendanceSchema();
 
   const event = await queryNeonOne<{ user_id: string }>(
     `SELECT user_id FROM public.events WHERE id = $1`,
