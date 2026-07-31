@@ -80,6 +80,9 @@ type AttendeeCard = CardData & {
   photo_path?: string;
   attended?: boolean;
   hasAttendanceCode?: boolean;
+  customFields?: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
 };
 type PendingAccessRequest = {
   id: string;
@@ -449,6 +452,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         if (!isMounted) return;
 
         const mappedCards = (attendeeRecords || []).map((secure: Record<string, unknown>) => {
+          const customFields =
+            secure.custom_fields && typeof secure.custom_fields === "object" && !Array.isArray(secure.custom_fields)
+              ? (secure.custom_fields as Record<string, unknown>)
+              : {};
+
           return {
             id: String(secure.id || ""),
             name: String(secure.name || ""),
@@ -457,6 +465,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             email: String(secure.card_email || ""),
             eventName: String(secure.event_name || ""),
             sessionDate: String(secure.session_date || ""),
+            sessionTime: String(secure.session_time || ""),
             location: String(secure.location || ""),
             track: String(secure.track || ""),
             guestCategory: String(secure.guest_category || ""),
@@ -465,8 +474,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             event_id: String(secure.event_id || ""),
             photo: typeof secure.photo_url === "string" && secure.photo_url ? secure.photo_url : undefined,
             photo_path: typeof secure.photo_url === "string" ? secure.photo_url : undefined,
+            cardPreviewUrl: typeof secure.card_preview_url === "string" ? secure.card_preview_url : undefined,
+            designType: String(secure.design_type || ""),
+            color: String(secure.card_color || ""),
+            fontFamily: String(secure.card_font || ""),
             attended: Boolean(secure.attended),
             hasAttendanceCode: Boolean(secure.attendance_code),
+            customFields,
+            createdAt: String(secure.created_at || ""),
+            updatedAt: String(secure.updated_at || ""),
           };
         });
 
@@ -1208,33 +1224,79 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     }
   };
 
-  const handleExport = () => {
-    if (filteredCards.length === 0) return;
+  const csvCell = (value: unknown) => {
+    if (value === null || value === undefined) return "";
+    const stringValue =
+      typeof value === "object"
+        ? JSON.stringify(value)
+        : String(value);
+    return `"${stringValue.replace(/"/g, '""')}"`;
+  };
 
-    const headers = ["Name", "Role", "Company", "Email", "Event", "Date", "Location", "Track", "Guest Category", "LinkedIn"];
-    const rows = filteredCards.map(c => [
-      c.name,
-      c.role,
-      c.company,
-      c.email,
-      c.eventName,
-      c.sessionDate || c.year,
-      c.location,
-      c.track || "",
-      c.guestCategory || "",
-      c.linkedin ? `https://linkedin.com/in/${c.linkedin}` : ""
+  const csvFilenamePart = (value: string) => {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  };
+
+  const normalizeLinkedInUrl = (value?: string) => {
+    const linkedIn = String(value || "").trim();
+    if (!linkedIn) return "";
+    if (/^https?:\/\//i.test(linkedIn)) return linkedIn;
+    return `https://linkedin.com/in/${linkedIn.replace(/^\/+|^in\//i, "")}`;
+  };
+
+  const handleExport = () => {
+    if (cards.length === 0) return;
+
+    const customFieldKeys = Array.from(
+      new Set(
+        cards.flatMap((card) =>
+          Object.keys(card.customFields || {}).filter((key) => !key.startsWith("__")),
+        ),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+
+    // Build a key → label map from the registration form so column headers
+    // match exactly what the attendee saw on the form.
+    const allFormFields = [
+      ...effectiveRegistrationConfig.guest,
+      ...effectiveRegistrationConfig.visitor,
+    ];
+    const fieldLabelMap = new Map(allFormFields.map((f) => [f.id, f.label]));
+
+    const headers = [
+      "Name",
+      "Role",
+      "Company",
+      "Email",
+      "QR Code Link",
+      "Attended",
+      ...customFieldKeys.map((key) => fieldLabelMap.get(key) ?? key),
+    ];
+    const rows = cards.map((card) => [
+      card.name,
+      card.role,
+      card.company,
+      card.email,
+      normalizeLinkedInUrl(card.linkedin),
+      card.attended ? "Yes" : "No",
+      ...customFieldKeys.map((key) => card.customFields?.[key] ?? ""),
     ]);
 
     const csvContent = [
-      headers.join(","),
-      ...rows.map(row => row.map(cell => `"${(cell || "").replace(/"/g, '""')}"`).join(","))
-    ].join("\n");
+      headers.map(csvCell).join(","),
+      ...rows.map(row => row.map(csvCell).join(",")),
+    ].join("\r\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([`\uFEFF${csvContent}`], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
     link.href = url;
-    link.download = `${eventData?.name || 'event'}-leads-export.csv`;
+    link.download = `${csvFilenamePart(eventData?.name || "") || `campaign-${eventData?.id || id}`}-attendees.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -2069,15 +2131,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <Button
                   variant={isTeamMemberEventMode ? "secondary" : "primary"}
                   onClick={handleExport}
-                  disabled={status.label === "Past" || !canExport}
+                  disabled={!canExport}
                   icon={<Download size={20} />}
                   className={`rounded-md shadow-sm transition-all duration-300 ${
                     isTeamMemberEventMode
                       ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
                       : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
-                  } ${status.label === "Past" || !canExport ? "opacity-50 grayscale" : " active:scale-95"}`}
+                  } ${!canExport ? "opacity-50 grayscale" : " active:scale-95"}`}
                 >
-                  Export Registry
+                  Download CSV
                 </Button>
               )}
             </div>
@@ -2104,6 +2166,23 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
+
+          {/* Download CSV Button */}
+          {cards.length > 0 && (
+            <button
+              onClick={handleExport}
+              disabled={!canExport}
+              title={!canExport ? "You do not have permission to export attendees" : "Download all attendee information as CSV"}
+              className={`flex items-center justify-center gap-2 h-14 sm:h-16 px-7 rounded-xl border-2 font-semibold text-base transition-all shadow-md ${
+                !canExport
+                  ? "border-border bg-gray-50 text-muted/50 cursor-not-allowed opacity-50"
+                  : "border-border bg-white text-heading hover:border-hairline-strong hover:bg-surface active:scale-95"
+              }`}
+            >
+              <Download size={20} className={!canExport ? "text-muted/50" : "text-muted"} />
+              <span>Download CSV</span>
+            </button>
+          )}
           
           {/* Filter Button and Dropdown */}
           <div className="relative" ref={filterRef}>
