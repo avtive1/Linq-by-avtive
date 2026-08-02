@@ -41,42 +41,52 @@ export function useOrgRegistrationStream(
 
   useEffect(() => {
     if (!enabled || !eventId) return;
+    let stopped = false;
+    let initialized = false;
+    let knownIds = new Set<string>();
 
-    const source = new EventSource(
-      `/api/registration-requests/stream?eventId=${encodeURIComponent(eventId)}`,
-    );
-
-    source.addEventListener("registration:new", (event) => {
+    const refresh = async () => {
       try {
-        const payload = JSON.parse((event as MessageEvent).data);
-        handlersRef.current.onNew?.(payload);
-      } catch {
-        // ignore malformed payloads
-      }
-    });
+        const response = await fetch(
+          `/api/events/${encodeURIComponent(eventId)}/registrations?limit=200&offset=0`,
+          { cache: "no-store" },
+        );
+        if (!response.ok || stopped) return;
+        const payload = (await response.json()) as {
+          data?: { requests?: RegistrationRequestSummary[] };
+          pagination?: { total?: number };
+        };
+        const requests = payload.data?.requests || [];
+        const nextIds = new Set(requests.map((request) => request.id));
 
-    source.addEventListener("registration:pendingCountUpdated", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data);
-        if (typeof payload.pendingCount === "number") {
-          handlersRef.current.onPendingCountUpdated?.(payload.pendingCount);
+        if (initialized) {
+          for (const request of requests) {
+            if (!knownIds.has(request.id)) {
+              handlersRef.current.onNew?.({ request });
+            }
+          }
+          for (const id of knownIds) {
+            if (!nextIds.has(id)) {
+              handlersRef.current.onUpdated?.({ requestId: id, status: "REVIEWED" });
+            }
+          }
         }
-      } catch {
-        // ignore malformed payloads
-      }
-    });
 
-    source.addEventListener("registration:updated", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data);
-        handlersRef.current.onUpdated?.(payload);
+        initialized = true;
+        knownIds = nextIds;
+        handlersRef.current.onPendingCountUpdated?.(
+          Number(payload.pagination?.total || requests.length),
+        );
       } catch {
-        // ignore malformed payloads
+        // A later interval retries transient dashboard refresh failures.
       }
-    });
+    };
 
+    void refresh();
+    const interval = window.setInterval(refresh, 10_000);
     return () => {
-      source.close();
+      stopped = true;
+      window.clearInterval(interval);
     };
   }, [enabled, eventId]);
 }
@@ -87,6 +97,7 @@ type UserRegistrationStatus = {
   rejection_reason?: string | null;
   card_id?: string | null;
   event_name?: string;
+  share_token?: string | null;
 };
 
 export function useRegistrationStatusStream(
@@ -107,39 +118,44 @@ export function useRegistrationStatusStream(
   useEffect(() => {
     if (!enabled || !requestId) return;
 
-    const source = new EventSource(
-      `/api/registration-requests/status/${encodeURIComponent(requestId)}/stream`,
-    );
+    let stopped = false;
+    let terminalStatusDelivered = false;
 
-    source.addEventListener("status", (event) => {
+    const refresh = async () => {
       try {
-        const payload = JSON.parse((event as MessageEvent).data) as UserRegistrationStatus;
-        handlersRef.current.onStatus?.(payload);
-      } catch {
-        // ignore malformed payloads
-      }
-    });
+        const response = await fetch(
+          `/api/registration-requests/${encodeURIComponent(requestId)}`,
+          { cache: "no-store" },
+        );
+        if (!response.ok || stopped) return;
+        const body = (await response.json()) as { data?: UserRegistrationStatus };
+        const status = body.data;
+        if (!status) return;
 
-    source.addEventListener("registration:approved", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data);
-        handlersRef.current.onApproved?.(payload);
-      } catch {
-        // ignore malformed payloads
-      }
-    });
+        handlersRef.current.onStatus?.(status);
+        if (terminalStatusDelivered || status.status === "PENDING") return;
+        terminalStatusDelivered = true;
 
-    source.addEventListener("registration:rejected", (event) => {
-      try {
-        const payload = JSON.parse((event as MessageEvent).data);
-        handlersRef.current.onRejected?.(payload);
+        if (status.status === "APPROVED") {
+          handlersRef.current.onApproved?.({
+            cardId: status.card_id || undefined,
+            shareToken: status.share_token || null,
+          });
+        } else {
+          handlersRef.current.onRejected?.({
+            rejectionReason: status.rejection_reason || undefined,
+          });
+        }
       } catch {
-        // ignore malformed payloads
+        // A later interval retries transient status refresh failures.
       }
-    });
+    };
 
+    void refresh();
+    const interval = window.setInterval(refresh, 5_000);
     return () => {
-      source.close();
+      stopped = true;
+      window.clearInterval(interval);
     };
   }, [enabled, requestId]);
 }

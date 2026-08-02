@@ -104,7 +104,7 @@ export async function POST(
         body: emailBody.trim(),
       });
 
-      if (!sendResult.sent) {
+      if (!sendResult.queued) {
         return NextResponse.json({ error: sendResult.error || "Failed to send email." }, { status: 500 });
       }
 

@@ -9,9 +9,24 @@ import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
 import { assignAttendanceCodeIfMissing } from "@/lib/services/attendance.service";
 import { ensureRegistrationRequestsSchema } from "@/lib/services/registration-schema";
-import type { RegistrationRequestSummary, RegistrationStatus } from "@/lib/services/realtime.service";
+import { issueAttendeeCardToken } from "@/lib/security/tokens";
 
 export const GUEST_REGISTRATION_TRACK = "guest";
+
+export type RegistrationStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export type RegistrationRequestSummary = {
+  id: string;
+  event_id: string;
+  organization_id: string;
+  status: RegistrationStatus;
+  attendee_name: string;
+  attendee_company: string;
+  attendee_email: string;
+  track: string;
+  created_at: string;
+  rejection_reason?: string | null;
+};
 
 export function isGuestRegistrationTrack(track: unknown): boolean {
   return String(track || "").trim().toLowerCase() === GUEST_REGISTRATION_TRACK;
@@ -153,25 +168,43 @@ export async function getRegistrationRequestById(
 }
 
 export async function getPublicRegistrationStatus(requestId: string) {
-  const row = await getRegistrationRequestById(requestId);
+  const row = await queryNeonOne<{
+    id: string;
+    status: RegistrationStatus;
+    rejection_reason: string | null;
+    card_id: string | null;
+  }>(
+    `SELECT id, status, rejection_reason, card_id
+     FROM public.registration_requests
+     WHERE id = $1
+     LIMIT 1`,
+    [requestId],
+  );
   if (!row) return null;
 
-  const event = await queryNeonOne<{ name: string; short_id: string | null }>(
-    `SELECT name, short_id FROM public.events WHERE id = $1`,
-    [row.event_id],
-  );
+  let shareToken: string | null = null;
+  if (row.status === "APPROVED" && row.card_id) {
+    try {
+      shareToken = await issueAttendeeCardToken(
+        {
+          sub: `registration:${row.id}`,
+          cardId: row.card_id,
+          scope: "card:edit",
+        },
+        { ttlSeconds: Number(process.env.ATTENDEE_SHARE_TOKEN_TTL_SECONDS || 7776000) },
+      );
+    } catch {
+      // The caller can still show approval status and use the emailed card link.
+      shareToken = null;
+    }
+  }
 
-  const summary = summarizePayload(row.attendee_payload || {});
   return {
     id: row.id,
     status: row.status,
     rejection_reason: row.rejection_reason,
-    event_id: row.event_id,
-    event_name: String(event?.name || ""),
     card_id: row.card_id,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
-    ...summary,
+    share_token: shareToken,
   };
 }
 

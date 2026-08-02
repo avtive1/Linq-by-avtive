@@ -6,6 +6,8 @@ import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
 import ExitAdminButton from "./_components/ExitAdminButton";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getServerAuthSession();
   const userId = session?.user?.id;

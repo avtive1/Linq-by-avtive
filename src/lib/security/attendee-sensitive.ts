@@ -20,6 +20,8 @@ export function encryptAttendeeSensitiveFields<T extends GenericRow>(row: T): T 
   if (!hasEnvelopeCryptoConfigured()) {
     return out as T;
   }
+  const emailForLookupTag =
+    typeof out.card_email === "string" ? out.card_email.trim().toLowerCase() : "";
   for (const field of ATTENDEE_CLASS_A_FIELDS) {
     const value = out[field];
     if (typeof value !== "string" || !value.trim()) continue;
@@ -27,9 +29,8 @@ export function encryptAttendeeSensitiveFields<T extends GenericRow>(row: T): T 
     out[field] = encryptSensitiveString(value, fieldContext(field));
   }
 
-  const email = out.card_email;
-  if (typeof email === "string" && email.trim()) {
-    out.card_email_lookup_tag = deterministicLookupTag(email.trim().toLowerCase(), "attendees.card_email");
+  if (emailForLookupTag) {
+    out.card_email_lookup_tag = deterministicLookupTag(emailForLookupTag, "attendees.card_email");
   }
   return out as T;
 }
@@ -79,10 +80,13 @@ export function decryptAttendeeSensitiveFields<T extends GenericRow>(row: T): {
 
   const email = out.card_email;
   if (canEncrypt && typeof email === "string" && email.trim()) {
-    migrationPatch.card_email_lookup_tag = deterministicLookupTag(
+    const expectedLookupTag = deterministicLookupTag(
       email.trim().toLowerCase(),
       "attendees.card_email",
     );
+    if (String(out.card_email_lookup_tag || "") !== expectedLookupTag) {
+      migrationPatch.card_email_lookup_tag = expectedLookupTag;
+    }
   }
 
   if (Object.keys(migrationPatch).length > 0) {

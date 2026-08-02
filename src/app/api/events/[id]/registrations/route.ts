@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
-  countPendingRegistrationsForEvent,
   createRegistrationRequest,
   listPendingRegistrationRequests,
 } from "@/lib/services/registration.service";
-import {
-  emitRegistrationNewToOrg,
-  emitRegistrationPendingCountUpdatedToOrg,
-} from "@/lib/services/realtime.service";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { queryNeonOne } from "@/lib/neon-db";
-import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
 
@@ -78,38 +72,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       eventId,
       userId,
       attendeeData: payload,
-    });
-
-    const { row: summary } = decryptAttendeeSensitiveFields(request.attendee_payload || {});
-    const pendingCount = await countPendingRegistrationsForEvent(eventId);
-
-    const realtimePayload = {
-      requestId: request.id,
-      eventId: request.event_id,
-      organizationId: request.organization_id,
-      status: request.status,
-      request: {
-        id: request.id,
-        event_id: request.event_id,
-        organization_id: request.organization_id,
-        status: request.status,
-        attendee_name: String(summary.name || ""),
-        attendee_company: String(summary.company || ""),
-        attendee_email: String(summary.card_email || ""),
-        track: String(summary.track || ""),
-        created_at: request.created_at,
-      },
-    };
-
-    await emitRegistrationNewToOrg({
-      organizationId: request.organization_id,
-      eventId: request.event_id,
-      payload: realtimePayload,
-    });
-    await emitRegistrationPendingCountUpdatedToOrg({
-      organizationId: request.organization_id,
-      eventId: request.event_id,
-      pendingCount,
     });
 
     return NextResponse.json(

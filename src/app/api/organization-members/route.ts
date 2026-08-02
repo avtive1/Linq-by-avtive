@@ -271,7 +271,7 @@ export async function POST(req: Request) {
         roleLabel: nextRoleLabel,
         acceptInviteUrl,
       });
-      if (!invRes.sent) logger.warn({ error: invRes.error }, "[organization-members] invitee email skipped");
+      if (!invRes.queued) logger.warn({ error: invRes.error }, "[organization-members] invitee email was not queued");
     } catch (e: unknown) {
       logger.error({ err: e instanceof Error ? e : undefined }, "[organization-members] invitee email failed");
     }
@@ -285,7 +285,7 @@ export async function POST(req: Request) {
           memberEmail: normalizedEmail,
           roleLabel: nextRoleLabel,
         });
-        if (!ownRes.sent) logger.warn({ error: ownRes.error }, "[organization-members] owner notice skipped");
+        if (!ownRes.queued) logger.warn({ error: ownRes.error }, "[organization-members] owner notice was not queued");
       }
     } catch (e: unknown) {
       logger.error({ err: e instanceof Error ? e : undefined }, "[organization-members] owner notice failed");

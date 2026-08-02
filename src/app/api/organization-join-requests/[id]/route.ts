@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { enqueueBrandedTransactionalEmail } from "@/lib/notifications/email-outbox";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { generateOrgJoinRequestDecisionEmailHtml } from "@/lib/email-templates/org-join-emails";
 import { seedViewEventGrantsForOrgMember } from "@/lib/organization/seedViewEventGrants";
@@ -137,7 +137,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     if (requesterEmail) {
       const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
-      await sendBrandedTransactionalEmail({
+      await enqueueBrandedTransactionalEmail({
         to: requesterEmail,
         subject: `Organization join request ${nextStatus}`,
         text:

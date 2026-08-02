@@ -71,8 +71,6 @@ type MyOrgJoinRequest = {
   rejection_reason?: string | null;
 };
 
-const ENABLE_DASHBOARD_BOOTSTRAP = process.env.NEXT_PUBLIC_DASHBOARD_BOOTSTRAP !== "false";
-
 const formatJoinStatus = (status: string) => {
   const normalized = String(status || "").toLowerCase();
   if (normalized === "approved") {
@@ -287,34 +285,6 @@ function DashboardContent() {
       return "";
     };
 
-    const loadBootstrapSnapshot = async () => {
-      try {
-        const res = await fetch("/api/dashboard/bootstrap", { cache: "no-store" });
-        if (!res.ok) return null;
-        const payload = await res.json().catch(() => null);
-        if (!payload || typeof payload !== "object" || !("data" in payload)) return null;
-        return payload.data as {
-          userId?: string;
-          isAdmin?: boolean;
-          profile?: { username?: string; organizationName?: string } | null;
-          member?: { org_owner_user_id?: string; role_label?: string; permissions?: string[] } | null;
-          ownerSignals?: { hasOwnedEvents?: boolean; hasOwnedMembers?: boolean; ownerByRegistry?: boolean } | null;
-          ownerOnboarding?: {
-            shouldShowOnboarding?: boolean;
-            teamStepCompleted?: boolean;
-            needsProfileSetup?: boolean;
-          } | null;
-          myAccessRequests?: unknown[];
-          myJoinRequests?: Array<{ status?: string }>;
-          inboxRequests?: unknown[];
-          orgJoinInbox?: unknown[];
-          failedNotifications?: unknown[];
-        };
-      } catch {
-        return null;
-      }
-    };
-
     const checkUser = async () => {
       if (isSessionPending || isInternalUserLoading || (session?.user && !userId)) return;
       try {
@@ -327,136 +297,6 @@ function DashboardContent() {
           return;
         }
 
-        const bootstrapData = ENABLE_DASHBOARD_BOOTSTRAP ? await loadBootstrapSnapshot() : null;
-        if (bootstrapData && String(bootstrapData.userId || "").trim()) {
-          const isActuallyAdmin = Boolean(bootstrapData.isAdmin);
-          if (isActuallyAdmin) setIsAdmin(true);
-
-          let effectiveId = userId;
-          let effectiveName = "";
-          let userisOrgTeamMemberLocal = false;
-          let userIsOrgOwnerLocal = false;
-          let gateStatus: "pending" | "awaiting_owner" | null = null;
-          const profileRow = bootstrapData.profile || null;
-
-          if (profileRow?.username?.trim()) {
-            effectiveName = profileRow.username.trim();
-          }
-          if (profileRow?.organizationName?.trim()) {
-            setOrganizationName(profileRow.organizationName.trim());
-          }
-
-          const memberData = bootstrapData.member || null;
-          if (typeof memberData?.org_owner_user_id === "string" && memberData.org_owner_user_id) {
-            effectiveId = memberData.org_owner_user_id;
-            setIsOrgTeamMember(true);
-            userisOrgTeamMemberLocal = true;
-            setIsOrgOwner(false);
-            setOrgRoleLabel(String(memberData.role_label || ""));
-            setOrgOwnerUserId(String(memberData.org_owner_user_id || ""));
-            setGrantedPermissions(Array.isArray(memberData.permissions) ? (memberData.permissions as string[]) : []);
-            if (Array.isArray(bootstrapData.myAccessRequests)) {
-              setMyAccessRequests(bootstrapData.myAccessRequests as MyAccessRequest[]);
-            }
-          } else {
-            setIsOrgTeamMember(false);
-            setOrgRoleLabel("");
-            const ownerSignals = bootstrapData.ownerSignals;
-            const userIsOrgOwner = Boolean(
-              ownerSignals?.hasOwnedEvents || ownerSignals?.hasOwnedMembers || ownerSignals?.ownerByRegistry,
-            );
-            setIsOrgOwner(userIsOrgOwner);
-            userIsOrgOwnerLocal = userIsOrgOwner;
-            if (!userIsOrgOwner) {
-              setIsOwnerProfileSetupModalOpen(false);
-              setIsOwnerOnboardingModalOpen(false);
-            } else {
-              const ownerOnboarding = bootstrapData.ownerOnboarding;
-              const teamStepCompleted = Boolean(ownerOnboarding?.teamStepCompleted);
-              const needsProfileSetup = Boolean(ownerOnboarding?.needsProfileSetup);
-              const shouldShowOnboarding = Boolean(ownerOnboarding?.shouldShowOnboarding);
-              const shouldForceOwnerOnboarding = onboardingIntent === "owner" && !teamStepCompleted;
-              if (needsProfileSetup && !isOwnerProfileSetupModalOpen) {
-                setOwnerProfileUsernameDraft(effectiveName || "");
-                setOwnerProfilePhotoDraft("");
-                setOwnerProfileSetupError("");
-              }
-              setIsOwnerProfileSetupModalOpen(needsProfileSetup);
-              setIsOwnerOnboardingModalOpen(!needsProfileSetup && (shouldShowOnboarding || shouldForceOwnerOnboarding));
-            }
-
-            if (profileRow?.organizationName?.trim() && !userIsOrgOwner) {
-              try {
-                const joinRes = await fetch("/api/organization-join-requests", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
-                });
-                if (joinRes.ok) {
-                  const joinPayload = await readResponsePayload(joinRes);
-                  const joinData = asPayloadRecord(joinPayload);
-                  const status = String(joinData?.status || "").toLowerCase();
-                  if (status === "created" || status === "pending_exists" || status === "reapply_later") {
-                    gateStatus = "pending";
-                  } else if (status === "no_owner_found") {
-                    gateStatus = "awaiting_owner";
-                  }
-                }
-              } catch {}
-            }
-
-            if (Array.isArray(bootstrapData.myJoinRequests)) {
-              setMyOrgJoinRequests(bootstrapData.myJoinRequests as MyOrgJoinRequest[]);
-              if (
-                bootstrapData.myJoinRequests.some(
-                  (req) => String(req?.status || "").toLowerCase() === "pending",
-                )
-              ) {
-                gateStatus = "pending";
-              }
-            }
-            setJoinGateStatus(gateStatus);
-            setJoinGateOrgName(profileRow?.organizationName?.trim() || "");
-          }
-
-          if (Array.isArray(bootstrapData.inboxRequests)) {
-            setInboxRequests(bootstrapData.inboxRequests as PendingInboxRequest[]);
-          }
-          if (Array.isArray(bootstrapData.orgJoinInbox)) {
-            setOrgJoinInbox(bootstrapData.orgJoinInbox as OrgJoinInboxRequest[]);
-          }
-          if (Array.isArray(bootstrapData.failedNotifications)) {
-            setFailedNotifications(bootstrapData.failedNotifications as FailedNotification[]);
-          }
-
-          if (impersonateId && isActuallyAdmin) {
-            effectiveId = impersonateId;
-            setIsPreviewMode(true);
-            effectiveName = "Organization View";
-          }
-
-          setUserName(effectiveName);
-          if (
-            !isActuallyAdmin &&
-            !userisOrgTeamMemberLocal &&
-            !userIsOrgOwnerLocal &&
-            (gateStatus === "pending" || gateStatus === "awaiting_owner")
-          ) {
-            setIsCheckingAuth(false);
-            return;
-          }
-          fetchData(effectiveId, () => isMounted);
-          setIsCheckingAuth(false);
-          void hydrateSecondaryPanels({
-            isOrgTeamMember: userisOrgTeamMemberLocal,
-            isOrgOwner: userIsOrgOwnerLocal,
-            profileOrganizationName: profileRow?.organizationName?.trim() || "",
-            effectiveName,
-            onboardingIntentValue: onboardingIntent,
-          });
-          return;
-        }
-        
         // Check for admin using server-owned config only.
         let isActuallyAdmin = false;
         try {
@@ -634,7 +474,9 @@ function DashboardContent() {
   const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
     try {
       // 1. Fetch all events owned by this user
-      const eventsRes = await fetch(`/api/events?ownerId=${encodeURIComponent(userId)}`);
+      const eventsRes = await fetch(
+        `/api/events?ownerId=${encodeURIComponent(userId)}&includeRoleStats=true`,
+      );
       const eventsPayload = await readResponsePayload(eventsRes);
       if (!eventsRes.ok) {
         const message = getPayloadError(eventsPayload, "Failed to load events.");
@@ -657,44 +499,15 @@ function DashboardContent() {
         totalEvents: mappedEvents.length,
         totalAttendees: mappedEvents.reduce((sum, evt) => sum + (evt.attendeeCount || 0), 0),
       });
-
-      if (mappedEvents.length === 0) {
-        setTopRoles([]);
-        return;
-      }
-
-      const attendeesByEvent = await Promise.all(
-        mappedEvents.map(async (evt) => {
-          try {
-            const attendeesRes = await fetch(
-              `/api/events/${evt.id}/attendees${
-                impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""
-              }`,
-            );
-            if (!attendeesRes.ok) return [];
-            const attendeesPayload = await readResponsePayload(attendeesRes);
-            return Array.isArray(attendeesPayload?.data) ? attendeesPayload.data : [];
-          } catch {
-            return [];
-          }
-        }),
-      );
-
-      if (getIsMounted && !getIsMounted()) return;
-
-      const roleCounts = new Map<string, number>();
-      for (const attendees of attendeesByEvent) {
-        for (const attendee of attendees as Array<Record<string, unknown>>) {
-          const role = String(attendee?.role || "").trim();
-          if (!role) continue;
-          roleCounts.set(role, (roleCounts.get(role) || 0) + 1);
-        }
-      }
-      const rankedRoles = Array.from(roleCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([role, count]) => ({ role, count }));
-      setTopRoles(rankedRoles);
+      const topRoles = Array.isArray((eventsPayload as { topRoles?: unknown })?.topRoles)
+        ? (eventsPayload as { topRoles: Array<{ role?: unknown; count?: unknown }> }).topRoles
+            .map((entry) => ({
+              role: String(entry.role || "").trim(),
+              count: Number(entry.count || 0),
+            }))
+            .filter((entry) => entry.role && Number.isFinite(entry.count) && entry.count > 0)
+        : [];
+      setTopRoles(topRoles);
 
     } catch (err: unknown) {
       logger.error({ err }, "Error fetching dashboard data");

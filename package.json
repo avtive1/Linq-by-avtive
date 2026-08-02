@@ -18,6 +18,8 @@
     "db:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/apply-indexes.ts",
     "db:audit:indexes": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/audit-indexes.mjs",
     "db:audit:explain": "node ./node_modules/tsx/dist/cli.mjs scripts/performance-audit/explain-queries.mjs",
+    "email:outbox:status": "node ./node_modules/tsx/dist/cli.mjs scripts/inspect-email-outbox.ts",
+    "email:outbox:process": "node ./node_modules/tsx/dist/cli.mjs scripts/process-email-outbox.ts",
     "load-test:smoke": "node scripts/load-test/smoke-load.mjs",
     "test": "vitest run tests",
     "test:edge": "vitest run tests/edge-cases",
@@ -47,8 +49,8 @@
     "jspdf": "^4.2.1",
     "jszip": "^3.10.1",
     "lucide-react": "^1.21.0",
-    "next": "^16.2.1",
-    "nodemailer": "^7.0.13",
+    "next": "^16.2.11",
+    "nodemailer": "^9.0.3",
     "pg": "^8.20.0",
     "pino": "^10.3.1",
     "qrcode": "^1.5.4",
@@ -72,12 +74,12 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "husky": "^9.1.7",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.18",
     "prisma": "^6.19.3",
     "shadcn": "^4.11.0",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.6"
   }
 }

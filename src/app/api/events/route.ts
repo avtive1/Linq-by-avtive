@@ -54,6 +54,7 @@ export async function GET(req: Request) {
 
     const url = new URL(req.url);
     const ownerId = String(url.searchParams.get("ownerId") || viewerId);
+    const includeRoleStats = url.searchParams.get("includeRoleStats") === "true";
 
     const { isAdminByRole, isAdminByEmail } = getViewerAdminAccess({
       viewerId,
@@ -76,7 +77,7 @@ export async function GET(req: Request) {
     }
     if (!canView) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
-    const rows = await queryNeon<{
+    const eventsQuery = queryNeon<{
       id: string;
       name: string;
       description: string;
@@ -95,6 +96,22 @@ export async function GET(req: Request) {
       [ownerId],
     );
 
+    const roleStatsQuery = includeRoleStats
+      ? queryNeon<{ role: string; count: string | number }>(
+          `SELECT a.role, COUNT(*)::int AS count
+           FROM public.attendees a
+           INNER JOIN public.events e ON e.id = a.event_id
+           WHERE e.user_id = $1
+             AND NULLIF(TRIM(a.role), '') IS NOT NULL
+           GROUP BY a.role
+           ORDER BY count DESC, a.role ASC
+           LIMIT 5`,
+          [ownerId],
+        )
+      : Promise.resolve([] as Array<{ role: string; count: string | number }>);
+
+    const [rows, roleStats] = await Promise.all([eventsQuery, roleStatsQuery]);
+
     return NextResponse.json(
       {
         data: rows.map((row) => ({
@@ -106,6 +123,10 @@ export async function GET(req: Request) {
           logo_url: row.logo_url,
           shortId: row.short_id,
           attendeeCount: Number(row.attendee_count || 0),
+        })),
+        topRoles: roleStats.map((row) => ({
+          role: row.role,
+          count: Number(row.count || 0),
         })),
       },
       { status: 200 },

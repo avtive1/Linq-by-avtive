@@ -53,7 +53,7 @@ export async function POST(req: Request) {
         organizationName: data.organizationName,
         temporaryPassword: password,
       });
-      if (!mail.sent) logger.warn({ error: mail.error }, "[admin/organizations] welcome email skipped");
+      if (!mail.queued) logger.warn({ error: mail.error }, "[admin/organizations] welcome email was not queued");
     } catch (e: unknown) {
       logger.error({ err: e instanceof Error ? e : undefined }, "[admin/organizations] welcome email failed");
     }

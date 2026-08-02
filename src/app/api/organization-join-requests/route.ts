@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { enqueueBrandedTransactionalEmail } from "@/lib/notifications/email-outbox";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { generateOrgJoinRequestOwnerEmailHtml } from "@/lib/email-templates/org-join-emails";
 import { normalizeOrganizationName, toOrganizationKey } from "@/lib/organization/normalize";
@@ -141,7 +141,7 @@ export async function POST(req: Request) {
 
     if (ownerEmail) {
       const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
-      await sendBrandedTransactionalEmail({
+      await enqueueBrandedTransactionalEmail({
         to: ownerEmail,
         subject: `Organization verification request (${requestedOrgName})`,
         text:

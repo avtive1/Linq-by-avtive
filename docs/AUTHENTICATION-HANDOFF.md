@@ -8,7 +8,7 @@ Authentication has been migrated from Auth.js / NextAuth credentials to Neon Aut
 - Neon Auth client entrypoint: `src/lib/auth/client.ts`
 - Auth API handler: `src/app/api/auth/[...path]/route.ts`
 - App session compatibility helper: `src/auth.ts`
-- Protected-route middleware: `src/middleware.ts`
+- Protected-route proxy: `src/proxy.ts`
 
 The app still uses its existing business identity tables:
 

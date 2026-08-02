@@ -8,11 +8,6 @@ const USERNAME_REGEX = /^[a-zA-Z0-9_.]+$/;
 const USERNAME_CHANGE_COOLDOWN_DAYS = 24;
 const ORG_CHANGE_COOLDOWN_DAYS = 90;
 
-async function ensureProfileColumns() {
-  await queryNeon(`ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`);
-  await queryNeon(`ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS organization_logo_url text`);
-}
-
 function fallbackUsernameFromEmail(email: string, userId: string) {
   const base = email
     .split("@")[0]
@@ -26,7 +21,6 @@ function fallbackUsernameFromEmail(email: string, userId: string) {
 
 export async function PATCH(req: Request) {
   try {
-    await ensureProfileColumns();
     const body = (await req.json()) as {
       username?: string;
       organizationName?: string;
@@ -236,7 +230,6 @@ export async function PATCH(req: Request) {
 
 export async function GET() {
   try {
-    await ensureProfileColumns();
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) {

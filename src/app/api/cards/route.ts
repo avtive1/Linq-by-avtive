@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
 import { assignAttendanceCodeIfMissing } from "@/lib/services/attendance.service";
@@ -8,21 +8,12 @@ import { sendVisitorAttendanceCodeEmail } from "@/lib/services/email.service";
 import { isGuestRegistrationTrack } from "@/lib/services/registration.service";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
-import { logger } from "@/lib/logger-server";
 import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
+import { logger } from "@/lib/logger-server";
 
 export async function POST(req: Request) {
   await enterApiLogContextFromRequest(req);
   try {
-    try {
-      await queryNeon(
-        `ALTER TABLE public.attendees
-         ADD COLUMN IF NOT EXISTS custom_fields jsonb NOT NULL DEFAULT '{}'::jsonb`,
-      );
-    } catch (schemaErr) {
-      logger.warn({ err: schemaErr instanceof Error ? schemaErr : undefined }, "Skipping attendees.custom_fields runtime schema patch");
-    }
-
     const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
     if (!parsed.ok) return parsed.response;
     const payload = parsed.data as Record<string, unknown>;
@@ -59,7 +50,7 @@ export async function POST(req: Request) {
             eventName: String(eventRow?.name || "the event"),
             attendanceCode,
           });
-          if (!emailResult.sent) {
+          if (!emailResult.queued) {
             logger.warn(
               { attendeeId: createdCardId, eventId, error: emailResult.error },
               "Visitor attendance code email failed",

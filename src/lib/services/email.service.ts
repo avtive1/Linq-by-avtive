@@ -1,4 +1,4 @@
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { enqueueBrandedTransactionalEmail } from "@/lib/notifications/email-outbox";
 import { toPublicCompactUrl } from "@/lib/services/shortLink.service";
 import {
   appendAttendanceCodeToApprovedEmailText,
@@ -59,7 +59,7 @@ export async function sendRegistrationApprovedEmail(input: {
     attendanceCode,
   });
 
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.to,
     subject: "Your Event Registration is Approved",
     text,
@@ -82,7 +82,7 @@ export async function sendVisitorAttendanceCodeEmail(input: {
     attendanceCode: input.attendanceCode,
   });
 
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.to,
     subject: `Your attendance code for ${input.eventName}`,
     text,
@@ -114,7 +114,7 @@ export async function sendRegistrationRejectedEmail(input: {
     eventLink,
   });
 
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.to,
     subject: "Registration Update for " + input.eventName,
     text,
@@ -138,7 +138,7 @@ export async function sendCustomAttendeeEmail(input: {
     bodyHtml,
   });
 
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.to,
     subject: input.subject,
     text: input.body,

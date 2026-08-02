@@ -29,10 +29,9 @@ export const options = {
 const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 const SCENARIOS = [
-  { weight: 40, name: "auth_session", path: "/api/auth/session", method: "GET" },
-  { weight: 30, name: "dashboard_bootstrap", path: "/api/dashboard/bootstrap", method: "GET" },
-  { weight: 20, name: "profile_username_unauth", path: "/api/profile/username", method: "GET" },
-  { weight: 10, name: "events_unauth", path: "/api/events", method: "GET" },
+  { weight: 55, name: "auth_session", path: "/api/auth/session", method: "GET" },
+  { weight: 30, name: "profile_username_unauth", path: "/api/profile/username", method: "GET" },
+  { weight: 15, name: "events_unauth", path: "/api/events", method: "GET" },
 ];
 
 function pickScenario() {

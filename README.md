@@ -37,6 +37,17 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Security Configuration
 
+## Testing
+
+The default test suite does not connect to a database. Tenant-isolation integration tests create and delete rows, so enable them explicitly only with a disposable or staging database where the migrations have been applied:
+
+```powershell
+$env:RUN_DB_INTEGRATION_TESTS = "true"
+npm.cmd run test:integration
+```
+
+Do not set this flag when `DATABASE_URL` points to production.
+
 The app now supports envelope encryption for selected attendee fields and signed attendee-card tokens.
 
 Required server-side env vars:

@@ -28,12 +28,7 @@ type OrganizationRow = {
   eventIds: Set<string>;
 };
 
-async function ensureOrganizationsSchema() {
-  await queryNeon(`ALTER TABLE public.organizations ADD COLUMN IF NOT EXISTS organization_logo_url text`);
-}
-
 export default async function AdminDashboardPage() {
-  await ensureOrganizationsSchema();
   // 1. Fetch All Organizations (Users)
   const userData = await listAdminUsers();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")

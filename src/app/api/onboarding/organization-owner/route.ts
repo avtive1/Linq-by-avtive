@@ -19,21 +19,8 @@ async function isOrganizationOwner(userId: string) {
   return Boolean(ownerRow?.id);
 }
 
-async function ensureOwnerOnboardingColumns() {
-  await queryNeon(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_onboarding_team_step_completed_at timestamptz`,
-  );
-  await queryNeon(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS profile_photo_url text`,
-  );
-  await queryNeon(
-    `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS owner_profile_setup_completed_at timestamptz`,
-  );
-}
-
 export async function GET() {
   try {
-    await ensureOwnerOnboardingColumns();
     const userId = await getCurrentUserId();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
@@ -95,7 +82,6 @@ export async function GET() {
 
 export async function PATCH() {
   try {
-    await ensureOwnerOnboardingColumns();
     const userId = await getCurrentUserId();
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 

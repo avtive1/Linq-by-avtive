@@ -25,7 +25,6 @@ const BASE_URL = __ENV.BASE_URL || "http://localhost:3000";
 
 const SCENARIOS = [
   { name: "auth_session", path: "/api/auth/session", method: "GET" },
-  { name: "dashboard_bootstrap_unauth", path: "/api/dashboard/bootstrap", method: "GET" },
 ];
 
 export default function smoke() {

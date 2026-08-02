@@ -285,3 +285,20 @@ model LoginEmailOtp {
   @@index([user_id, expires_at(sort: Desc)], map: "login_email_otp_user_expires_idx")
   @@map("login_email_otp")
 }
+
+model EmailOutbox {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  idempotency_key String   @unique
+  payload         Json
+  status          String   @default("pending")
+  attempts        Int      @default(0)
+  max_attempts    Int      @default(5)
+  available_at    DateTime @default(now()) @db.Timestamptz(6)
+  locked_until    DateTime? @db.Timestamptz(6)
+  sent_at         DateTime? @db.Timestamptz(6)
+  last_error      String?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@map("email_outbox")
+}

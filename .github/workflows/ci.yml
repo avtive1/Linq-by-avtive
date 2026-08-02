@@ -11,6 +11,7 @@ jobs:
     env:
       # CI placeholders only; production runtime uses real deployment secrets.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      RUN_DB_INTEGRATION_TESTS: "false"
       NEON_AUTH_BASE_URL: https://ci-build-placeholder.neon-auth.invalid
       NEON_AUTH_COOKIE_SECRET: ci-build-placeholder-neon-auth-cookie-secret-minimum-32-chars
 

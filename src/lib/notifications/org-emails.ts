@@ -1,4 +1,7 @@
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import {
+  enqueueBrandedTransactionalEmail,
+  type EmailQueueResult,
+} from "@/lib/notifications/email-outbox";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { generateOrganizationCreatedWelcomeEmailHtml } from "@/lib/email-templates/organization-created";
 import {
@@ -10,7 +13,7 @@ export async function sendOrganizationCreatedWelcomeEmail(input: {
   to: string;
   organizationName: string;
   temporaryPassword: string;
-}): Promise<{ sent: boolean; error?: string }> {
+}): Promise<EmailQueueResult> {
   const loginUrl = `${getPublicAppUrl()}/login`;
   const body =
     `Hi there,\n\n` +
@@ -20,7 +23,7 @@ export async function sendOrganizationCreatedWelcomeEmail(input: {
     `Login email: ${input.to}\n` +
     `Temporary password: ${input.temporaryPassword}\n\n` +
     `Go to Login: ${loginUrl}\n`;
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.to,
     subject: `Your organization "${input.organizationName}" is ready on AVTIVE`,
     text: body,
@@ -38,7 +41,7 @@ export async function sendTeamMemberInviteEmail(input: {
   organizationName: string;
   roleLabel: string;
   acceptInviteUrl: string;
-}): Promise<{ sent: boolean; error?: string }> {
+}): Promise<EmailQueueResult> {
   const loginUrl = `${getPublicAppUrl()}/login`;
   const body =
     `Hi there,\n\n` +
@@ -46,7 +49,7 @@ export async function sendTeamMemberInviteEmail(input: {
     `Use this email address (${input.to}) when accepting the invitation or signing in.\n\n` +
     `Accept this invitation:\n${input.acceptInviteUrl}\n\n` +
     `Or sign in after your admin has added you:\n${loginUrl}\n`;
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.to,
     subject: `Invitation to join ${input.organizationName} on AVTIVE`,
     text: body,
@@ -65,7 +68,7 @@ export async function sendTeamMemberAddedOwnerNoticeEmail(input: {
   organizationName: string;
   memberEmail: string;
   roleLabel: string;
-}): Promise<{ sent: boolean; error?: string }> {
+}): Promise<EmailQueueResult> {
   const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
   const body =
     `Hi there,\n\n` +
@@ -73,7 +76,7 @@ export async function sendTeamMemberAddedOwnerNoticeEmail(input: {
     `Member email: ${input.memberEmail}\n` +
     `Role: ${input.roleLabel}\n\n` +
     `If you did not perform this action, sign in and review Team Access on your dashboard:\n${dashboardUrl}\n`;
-  return sendBrandedTransactionalEmail({
+  return enqueueBrandedTransactionalEmail({
     to: input.ownerEmail,
     subject: `Team member added — ${input.organizationName}`,
     text: body,

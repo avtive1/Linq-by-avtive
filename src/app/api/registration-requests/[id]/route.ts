@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import {
   approveRegistrationRequest,
-  countPendingRegistrationsForEvent,
   getPublicRegistrationStatus,
   rejectRegistrationRequest,
 } from "@/lib/services/registration.service";
@@ -10,12 +9,6 @@ import {
   sendRegistrationApprovedEmail,
   sendRegistrationRejectedEmail,
 } from "@/lib/services/email.service";
-import {
-  emitRegistrationApprovedToUser,
-  emitRegistrationPendingCountUpdatedToOrg,
-  emitRegistrationRejectedToUser,
-  emitRegistrationUpdatedToOrg,
-} from "@/lib/services/realtime.service";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { validateCsrfOrigin } from "@/lib/security/csrf";
 import { isValidUuid } from "@/lib/validation/uuid";
@@ -83,8 +76,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
 
       const { request, cardId, shareToken, attendeeEmail, eventName, eventShortId, attendanceCode } = result;
-      const pendingCount = await countPendingRegistrationsForEvent(request.event_id);
-
       let notifyError: string | null = null;
       if (attendeeEmail) {
         const emailResult = await sendRegistrationApprovedEmail({
@@ -96,7 +87,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           eventShortId,
           attendanceCode,
         });
-        if (emailResult.sent) {
+        if (emailResult.queued) {
           await updateTenantRows(
             "registration_requests",
             { attendee_notified_at: new Date().toISOString(), notification_error: null },
@@ -119,30 +110,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           "id",
         );
       }
-
-      const realtimePayload = {
-        requestId: id,
-        eventId: request.event_id,
-        organizationId: request.organization_id,
-        status: "APPROVED" as const,
-        cardId,
-        shareToken,
-      };
-
-      await emitRegistrationUpdatedToOrg({
-        organizationId: request.organization_id,
-        eventId: request.event_id,
-        payload: realtimePayload,
-      });
-      await emitRegistrationPendingCountUpdatedToOrg({
-        organizationId: request.organization_id,
-        eventId: request.event_id,
-        pendingCount,
-      });
-      await emitRegistrationApprovedToUser({
-        requestId: id,
-        payload: realtimePayload,
-      });
 
       return NextResponse.json(
         {
@@ -177,8 +144,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const { request, attendeeEmail, eventName, eventShortId } = rejectResult;
-    const pendingCount = await countPendingRegistrationsForEvent(request.event_id);
-
     let notifyError: string | null = null;
     if (attendeeEmail) {
       const emailResult = await sendRegistrationRejectedEmail({
@@ -188,7 +153,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         eventId: request.event_id,
         eventShortId,
       });
-      if (emailResult.sent) {
+      if (emailResult.queued) {
         await updateTenantRows(
           "registration_requests",
           { attendee_notified_at: new Date().toISOString(), notification_error: null },
@@ -211,29 +176,6 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         "id",
       );
     }
-
-    const realtimePayload = {
-      requestId: id,
-      eventId: request.event_id,
-      organizationId: request.organization_id,
-      status: "REJECTED" as const,
-      rejectionReason: trimmedReason,
-    };
-
-    await emitRegistrationUpdatedToOrg({
-      organizationId: request.organization_id,
-      eventId: request.event_id,
-      payload: realtimePayload,
-    });
-    await emitRegistrationPendingCountUpdatedToOrg({
-      organizationId: request.organization_id,
-      eventId: request.event_id,
-      pendingCount,
-    });
-    await emitRegistrationRejectedToUser({
-      requestId: id,
-      payload: realtimePayload,
-    });
 
     return NextResponse.json({ data: { status: "REJECTED" } }, { status: 200 });
   } catch (error: unknown) {

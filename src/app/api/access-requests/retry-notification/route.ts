@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { enqueueBrandedTransactionalEmail } from "@/lib/notifications/email-outbox";
 import { getPublicAppUrl } from "@/lib/app-url";
 import {
   generateAccessRequestDecisionEmailHtml,
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     if (target === "owner") {
       if (!ownerEmail) return NextResponse.json({ error: "Owner email missing." }, { status: 400 });
       const safeRequesterEmail = requesterEmail || "unknown";
-      const emailResult = await sendBrandedTransactionalEmail({
+      const emailResult = await enqueueBrandedTransactionalEmail({
         to: ownerEmail,
         subject: `Access request for ${eventName}`,
         text:
@@ -75,7 +75,7 @@ export async function POST(req: Request) {
           dashboardUrl,
         }),
       });
-      if (!emailResult.sent) {
+      if (!emailResult.queued) {
         await updateTenantRows(
           "access_requests",
           { notification_error: emailResult.error || "Retry failed." },
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
 
     if (!requesterEmail) return NextResponse.json({ error: "Requester email missing." }, { status: 400 });
     const decisionLabel = requestRow.status === "approved" ? "approved" : requestRow.status === "rejected" ? "rejected" : "updated";
-    const emailResult = await sendBrandedTransactionalEmail({
+    const emailResult = await enqueueBrandedTransactionalEmail({
       to: requesterEmail,
       subject: `Access request ${decisionLabel} for ${eventName}`,
       text:
@@ -113,7 +113,7 @@ export async function POST(req: Request) {
         dashboardUrl,
       }),
     });
-    if (!emailResult.sent) {
+    if (!emailResult.queued) {
       await updateTenantRows(
         "access_requests",
         { notification_error: emailResult.error || "Retry failed." },

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { sendBrandedTransactionalEmail } from "@/lib/notifications/branded-email";
+import { enqueueBrandedTransactionalEmail } from "@/lib/notifications/email-outbox";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { generateAccessRequestOwnerEmailHtml } from "@/lib/email-templates/access-request-emails";
 import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
@@ -197,7 +197,7 @@ export async function POST(req: Request) {
     let notifyError: string | null = null;
     if (ownerEmail) {
       const dashboardUrl = `${getPublicAppUrl()}/dashboard`;
-      const emailResult = await sendBrandedTransactionalEmail({
+      const emailResult = await enqueueBrandedTransactionalEmail({
         to: ownerEmail,
         subject: `Access request for ${eventName}`,
         text:
@@ -215,7 +215,7 @@ export async function POST(req: Request) {
           dashboardUrl,
         }),
       });
-      if (emailResult.sent) {
+      if (emailResult.queued) {
         await updateTenantRows(
           "access_requests",
           { owner_notified_at: new Date().toISOString(), notification_error: null },

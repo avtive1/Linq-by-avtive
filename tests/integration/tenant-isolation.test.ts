@@ -15,7 +15,11 @@ import {
 import { runWithTenantContextAsync } from "@/lib/tenant/context";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
 
-const hasDatabase = Boolean(process.env.DATABASE_URL?.trim());
+// Integration tests create and delete rows in the configured database. Require
+// an explicit opt-in so `npm test` cannot touch a developer or production DB.
+const hasDatabase =
+  process.env.RUN_DB_INTEGRATION_TESTS === "true" &&
+  Boolean(process.env.DATABASE_URL?.trim());
 
 function uuid() {
   return crypto.randomUUID();
