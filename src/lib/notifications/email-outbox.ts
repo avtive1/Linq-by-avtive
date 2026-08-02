@@ -49,12 +49,12 @@ export async function enqueueBrandedTransactionalEmail(
         try {
           const result = await processEmailOutboxMessage(id);
           if (result.failed > 0) {
-            logger.warn({ emailId: id, outbox: result }, "Immediate email delivery failed; Cron will retry");
+            logger.warn({ emailId: id, outbox: result }, "Immediate email delivery failed; message remains in the outbox");
           }
         } catch (error: unknown) {
           logger.error(
             { emailId: id, err: error instanceof Error ? error : undefined },
-            "Immediate email delivery crashed; Cron will retry",
+            "Immediate email delivery crashed; message remains in the outbox",
           );
         }
       });
