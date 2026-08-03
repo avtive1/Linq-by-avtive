@@ -1,8 +1,11 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
-import { Button } from "@/components/ui";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import { CardPreview } from "@/components/CardPreview";
 import { CardArtboardScaler } from "@/components/CardArtboardScaler";
 import { CARD_ARTBOARD_HORIZONTAL, CARD_ARTBOARD_VERTICAL } from "@/lib/card-preview-scale";
@@ -281,57 +284,59 @@ export default function CardView({
                 </div>
              ) : (
                 <div className="flex items-center gap-3">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       router.push(backHref);
                       router.refresh();
                     }}
-                    className="inline-flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md group py-1 cursor-pointer bg-transparent border-none text-left"
+                    className="gap-2.5 px-0 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 group cursor-pointer bg-transparent"
                   >
                     <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
                     Back
-                  </button>
+                  </Button>
                 </div>
              )}
 
              {/* View toggles: badge/print must work even without LinkedIn (QR back may be empty). */}
-             <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20 gap-1">
-                <button
+             <Card className="flex flex-row bg-white/10 p-1 rounded-md w-fit border-white/20 gap-1 shadow-none">
+                <Button
                   type="button"
+                  variant={viewMode === "horizontal" ? "default" : "ghost"}
                   onClick={() => changeViewMode("horizontal")}
-                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "horizontal" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] ${viewMode === "horizontal" ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant={viewMode === "vertical" ? "default" : "ghost"}
                   onClick={() => changeViewMode("vertical")}
-                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${viewMode === "vertical" ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] ${viewMode === "vertical" ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
-                </button>
-             </div>
+                </Button>
+             </Card>
           </div>
 
           <div className="flex items-center gap-3">
             {isShareMode && shareToken && (
-              <Button
+              <Link
                 href={`/cards/${card.id}/edit?share=true&token=${encodeURIComponent(shareToken)}`}
-                variant="secondary"
-                className="shadow-lg flex-1 md:flex-initial min-w-[116px]"
+                className={buttonVariants({ variant: "secondary", className: "shadow-lg flex-1 md:flex-initial min-w-[116px]" })}
               >
                 Edit
-              </Button>
+              </Link>
             )}
             {viewMode === "horizontal" && (
               <Button
                 onClick={handleShareLinkedIn}
                 disabled={isDownloading}
-                variant="blue"
-                icon={<Share2 size={16} />}
                 className="shadow-lg flex-1 md:flex-initial min-w-[116px]"
               >
+                <Share2 size={16} />
                 Share
               </Button>
             )}
@@ -341,28 +346,31 @@ export default function CardView({
                   onClick={() => setShowBadgeDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   variant="secondary"
-                  icon={<Download size={18} />}
                   className="shadow-lg flex-1 md:flex-initial min-w-[132px]"
                 >
+                  <Download size={18} />
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>
                 {showBadgeDownloadMenu && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-md border border-border/70 bg-white shadow-xl z-50 overflow-hidden">
-                    <button
+                  <Card className="absolute right-0 mt-2 w-52 rounded-md border-border/70 bg-white p-1 shadow-xl z-50 overflow-hidden">
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={handleDownloadBadgePdf}
-                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors"
+                      className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
                       Download as PDF
-                    </button>
-                    <button
+                    </Button>
+                    <Separator className="bg-border/60" />
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={handleDownloadBadgeZip}
-                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors border-t border-border/60"
+                      className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
                       Download as ZIP
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 )}
               </div>
             ) : (
@@ -370,31 +378,34 @@ export default function CardView({
                 <Button
                   onClick={() => setShowPostDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
-                  icon={<Download size={18} />}
                   className="shadow-lg shadow-black/10 flex-1 md:flex-initial min-w-[132px]"
                 >
+                  <Download size={18} />
                   {isDownloading ? "Preparing…" : "Download"}
                 </Button>
                 {showPostDownloadMenu && (
-                  <div className="absolute right-0 mt-2 w-52 rounded-md border border-border/70 bg-white shadow-xl z-50 overflow-hidden">
-                    <button
+                  <Card className="absolute right-0 mt-2 w-52 rounded-md border-border/70 bg-white p-1 shadow-xl z-50 overflow-hidden">
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={handleDownloadPostPdf}
-                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors"
+                      className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
                       Download as PDF
-                    </button>
-                    <button
+                    </Button>
+                    <Separator className="bg-border/60" />
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={() => {
                         setShowPostDownloadMenu(false);
                         void handleDownload();
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm text-heading hover:bg-slate-50 transition-colors border-t border-border/60"
+                      className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
                       Download as Image
-                    </button>
-                  </div>
+                    </Button>
+                  </Card>
                 )}
               </div>
             )}
@@ -447,22 +458,24 @@ export default function CardView({
             </CardArtboardScaler>
           ) : (
             <>
-              <div className="flex bg-white/10 p-1 rounded-md w-fit border border-white/20 gap-1">
-                <button
+              <Card className="flex flex-row bg-white/10 p-1 rounded-md w-fit border-white/20 gap-1 shadow-none">
+                <Button
                   type="button"
+                  variant={badgeSide === 1 ? "default" : "ghost"}
                   onClick={() => setBadgeSide(1)}
-                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${badgeSide === 1 ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] ${badgeSide === 1 ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Front
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant={badgeSide === 2 ? "default" : "ghost"}
                   onClick={() => setBadgeSide(2)}
-                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.97] ${badgeSide === 2 ? "bg-primary text-primary-foreground shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] ${badgeSide === 2 ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Back
-                </button>
-              </div>
+                </Button>
+              </Card>
               <CardArtboardScaler
                 artboardWidth={CARD_ARTBOARD_VERTICAL.width}
                 artboardHeight={CARD_ARTBOARD_VERTICAL.height}

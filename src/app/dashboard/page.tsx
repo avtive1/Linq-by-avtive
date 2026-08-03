@@ -1572,7 +1572,7 @@ function DashboardContent() {
         {/* Search Bar + Filters */}
         <motion.div className="flex min-w-0 flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
           <InputGroup
-            className={`h-12 min-h-12 w-full min-w-0 flex-1 rounded-md px-5 shadow-sm transition-all sm:h-14 sm:min-h-14 sm:px-7 ${
+            className={`h-12 min-h-12 w-full min-w-0 flex-1 rounded-md px-4 shadow-sm transition-all sm:h-14 sm:min-h-14 sm:px-5 ${
               isPreviewMode
                 ? "border-heading/20 bg-white/90 focus-within:bg-white"
                 : isTeamMemberMode || isOrgAdminMode
@@ -1588,7 +1588,7 @@ function DashboardContent() {
               name="campaignSearch"
               type="text"
               placeholder={isTeamMemberMode ? "Search assigned campaigns..." : "Search campaigns..."}
-              className="min-w-0 flex-1 py-[0.65rem] pr-0 text-[17px] leading-[1.6] text-heading placeholder:text-muted/55 placeholder:opacity-90 sm:h-full sm:min-h-0 sm:py-0"
+              className="min-w-0 flex-1 py-[0.65rem] pr-0 text-[16px] leading-[1.6] text-heading placeholder:text-muted/55 placeholder:opacity-90 sm:h-full sm:min-h-0 sm:py-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -1596,8 +1596,11 @@ function DashboardContent() {
           <div className="relative w-full min-w-0 self-stretch sm:w-auto sm:self-auto">
             <ShadButton
               type="button"
+              variant="outline"
+              size="lg"
               onClick={() => setIsEventFilterOpen((prev) => !prev)}
-              className={`h-12 min-h-12 w-full rounded-md border px-7 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:min-h-14 sm:w-auto ${
+              aria-expanded={isEventFilterOpen}
+              className={`h-12 min-h-12 w-full rounded-md px-7 shadow-sm text-base font-semibold transition-all duration-150 sm:h-14 sm:min-h-14 sm:w-auto ${
                 isEventFilterOpen
                   ? "bg-primary/10 border-primary/30 text-primary-strong"
                   : "bg-white/92 border-primary/20 text-heading hover:bg-white hover:border-primary/30"
@@ -1621,10 +1624,10 @@ function DashboardContent() {
                         <ShadButton
                           key={opt.id}
                           type="button"
-                          variant="outline"
+                          variant={eventStatusFilter === opt.id ? "secondary" : "outline"}
                           size="xs"
                           onClick={() => setEventStatusFilter(opt.id as "all" | "upcoming" | "ongoing" | "past")}
-                          className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                             eventStatusFilter === opt.id
                               ? "bg-primary/10 border-primary/30 text-primary-strong"
                               : "bg-white border-border/70 text-heading hover:border-primary/30"
@@ -1635,6 +1638,7 @@ function DashboardContent() {
                       ))}
                     </div>
                   </div>
+                  <Separator className="bg-border/50" />
                   <div className="flex flex-col gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">Campaign mode</p>
                     <div className="flex flex-wrap gap-2">
@@ -1646,10 +1650,10 @@ function DashboardContent() {
                         <ShadButton
                           key={opt.id}
                           type="button"
-                          variant="outline"
+                          variant={eventLocationFilter === opt.id ? "secondary" : "outline"}
                           size="xs"
                           onClick={() => setEventLocationFilter(opt.id as "all" | "onsite" | "webinar")}
-                          className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
                             eventLocationFilter === opt.id
                               ? "bg-primary/10 border-primary/30 text-primary-strong"
                               : "bg-white border-border/70 text-heading hover:border-primary/30"
@@ -1968,13 +1972,13 @@ function DashboardContent() {
       {/* Event Creation Modal */}
       <Dialog open={isEventModalOpen && !isPreviewMode} onOpenChange={(open) => !open && setIsEventModalOpen(false)}>
           <DialogContent showCloseButton={false} className="w-full max-w-[480px] max-h-[92dvh] min-h-0 flex flex-col glass-panel bg-white border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-8 pt-6 pb-3 flex-row items-center justify-between border-b border-border/50 shrink-0">
+            <DialogHeader className="px-8 pt-6 pb-3 flex-row items-start justify-between border-b border-border/50 shrink-0">
               <div className="flex flex-col gap-1">
                 <DialogTitle className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Create New Campaign</DialogTitle>
                 <DialogDescription className="text-[13px] text-muted">Add details for your upcoming campaign.</DialogDescription>
               </div>
-              <ShadButton type="button" variant="ghost" size="icon-sm" onClick={() => setIsEventModalOpen(false)} className="text-muted hover:text-heading">
-                <X size={20}/>
+              <ShadButton type="button" variant="ghost" size="icon-sm" onClick={() => setIsEventModalOpen(false)} className="h-9 w-9 text-muted hover:text-heading">
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
 
@@ -2107,7 +2111,7 @@ function DashboardContent() {
 
       <Dialog open={isUsernameModalOpen && !isPreviewMode} onOpenChange={(open) => !open && !isSavingUsername && !isSavingPassword && setIsUsernameModalOpen(false)}>
           <DialogContent showCloseButton={false} className="w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white/90 border border-border/70 rounded-md p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-8 pt-8 pb-4 flex-row items-center justify-between shrink-0">
+            <DialogHeader className="px-8 pt-8 pb-4 flex-row items-start justify-between shrink-0">
               <div className="flex flex-col gap-1">
                 <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Account Settings</DialogTitle>
                 <DialogDescription className="text-sm text-muted">Manage your profile, organization, and security preferences.</DialogDescription>
@@ -2115,13 +2119,13 @@ function DashboardContent() {
               <ShadButton
                 type="button"
                 variant="outline"
-                size="icon-lg"
+                size="icon-sm"
                 onClick={() => {
                   if (!isSavingUsername && !isSavingPassword) setIsUsernameModalOpen(false);
                 }}
-                className="w-12 h-12 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
-                <X size={20} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <div className="flex-1 min-h-0 overflow-y-auto p-8 pt-4 flex flex-col gap-8">
@@ -2335,7 +2339,7 @@ function DashboardContent() {
 
       <Dialog open={isTeamModalOpen && !isPreviewMode} onOpenChange={(open) => !open && !isSubmittingTeamInvite && setIsTeamModalOpen(false)}>
           <DialogContent showCloseButton={false} className="w-full max-w-[660px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="flex shrink-0 flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
+            <DialogHeader className="flex shrink-0 flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
               <div className="flex flex-col gap-1">
                 <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {teamModalView === "list" && "Organization Team"}
@@ -2351,12 +2355,12 @@ function DashboardContent() {
               <ShadButton
                 type="button"
                 variant="outline"
-                size="icon-lg"
+                size="icon-sm"
                 onClick={() => setIsTeamModalOpen(false)}
-                className="w-12 h-12 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
                 aria-label="Close modal"
               >
-                <X size={20} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
 
@@ -2386,15 +2390,15 @@ function DashboardContent() {
                       </Card>
                     ) : (
                       teamMembers.map((m) => (
-                        <Card 
-                          key={m.id} 
-                          className="group w-full flex items-center justify-between px-4 py-4 bg-white/60 border border-border/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
+                        <Card
+                          key={m.id}
+                          className="group w-full flex-row items-center justify-between gap-4 px-4 py-4 bg-white/60 border border-border/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
                         >
-                          <div className="flex items-center gap-4 min-w-0">
+                          <div className="flex min-w-0 flex-1 items-center gap-4">
                             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm border border-primary/20 shrink-0">
                               {m.member_email.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex flex-col gap-2 min-w-0">
+                            <div className="flex min-w-0 flex-1 flex-col gap-2">
                               <span className="text-base font-semibold text-heading truncate leading-[1.4]">{m.member_email}</span>
                               <Badge variant="outline" className="text-[15px] leading-tight text-muted font-semibold bg-surface/55 w-fit px-3.5 py-1.5 rounded-md border-border/35">
                                 {m.role_label}
@@ -2409,7 +2413,7 @@ function DashboardContent() {
                               onClick={() => {
                                 void openTeamMemberEdit(m);
                               }}
-                              className="transition-all shadow-sm border-primary/20 text-primary-strong"
+                              className="shrink-0 transition-all shadow-sm border-primary/20 text-primary-strong"
                             >
                               <Pencil size={14} />
                               Edit Access
@@ -2566,13 +2570,13 @@ function DashboardContent() {
       {/* Request Permission Modal */}
       <Dialog open={isRequestPermissionModalOpen} onOpenChange={(open) => !open && setIsRequestPermissionModalOpen(false)}>
           <DialogContent showCloseButton={false} className="bg-white/95 border border-border/40 w-full max-w-[500px] max-h-[92dvh] flex flex-col rounded-md p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 py-5 border-b border-border/10 flex-row items-center justify-between bg-primary/2 shrink-0">
+            <DialogHeader className="px-6 py-5 border-b border-border/10 flex-row items-start justify-between bg-primary/2 shrink-0">
               <div className="flex items-center gap-2">
                 <AlertCircle className="text-danger" size={20} />
                 <DialogTitle className="text-xl font-semibold text-heading tracking-tight">Request Creation Access</DialogTitle>
               </div>
-              <ShadButton type="button" variant="ghost" size="icon-sm" onClick={() => setIsRequestPermissionModalOpen(false)} className="text-muted hover:text-heading">
-                <X size={20} />
+              <ShadButton type="button" variant="ghost" size="icon-sm" onClick={() => setIsRequestPermissionModalOpen(false)} className="h-9 w-9 text-muted hover:text-heading">
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             

@@ -1,10 +1,18 @@
 "use client";
 import { useState, useEffect, Suspense, useRef } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker, Skeleton } from "@/components/ui";
+import { FilePicker } from "@/components/ui";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 
-import { Clock, Lock, XCircle, CheckCircle2 } from "lucide-react";
+import { AlertCircle, Clock, Lock, XCircle, CheckCircle2 } from "lucide-react";
 import { useRegistrationStatusStream } from "@/lib/ui/useRegistrationRealtime";
 import { HorizontalPreviewScaler } from "@/components/HorizontalPreviewScaler";
 import { VerticalPreviewScaler } from "@/components/VerticalPreviewScaler";
@@ -40,6 +48,54 @@ function getPayloadError(payload: unknown, fallback: string): string {
     if (typeof value === "string" && value.trim()) return value.trim();
   }
   return fallback;
+}
+
+function RegistrationInputField({
+  id,
+  label,
+  required,
+  type = "text",
+  placeholder,
+  value,
+  error,
+  maxLength,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  error?: string;
+  maxLength?: number;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>
+        {label}
+        {required ? <span className="text-primary-strong"> *</span> : null}
+      </Label>
+      <Input
+        id={id}
+        required={required}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        maxLength={maxLength}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${id}-error` : undefined}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error ? (
+        <Alert id={`${id}-error`} variant="destructive" className="px-3 py-2">
+          <AlertCircle aria-hidden="true" />
+          <AlertDescription className="text-xs">{error}</AlertDescription>
+        </Alert>
+      ) : null}
+    </div>
+  );
 }
 
 function NewCardForm() {
@@ -469,15 +525,15 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
+        <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm">
           <p className="text-heading font-semibold">Invalid registration link</p>
           <p className="text-sm text-muted">
             This page can only be opened from an event registration link provided by your organizer.
           </p>
-          <Button href="/" variant="secondary" className="mt-2">
+          <Link href="/" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
             Back to home
-          </Button>
-        </div>
+          </Link>
+        </Card>
       </main>
     );
   }
@@ -486,7 +542,7 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-primary/20">
+        <Card className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border-primary/20">
           <div className="w-16 h-16 rounded-md bg-primary/10 flex items-center justify-center text-primary-strong">
             <Clock size={32} />
           </div>
@@ -497,11 +553,11 @@ function NewCardForm() {
               We will email you when your registration is reviewed.
             </p>
           </div>
-          <div className="w-full h-px bg-border/50" />
+          <Separator className="bg-border/50" />
           <p className="text-xs text-muted/70">
             Event: <span className="font-medium text-heading">{form.eventName || "Your event"}</span>
           </p>
-        </div>
+        </Card>
       </main>
     );
   }
@@ -510,7 +566,7 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-red-200/60">
+        <Card className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border-red-200/60">
           <div className="w-16 h-16 rounded-md bg-red-50 flex items-center justify-center text-red-600">
             <XCircle size={32} />
           </div>
@@ -525,10 +581,10 @@ function NewCardForm() {
               </p>
             ) : null}
           </div>
-          <Button href="/" variant="secondary" fullWidth className="mt-2 w-full">
+          <Link href="/" className={buttonVariants({ variant: "secondary", className: "mt-2 w-full" })}>
             Back to Home
-          </Button>
-        </div>
+          </Link>
+        </Card>
       </main>
     );
   }
@@ -537,12 +593,12 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-emerald-200/60">
+        <Card className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border-emerald-200/60">
           <div className="w-16 h-16 rounded-md bg-emerald-50 flex items-center justify-center text-emerald-600">
             <CheckCircle2 size={32} />
           </div>
           <p className="text-sm text-muted">Your registration was approved. Loading your card...</p>
-        </div>
+        </Card>
       </main>
     );
   }
@@ -551,7 +607,7 @@ function NewCardForm() {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border border-amber-500/20">
+        <Card className="relative z-10 flex flex-col items-center gap-6 glass-panel p-12 rounded-xl shadow-2xl max-w-md border-amber-500/20">
           <div className="w-16 h-16 rounded-md bg-amber-500/10 flex items-center justify-center text-amber-600">
             <Lock size={32} />
           </div>
@@ -561,14 +617,14 @@ function NewCardForm() {
               We&apos;re sorry, but the registration for <span className="font-medium text-heading">{form.eventName}</span> has ended as the event date has passed.
             </p>
           </div>
-          <div className="w-full h-px bg-border/50" />
+          <Separator className="bg-border/50" />
           <p className="text-xs text-muted/60 font-medium italic">
             If you are the organizer, please renew the event in your dashboard to reactivate registration.
           </p>
-          <Button href="/" variant="secondary" fullWidth className="mt-2 w-full">
+          <Link href="/" className={buttonVariants({ variant: "secondary", className: "mt-2 w-full" })}>
             Back to Home
-          </Button>
-        </div>
+          </Link>
+        </Card>
       </main>
     );
   }
@@ -580,7 +636,7 @@ function NewCardForm() {
       <GradientBackground />
 
       {/* Left Sidebar - Form */}
-      <div className="relative z-10 flex w-full flex-col animate-slide-up lg:h-dvh lg:max-h-dvh lg:w-[460px] glass-panel border-r-border/30">
+      <Card className="relative z-10 flex w-full flex-col gap-0 animate-slide-up lg:h-dvh lg:max-h-dvh lg:w-[460px] glass-panel rounded-none border-y-0 border-l-0 border-r-border/30 p-0">
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="flex-1 overflow-y-auto p-8 md:p-10">
             <div className="flex items-center gap-4 mb-5">
@@ -606,24 +662,25 @@ function NewCardForm() {
               </div>
 
               {eventLoading && (
-                <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+                <Alert className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border-primary/30 px-3 py-2">
                   <Lock size={14} />
-                  Loading event details...
-                </div>
+                  <AlertDescription className="text-xs text-primary-strong">Loading event details...</AlertDescription>
+                </Alert>
               )}
               {!eventLoading && (
-                <div className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+                <Alert className="flex items-center gap-2 text-xs font-medium text-primary-strong bg-primary/10 border-primary/30 px-3 py-2">
                   <Lock size={12} />
-                  Event details are pre-filled from the organizer.
-                </div>
+                  <AlertDescription className="text-xs text-primary-strong">Event details are pre-filled from the organizer.</AlertDescription>
+                </Alert>
               )}
 
               <div className="flex flex-col gap-8">
             {enabledFields.map((field) => {
               if (field.id === "name") {
                 return (
-                  <TextInput
+                  <RegistrationInputField
                     key={field.id}
+                    id="registration-name"
                     label={field.label}
                     required
                     placeholder={field.placeholder || "Full Name"}
@@ -636,8 +693,9 @@ function NewCardForm() {
               }
               if (field.id === "role") {
                 return (
-                  <TextInput
+                  <RegistrationInputField
                     key={field.id}
+                    id="registration-role"
                     label={field.label}
                     required
                     placeholder={field.placeholder || "Designation"}
@@ -650,8 +708,9 @@ function NewCardForm() {
               }
               if (field.id === "company") {
                 return (
-                  <TextInput
+                  <RegistrationInputField
                     key={field.id}
+                    id="registration-company"
                     label={field.label}
                     required={true}
                     placeholder={field.placeholder || "Organization"}
@@ -664,12 +723,12 @@ function NewCardForm() {
               }
               if (field.id === "email") {
                 return (
-                  <TextInput
+                  <RegistrationInputField
                     key={field.id}
+                    id="registration-email"
                     label={field.label}
                     required={true}
                     type="email"
-                    icon="email"
                     placeholder={field.placeholder || "hello@example.com"}
                     value={form.email}
                     error={errors.email}
@@ -679,8 +738,9 @@ function NewCardForm() {
               }
               if (field.id === "linkedin") {
                 return (
-                  <TextInput
+                  <RegistrationInputField
                     key={field.id}
+                    id="registration-linkedin"
                     label={field.label}
                     required={field.required}
                     type="text"
@@ -710,8 +770,9 @@ function NewCardForm() {
                 );
               }
               return (
-                <TextInput
+                <RegistrationInputField
                   key={field.id}
+                  id={`registration-custom-${field.id}`}
                   label={field.label}
                   required={field.required}
                   type={field.inputType}
@@ -727,12 +788,12 @@ function NewCardForm() {
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-border/40 bg-white/95 px-8 py-4 md:px-10">
+          <Separator className="bg-border/40" />
+          <div className="shrink-0 bg-white/95 px-8 py-4 md:px-10">
             <Button
               type="submit"
-              fullWidth
               disabled={loading}
-              className="rounded-md"
+              className="w-full rounded-md"
             >
               {loading
                 ? form.cardRole === "guest"
@@ -744,7 +805,7 @@ function NewCardForm() {
             </Button>
           </div>
         </form>
-      </div>
+      </Card>
 
       <div 
         style={{ 
@@ -808,11 +869,11 @@ function NewCardForm() {
                </Button>
              </div>
           </div>
-        <div className="w-full max-w-[1040px] mt-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
+        <Card className="w-full max-w-[1040px] mt-8 animate-slide-up bg-white/45 border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
           <p className="text-sm text-muted text-center lg:text-left">
             Card branding is managed by the event organization. You can edit attendee details and preview the finalized event design.
           </p>
-        </div>
+        </Card>
 
 
         {/* Print Preview Overlay */}

@@ -1,7 +1,9 @@
-import { Button } from "@/components/ui";
+import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { Info } from "lucide-react";
 import CardView from "./CardView";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { CardData } from "@/types/card";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { Metadata } from "next";
@@ -96,11 +98,11 @@ export default async function CardViewPage(props: {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
+        <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
           <div className="flex flex-col gap-1">
             <p className="text-heading font-semibold">Invalid card link</p>
           </div>
-        </div>
+        </Card>
       </main>
     );
   }
@@ -134,7 +136,7 @@ export default async function CardViewPage(props: {
       return (
         <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
           <GradientBackground />
-          <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
+          <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
             <div className="w-12 h-12 rounded-md bg-surface flex items-center justify-center text-muted">
               <Info size={24} />
             </div>
@@ -142,10 +144,10 @@ export default async function CardViewPage(props: {
               <p className="text-heading font-semibold">Access denied</p>
               <p className="text-sm text-muted">Sign in or use a valid secure card link.</p>
             </div>
-            <Button href="/login" variant="secondary" className="mt-2">
+            <Link href="/login" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
               Go to Login
-            </Button>
-          </div>
+            </Link>
+          </Card>
         </main>
       );
     }
@@ -313,7 +315,7 @@ export default async function CardViewPage(props: {
     return (
       <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
         <GradientBackground />
-        <div className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
+        <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
           <div className="w-12 h-12 rounded-md bg-surface flex items-center justify-center text-muted">
             <Info size={24} />
           </div>
@@ -324,11 +326,11 @@ export default async function CardViewPage(props: {
             </p>
           </div>
           {!isShareMode && (
-            <Button href="/dashboard" variant="secondary" className="mt-2">
+            <Link href="/dashboard" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
               Back to Dashboard
-            </Button>
+            </Link>
           )}
-        </div>
+        </Card>
       </main>
     );
   }

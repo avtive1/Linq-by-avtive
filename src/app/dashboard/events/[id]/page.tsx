@@ -6,15 +6,17 @@ import { authClient } from "@/lib/auth/client";
 import { useInternalUserId } from "@/lib/auth/use-internal-user-id";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, TextArea, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
+import { Button, TextInput, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button as ShadButton, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -56,6 +58,7 @@ import {
   Lock,
   SlidersHorizontal,
   MoreVertical,
+  AlertCircle,
 } from "lucide-react";
 
 import { CardData, EventData } from "@/types/card";
@@ -80,7 +83,6 @@ import {
   dashboardPreviewBannerOuter,
   dashboardPreviewBannerInner,
   dashboardModalBackdrop,
-  dashboardModalBackdropTop,
 } from "@/lib/ui/dashboard-shell";
 import { CardPreview } from "@/components/CardPreview";
 import { BrandingDualPreview } from "@/components/BrandingDualPreview";
@@ -2308,7 +2310,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 {...staggerItem(idx, 0.04, 0.24, 14, 0.28)}
                 {...hoverLift(-2, 1.004)}
                 >
-                  <Card className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-md  ${
+                  <Card className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 overflow-visible p-5 sm:p-6 rounded-md  ${
                   isPreviewMode
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
                     : isTeamMemberEventMode || isOrgAdminEventMode
@@ -2485,7 +2487,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <Dialog open={isAccessRequestOpen} onOpenChange={(open) => !open && !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}>
         <DialogContent showCloseButton={false} className="w-full max-w-[440px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-start justify-between">
               <div>
                 <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Take Access</DialogTitle>
                 <DialogDescription className="text-sm text-muted">Request approval from organization admin to perform restricted actions.</DialogDescription>
@@ -2497,7 +2499,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <form
@@ -2549,7 +2551,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <Dialog open={Boolean(attendanceModalCardId)} onOpenChange={(open) => !open && closeAttendanceModal()}>
           <DialogContent showCloseButton={false} className="w-full max-w-[420px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-start justify-between">
               <div>
                 <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   Mark attended
@@ -2565,7 +2567,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={closeAttendanceModal}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <div className="px-6 pb-6 flex flex-col gap-4">
@@ -2596,7 +2598,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <Dialog open={isEmailModalOpen && Boolean(emailModalAttendee)} onOpenChange={(open) => !open && !isSendingEmail && setIsEmailModalOpen(false)}>
           <DialogContent showCloseButton={false} className="w-full max-w-[480px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-start justify-between">
               <div>
                 <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   Send Custom Email
@@ -2612,7 +2614,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={() => !isSendingEmail && setIsEmailModalOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <form
@@ -2671,7 +2673,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         }
       }}>
           <DialogContent showCloseButton={false} className="w-full max-w-[720px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-start justify-between">
               <div>
                 <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   Pending Registration Requests
@@ -2689,7 +2691,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
@@ -2780,7 +2782,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             onClick={() => setIsAccessInboxOpen(false)}
           />
           <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+            <div className="px-6 pt-6 pb-3 flex items-start justify-between">
               <div>
                 <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Pending Access Requests</h3>
                 <p className="text-sm text-muted">Approve or reject member access for this campaign.</p>
@@ -2790,7 +2792,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={() => setIsAccessInboxOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
             <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
@@ -2820,7 +2822,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
       <Dialog open={isAccessControlOpen} onOpenChange={(open) => !open && setIsAccessControlOpen(false)}>
           <DialogContent showCloseButton={false} className="w-full max-w-[620px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-start justify-between">
               <div>
                 <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Active Access Grants</DialogTitle>
                 <DialogDescription className="text-sm text-muted">Revoke member permissions synced to this organization.</DialogDescription>
@@ -2832,7 +2834,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 onClick={() => setIsAccessControlOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
@@ -2876,9 +2878,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       </Dialog>
 
       <Dialog open={isBrandingOpen} onOpenChange={(open) => !open && !isSavingBranding && setIsBrandingOpen(false)}>
-        <DialogContent showCloseButton={false} className="z-100 flex h-dvh max-h-dvh w-full max-w-none -translate-x-1/2 -translate-y-1/2 flex-col rounded-none border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-none">
+        <DialogContent showCloseButton={false} className="z-100 flex h-dvh max-h-dvh w-full max-w-none -translate-x-1/2 -translate-y-1/2 flex-col gap-0 rounded-none border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-none">
           <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1540px] flex-1 flex-col px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:py-4">
-            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-border/40 bg-white/90 p-0 shadow-2xl backdrop-blur-sm">
+            <Card className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden rounded-xl border-border/40 bg-white/90 p-0 shadow-2xl backdrop-blur-sm">
               <DialogHeader className="flex min-w-0 shrink-0 flex-row flex-wrap items-start justify-between gap-4 px-5 pb-4 pt-6 sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
                 <div>
                   <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Card Branding</DialogTitle>
@@ -2887,19 +2889,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <ShadButton
                   type="button"
                   variant="outline"
-                  size="icon"
+                  size="icon-sm"
                   onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
                   disabled={isSavingBranding}
-                  className="w-12 h-12 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                  className="w-9 h-9 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
                 >
-                  <X size={20} />
+                  <X size={16} />
                 </ShadButton>
               </DialogHeader>
               <Separator className="bg-border/40" />
 
               <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
-                <div className="relative min-h-0 min-w-0 overflow-hidden">
-                  <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden px-2 py-2 sm:px-4 sm:py-3">
+                <div className="relative min-h-[48dvh] min-w-0 overflow-hidden sm:min-h-[54dvh] lg:min-h-[58dvh]">
+                  <div className="absolute inset-0 min-h-0 min-w-0 overflow-hidden px-1 py-1 sm:px-2 sm:py-2">
                     <BrandingDualPreview
                       socialPreview={<CardPreview data={brandingPreviewData} preview />}
                       badgePreview={
@@ -3117,30 +3119,27 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </DialogContent>
       </Dialog>
 
-      {isRegistrationFormOpen && (
-        <div className={dashboardModalBackdropTop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSavingRegistrationForm && setIsRegistrationFormOpen(false)}
-          />
-          <div className="relative my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[780px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel sm:max-h-[calc(100dvh-4rem)]">
-            <div className="flex shrink-0 items-start justify-between border-b border-border/40 bg-white/70 px-6 py-5 sm:px-8 sm:pt-7">
+      <Dialog open={isRegistrationFormOpen} onOpenChange={(open) => !open && !isSavingRegistrationForm && setIsRegistrationFormOpen(false)}>
+          <DialogContent showCloseButton={false} className="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[780px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 p-0 shadow-2xl glass-panel sm:max-h-[calc(100dvh-4rem)]">
+            <DialogHeader className="flex shrink-0 flex-row items-start justify-between border-b border-border/40 bg-white/70 px-6 py-5 sm:px-8 sm:pt-7">
               <div className="min-w-0 pr-4">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {formBuilderRole === "guest" ? "Guest Form Preview" : "Visitor Form Preview"}
-                </h2>
-                <p className="text-sm text-muted mt-1.5">
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted mt-1.5">
                   Review the live form and manage custom fields in one place.
-                </p>
+                </DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => setIsRegistrationFormOpen(false)}
-                className="w-12 h-12 shrink-0 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
+                className="w-9 h-9 shrink-0 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
-                <X size={20} />
-              </button>
-            </div>
+                <X size={16} />
+              </ShadButton>
+            </DialogHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto bg-white/40 px-6 py-5 sm:px-8 sm:py-6">
               <div className="flex flex-col gap-4">
@@ -3148,64 +3147,69 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   const isCustomField = !CORE_PREVIEW_FIELD_IDS.has(field.id);
                   if (!isCustomField) {
                     return (
-                      <TextInput
-                        key={`builder-preview-${formBuilderRole}-${field.id}`}
-                        label={field.label}
-                        required={field.required}
-                        type={field.id === "email" ? "email" : field.inputType}
-                        placeholder={field.placeholder || field.label}
-                        value=""
-                        disabled
-                      />
+                      <div key={`builder-preview-${formBuilderRole}-${field.id}`} className="grid gap-2">
+                        <Label htmlFor={`builder-preview-${formBuilderRole}-${field.id}`}>
+                          {field.label}{field.required ? <span className="text-primary-strong"> *</span> : null}
+                        </Label>
+                        <Input
+                          id={`builder-preview-${formBuilderRole}-${field.id}`}
+                          required={field.required}
+                          type={field.id === "email" ? "email" : field.inputType}
+                          placeholder={field.placeholder || field.label}
+                          value=""
+                          disabled
+                        />
+                      </div>
                     );
                   }
                   return (
-                    <div key={`builder-preview-${formBuilderRole}-${field.id}`} className="rounded-md">
-                      <TextInput
-                        label={field.label}
-                        required={field.required}
-                        type={field.inputType}
-                        placeholder={field.placeholder || field.label}
-                        value=""
-                        disabled
-                      />
+                    <Card key={`builder-preview-${formBuilderRole}-${field.id}`} className="rounded-md border-border/50 bg-white/70 p-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`builder-preview-${formBuilderRole}-${field.id}`}>
+                          {field.label}{field.required ? <span className="text-primary-strong"> *</span> : null}
+                        </Label>
+                        <Input
+                          id={`builder-preview-${formBuilderRole}-${field.id}`}
+                          required={field.required}
+                          type={field.inputType}
+                          placeholder={field.placeholder || field.label}
+                          value=""
+                          disabled
+                        />
+                      </div>
                       <div className="mt-2.5 flex items-center justify-between gap-3">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            updateDraftFields(formBuilderRole, (fields) =>
-                              fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
-                            )
-                          }
-                          className="inline-flex items-center gap-2 px-0 py-0 text-sm font-semibold text-heading transition-colors"
-                          aria-pressed={field.required}
-                          aria-label={`${field.required ? "Set optional" : "Set required"} for ${field.label}`}
+                        <Label
+                          htmlFor={`builder-required-${formBuilderRole}-${field.id}`}
+                          className="inline-flex items-center gap-2 text-sm font-semibold text-heading transition-colors"
                         >
-                          <span
-                            className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
-                              field.required ? "bg-[#4FAE62]" : "bg-slate-300"
-                            }`}
-                          >
-                            <span
-                              className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                                field.required ? "translate-x-4" : "translate-x-0.5"
-                              }`}
-                            />
-                          </span>
+                          <Checkbox
+                            id={`builder-required-${formBuilderRole}-${field.id}`}
+                            checked={field.required}
+                            onCheckedChange={() =>
+                              updateDraftFields(formBuilderRole, (fields) =>
+                                fields.map((f) => (f.id === field.id ? { ...f, required: !f.required } : f)),
+                              )
+                            }
+                            aria-label={`${field.required ? "Set optional" : "Set required"} for ${field.label}`}
+                          />
                           <span className="min-w-[92px] text-sm font-medium leading-none text-[#2F4C97]">
                             {field.required ? "Required" : "Optional"}
                           </span>
-                        </button>
+                        </Label>
                         <div className="flex items-center gap-2">
-                          <button
+                          <ShadButton
                             type="button"
+                            variant="secondary"
+                            size="sm"
                             onClick={() => startEditCustomField(field)}
-                            className="px-3 py-1.5 text-xs rounded-[4px] border border-primary/30 text-primary-strong bg-primary/10 font-semibold hover:bg-primary/15 transition-colors"
+                            className="h-8 text-xs border-primary/30 text-primary-strong bg-primary/10 hover:bg-primary/15"
                           >
                             Edit
-                          </button>
-                          <button
+                          </ShadButton>
+                          <ShadButton
                             type="button"
+                            variant="secondary"
+                            size="sm"
                             onClick={() => {
                               if (editingCustomFieldId === field.id) {
                                 setEditingCustomFieldId(null);
@@ -3216,43 +3220,49 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                                 fields.filter((f) => f.id !== field.id),
                               );
                             }}
-                            className="px-3 py-1.5 text-xs rounded-[4px] border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                            className="h-8 text-xs border-red-200 text-red-600 bg-red-50 hover:bg-red-100"
                           >
                             Remove
-                          </button>
+                          </ShadButton>
                         </div>
                       </div>
-                    </div>
+                    </Card>
                   );
                 })}
               </div>
 
               <div className="pt-2">
-                <p className="text-sm font-semibold text-heading mb-3">
+                <Label className="text-sm font-semibold text-heading mb-3">
                   {editingCustomFieldId ? "Edit Custom Field" : "Add Custom Field"}
-                </p>
+                </Label>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <TextInput
-                    label="Field Label"
-                    placeholder="e.g. Website"
-                    value={newFieldLabel}
-                    onChange={setNewFieldLabel}
-                  />
-                  <Select
-                    label="Input Type"
-                    value={newFieldType}
-                    onChange={(value) => setNewFieldType(value as "text" | "number" | "url")}
-                    options={[
-                      { value: "text", label: "Text" },
-                      { value: "number", label: "Number" },
-                      { value: "url", label: "URL" },
-                    ]}
-                  />
+                  <div className="grid gap-2">
+                    <Label htmlFor="builder-new-field-label">Field Label</Label>
+                    <Input
+                      id="builder-new-field-label"
+                      placeholder="e.g. Website"
+                      value={newFieldLabel}
+                      onChange={(e) => setNewFieldLabel(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="builder-new-field-type">Input Type</Label>
+                    <ShadSelect value={newFieldType} onValueChange={(value) => setNewFieldType(value as "text" | "number" | "url")}>
+                      <SelectTrigger id="builder-new-field-type" className="h-11 w-full border-border/60 bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="url">URL</SelectItem>
+                      </SelectContent>
+                    </ShadSelect>
+                  </div>
                 </div>
                 <div className="mt-3 flex justify-end">
                   <div className="flex items-center gap-2">
                     {editingCustomFieldId && (
-                      <Button
+                      <ShadButton
                         variant="secondary"
                         size="sm"
                         onClick={() => {
@@ -3262,62 +3272,57 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         }}
                       >
                         Cancel Edit
-                      </Button>
+                      </ShadButton>
                     )}
-                    <Button variant="secondary" size="sm" onClick={addCustomFieldToDraft}>
+                    <ShadButton variant="secondary" size="sm" onClick={addCustomFieldToDraft}>
                       {editingCustomFieldId ? "Save Edit" : "Add Field"}
-                    </Button>
+                    </ShadButton>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="shrink-0 border-t border-border/40 bg-white/95 px-6 py-4 sm:px-8">
+            <Separator className="bg-border/40" />
+            <DialogFooter className="shrink-0 bg-white/95 px-6 py-4 sm:px-8">
               <div className="form-actions">
-                <Button
+                <ShadButton
                   variant="secondary"
-                  fullWidth
-                  className="order-2 sm:order-1"
+                  className="order-2 w-full sm:order-1"
                   disabled={isSavingRegistrationForm}
                   onClick={() => setIsRegistrationFormOpen(false)}
                 >
                   Cancel
-                </Button>
-                <Button
-                  fullWidth
-                  className="order-1 sm:order-2"
+                </ShadButton>
+                <ShadButton
+                  className="order-1 w-full sm:order-2"
                   disabled={isSavingRegistrationForm}
                   onClick={saveRegistrationFormConfig}
                 >
                   {isSavingRegistrationForm ? "Saving..." : "Save Form"}
-                </Button>
+                </ShadButton>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogFooter>
+          </DialogContent>
+      </Dialog>
 
-      {/* Sponsors modal */}
-      {isGuestCategoryOpen && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => setIsGuestCategoryOpen(false)}
-          />
-          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+      <Dialog open={isGuestCategoryOpen} onOpenChange={(open) => !open && setIsGuestCategoryOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-8 pt-8 pb-4 flex-row items-start justify-between">
               <div>
-                <h3 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Guest Category</h3>
-                <p className="text-base text-muted mt-1">Type category like Judge, Speaker, Chief Guest, Evaluator.</p>
+                <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Guest Category</DialogTitle>
+                <DialogDescription className="text-base text-muted mt-1">Type category like Judge, Speaker, Chief Guest, Evaluator.</DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => setIsGuestCategoryOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
-              </button>
-            </div>
+                <X size={16} />
+              </ShadButton>
+            </DialogHeader>
+            <Separator className="bg-border/40" />
             <form
               className="px-8 pb-8 flex flex-col gap-4"
               onSubmit={async (e) => {
@@ -3333,66 +3338,72 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 openShareActions(url, "guest");
               }}
             >
-              <TextInput
-                label="Guest Category"
-                required
-                placeholder="e.g. Judge"
-                value={guestCategoryInput}
-                maxLength={40}
-                onChange={(v) => {
-                  setGuestCategoryInput(v);
+              <div className="grid gap-2">
+                <Label htmlFor="event-guest-category">Guest Category <span className="text-primary-strong">*</span></Label>
+                <Input
+                  id="event-guest-category"
+                  required
+                  placeholder="e.g. Judge"
+                  value={guestCategoryInput}
+                  maxLength={40}
+                  aria-invalid={Boolean(guestCategoryError)}
+                  aria-describedby={guestCategoryError ? "event-guest-category-error" : undefined}
+                  onChange={(e) => {
+                  setGuestCategoryInput(e.target.value);
                   if (guestCategoryError) setGuestCategoryError("");
                 }}
-              />
-              {guestCategoryError && <p className="text-sm font-normal leading-[1.6] text-red-500">{guestCategoryError}</p>}
-              <div className="form-actions pt-2">
-                <Button type="button" variant="secondary" fullWidth className="order-2 sm:order-1" onClick={() => setIsGuestCategoryOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" fullWidth className="order-1 sm:order-2">
-                  Save
-                </Button>
+                />
               </div>
+              {guestCategoryError && (
+                <Alert id="event-guest-category-error" variant="destructive">
+                  <AlertCircle aria-hidden="true" />
+                  <AlertDescription>{guestCategoryError}</AlertDescription>
+                </Alert>
+              )}
+              <DialogFooter className="form-actions pt-2">
+                <ShadButton type="button" variant="secondary" className="order-2 w-full sm:order-1" onClick={() => setIsGuestCategoryOpen(false)}>
+                  Cancel
+                </ShadButton>
+                <ShadButton type="submit" className="order-1 w-full sm:order-2">
+                  Save
+                </ShadButton>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isShareActionsOpen && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => setIsShareActionsOpen(false)}
-          />
-          <div className="relative w-full max-w-[640px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+      <Dialog open={isShareActionsOpen} onOpenChange={(open) => !open && setIsShareActionsOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[640px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-8 pt-8 pb-4 flex-row items-start justify-between">
               <div>
-                <h3 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</h3>
-                <p className="text-base text-muted mt-1">
+                <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Share Registration</DialogTitle>
+                <DialogDescription className="text-base text-muted mt-1">
                   {shareDraftRole === "guest"
                     ? "Use this guest link directly."
                     : "Use the link directly or share on LinkedIn."}
-                </p>
+                </DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => setIsShareActionsOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
-                <X size={18} />
-              </button>
-            </div>
+                <X size={16} />
+              </ShadButton>
+            </DialogHeader>
+            <Separator className="bg-border/40" />
             <div className="px-8 pb-8 flex flex-col gap-4">
               {shareDraftRole === "visitor" && (
-                <div className="rounded-md border border-border/60 bg-surface/40 px-4 py-3">
+                <Card className="rounded-md border-border/60 bg-surface/40 px-4 py-3">
                   <p className="text-sm font-medium tracking-[0.01em] leading-tight text-muted mb-1.5">Default LinkedIn caption</p>
                   <p className="text-sm text-heading wrap-break-word">{shareDraftMessage}</p>
-                </div>
+                </Card>
               )}
               <div className={`grid gap-3 ${shareDraftRole === "visitor" ? "grid-cols-2" : "grid-cols-1"}`}>
-                <Button
+                <ShadButton
                   variant="secondary"
-                  icon={<LinkIcon size={16} />}
                   onClick={async () => {
                     try {
                       await navigator.clipboard.writeText(shareDraftUrl);
@@ -3402,10 +3413,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }
                   }}
                 >
+                  <LinkIcon size={16} />
                   Copy Link
-                </Button>
+                </ShadButton>
                 {shareDraftRole === "visitor" && (
-                  <Button
+                  <ShadButton
                     onClick={() => {
                       window.open(
                         buildLinkedInFeedShareUrl(shareDraftMessage),
@@ -3416,18 +3428,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }}
                   >
                     LinkedIn
-                  </Button>
+                  </ShadButton>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
       {/* Sponsors modal */}
       <Dialog open={isSponsorsOpen && Boolean(eventData)} onOpenChange={(open) => !open && !isSavingSponsors && setIsSponsorsOpen(false)}>
           <DialogContent showCloseButton={false} className="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[520px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 p-0 shadow-2xl glass-panel sm:max-h-[calc(100dvh-4rem)]">
-            <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-border/50 px-6 py-5">
+            <DialogHeader className="flex shrink-0 flex-row items-start justify-between border-b border-border/50 px-6 py-5">
               <div className="flex flex-col gap-1 pr-4">
                 <DialogTitle className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</DialogTitle>
                 <DialogDescription className="text-sm text-muted">
@@ -3439,9 +3450,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 variant="outline"
                 size="icon-sm"
                 onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
-                className="shrink-0 rounded-sm border border-border p-2 text-muted transition-colors hover:bg-surface hover:text-heading"
+                className="h-9 w-9 shrink-0 rounded-sm border border-border p-0 text-muted transition-colors hover:bg-surface hover:text-heading"
               >
-                <X size={20} />
+                <X size={16} />
               </ShadButton>
             </DialogHeader>
             <form onSubmit={handleSaveSponsors} className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -3478,39 +3489,40 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       </Dialog>
 
       {/* Edit Campaign Modal */}
-      {isEditOpen && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => setIsEditOpen(false)}
-          />
-          <div className="relative w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="px-8 pt-6 pb-3 flex items-center justify-between border-b border-border/50 shrink-0">
+      <Dialog open={isEditOpen} onOpenChange={(open) => !open && setIsEditOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-8 pt-6 pb-3 flex-row items-start justify-between shrink-0">
               <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Edit Campaign</h2>
-                <p className="text-[13px] text-muted">Update the campaign details below.</p>
+                <DialogTitle className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Edit Campaign</DialogTitle>
+                <DialogDescription className="text-[13px] text-muted">Update the campaign details below.</DialogDescription>
               </div>
-              <button
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => setIsEditOpen(false)}
                 className="shrink-0 w-9 h-9 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
-                <X size={18} />
-              </button>
-            </div>
+                <X size={16} />
+              </ShadButton>
+            </DialogHeader>
+            <Separator className="bg-border/50" />
 
             {/* Modal Body + Footer */}
             <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <TextInput
-                    label="Name of the Campaign"
-                    required
-                    value={editForm.name}
-                    maxLength={EVENT_NAME_MAX_CHARS}
-                    onChange={(v) => setEditForm({ ...editForm, name: v })}
-                  />
+                  <div className="grid gap-2">
+                    <Label htmlFor="event-edit-name">Name of the Campaign <span className="text-primary-strong">*</span></Label>
+                    <Input
+                      id="event-edit-name"
+                      required
+                      value={editForm.name}
+                      maxLength={EVENT_NAME_MAX_CHARS}
+                      onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    />
+                  </div>
                   <div className="flex justify-end">
                     <span className={`text-[11px] font-medium ${editForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"}`}>
                       {editForm.name.length}/{EVENT_NAME_MAX_CHARS} chars
@@ -3518,56 +3530,63 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                 </div>
 
-                <TextArea
-                  label="Campaign Description"
-                  placeholder="Describe your campaign (e.g. goals, audience)..."
-                  value={editForm.description}
-                  maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
-                  onChange={(v: string) => setEditForm({ ...editForm, description: v })}
-                />
+                <div className="grid gap-2">
+                  <Label htmlFor="event-edit-description">Campaign Description</Label>
+                  <ShadTextarea
+                    id="event-edit-description"
+                    placeholder="Describe your campaign (e.g. goals, audience)..."
+                    value={editForm.description}
+                    maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
+                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  />
+                </div>
                 
                 <div className="flex flex-col gap-2 w-full">
-                  <div className="flex items-center gap-1">
-                     <label className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location Type</label>
-                  </div>
-                  <div className="flex gap-4 mb-1">
-                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" id="event-edit-location-onsite" name="locationType" value="onsite" checked={editForm.location_type === "onsite"} onChange={() => setEditForm({ ...editForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                  <Label className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location Type</Label>
+                  <RadioGroup className="flex flex-row gap-4 mb-1" value={editForm.location_type} onValueChange={(value) => setEditForm({ ...editForm, location_type: value as "onsite" | "webinar", ...(value === "webinar" ? { location: "" } : {}) })}>
+                     <Label htmlFor="event-edit-location-onsite" className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <RadioGroupItem id="event-edit-location-onsite" value="onsite" />
                         Onsite
-                     </label>
-                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" id="event-edit-location-webinar" name="locationType" value="webinar" checked={editForm.location_type === "webinar"} onChange={() => setEditForm({ ...editForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                     </Label>
+                     <Label htmlFor="event-edit-location-webinar" className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <RadioGroupItem id="event-edit-location-webinar" value="webinar" />
                         Webinar
-                     </label>
-                  </div>
+                     </Label>
+                  </RadioGroup>
                 </div>
 
                 {editForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location <span className="text-primary-strong">*</span></label>
-                     <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
-                        <Globe size={18} className="text-muted mr-2" />
-                        <input id="event-edit-webinar-readonly" name="locationWebinarLabel" type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
-                     </div>
+                     <Label htmlFor="event-edit-webinar-readonly" className="text-[14px] font-normal tracking-[0.01em] leading-tight text-heading">Location <span className="text-primary-strong">*</span></Label>
+                     <InputGroup className="h-11 bg-surface border-border/60 cursor-not-allowed">
+                        <InputGroupAddon><Globe size={18} className="text-muted" /></InputGroupAddon>
+                        <InputGroupInput id="event-edit-webinar-readonly" name="locationWebinarLabel" type="text" value="Webinar" disabled className="text-muted cursor-not-allowed" readOnly />
+                     </InputGroup>
                    </div>
                 ) : (
-                  <TextInput
-                    label="Location"
-                    required
-                    value={editForm.location}
-                    onChange={(v) => setEditForm({ ...editForm, location: v })}
-                  />
+                  <div className="grid gap-2">
+                    <Label htmlFor="event-edit-location">Location <span className="text-primary-strong">*</span></Label>
+                    <Input
+                      id="event-edit-location"
+                      required
+                      value={editForm.location}
+                      onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                    />
+                  </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextInput
-                    label="Event Date"
-                    required
-                    type="date"
-                    min={minCampaignDate}
-                    value={editForm.date}
-                    onChange={(v) => setEditForm({ ...editForm, date: v })}
-                  />
+                  <div className="grid gap-2">
+                    <Label htmlFor="event-edit-date">Event Date <span className="text-primary-strong">*</span></Label>
+                    <Input
+                      id="event-edit-date"
+                      required
+                      type="date"
+                      min={minCampaignDate}
+                      value={editForm.date}
+                      onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                    />
+                  </div>
                   <TimeInput
                     label="Event Time"
                     required
@@ -3590,29 +3609,26 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
               </div>
 
-              {/* Modal Footer */}
-              <div className="shrink-0 border-t border-border/50 bg-white p-6 form-actions">
-                <Button
+              <Separator className="bg-border/50" />
+              <DialogFooter className="shrink-0 bg-white p-6 form-actions">
+                <ShadButton
                   variant="secondary"
-                  fullWidth
                   onClick={() => setIsEditOpen(false)}
-                  className="order-2 sm:order-1"
+                  className="order-2 w-full sm:order-1"
                 >
                   Cancel
-                </Button>
-                <Button
+                </ShadButton>
+                <ShadButton
                   type="submit"
-                  fullWidth
                   disabled={isSavingEdit}
-                  className="order-1 sm:order-2"
+                  className="order-1 w-full sm:order-2"
                 >
                   {isSavingEdit ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
+                </ShadButton>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
       {/* Delete Event Modal */}
       {isDeleteOpen && eventData && (
@@ -3631,9 +3647,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               </div>
               <button
                 onClick={() => !isDeleting && setIsDeleteOpen(false)}
-                className="w-12 h-12 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 shrink-0"
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 shrink-0"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
@@ -3691,16 +3707,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           />
           <div className="relative w-full max-w-[460px] glass-panel bg-white/90 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between">
+            <div className="px-8 pt-8 pb-4 flex items-start justify-between">
               <div className="flex flex-col gap-1">
                 <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Renew Event</h2>
                 <p className="text-sm text-muted">Update the details to reactivate this campaign.</p>
               </div>
               <button
                 onClick={() => !isRenewing && setIsRenewOpen(false)}
-                className="w-12 h-12 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
+                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
               >
-                <X size={20} />
+                <X size={16} />
               </button>
             </div>
 
