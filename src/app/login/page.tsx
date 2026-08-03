@@ -5,8 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button } from "@/components/ui";
-import { ArrowLeft } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { AlertCircle, ArrowLeft, Lock, Mail } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -155,16 +161,19 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="relative min-h-dvh w-full flex items-center justify-center overflow-x-hidden overflow-y-auto bg-surface py-10 px-[max(0.75rem,env(safe-area-inset-left))] sm:px-[max(1.5rem,env(safe-area-inset-left))]">
+    <main className="relative flex min-h-dvh w-full items-center justify-center overflow-x-hidden overflow-y-auto bg-surface px-[max(0.75rem,env(safe-area-inset-left))] py-10 sm:px-[max(1.5rem,env(safe-area-inset-left))]">
       <GradientBackground />
-      <div className="relative z-10 w-full max-w-[520px] min-w-0 px-1 sm:px-0 animate-slide-up">
+      <div className="relative z-10 w-full max-w-[520px] min-w-0 animate-slide-up px-1 sm:px-0">
         <Link
           href="/"
-          className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
+          className={cn(
+            buttonVariants({ variant: "ghost", size: "sm" }),
+            "mb-5 h-auto gap-2 px-0 text-[13px] font-normal text-text-muted hover:bg-transparent hover:text-text-primary hover:underline focus-visible:ring-royal-indigo/30 group",
+          )}
         >
-          <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
-          </div>
+          <span className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }), "bg-canvas/80 backdrop-blur-sm")}>
+            <ArrowLeft size={16} className="text-text-primary transition-transform group-hover:-translate-x-0.5" />
+          </span>
           <span>Back to Home</span>
         </Link>
 
@@ -172,66 +181,123 @@ export default function LoginPage() {
           <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-xmuted">AVTIVE</span>
         </div>
 
-        <div className="rounded-lg border border-border bg-canvas p-6 sm:p-8 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-            <div className="flex flex-col gap-4">
-              <h1 className="text-[32px] font-medium tracking-[-0.01em] leading-[1.15] text-text-primary">
+        <Card className="rounded-lg bg-canvas shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
+          <form onSubmit={handleSubmit}>
+            <CardHeader className="gap-4 px-6 pt-6 sm:px-8 sm:pt-8">
+              <CardTitle className="text-[32px] font-medium leading-[1.15] tracking-[-0.01em] text-text-primary">
                 Welcome back
-              </h1>
-              <p className="text-[15px] leading-[1.65] text-text-muted">
+              </CardTitle>
+              <CardDescription className="text-[15px] leading-[1.65] text-text-muted">
                 Please enter your details to sign in.
-              </p>
-            </div>
+              </CardDescription>
+            </CardHeader>
 
-            <div className="flex flex-col gap-6">
-              <TextInput label="Email Address" required type="email" placeholder="you@example.com" icon="email" value={email} onChange={setEmail} />
-              <TextInput label="Password" required type="password" placeholder="••••••••••••" icon="lock" value={password} onChange={setPassword} />
+            <CardContent className="flex flex-col gap-8 px-6 pb-6 sm:px-8 sm:pb-8">
+              <Separator />
+
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <InputGroup>
+                    <InputGroupAddon>
+                      <Mail aria-hidden="true" />
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      id="email"
+                      required
+                      type="email"
+                      autoComplete="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      aria-invalid={Boolean(error)}
+                      onChange={(event) => setEmail(event.target.value)}
+                    />
+                  </InputGroup>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <InputGroup>
+                    <InputGroupAddon>
+                      <Lock aria-hidden="true" />
+                    </InputGroupAddon>
+                    <InputGroupInput
+                      id="password"
+                      required
+                      type="password"
+                      autoComplete="current-password"
+                      placeholder="Password"
+                      value={password}
+                      aria-invalid={Boolean(error)}
+                      onChange={(event) => setPassword(event.target.value)}
+                    />
+                  </InputGroup>
+                </div>
+
+                {needsOtpStep ? (
+                  <div className="grid gap-2">
+                    <Label htmlFor="otp">Email verification code</Label>
+                    <InputGroup>
+                      <InputGroupAddon>
+                        <Lock aria-hidden="true" />
+                      </InputGroupAddon>
+                      <InputGroupInput
+                        id="otp"
+                        required
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="6-digit code"
+                        value={otp}
+                        aria-invalid={Boolean(error)}
+                        onChange={(event) => setOtp(event.target.value)}
+                      />
+                    </InputGroup>
+                  </div>
+                ) : null}
+              </div>
+
               {needsOtpStep ? (
-                <TextInput
-                  label="Email verification code"
-                  required
-                  type="text"
-                  autoComplete="one-time-code"
-                  placeholder="6-digit code"
-                  icon="lock"
-                  value={otp}
-                  onChange={setOtp}
-                />
+                <Alert>
+                  <Mail aria-hidden="true" />
+                  <AlertDescription>
+                    We sent a code to your email. Enter it to finish signing in to your organization account.
+                  </AlertDescription>
+                </Alert>
               ) : null}
-            </div>
 
-            {needsOtpStep ? (
-              <p className="text-[13px] text-text-muted leading-relaxed">
-                We sent a code to your email. Enter it to finish signing in to your organization account.
-              </p>
-            ) : null}
+              {error ? (
+                <Alert variant="destructive">
+                  <AlertCircle aria-hidden="true" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              ) : null}
 
-            {error && <p className="text-[13px] text-error font-medium text-center">{error}</p>}
-
-            <Button
-              type="submit"
-              variant="primary"
-              fullWidth
-              size="lg"
-              disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
-            >
-              {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
-            </Button>
-            {needsOtpStep ? (
-              <button
-                type="button"
-                className="text-[13px] text-text-muted hover:text-text-primary underline underline-offset-4 mx-auto block"
-                onClick={() => {
-                  setNeedsOtpStep(false);
-                  setOtp("");
-                  setError("");
-                }}
+              <Button
+                type="submit"
+                className="w-full"
+                size="lg"
+                disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
               >
-                Use a different account
-              </button>
-            ) : null}
+                {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
+              </Button>
+              {needsOtpStep ? (
+                <Button
+                  type="button"
+                  variant="link"
+                  className="mx-auto h-auto text-[13px] text-text-muted hover:text-text-primary"
+                  onClick={() => {
+                    setNeedsOtpStep(false);
+                    setOtp("");
+                    setError("");
+                  }}
+                >
+                  Use a different account
+                </Button>
+              ) : null}
+            </CardContent>
           </form>
-        </div>
+        </Card>
       </div>
     </main>
   );

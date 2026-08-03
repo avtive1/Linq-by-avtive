@@ -76,7 +76,7 @@
     "husky": "^9.1.7",
     "postcss": "^8.5.18",
     "prisma": "^6.19.3",
-    "shadcn": "^4.11.0",
+    "shadcn": "^4.16.1",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.23.4",
     "typescript": "^5",

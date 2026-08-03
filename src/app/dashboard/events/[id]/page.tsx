@@ -6,7 +6,25 @@ import { authClient } from "@/lib/auth/client";
 import { useInternalUserId } from "@/lib/auth/use-internal-user-id";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
-import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
+import { Button, TextInput, TextArea, AnimatedCounter, FilePicker, Select, TimeInput } from "@/components/ui";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button as ShadButton, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select as ShadSelect,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea as ShadTextarea } from "@/components/ui/textarea";
 import { CardTypographyPicker } from "@/components/CardTypographyPicker";
 import { isDeleteConfirmMatch, normalizeDeleteConfirmText } from "@/lib/ui/delete-confirm";
 import { buildLinkedInFeedShareUrl } from "@/lib/share/linkedin-card-share";
@@ -42,7 +60,7 @@ import {
 
 import { CardData, EventData } from "@/types/card";
 import { toast } from "sonner";
-import { getEventStatus } from "@/lib/utils";
+import { cn, getEventStatus } from "@/lib/utils";
 import { motion } from "framer-motion";
 import { useAutoRefresh, useDashboardMotion } from "@/lib/ui/useDashboardMotion";
 import { toCompactShareUrl } from "@/lib/ui/share-short-link";
@@ -1588,9 +1606,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       <main className={dashboardMainWhiteCenter}>
         <GradientBackground />
         <div className="relative z-10 text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Campaign not found</div>
-        <Button variant="secondary" icon={<ArrowLeft size={16} />} href="/dashboard" className="relative z-10">
+        <Link href="/dashboard" className={cn(buttonVariants({ variant: "secondary" }), "relative z-10")}>
+          <ArrowLeft size={16} />
           Back to Dashboard
-        </Button>
+        </Link>
       </main>
     );
   }
@@ -1606,7 +1625,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             </div>
             <Link
               href="/admin"
-              className="flex shrink-0 items-center gap-2 self-start rounded-sm border border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-all hover:border-white/40 hover:bg-white/20 active:scale-95 sm:self-auto"
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "shrink-0 self-start rounded-sm border-white/25 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:border-white/40 hover:bg-white/20 active:scale-95 sm:self-auto")}
             >
               <ArrowLeft size={14} />
               Exit Preview
@@ -1619,7 +1638,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       <div className={dashboardContentInset}>
         {/* Header row */}
         <motion.div className="relative z-30 mb-7 sm:mb-9" viewport={presets.viewport} {...fadeUp(0.02)}>
-          <button
+          <ShadButton
             type="button"
             onClick={() => {
               router.refresh();
@@ -1630,13 +1649,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               }
               router.push("/dashboard");
             }}
-            className="flex items-center gap-2.5 text-base font-semibold text-heading hover:text-ink hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-inline mb-1.5 group -ml-1 sm:-ml-2 bg-transparent border-none cursor-pointer py-1"
+            variant="ghost"
+            className="h-auto gap-2.5 px-0 text-base font-semibold text-heading hover:bg-transparent hover:text-ink hover:underline rounded-inline mb-1.5 group -ml-1 sm:-ml-2 py-1"
           >
             <motion.span {...hoverIconNudge(-2)} className="inline-flex">
               <ArrowLeft size={16} className="transition-transform" />
             </motion.span>
             {isPreviewMode ? "Back to Organization View" : "Back to Dashboard"}
-          </button>
+          </ShadButton>
           <span className="block text-sm font-normal tracking-[0.01em] leading-tight text-muted/70 mb-4">
             Campaign details
           </span>
@@ -1650,9 +1670,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               >
                 {eventData.name}
               </h1>
-              <span className={`inline-flex shrink-0 text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
+              <Badge variant="outline" className={`inline-flex shrink-0 text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
                 {status.label}
-              </span>
+              </Badge>
             </div>
             <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 sm:gap-y-1 text-sm text-muted font-medium">
               <div className="flex items-center gap-2 min-w-0">
@@ -1679,7 +1699,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             {!isPreviewMode && (
               <>
                 <div className="relative" ref={shareRef}>
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     onClick={() => {
                       if (!isBrandingFinalized) {
@@ -1689,26 +1709,27 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       setIsShareOpen(!isShareOpen);
                     }}
                     disabled={status.label === "Past" || !isBrandingFinalized}
-                    icon={<LinkIcon size={18} />}
                     className={`transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
+                    <LinkIcon size={18} />
                     Share Link
-                  </Button>
+                  </ShadButton>
 
                   {isShareOpen && (
-                    <div className="absolute left-1/2 right-auto top-full z-9999 mt-3 w-[min(22rem,calc(100vw-2rem))] max-w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border border-border bg-white py-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] animate-in fade-in slide-in-from-top-2 duration-200 sm:left-auto sm:right-0 sm:w-56 sm:max-w-none sm:translate-x-0">
+                    <Card className="absolute left-1/2 right-auto top-full z-9999 mt-3 w-[min(22rem,calc(100vw-2rem))] max-w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl border-border bg-white py-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] animate-in fade-in slide-in-from-top-2 duration-200 sm:left-auto sm:right-0 sm:w-56 sm:max-w-none sm:translate-x-0">
                       <div className="px-4 py-2 mb-1 border-b border-border/40">
                         <span className="text-[13px] font-medium text-muted/50 uppercase tracking-[0.01em] leading-tight">Share Options</span>
                       </div>
                       
-                      <button
+                      <ShadButton
+                        variant="ghost"
                         onClick={() => {
                           setIsShareOpen(false);
                           setGuestCategoryInput("");
                           setGuestCategoryError("");
                           setIsGuestCategoryOpen(true);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-surface transition-all group"
+                        className="h-auto w-full justify-start gap-3 px-4 py-2 text-left hover:bg-surface group"
                       >
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary-strong group-hover:scale-110 transition-transform">
                           <User size={16} />
@@ -1716,16 +1737,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <div className="flex flex-col">
                           <span className="font-medium text-sm text-heading leading-tight">Guest</span>
                         </div>
-                      </button>
+                      </ShadButton>
 
-                      <button
+                      <ShadButton
+                        variant="ghost"
                         onClick={async () => {
                           const longUrl = `${window.location.origin}/r/${eventData.short_id || eventData.id}?r=v`;
                           const url = await toCompactShareUrl(longUrl);
                           setIsShareOpen(false);
                           openShareActions(url, "visitor");
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2 text-left hover:bg-surface transition-all group"
+                        className="h-auto w-full justify-start gap-3 px-4 py-2 text-left hover:bg-surface group"
                       >
                         <div className="w-8 h-8 rounded-lg bg-surface-strong/10 bg-slate-100 flex items-center justify-center text-slate-500 group-hover:scale-110 transition-transform">
                           <User size={16} />
@@ -1733,12 +1755,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <div className="flex flex-col">
                           <span className="font-medium text-sm text-heading leading-tight">Visitor</span>
                         </div>
-                      </button>
-                    </div>
+                      </ShadButton>
+                    </Card>
                   )}
                 </div>
 
-                <Button
+                <ShadButton
                   variant="secondary"
                   onClick={() => {
                     if (!canManageEvent) return;
@@ -1753,14 +1775,13 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     setIsBrandingOpen(true);
                   }}
                   disabled={!canManageEvent}
-                  icon={<Layers3 size={16} />}
                   className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
                 >
+                  <Layers3 size={16} />
                   Card Branding
-                </Button>
+                </ShadButton>
                 {status.label === "Past" ? (
-                  <Button 
-                    variant="primary" 
+                  <ShadButton 
                     onClick={() => {
                       if (!canManageEvent) {
                         setAccessRequestAction("manage_event");
@@ -1771,49 +1792,49 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       setIsRenewOpen(true);
                     }} 
                     disabled={!canManageEvent}
-                    icon={<RefreshCw size={16} />}
                     className={`shadow-lg shadow-black/10 animate-pulse-subtle ${!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
+                    <RefreshCw size={16} />
                     Renew Event
-                  </Button>
+                  </ShadButton>
                 ) : (
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     onClick={() => (canManageEvent ? openEdit() : undefined)}
                     disabled={!canManageEvent}
-                    icon={<Pencil size={16} />}
                     className={
                       !canManageEvent
                         ? "opacity-50 cursor-not-allowed grayscale"
                         : "transition-shadow duration-200 hover:shadow-md hover:border-primary/50 hover:bg-primary/9"
                     }
                   >
+                    <Pencil size={16} />
                     Edit
-                  </Button>
+                  </ShadButton>
                 )}
-                <Button
+                <ShadButton
                   variant="secondary"
                   onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
                   disabled={!canManageEvent}
-                  icon={<Handshake size={16} />}
                   className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
                 >
+                  <Handshake size={16} />
                   Sponsors
-                </Button>
-                <Button
+                </ShadButton>
+                <ShadButton
                   variant="secondary"
                   onClick={() => (canManageEvent ? handleDuplicate() : undefined)}
                   disabled={isDuplicating || status.label === "Past" || !canManageEvent}
-                  icon={<Copy size={16} />}
                   className={status.label === "Past" || !canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
                 >
+                  <Copy size={16} />
                   {isDuplicating ? "..." : "Duplicate"}
-                </Button>
+                </ShadButton>
                 <div 
                   title={cards.length > 0 ? "Events with registered leads cannot be deleted." : ""}
                   className={cards.length > 0 ? "cursor-help" : ""}
                 >
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     onClick={() => {
                       if (!canDeleteEvent) return;
@@ -1822,18 +1843,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       setIsDeleteOpen(true);
                     }}
                     disabled={cards.length > 0 || !canDeleteEvent}
-                    icon={<Trash2 size={16} />}
                     className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${
                       cards.length > 0 || !canDeleteEvent
                         ? "cursor-not-allowed disabled:opacity-70 disabled:text-red-400 disabled:border-red-200/55 disabled:hover:bg-transparent disabled:hover:text-red-400 disabled:hover:border-red-200/55"
                         : ""
                     }`}
                   >
+                    <Trash2 size={16} />
                     Delete
-                  </Button>
+                  </ShadButton>
                 </div>
                 {!canManageEvent && !canDeleteEvent && (
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     onClick={() => {
                       setAccessRequestAction("delete_event");
@@ -1841,20 +1862,20 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }}
                   >
                     Take Access
-                  </Button>
+                  </ShadButton>
                 )}
                 {canReviewRegistrations && (
-                  <Button variant="secondary" onClick={() => setIsRegistrationInboxOpen(true)}>
+                  <ShadButton variant="secondary" onClick={() => setIsRegistrationInboxOpen(true)}>
                     Pending Registrations ({pendingRegistrationCount})
-                  </Button>
+                  </ShadButton>
                 )}
                 {canReviewAccessRequests && pendingAccessRequests.length > 0 && (
-                  <Button variant="secondary" onClick={() => setIsAccessInboxOpen(true)}>
+                  <ShadButton variant="secondary" onClick={() => setIsAccessInboxOpen(true)}>
                     Requests ({pendingAccessRequests.length})
-                  </Button>
+                  </ShadButton>
                 )}
                 {isEventOwner && (
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     onClick={async () => {
                       setIsAccessControlOpen(true);
@@ -1862,7 +1883,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     }}
                   >
                     Access Control
-                  </Button>
+                  </ShadButton>
                 )}
               </>
             )}
@@ -1871,13 +1892,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           {renderCampaignDescriptionSection()}
         </motion.div>
         {!isPreviewMode && !isBrandingFinalized && (
-          <div className="mb-6 rounded-md border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Please save card branding first, then you can use <span className="font-semibold">Share Link</span> for Guest/Visitor registrations.
-          </div>
+          <Alert className="mb-6 border-amber-300/50 bg-amber-50 text-amber-800">
+            <AlertDescription>
+              Please save card branding first, then you can use <span className="font-semibold">Share Link</span> for Guest/Visitor registrations.
+            </AlertDescription>
+          </Alert>
         )}
 
         {isPreviewMode && (
-          <div className="motion-token-enter relative mb-8 overflow-hidden rounded-xl border border-hairline-soft bg-white p-5 shadow-xl">
+          <Card className="motion-token-enter relative mb-8 overflow-hidden rounded-xl border-hairline-soft bg-white p-5 shadow-xl">
             <div className="flex flex-col gap-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
@@ -1888,15 +1911,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <h2 className="ui-section-heading">Platform Audit Layer</h2>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center gap-1 rounded-sm border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary-strong">
+                  <Badge variant="outline" className="inline-flex items-center gap-1 rounded-sm border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary-strong">
                     <ShieldCheck size={11} /> Super Admin
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-sm border border-amber-300/40 bg-amber-50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-amber-700">
+                  </Badge>
+                  <Badge variant="outline" className="inline-flex items-center gap-1 rounded-sm border-amber-300/40 bg-amber-50 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-amber-700">
                     <Activity size={11} /> View Only
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-sm border border-danger/20 bg-danger/5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-danger">
+                  </Badge>
+                  <Badge variant="outline" className="inline-flex items-center gap-1 rounded-sm border-danger/20 bg-danger/5 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-danger">
                     <Lock size={11} /> Immutable Mode
-                  </span>
+                  </Badge>
                 </div>
               </div>
 
@@ -1906,21 +1929,22 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
 
             </div>
-          </div>
+          </Card>
         )}
         {isOrgAdminEventMode && (
           <motion.div
-            className="mb-8 w-full max-w-full min-w-0 box-border rounded-sm border border-primary/25 bg-surface border border-hairline-soft px-4 py-4 shadow-sm motion-token-enter motion-token-hover sm:px-5 overflow-x-auto"
+            className="mb-8 w-full max-w-full min-w-0 box-border motion-token-enter motion-token-hover overflow-x-auto"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
             {...hoverLift(-2, 1.004)}
           >
+            <Card className="rounded-sm border-primary/25 bg-surface px-4 py-4 shadow-sm sm:px-5">
             <div className="flex min-w-0 flex-col gap-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-primary/25 bg-primary/12 text-primary-strong">
+                  <Badge variant="outline" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border-primary/25 bg-primary/12 p-0 text-primary-strong">
                     <Activity size={20} />
-                  </span>
+                  </Badge>
                   <div className="min-w-0 flex flex-col">
                     <span className="break-words text-2xl sm:text-[30px] font-bold tracking-[-0.02em] text-primary-strong leading-tight wrap-break-word">
                       Campaign Management Console
@@ -1931,11 +1955,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
               <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-2">
                 <motion.div
-                  className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
+                  className="motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.06)}
                   {...hoverLift(-2, 1.005)}
                 >
+                  <Card className="rounded-sm border-primary/20 bg-white/85 px-4 py-3">
                   <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <Layers3 size={13} className="text-primary-strong" />
                     Leads Composition
@@ -1960,14 +1985,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       </motion.div>
                     ))}
                   </div>
+                  </Card>
                 </motion.div>
 
                 <motion.div
-                  className="rounded-sm border border-primary/20 bg-white/85 px-4 py-3 motion-token-enter motion-token-hover"
+                  className="motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.08)}
                   {...hoverLift(-2, 1.005)}
                 >
+                  <Card className="rounded-sm border-primary/20 bg-white/85 px-4 py-3">
                   <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <TrendingUp size={13} className="text-primary-strong" />
                     Top Roles
@@ -1991,16 +2018,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                               {entry.role}
                             </span>
                           </div>
-                          <div className="rounded-full bg-heading/5 px-2.5 py-0.5 text-xs font-semibold text-heading/80">
+                          <Badge variant="outline" className="rounded-full border-transparent bg-heading/5 px-2.5 py-0.5 text-xs font-semibold text-heading/80">
                             {entry.count}
-                          </div>
+                          </Badge>
                         </motion.div>
                       ))
                     )}
                   </div>
+                  </Card>
                 </motion.div>
               </div>
             </div>
+            </Card>
           </motion.div>
         )}
         {isTeamMemberEventMode && (
@@ -2011,13 +2040,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             {...hoverLift(-2, 1.004)}
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center rounded-md border border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
+              <Badge variant="outline" className="inline-flex items-center rounded-md border-primary/25 bg-primary/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary-strong">
                 Team Member View
-              </span>
-              <span className="inline-flex items-center rounded-md border border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
+              </Badge>
+              <Badge variant="outline" className="inline-flex items-center rounded-md border-border/70 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wide text-heading/80">
                 Campaign Access
-              </span>
-              <span
+              </Badge>
+              <Badge
+                variant="outline"
                 className={`inline-flex items-center rounded-md border px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                   canManageEvent
                     ? "border-primary/25 bg-primary/10 text-primary-strong"
@@ -2025,7 +2055,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 }`}
               >
                 {canManageEvent ? "Manage enabled" : "Restricted mode"}
-              </span>
+              </Badge>
             </div>
             <p className="mt-2 text-sm text-muted">
               Card operations and campaign actions are shown based on your granted permissions.
@@ -2049,10 +2079,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-md border border-border/60 bg-white p-4.5 flex flex-col">
+                <Card className="rounded-md border-border/60 bg-white p-4.5 flex flex-col">
                   <p className="text-[22px] font-semibold text-heading leading-tight">Guest Form</p>
                   <p className="mt-1 text-sm text-muted">Preview and customize guest registration fields.</p>
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     size="sm"
                     className="mt-4 !h-11 w-fit shrink-0 px-5 text-base"
@@ -2060,16 +2090,16 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     onClick={() => openRegistrationFormModal("guest")}
                     >
                     Preview Form
-                  </Button>
+                  </ShadButton>
                   {!canManageEvent && (
                     <p className="text-[11px] text-muted mt-2">You need campaign manage access to edit fields.</p>
                   )}
                   <p className="mt-2 text-sm text-muted">{previewGuestFields.length} fields configured</p>
-                </div>
-                <div className="rounded-md border border-border/60 bg-white p-4.5 flex flex-col">
+                </Card>
+                <Card className="rounded-md border-border/60 bg-white p-4.5 flex flex-col">
                   <p className="text-[22px] font-semibold text-heading leading-tight">Visitor Form</p>
                   <p className="mt-1 text-sm text-muted">Preview and customize visitor registration fields.</p>
-                  <Button
+                  <ShadButton
                     variant="secondary"
                     size="sm"
                     className="mt-4 !h-11 w-fit shrink-0 px-5 text-base"
@@ -2077,12 +2107,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     onClick={() => openRegistrationFormModal("visitor")}
                   >
                     Preview Form
-                  </Button>
+                  </ShadButton>
                   {!canManageEvent && (
                     <p className="text-[11px] text-muted mt-2">You need campaign manage access to edit fields.</p>
                   )}
                   <p className="mt-2 text-sm text-muted">{previewVisitorFields.length} fields configured</p>
-                </div>
+                </Card>
               </div>
             </div>
           </motion.div>
@@ -2130,158 +2160,162 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
             <div className="relative z-10 flex flex-wrap justify-center md:justify-end items-center gap-4">
               {cards.length > 0 && (
-                <Button
-                  variant={isTeamMemberEventMode ? "secondary" : "primary"}
+                <ShadButton
+                  variant={isTeamMemberEventMode ? "secondary" : "default"}
                   onClick={handleExport}
                   disabled={!canExport}
-                  icon={<Download size={20} />}
                   className={`rounded-md shadow-sm transition-all duration-300 ${
                     isTeamMemberEventMode
                       ? "bg-white border-primary/20 hover:border-primary/40 hover:bg-primary/5 text-primary-strong" 
                       : "bg-primary hover:bg-primary-strong text-white border-none shadow-primary/30"
                   } ${!canExport ? "opacity-50 grayscale" : " active:scale-95"}`}
                 >
+                  <Download size={20} />
                   Download CSV
-                </Button>
+                </ShadButton>
               )}
             </div>
           </motion.div>
         )}
 
         {/* Search Bar */}
-        <motion.div className="mb-4 flex min-w-0 flex-col gap-3 delay-200 sm:flex-row sm:gap-3" viewport={presets.viewport} {...fadeUp(0.1)}>
-          <div
-            className={`group flex min-h-12 w-full min-w-0 flex-1 items-center gap-3 rounded-xl border px-5 shadow-md transition-all focus-within:outline-none focus-within:ring-4 focus-within:ring-primary/10 sm:h-14 sm:min-h-14 sm:gap-[0.875rem] sm:px-7 ${
+        <motion.div className="mb-4 flex min-w-0 flex-col gap-3 delay-200 sm:flex-row sm:items-center sm:gap-3" viewport={presets.viewport} {...fadeUp(0.1)}>
+          <InputGroup
+            className={`group h-10 w-full min-w-0 flex-1 rounded-md px-2.5 shadow-xs sm:h-10 ${
               isPreviewMode
-                ? "border-primary/20 bg-white/90 focus-within:bg-white"
-                : "border-white/40 bg-white/70 backdrop-blur-md focus-within:bg-white"
+                ? "border-primary/20 bg-white/90"
+                : "border-border/60 bg-white/80 backdrop-blur-md"
             }`}
           >
-            <Search className="pointer-events-none shrink-0 text-muted/50 transition-colors group-focus-within:text-primary" size={20} strokeWidth={2.5} aria-hidden />
-            <input
+            <InputGroupAddon className="p-0">
+              <Search className="pointer-events-none shrink-0 text-muted/50 transition-colors group-focus-within:text-primary" size={18} strokeWidth={2.25} aria-hidden="true" />
+            </InputGroupAddon>
+            <InputGroupInput
               id="event-attendees-search"
               name="eventAttendeesSearch"
               type="text"
               placeholder="Search leads in this campaign..."
-              className="min-w-0 flex-1 border-0 bg-transparent py-[0.65rem] pr-0 text-base font-medium leading-[1.6] text-heading shadow-none outline-none ring-0 placeholder:text-muted/30 focus-visible:ring-0 sm:h-full sm:min-h-0 sm:py-0"
+              className="min-w-0 flex-1 text-sm font-medium text-heading placeholder:text-muted/40"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
+          </InputGroup>
 
           {/* Download CSV Button */}
           {cards.length > 0 && (
-            <button
+            <ShadButton
+              variant="outline"
+              size="lg"
               onClick={handleExport}
               disabled={!canExport}
               title={!canExport ? "You do not have permission to export attendees" : "Download all attendee information as CSV"}
-              className={`flex items-center justify-center gap-2 h-14 sm:h-16 px-7 rounded-xl border-2 font-semibold text-base transition-all shadow-md ${
+              className={`w-full justify-center sm:w-auto ${
                 !canExport
-                  ? "border-border bg-gray-50 text-muted/50 cursor-not-allowed opacity-50"
-                  : "border-border bg-white text-heading hover:border-hairline-strong hover:bg-surface active:scale-95"
-              }`}
-            >
-              <Download size={20} className={!canExport ? "text-muted/50" : "text-muted"} />
-              <span>Download CSV</span>
-            </button>
-          )}
-          
-          {/* Filter Button and Dropdown */}
-          <div className="relative" ref={filterRef}>
-            <button
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className={`flex items-center justify-center gap-2 h-14 sm:h-16 px-7 rounded-xl border-2 font-semibold text-base transition-all shadow-md ${
-                isFilterOpen || trackFilter !== "all"
-                  ? "border-primary bg-surface text-ink"
+                  ? "cursor-not-allowed opacity-50"
                   : "border-border bg-white text-heading hover:border-hairline-strong hover:bg-surface"
               }`}
             >
-              <SlidersHorizontal size={20} className={isFilterOpen || trackFilter !== "all" ? "text-ink" : "text-muted"} />
+              <Download size={18} className={!canExport ? "text-muted/50" : "text-muted"} />
+              <span>Download CSV</span>
+            </ShadButton>
+          )}
+          
+          {/* Filter Button and Dropdown */}
+          <div className="relative w-full sm:w-auto" ref={filterRef}>
+            <ShadButton
+              variant={isFilterOpen || trackFilter !== "all" ? "secondary" : "outline"}
+              size="lg"
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="w-full justify-center border-border bg-white text-heading hover:border-hairline-strong hover:bg-surface sm:w-auto"
+            >
+              <SlidersHorizontal size={18} className={isFilterOpen || trackFilter !== "all" ? "text-ink" : "text-muted"} />
               <span>Filter</span>
-            </button>
+            </ShadButton>
 
             {isFilterOpen && (
-              <div className="absolute right-0 top-full z-[9999] mt-3 w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-gray-200 bg-white py-4 px-5 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] animate-in fade-in slide-in-from-top-2 duration-200">
+              <Card className="absolute right-0 top-full z-[9999] mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-md border-gray-200 bg-white p-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
   <div className="mb-4">
     <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
       LEAD TYPE
     </h4>
 
     <div className="flex flex-wrap gap-2">
-      <button
+      <ShadButton
+        type="button"
+        variant={trackFilter === "all" ? "secondary" : "outline"}
+        size="sm"
         onClick={() => setTrackFilter("all")}
-        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-          trackFilter === "all"
-            ? "bg-primary/10 text-ink border-primary"
-            : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"
-        }`}
+        className={trackFilter === "all" ? "border-primary/30 bg-primary/10 text-ink" : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"}
       >
         All
-      </button>
+      </ShadButton>
 
-      <button
+      <ShadButton
+        type="button"
+        variant={trackFilter === "guest" ? "secondary" : "outline"}
+        size="sm"
         onClick={() => setTrackFilter("guest")}
-        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-          trackFilter === "guest"
-            ? "bg-primary/10 text-ink border-primary"
-            : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"
-        }`}
+        className={trackFilter === "guest" ? "border-primary/30 bg-primary/10 text-ink" : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"}
       >
         Guest
-      </button>
+      </ShadButton>
 
-      <button
+      <ShadButton
+        type="button"
+        variant={trackFilter === "visitor" ? "secondary" : "outline"}
+        size="sm"
         onClick={() => setTrackFilter("visitor")}
-        className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
-          trackFilter === "visitor"
-            ? "bg-primary/10 text-ink border-primary"
-            : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"
-        }`}
+        className={trackFilter === "visitor" ? "border-primary/30 bg-primary/10 text-ink" : "bg-surface text-steel border-hairline hover:border-hairline-strong hover:text-ink"}
       >
         Visitor
-      </button>
+      </ShadButton>
     </div>
   </div>
 
-  <button
+  <ShadButton
+    type="button"
+    variant="link"
+    size="sm"
     onClick={() => {
       setTrackFilter("all");
       setIsFilterOpen(false);
     }}
-    className="w-full text-right text-sm text-gray-500 hover:text-success transition-colors"
+    className="ml-auto flex h-auto text-gray-500 hover:text-success"
   >
     Reset filters
-  </button>
-</div>
+  </ShadButton>
+</Card>
             )}
           </div>
         </motion.div>
 
         {/* Cards list */}
         {cards.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6 animate-slide-up delay-300">
+          <Card className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border-dashed border-border rounded-xl gap-4 px-6 animate-slide-up delay-300">
             <div className="flex flex-col gap-1">
               <p className="text-heading font-medium text-lg">No leads yet</p>
               <p className="text-sm text-muted">Share the registration link to invite leads to register for this campaign.</p>
             </div>
-          </div>
+          </Card>
         ) : (
           <div className="grid gap-4 animate-slide-up delay-300">
             {filteredCards.length > 0 ? (
               filteredCards.map((card, idx) => (
                 <motion.div
                   key={card.id}
-                className={`group motion-token-enter motion-token-hover flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-md  ${
+                className="group motion-token-enter motion-token-hover"
+                viewport={presets.viewport}
+                {...staggerItem(idx, 0.04, 0.24, 14, 0.28)}
+                {...hoverLift(-2, 1.004)}
+                >
+                  <Card className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 rounded-md  ${
                   isPreviewMode
                     ? "bg-white/90 border border-heading/15 shadow-md hover:shadow-lg hover:border-heading/30"
                     : isTeamMemberEventMode || isOrgAdminEventMode
                       ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/35"
                     : "glass-panel hover:shadow-xl hover:shadow-black/5 hover:border-primary/30"
                 }`}
-                viewport={presets.viewport}
-                {...staggerItem(idx, 0.04, 0.24, 14, 0.28)}
-                {...hoverLift(-2, 1.004)}
-                >
+                  >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative shrink-0">
                       <div className="w-14 h-14 rounded-xl bg-primary/5 flex items-center justify-center border border-primary/20 overflow-hidden ring-offset-2 ring-primary/10 group-hover:ring-2 transition-all duration-500 transform group-hover:scale-105">
@@ -2308,16 +2342,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           {card.name}
                         </h3>
                         {(card.track === "guest" && card.guestCategory) && (
-                          <span className="text-[14px] bg-primary/10 px-3 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-[0em] leading-[1.2] shrink-0">
+                          <Badge variant="outline" className="text-[14px] bg-primary/10 px-3 py-1 rounded-inline border-primary/20 text-primary-strong font-semibold tracking-[0em] leading-[1.2] shrink-0">
                             {card.guestCategory}
-                          </span>
+                          </Badge>
                         )}
                         {card.company && (
-                          <span className="text-[14px] bg-primary/10 px-3 py-1 rounded-inline border border-primary/20 text-primary-strong font-semibold tracking-[0em] leading-[1.2] shrink-0">
+                          <Badge variant="outline" className="text-[14px] bg-primary/10 px-3 py-1 rounded-inline border-primary/20 text-primary-strong font-semibold tracking-[0em] leading-[1.2] shrink-0">
                             {card.company}
-                          </span>
+                          </Badge>
                         )}
-                        <span
+                        <Badge
+                          variant="outline"
                           className={`text-[11px] font-semibold px-2 py-0.5 rounded-inline border shrink-0 ${
                             card.attended
                               ? "bg-success/10 text-success border-success/25"
@@ -2325,7 +2360,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           }`}
                         >
                           {card.attended ? "Attended" : "Not attended"}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs font-medium leading-[1.5] text-heading/75">
                         <span className="flex items-center">{card.role}</span>
@@ -2340,10 +2375,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                   <div className="flex items-center gap-2 shrink-0">
                     {isEventOwner && !isPreviewMode && card.hasAttendanceCode && !card.attended && (
-                      <Button
+                      <ShadButton
                         variant="secondary"
                         size="sm"
-                        icon={<ShieldCheck size={14} />}
                         onClick={() => {
                           setAttendanceModalCardId(card.id);
                           setAttendanceCodeInput("");
@@ -2351,46 +2385,42 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         disabled={markingAttendanceId === card.id}
                         className="shrink-0 rounded-md bg-white/60 border-white/60"
                       >
+                        <ShieldCheck size={14} />
                         Mark attended
-                      </Button>
+                      </ShadButton>
                     )}
-                    <Button
+                    <Link
                       href={`/cards/${card.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`}
-                      variant="secondary"
-                      icon={
-                        <motion.span {...hoverIconNudge(2)} className="inline-flex">
-                          <ExternalLink size={14} />
-                        </motion.span>
-                      }
-                      className="shrink-0 rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-ink"
+                      className={cn(buttonVariants({ variant: "secondary" }), "shrink-0 rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-ink")}
                     >
+                      <motion.span {...hoverIconNudge(2)} className="inline-flex">
+                        <ExternalLink size={14} />
+                      </motion.span>
                       View
-                    </Button>
+                    </Link>
                     {!isPreviewMode &&
                       (canEditCards ? (
-                        <Button
+                        <Link
                           href={`/cards/${card.id}/edit`}
-                          variant="secondary"
-                          size="sm"
-                          icon={<Pencil size={14} />}
-                          className="shrink-0 rounded-sm bg-white/50 border-white/60"
+                          className={cn(buttonVariants({ variant: "secondary", size: "sm" }), "shrink-0 rounded-sm bg-white/50 border-white/60")}
                         >
+                          <Pencil size={14} />
                           Edit
-                        </Button>
+                        </Link>
                       ) : (
-                        <Button
+                        <ShadButton
                           variant="secondary"
                           size="sm"
-                          icon={<Pencil size={14} />}
                           className="rounded-sm bg-white/50 border-white/60 opacity-50 cursor-not-allowed grayscale"
                           disabled
                           title="Request access to edit lead cards."
                         >
+                          <Pencil size={14} />
                           Edit
-                        </Button>
+                        </ShadButton>
                       ))}
                     {!isPreviewMode && (
-                      <Button
+                      <ShadButton
                         variant="secondary"
                         size="sm"
                         onClick={() => {
@@ -2406,10 +2436,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         }`}
                       >
                         <Trash2 size={16} />
-                      </Button>
+                      </ShadButton>
                     )}
                     <div className="attendee-menu-container relative">
-                      <Button
+                      <ShadButton
                         variant="secondary"
                         size="sm"
                         onClick={() => {
@@ -2419,11 +2449,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         title="More actions"
                       >
                         <MoreVertical size={16} />
-                      </Button>
+                      </ShadButton>
                       {activeMenuAttendeeId === card.id && (
-                        <div className="absolute right-0 top-full z-[9999] mt-1 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-1 duration-100">
-                          <button
+                        <Card className="absolute right-0 top-full z-[9999] mt-1 w-48 rounded-md border-gray-200 bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 animate-in fade-in slide-in-from-top-1 duration-100">
+                          <ShadButton
                             type="button"
+                            variant="ghost"
                             onClick={() => {
                               setEmailModalAttendee(card);
                               setEmailSubject("");
@@ -2431,46 +2462,44 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                               setIsEmailModalOpen(true);
                               setActiveMenuAttendeeId(null);
                             }}
-                            className="flex w-full items-center px-4 py-2 text-left text-sm text-heading hover:bg-surface transition-colors font-medium"
+                            className="flex h-auto w-full justify-start px-4 py-2 text-left text-sm text-heading hover:bg-surface transition-colors font-medium"
                           >
                             Send Custom Email
-                          </button>
-                        </div>
+                          </ShadButton>
+                        </Card>
                       )}
                     </div>
 
                   </div>
+                  </Card>
                 </motion.div>
               ))
             ) : (
-              <div className="text-center py-16 glass-panel rounded-xl border-dashed">
+              <Card className="text-center py-16 glass-panel rounded-xl border-dashed">
                 <p className="text-muted font-medium">No results found for &ldquo;{searchQuery}&rdquo;</p>
-              </div>
+              </Card>
             )}
           </div>
         )}
       </div>
 
-      {isAccessRequestOpen && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
-          />
-          <div className="relative w-full max-w-[440px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+      <Dialog open={isAccessRequestOpen} onOpenChange={(open) => !open && !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}>
+        <DialogContent showCloseButton={false} className="w-full max-w-[440px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Take Access</h3>
-                <p className="text-sm text-muted">Request approval from organization admin to perform restricted actions.</p>
+                <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Take Access</DialogTitle>
+                <DialogDescription className="text-sm text-muted">Request approval from organization admin to perform restricted actions.</DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => !isSubmittingAccessRequest && setIsAccessRequestOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
                 <X size={18} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <form
               className="px-6 pb-6 flex flex-col gap-3"
               onSubmit={(e) => {
@@ -2478,17 +2507,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 submitAccessRequest(accessRequestAction, accessRequestNote);
               }}
             >
-              <label className="text-[13px] font-normal tracking-[0.01em] leading-tight text-heading">Requested action</label>
-              <select
-                value={accessRequestAction}
-                onChange={(e) => setAccessRequestAction(e.target.value)}
-                className="h-11 w-full rounded-md border border-border/60 bg-white px-3 text-sm text-heading outline-none focus:border-primary/70"
-              >
-                <option value="manage_event">Manage event settings</option>
-                <option value="delete_event">Delete event (only when leads = 0)</option>
-                <option value="edit_cards">Edit lead cards</option>
-                <option value="delete_cards">Delete lead cards</option>
-              </select>
+              <Label className="text-[13px] font-normal tracking-[0.01em] leading-tight text-heading">Requested action</Label>
+            <ShadSelect value={accessRequestAction} onValueChange={(value) => value && setAccessRequestAction(value)}>
+                <SelectTrigger className="h-11 w-full border-border/60 bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manage_event">Manage event settings</SelectItem>
+                  <SelectItem value="delete_event">Delete event (only when leads = 0)</SelectItem>
+                  <SelectItem value="edit_cards">Edit lead cards</SelectItem>
+                  <SelectItem value="delete_cards">Delete lead cards</SelectItem>
+                </SelectContent>
+              </ShadSelect>
               <TextInput
                 label="Reason"
                 required
@@ -2499,98 +2529,92 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
               <p className="text-xs text-muted -mt-1">
                 Your organization admin will review this request and can approve or reject it.
               </p>
-              <div className="form-actions pt-1">
-                <Button
+              <DialogFooter className="form-actions pt-1">
+                <ShadButton
                   type="button"
                   variant="secondary"
-                  fullWidth
                   onClick={() => setIsAccessRequestOpen(false)}
                   disabled={isSubmittingAccessRequest}
-                  className="order-2 sm:order-1"
+                  className="order-2 w-full sm:order-1"
                 >
                   Cancel
-                </Button>
-                <Button type="submit" fullWidth disabled={isSubmittingAccessRequest} className="order-1 sm:order-2">
+                </ShadButton>
+                <ShadButton type="submit" disabled={isSubmittingAccessRequest} className="order-1 w-full sm:order-2">
                   {isSubmittingAccessRequest ? "Sending..." : "Request Access"}
-                </Button>
-              </div>
+                </ShadButton>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
-      {attendanceModalCardId && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={closeAttendanceModal}
-          />
-          <div className="relative w-full max-w-[420px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+      <Dialog open={Boolean(attendanceModalCardId)} onOpenChange={(open) => !open && closeAttendanceModal()}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[420px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   Mark attended
-                </h3>
-                <p className="text-sm text-muted mt-1">
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted mt-1">
                   Enter the 6-digit code the guest or visitor received by email.
-                </p>
+                </DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={closeAttendanceModal}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
                 <X size={18} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <div className="px-6 pb-6 flex flex-col gap-4">
-              <TextInput
-                label="Attendance code"
-                value={attendanceCodeInput}
-                onChange={setAttendanceCodeInput}
-                placeholder="000000"
-                maxLength={6}
-              />
+              <div className="grid gap-2">
+                <Label htmlFor="event-attendance-code">Attendance code</Label>
+                <Input
+                  id="event-attendance-code"
+                  value={attendanceCodeInput}
+                  onChange={(e) => setAttendanceCodeInput(e.target.value)}
+                  placeholder="000000"
+                  maxLength={6}
+                />
+              </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="secondary" onClick={closeAttendanceModal}>
+                <ShadButton variant="secondary" onClick={closeAttendanceModal}>
                   Cancel
-                </Button>
-                <Button
+                </ShadButton>
+                <ShadButton
                   onClick={() => void submitAttendance()}
                   disabled={markingAttendanceId === attendanceModalCardId}
                 >
                   {markingAttendanceId === attendanceModalCardId ? "Verifying..." : "Confirm"}
-                </Button>
+                </ShadButton>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isEmailModalOpen && emailModalAttendee && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSendingEmail && setIsEmailModalOpen(false)}
-          />
-          <div className="relative w-full max-w-[480px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+      <Dialog open={isEmailModalOpen && Boolean(emailModalAttendee)} onOpenChange={(open) => !open && !isSendingEmail && setIsEmailModalOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[480px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   Send Custom Email
-                </h3>
-                <p className="text-sm text-muted mt-1">
-                  Send a message directly to {emailModalAttendee.name} ({emailModalAttendee.email}).
-                </p>
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted mt-1">
+                  Send a message directly to {emailModalAttendee?.name} ({emailModalAttendee?.email}).
+                </DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => !isSendingEmail && setIsEmailModalOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
                 <X size={18} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <form
               className="px-6 pb-6 flex flex-col gap-4"
               onSubmit={(e) => {
@@ -2598,63 +2622,66 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 void handleSendCustomEmail();
               }}
             >
-              <TextInput
-                label="Subject"
-                required
-                placeholder="Enter email subject"
-                value={emailSubject}
-                onChange={setEmailSubject}
-                disabled={isSendingEmail}
-              />
-              <TextArea
-                label="Email Body"
-                required
-                placeholder="Write your email content here..."
-                value={emailBody}
-                onChange={setEmailBody}
-                rows={6}
-                disabled={isSendingEmail}
-              />
-              <div className="form-actions pt-2">
-                <Button
+              <div className="grid gap-2">
+                <Label htmlFor="event-email-subject">Subject <span className="text-primary-strong">*</span></Label>
+                <Input
+                  id="event-email-subject"
+                  required
+                  placeholder="Enter email subject"
+                  value={emailSubject}
+                  onChange={(e) => setEmailSubject(e.target.value)}
+                  disabled={isSendingEmail}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="event-email-body">Email Body <span className="text-primary-strong">*</span></Label>
+                <ShadTextarea
+                  id="event-email-body"
+                  required
+                  placeholder="Write your email content here..."
+                  value={emailBody}
+                  onChange={(e) => setEmailBody(e.target.value)}
+                  rows={6}
+                  disabled={isSendingEmail}
+                />
+              </div>
+              <DialogFooter className="form-actions pt-2">
+                <ShadButton
                   type="button"
                   variant="secondary"
-                  fullWidth
                   onClick={() => setIsEmailModalOpen(false)}
                   disabled={isSendingEmail}
-                  className="order-2 sm:order-1"
+                  className="order-2 w-full sm:order-1"
                 >
                   Cancel
-                </Button>
-                <Button type="submit" fullWidth disabled={isSendingEmail} className="order-1 sm:order-2">
+                </ShadButton>
+                <ShadButton type="submit" disabled={isSendingEmail} className="order-1 w-full sm:order-2">
                   {isSendingEmail ? "Sending..." : "Send Email"}
-                </Button>
-              </div>
+                </ShadButton>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isRegistrationInboxOpen && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => {
-              setIsRegistrationInboxOpen(false);
-              setRejectingRegistrationId(null);
-              setRegistrationRejectionReason("");
-            }}
-          />
-          <div className="relative w-full max-w-[720px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+      <Dialog open={isRegistrationInboxOpen} onOpenChange={(open) => {
+        if (!open) {
+          setIsRegistrationInboxOpen(false);
+          setRejectingRegistrationId(null);
+          setRegistrationRejectionReason("");
+        }
+      }}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[720px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   Pending Registration Requests
-                </h3>
-                <p className="text-sm text-muted">Approve or reject guest registrations. Visitors are accepted automatically.</p>
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted">Approve or reject guest registrations. Visitors are accepted automatically.</DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => {
                   setIsRegistrationInboxOpen(false);
                   setRejectingRegistrationId(null);
@@ -2663,14 +2690,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
                 <X size={18} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
               {pendingRegistrations.length === 0 ? (
                 <p className="text-sm text-muted py-6 text-center">No pending registration requests.</p>
               ) : (
                 pendingRegistrations.map((req) => (
-                  <div key={req.id} className="rounded-md border border-border/50 bg-white/80 p-4">
+                  <Card key={req.id} className="rounded-md border-border/50 bg-white/80 p-4">
                     <div className="flex flex-col gap-1">
                       <p className="text-sm font-semibold text-heading">{req.attendee_name || "Attendee"}</p>
                       {req.attendee_company ? (
@@ -2685,15 +2712,18 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
                     {rejectingRegistrationId === req.id ? (
                       <div className="mt-3 flex flex-col gap-2">
-                        <TextArea
-                          label="Rejection reason"
-                          required
-                          value={registrationRejectionReason}
-                          onChange={setRegistrationRejectionReason}
-                          placeholder="Explain why this registration was not approved"
-                        />
+                        <div className="grid gap-2">
+                          <Label htmlFor={`registration-reject-${req.id}`}>Rejection reason <span className="text-primary-strong">*</span></Label>
+                          <ShadTextarea
+                            id={`registration-reject-${req.id}`}
+                            required
+                            value={registrationRejectionReason}
+                            onChange={(e) => setRegistrationRejectionReason(e.target.value)}
+                            placeholder="Explain why this registration was not approved"
+                          />
+                        </div>
                         <div className="flex gap-2">
-                          <Button
+                          <ShadButton
                             size="sm"
                             variant="secondary"
                             onClick={() => {
@@ -2702,8 +2732,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             }}
                           >
                             Cancel
-                          </Button>
-                          <Button
+                          </ShadButton>
+                          <ShadButton
                             size="sm"
                             onClick={() =>
                               reviewRegistrationRequest(req.id, "reject", registrationRejectionReason)
@@ -2711,19 +2741,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             disabled={reviewingRegistrationId === req.id}
                           >
                             {reviewingRegistrationId === req.id ? "Rejecting..." : "Confirm Reject"}
-                          </Button>
+                          </ShadButton>
                         </div>
                       </div>
                     ) : (
                       <div className="flex gap-2 mt-3">
-                        <Button
+                        <ShadButton
                           size="sm"
                           onClick={() => reviewRegistrationRequest(req.id, "approve")}
                           disabled={reviewingRegistrationId === req.id}
                         >
                           {reviewingRegistrationId === req.id ? "Approving..." : "Approve"}
-                        </Button>
-                        <Button
+                        </ShadButton>
+                        <ShadButton
                           size="sm"
                           variant="secondary"
                           onClick={() => {
@@ -2733,16 +2763,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           disabled={reviewingRegistrationId === req.id}
                         >
                           Reject
-                        </Button>
+                        </ShadButton>
                       </div>
                     )}
-                  </div>
+                  </Card>
                 ))
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
       {isAccessInboxOpen && (
         <div className={dashboardModalBackdrop}>
@@ -2789,26 +2818,23 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </div>
       )}
 
-      {isAccessControlOpen && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => setIsAccessControlOpen(false)}
-          />
-          <div className="relative w-full max-w-[620px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 pt-6 pb-3 flex items-center justify-between">
+      <Dialog open={isAccessControlOpen} onOpenChange={(open) => !open && setIsAccessControlOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[620px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Active Access Grants</h3>
-                <p className="text-sm text-muted">Revoke member permissions synced to this organization.</p>
+                <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Active Access Grants</DialogTitle>
+                <DialogDescription className="text-sm text-muted">Revoke member permissions synced to this organization.</DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => setIsAccessControlOpen(false)}
                 className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
               >
                 <X size={18} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <div className="px-6 pb-6 max-h-[62vh] overflow-y-auto flex flex-col gap-3">
               {isLoadingGrants ? (
                 <p className="text-sm text-muted py-6 text-center">Loading grants...</p>
@@ -2822,52 +2848,54 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     return acc;
                   }, {} as Record<string, { email: string; grants: typeof activeGrants }>)
                 ).map((group) => (
-                  <div key={group.email} className="rounded-md border border-border/50 bg-white/80 p-4 flex flex-col gap-3">
+                  <Card key={group.email} className="rounded-md border-border/50 bg-white/80 p-4 flex flex-col gap-3">
                     <p className="text-sm font-semibold text-heading truncate">{group.email}</p>
                     <div className="flex flex-col gap-2">
                       {group.grants.map(grant => (
-                        <div key={grant.id} className="flex items-center justify-between gap-2 p-2 rounded-sm bg-surface/50 border border-border/30">
-                          <p className="text-xs text-muted font-medium">Permission: <span className="text-heading">{grant.permission}</span></p>
-                          <Button
+                        <Card key={grant.id} className="flex flex-row items-center justify-between gap-3 p-2 rounded-sm bg-surface/50 border-border/30">
+                          <p className="min-w-0 flex-1 truncate text-xs font-medium text-muted">
+                            Permission: <span className="text-heading">{grant.permission}</span>
+                          </p>
+                          <ShadButton
                             size="sm"
                             variant="secondary"
                             onClick={() => revokeGrant(grant.id)}
                             disabled={revokingGrantId === grant.id}
-                            className="h-7 text-xs px-3 disabled:opacity-60"
+                            className="h-7 shrink-0 px-3 text-xs disabled:opacity-60"
                           >
                             {revokingGrantId === grant.id ? "Revoking..." : "Revoke"}
-                          </Button>
-                        </div>
+                          </ShadButton>
+                        </Card>
                       ))}
                     </div>
-                  </div>
+                  </Card>
                 ))
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isBrandingOpen && (
-        <div className="fixed inset-0 z-100 flex h-dvh max-h-dvh flex-col">
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
-          />
+      <Dialog open={isBrandingOpen} onOpenChange={(open) => !open && !isSavingBranding && setIsBrandingOpen(false)}>
+        <DialogContent showCloseButton={false} className="z-100 flex h-dvh max-h-dvh w-full max-w-none -translate-x-1/2 -translate-y-1/2 flex-col rounded-none border-0 bg-transparent p-0 shadow-none ring-0 sm:max-w-none">
           <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-[1540px] flex-1 flex-col px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-8 sm:py-4">
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/40 bg-white/90 shadow-2xl backdrop-blur-sm">
-              <div className="flex min-w-0 shrink-0 flex-wrap items-start justify-between gap-4 border-b border-border/40 px-5 pb-4 pt-6 sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
+            <Card className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border-border/40 bg-white/90 p-0 shadow-2xl backdrop-blur-sm">
+              <DialogHeader className="flex min-w-0 shrink-0 flex-row flex-wrap items-start justify-between gap-4 px-5 pb-4 pt-6 sm:flex-nowrap sm:px-8 sm:pb-4 sm:pt-7">
                 <div>
-                  <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Card Branding</h2>
-                  <p className="text-sm text-muted mt-1.5">Finalize branding first, then share guest/visitor links.</p>
+                  <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Card Branding</DialogTitle>
+                  <DialogDescription className="text-sm text-muted mt-1.5">Finalize branding first, then share guest/visitor links.</DialogDescription>
                 </div>
-                <button
+                <ShadButton
+                  type="button"
+                  variant="outline"
+                  size="icon"
                   onClick={() => !isSavingBranding && setIsBrandingOpen(false)}
+                  disabled={isSavingBranding}
                   className="w-12 h-12 rounded-md border border-border/70 flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
                 >
                   <X size={20} />
-                </button>
-              </div>
+                </ShadButton>
+              </DialogHeader>
+              <Separator className="bg-border/40" />
 
               <div className="grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden">
                 <div className="relative min-h-0 min-w-0 overflow-hidden">
@@ -2881,22 +2909,24 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                 </div>
 
-                <div className="relative z-20 min-h-0 shrink-0 overflow-visible border-t border-border/40 bg-white/80 px-5 py-5 sm:px-8">
+                <Card className="relative z-20 min-h-0 shrink-0 overflow-visible rounded-none border-x-0 border-b-0 border-t border-border/40 bg-white/80 px-5 py-5 shadow-none sm:px-8">
                   <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
                     <div className="relative flex flex-col gap-2">
-                      <span className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
+                      <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Theme color
-                      </span>
+                      </Label>
                       <div className="flex h-11 items-center gap-2">
                         {BRAND_THEME_COLORS.map((c) => (
-                          <button
+                          <ShadButton
                             key={c.name}
                             type="button"
+                            variant="ghost"
+                            size="icon-sm"
                             onClick={() => {
                               setShowBrandCustomColorPicker(false);
                               editBrandingDraft((prev) => ({ ...prev, card_color: c.name }));
                             }}
-                            className={`w-8 h-8 rounded-md border transition-all ${
+                            className={`w-8 h-8 rounded-md border p-0 transition-all ${
                               brandingDraft.card_color === c.name
                                 ? "ring-2 ring-primary ring-offset-2 scale-110 border-transparent"
                                 : "border-white/40 hover:scale-105"
@@ -2905,8 +2935,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             aria-label={`Set ${c.name} theme`}
                           />
                         ))}
-                        <button
+                        <ShadButton
                           type="button"
+                          variant="ghost"
+                          size="icon-sm"
                           onClick={(e) => {
                             setShowBrandTextColorPicker(false);
                             setBrandCustomColorAnchorRect(e.currentTarget.getBoundingClientRect());
@@ -2935,7 +2967,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           >
                             +
                           </span>
-                        </button>
+                        </ShadButton>
                       </div>
                       {showBrandCustomColorPicker && (
                         <CustomColorPicker
@@ -2952,12 +2984,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
 
                     <div className="relative flex flex-col gap-2">
-                      <span className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
+                      <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Text color
-                      </span>
-                      <div className="flex h-11 w-fit items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
-                        <button
+                      </Label>
+                      <Card className="flex h-11 w-fit flex-row items-center rounded-md border-border/60 bg-white/85 p-1 shadow-sm">
+                        <ShadButton
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => {
                             setActiveBrandTextTarget("horizontal");
                             setShowBrandCustomColorPicker(false);
@@ -2972,10 +3006,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           }`}
                         >
                           T1 - Horizontal
-                        </button>
-                        <div className="mx-1 h-5 w-px bg-border/70" />
-                        <button
+                        </ShadButton>
+                        <Separator orientation="vertical" className="mx-1 h-5 bg-border/70" />
+                        <ShadButton
                           type="button"
+                          variant="ghost"
+                          size="sm"
                           onClick={(e) => {
                             setActiveBrandTextTarget("vertical");
                             setShowBrandCustomColorPicker(false);
@@ -2990,8 +3026,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           }`}
                         >
                           T2 - Vertical
-                        </button>
-                      </div>
+                        </ShadButton>
+                      </Card>
                       {showBrandTextColorPicker && (
                         <CustomColorPicker
                           value={draftBrandTextColor}
@@ -3011,9 +3047,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     </div>
 
                     <div className="relative z-30 flex flex-col gap-2 overflow-visible sm:col-span-2 lg:col-span-1">
-                      <span className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
+                      <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Typography
-                      </span>
+                      </Label>
                       <CardTypographyPicker
                         value={brandingDraft.card_font}
                         onChange={(val) => editBrandingDraft((prev) => ({ ...prev, card_font: val }))}
@@ -3021,22 +3057,23 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       />
                     </div>
                   </div>
-                </div>
+                </Card>
               </div>
 
-              <div className="shrink-0 border-t border-border/40 bg-white/95 px-5 py-4 sm:px-8">
+              <Separator className="bg-border/40" />
+              <DialogFooter className="shrink-0 bg-white/95 px-5 py-4 sm:px-8">
                 <div className="grid w-full grid-cols-1 items-center gap-3 min-[560px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                   <div className="flex justify-center min-[560px]:justify-start">
-                    <Button
+                    <ShadButton
                       className="w-full min-[560px]:w-auto shrink-0 sm:min-w-[132px]"
                       disabled={isSavingBranding}
                       onClick={saveBrandingConfig}
                     >
                       {isSavingBranding ? "Saving..." : "Save Branding"}
-                    </Button>
+                    </ShadButton>
                   </div>
                   <div className="flex flex-wrap items-center justify-center gap-2">
-                    <Button
+                    <ShadButton
                       type="button"
                       variant="secondary"
                       className="shrink-0"
@@ -3048,8 +3085,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <Undo2 size={16} className="shrink-0 opacity-90" aria-hidden />
                         Undo
                       </span>
-                    </Button>
-                    <Button
+                    </ShadButton>
+                    <ShadButton
                       type="button"
                       variant="secondary"
                       className="shrink-0"
@@ -3061,24 +3098,24 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <Redo2 size={16} className="shrink-0 opacity-90" aria-hidden />
                         Redo
                       </span>
-                    </Button>
+                    </ShadButton>
                   </div>
                   <div className="flex justify-center min-[560px]:justify-end">
-                    <Button
+                    <ShadButton
                       variant="secondary"
                       className="w-full min-[560px]:w-auto shrink-0 sm:min-w-[112px]"
                       disabled={isSavingBranding}
                       onClick={() => setIsBrandingOpen(false)}
                     >
                       Cancel
-                    </Button>
+                    </ShadButton>
                   </div>
                 </div>
-              </div>
-            </div>
+              </DialogFooter>
+            </Card>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
 
       {isRegistrationFormOpen && (
         <div className={dashboardModalBackdropTop}>
@@ -3388,28 +3425,25 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       {/* Sponsors modal */}
-      {isSponsorsOpen && eventData && (
-        <div className={dashboardModalBackdropTop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
-          />
-          <div className="relative my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[520px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 shadow-2xl animate-in zoom-in-95 duration-200 glass-panel sm:max-h-[calc(100dvh-4rem)]">
-            <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-6 py-5">
+      <Dialog open={isSponsorsOpen && Boolean(eventData)} onOpenChange={(open) => !open && !isSavingSponsors && setIsSponsorsOpen(false)}>
+          <DialogContent showCloseButton={false} className="my-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-[520px] flex-col overflow-hidden rounded-xl border border-border/70 bg-white/95 p-0 shadow-2xl glass-panel sm:max-h-[calc(100dvh-4rem)]">
+            <DialogHeader className="flex shrink-0 flex-row items-center justify-between border-b border-border/50 px-6 py-5">
               <div className="flex flex-col gap-1 pr-4">
-                <h2 className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</h2>
-                <p className="text-sm text-muted">
+                <DialogTitle className="text-xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Event sponsors</DialogTitle>
+                <DialogDescription className="text-sm text-muted">
                   Up to five logos with names. They appear on every lead card for this campaign.
-                </p>
+                </DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-sm"
                 onClick={() => !isSavingSponsors && setIsSponsorsOpen(false)}
                 className="shrink-0 rounded-sm border border-border p-2 text-muted transition-colors hover:bg-surface hover:text-heading"
               >
                 <X size={20} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <form onSubmit={handleSaveSponsors} className="flex min-h-0 flex-1 flex-col overflow-hidden">
               <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
                 <EventSponsorsForm
@@ -3419,32 +3453,29 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   disabled={isSavingSponsors || isPreviewMode}
                 />
               </div>
-              <div className="shrink-0 border-t border-border/50 bg-white/95 px-6 py-4 sm:flex-row">
+              <DialogFooter className="shrink-0 border-t border-border/50 bg-white/95 px-6 py-4 sm:flex-row">
                 <div className="form-actions w-full">
-                  <Button
+                  <ShadButton
                     type="button"
                     variant="secondary"
-                    fullWidth
-                    className="order-2 sm:order-1"
+                    className="order-2 w-full sm:order-1"
                     disabled={isSavingSponsors}
                     onClick={() => setIsSponsorsOpen(false)}
                   >
                     Cancel
-                  </Button>
-                  <Button
+                  </ShadButton>
+                  <ShadButton
                     type="submit"
-                    fullWidth
-                    className="order-1 sm:order-2"
+                    className="order-1 w-full sm:order-2"
                     disabled={isSavingSponsors || isPreviewMode}
                   >
                     {isSavingSponsors ? "Saving..." : "Save sponsors"}
-                  </Button>
+                  </ShadButton>
                 </div>
-              </div>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
       {/* Edit Campaign Modal */}
       {isEditOpen && (

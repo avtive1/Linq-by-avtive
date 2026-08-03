@@ -6,7 +6,21 @@ import { authClient } from "@/lib/auth/client";
 import { useInternalUserId } from "@/lib/auth/use-internal-user-id";
 import GradientBackground from "@/components/GradientBackground";
 import { OptimizedImage } from "@/components/OptimizedImage";
-import { Button, TextInput, TextArea, Skeleton, AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
+import { AnimatedCounter, FilePicker, TimeInput } from "@/components/ui";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button as ShadButton, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea as ShadTextarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
@@ -21,7 +35,6 @@ import {
   dashboardMainTransparent,
   dashboardPreviewBannerOuter,
   dashboardPreviewBannerInner,
-  dashboardModalBackdrop,
 } from "@/lib/ui/dashboard-shell";
 
 import { useSearchParams } from "next/navigation";
@@ -1074,7 +1087,7 @@ function DashboardContent() {
       <main className={dashboardMainTransparent}>
         <GradientBackground />
         <div className={dashboardContentInset}>
-          <div className="mx-auto max-w-[760px] glass-panel rounded-md p-6 sm:p-10 lg:p-12 flex flex-col gap-6 text-center">
+          <Card className="mx-auto max-w-[760px] rounded-md bg-white/90 p-6 text-center sm:p-10 lg:p-12">
             <h1
               className="text-2xl sm:text-3xl font-semibold text-heading tracking-tight leading-[1.1]"
               style={{ fontWeight: 700, WebkitTextStroke: "0px currentColor", textShadow: "none" }}
@@ -1086,12 +1099,12 @@ function DashboardContent() {
                 ? `Your request to join ${joinGateOrgName ? `"${joinGateOrgName}"` : "this organization"} is awaiting founder approval. Dashboard access will unlock after approval.`
                 : `No founder is assigned yet for ${joinGateOrgName ? `"${joinGateOrgName}"` : "this organization"}. Ask your admin to assign the founder email, then try again.`}
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button variant="secondary" onClick={handleLogout}>
+            <CardContent className="flex flex-col items-center justify-center gap-4 p-0 sm:flex-row">
+              <ShadButton variant="secondary" onClick={handleLogout}>
                 Log out
-              </Button>
-            </div>
-          </div>
+              </ShadButton>
+            </CardContent>
+          </Card>
         </div>
       </main>
     );
@@ -1110,7 +1123,10 @@ function DashboardContent() {
             </div>
             <Link
               href="/admin"
-              className="no-link-underline shrink-0 self-start cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[13px] font-medium text-white hover:no-link-underline hover:bg-white/20 sm:self-auto"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "sm" }),
+                "no-link-underline shrink-0 self-start cursor-pointer border-white/20 bg-white/10 text-[13px] text-white hover:no-link-underline hover:bg-white/20 sm:self-auto",
+              )}
             >
               Exit Preview
             </Link>
@@ -1146,9 +1162,10 @@ function DashboardContent() {
         ) : (
           <>
         {bootstrapError ? (
-          <div className="mb-6 rounded-md border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-            {bootstrapError}
-          </div>
+          <Alert variant="destructive" className="mb-6 border-danger/30 bg-danger/10 text-danger">
+            <AlertCircle aria-hidden="true" />
+            <AlertDescription>{bootstrapError}</AlertDescription>
+          </Alert>
         ) : null}
         {/* Header row */}
         <motion.div
@@ -1188,7 +1205,8 @@ function DashboardContent() {
                 <User size={18} className="text-primary-strong/70" />
                 <span>{userName}</span>
                 {!isPreviewMode && (isOrgOwner || isOrgTeamMember) && (
-                  <span
+                  <Badge
+                    variant="outline"
                     className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md border ${
                       isOrgOwner
                         ? "bg-primary/10 text-primary-strong border-primary/25"
@@ -1197,7 +1215,7 @@ function DashboardContent() {
                   >
                     {isOrgOwner ? <ShieldCheck size={12} /> : <UserCheck size={12} />}
                     {isOrgOwner ? "Admin" : "Team Member"}
-                  </span>
+                  </Badge>
                 )}
               </div>
             )}
@@ -1224,19 +1242,21 @@ function DashboardContent() {
           <div className="flex min-w-0 w-full flex-col items-stretch gap-3 max-lg:basis-full lg:w-auto lg:basis-auto lg:flex-row lg:flex-nowrap lg:items-center lg:justify-end">
             {isAdmin && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
-                <Button
+                <Link
                   href="/admin"
-                  variant="secondary"
-                  className="bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium"
-                  icon={<Sparkles size={18} />}
+                  className={cn(
+                    buttonVariants({ variant: "secondary" }),
+                    "bg-red-500/10 border-red-500/30 text-red-600 hover:bg-red-500/20 hover:border-red-500/45 font-medium",
+                  )}
                 >
+                  <Sparkles size={18} />
                   Admin Panel
-                </Button>
+                </Link>
               </div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
-                <Button
+                <ShadButton
                   variant="secondary"
                   onClick={() => {
                     if (isOrgTeamMember && !hasCreateCampaignPermission) {
@@ -1247,29 +1267,29 @@ function DashboardContent() {
                   }}
                   className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] bg-surface border-hairline-strong text-ink hover:bg-white"
                   title={isOrgTeamMember && !hasCreateCampaignPermission ? "You need Campaign Creation access. Request it from your organization admin." : ""}
-                  icon={isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
                 >
+                  {isOrgTeamMember && !hasCreateCampaignPermission ? <AlertCircle size={18} className="animate-pulse" /> : <Calendar size={18} />}
                   <span>New Campaign</span>
-                </Button>
+                </ShadButton>
               </div>
             )}
             {!isPreviewMode && !hasPendingOrgJoin && !isOrgTeamMember && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
-                <Button
+                <ShadButton
                   variant="secondary"
                   onClick={() => {
                     void openTeamAccessModal("list");
                   }}
                   className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface"
-                  icon={<Users size={18} />}
                 >
+                  <Users size={18} />
                   Team Access
-                </Button>
+                </ShadButton>
               </div>
             )}
             {!isPreviewMode && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
-                <Button
+                <ShadButton
                   variant="secondary"
                   onClick={() => {
                     setUsernameDraft(userName);
@@ -1283,38 +1303,38 @@ function DashboardContent() {
                     setIsUsernameModalOpen(true);
                   }}
                   className="w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
-                  icon={<Settings size={18} />}
                 >
+                  <Settings size={18} />
                   <span>Settings</span>
-                </Button>
+                </ShadButton>
               </div>
             )}
             <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
-              <Button
+              <ShadButton
                 variant="secondary"
-                fullWidth
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                icon={isLoggingOut ? undefined : <LogOut size={18} />}
-                className="justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
+                className="w-full justify-center whitespace-nowrap lg:w-auto border-hairline-strong text-ink hover:bg-surface"
               >
+                {isLoggingOut ? null : <LogOut size={18} />}
                 <span>{isLoggingOut ? "..." : "Logout"}</span>
-              </Button>
+              </ShadButton>
             </div>
           </div>
         </motion.div>
         {isOrgAdminMode && (
           <motion.div
-            className="mb-8 rounded-md border border-hairline-soft bg-surface px-4 py-6 min-w-0 lg:px-6"
+            className="mb-8 min-w-0"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
           >
-            <div className="flex flex-col gap-5">
+            <Card className="rounded-md border-hairline-soft bg-surface px-4 py-6 lg:px-6">
+            <CardContent className="flex flex-col gap-5 p-0">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary/25 bg-primary/10 text-primary-strong">
+                  <Badge variant="outline" className="h-10 w-10 justify-center rounded-md border-primary/25 bg-primary/10 p-0 text-primary-strong">
                     <ShieldCheck size={20} />
-                  </span>
+                  </Badge>
                   <div className="flex flex-col">
                     <p className="text-xl font-bold uppercase tracking-wide text-primary-strong leading-none mb-1">
                       {orgDisplayName} Admin Console
@@ -1338,15 +1358,17 @@ function DashboardContent() {
                 ].map((kpi, kpiIdx) => (
                   <motion.div
                     key={kpi.label}
-                    className="rounded-md border border-primary/20 bg-white/90 px-4 py-3 motion-token-enter motion-token-hover"
+                    className="motion-token-enter motion-token-hover"
                     viewport={presets.viewport}
                     {...staggerItem(kpiIdx, 0.05, 0.22, 12, 0.28)}
                     {...hoverLift(-3, 1.008)}
                   >
+                    <Card className="rounded-md border-primary/20 bg-white/90 px-4 py-3">
                     <p className="text-xs uppercase tracking-wide text-muted">{kpi.label}</p>
                     <p className="mt-1 text-3xl font-semibold leading-tight text-heading">
                       <AnimatedCounter value={kpi.value} />
                     </p>
+                    </Card>
                   </motion.div>
                 ))}
               </div>
@@ -1354,11 +1376,12 @@ function DashboardContent() {
               <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                 {/* Campaign Status — 3-tile visual */}
                 <motion.div
-                  className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
+                  className="motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.08)}
                   {...hoverLift(-2, 1.005)}
                 >
+                  <Card className="rounded-md border-primary/20 bg-white/85 px-4 py-4">
                   <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <Layers3 size={14} className="text-primary-strong" />
                     Campaign Status
@@ -1371,28 +1394,32 @@ function DashboardContent() {
                     ].map((item, idx) => (
                       <motion.div
                         key={item.label}
-                        className={`flex flex-col items-center gap-2 rounded-md border py-4 px-2 ${item.bg} ${item.border}`}
+                        className="motion-token-enter"
                         viewport={presets.viewport}
                         {...staggerItem(idx, 0.04, 0.18, 8, 0.24)}
                       >
+                        <Card className={`flex flex-col items-center gap-2 rounded-md border py-4 px-2 ${item.bg} ${item.border}`}>
                         <span className="text-2xl font-semibold text-heading tracking-[-0.02em] leading-none">
                           {item.value}
                         </span>
                         <span className={`text-[11px] font-semibold uppercase tracking-wider ${item.text} text-center leading-tight`}>
                           {item.label}
                         </span>
+                        </Card>
                       </motion.div>
                     ))}
                   </div>
+                  </Card>
                 </motion.div>
 
                 {/* Top Campaigns — ranked list */}
                 <motion.div
-                  className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
+                  className="motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.1)}
                   {...hoverLift(-2, 1.005)}
                 >
+                  <Card className="rounded-md border-primary/20 bg-white/85 px-4 py-4">
                   <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <TrendingUp size={14} className="text-primary-strong" />
                     Top Campaigns
@@ -1414,22 +1441,24 @@ function DashboardContent() {
                           <span className="flex-1 truncate text-sm font-medium text-heading leading-tight">
                             {evt.name}
                           </span>
-                          <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
+                          <Badge variant="outline" className="shrink-0 rounded-md border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
                             {evt.attendeeCount || 0}
-                          </span>
+                          </Badge>
                         </motion.div>
                       ))
                     )}
                   </div>
+                  </Card>
                 </motion.div>
 
                 {/* Top Roles — ranked list */}
                 <motion.div
-                  className="rounded-md border border-primary/20 bg-white/85 px-4 py-4 motion-token-enter motion-token-hover"
+                  className="motion-token-enter motion-token-hover"
                   viewport={presets.viewport}
                   {...fadeUp(0.12)}
                   {...hoverLift(-2, 1.005)}
                 >
+                  <Card className="rounded-md border-primary/20 bg-white/85 px-4 py-4">
                   <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-heading/75">
                     <Users size={14} className="text-primary-strong" />
                     Top 5 Roles
@@ -1451,16 +1480,18 @@ function DashboardContent() {
                           <span className="flex-1 truncate text-sm font-medium text-heading leading-tight">
                             {entry.role}
                           </span>
-                          <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
+                          <Badge variant="outline" className="shrink-0 rounded-md border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold text-primary-strong leading-tight">
                             {entry.count}
-                          </span>
+                          </Badge>
                         </motion.div>
                       ))
                     )}
                   </div>
+                  </Card>
                 </motion.div>
               </div>
-            </div>
+            </CardContent>
+            </Card>
           </motion.div>
         )}
         {isTeamMemberMode && (
@@ -1540,8 +1571,8 @@ function DashboardContent() {
 
         {/* Search Bar + Filters */}
         <motion.div className="flex min-w-0 flex-col sm:flex-row gap-4 mb-8 delay-200" viewport={presets.viewport} {...fadeUp(0.1)}>
-          <div
-            className={`flex h-12 min-h-12 w-full min-w-0 flex-1 items-center gap-3 rounded-md border px-5 shadow-sm transition-all focus-within:outline-none focus-within:ring-2 focus-within:ring-primary/40 sm:h-14 sm:min-h-14 sm:gap-4 sm:px-7 ${
+          <InputGroup
+            className={`h-12 min-h-12 w-full min-w-0 flex-1 rounded-md px-5 shadow-sm transition-all sm:h-14 sm:min-h-14 sm:px-7 ${
               isPreviewMode
                 ? "border-heading/20 bg-white/90 focus-within:bg-white"
                 : isTeamMemberMode || isOrgAdminMode
@@ -1549,19 +1580,21 @@ function DashboardContent() {
                   : "border-border/60 bg-white/80 backdrop-blur-md focus-within:bg-white"
             }`}
           >
-            <Search className="pointer-events-none shrink-0 text-heading" size={22} strokeWidth={2.5} aria-hidden />
-            <input
+            <InputGroupAddon className="p-0">
+              <Search className="pointer-events-none shrink-0 text-heading" size={22} strokeWidth={2.5} aria-hidden="true" />
+            </InputGroupAddon>
+            <InputGroupInput
               id="dashboard-campaign-search"
               name="campaignSearch"
               type="text"
               placeholder={isTeamMemberMode ? "Search assigned campaigns..." : "Search campaigns..."}
-              className="min-w-0 flex-1 border-0 bg-transparent py-[0.65rem] pr-0 text-[17px] leading-[1.6] text-heading shadow-none outline-none ring-0 placeholder:text-muted/55 placeholder:opacity-90 focus-visible:ring-0 sm:h-full sm:min-h-0 sm:py-0"
+              className="min-w-0 flex-1 py-[0.65rem] pr-0 text-[17px] leading-[1.6] text-heading placeholder:text-muted/55 placeholder:opacity-90 sm:h-full sm:min-h-0 sm:py-0"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-          </div>
+          </InputGroup>
           <div className="relative w-full min-w-0 self-stretch sm:w-auto sm:self-auto">
-            <button
+            <ShadButton
               type="button"
               onClick={() => setIsEventFilterOpen((prev) => !prev)}
               className={`h-12 min-h-12 w-full rounded-md border px-7 shadow-sm inline-flex items-center justify-center gap-2.5 text-base font-semibold transition-all duration-150 sm:inline-flex sm:h-14 sm:min-h-14 sm:w-auto ${
@@ -1572,9 +1605,9 @@ function DashboardContent() {
             >
               <SlidersHorizontal size={18} />
               Filter
-            </button>
+            </ShadButton>
             {isEventFilterOpen && (
-              <div className="absolute left-1/2 z-30 mt-2 w-[min(calc(100vw-2rem),280px)] -translate-x-1/2 rounded-md border border-border/70 bg-white/95 p-4 shadow-xl sm:left-auto sm:right-0 sm:translate-x-0 sm:w-[280px]">
+              <Card className="absolute left-1/2 z-30 mt-2 w-[min(calc(100vw-2rem),280px)] -translate-x-1/2 rounded-md border-border/70 bg-white/95 p-4 shadow-xl sm:left-auto sm:right-0 sm:translate-x-0 sm:w-[280px]">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">Campaign status</p>
@@ -1585,9 +1618,11 @@ function DashboardContent() {
                         { id: "ongoing", label: "Ongoing" },
                         { id: "past", label: "Past" },
                       ].map((opt) => (
-                        <button
+                        <ShadButton
                           key={opt.id}
                           type="button"
+                          variant="outline"
+                          size="xs"
                           onClick={() => setEventStatusFilter(opt.id as "all" | "upcoming" | "ongoing" | "past")}
                           className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
                             eventStatusFilter === opt.id
@@ -1596,7 +1631,7 @@ function DashboardContent() {
                           }`}
                         >
                           {opt.label}
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
@@ -1608,9 +1643,11 @@ function DashboardContent() {
                         { id: "onsite", label: "Onsite" },
                         { id: "webinar", label: "Webinar" },
                       ].map((opt) => (
-                        <button
+                        <ShadButton
                           key={opt.id}
                           type="button"
+                          variant="outline"
+                          size="xs"
                           onClick={() => setEventLocationFilter(opt.id as "all" | "onsite" | "webinar")}
                           className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-all ${
                             eventLocationFilter === opt.id
@@ -1619,13 +1656,15 @@ function DashboardContent() {
                           }`}
                         >
                           {opt.label}
-                        </button>
+                        </ShadButton>
                       ))}
                     </div>
                   </div>
                   <div className="flex justify-end pt-1">
-                    <button
+                    <ShadButton
                       type="button"
+                      variant="link"
+                      size="xs"
                       onClick={() => {
                         setEventStatusFilter("all");
                         setEventLocationFilter("all");
@@ -1633,27 +1672,29 @@ function DashboardContent() {
                       className="cursor-pointer text-xs font-medium text-muted hover:text-heading underline-offset-4 hover:underline"
                     >
                       Reset filters
-                    </button>
+                    </ShadButton>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </div>
         </motion.div>
 
         {isOrgTeamMember && (
           <motion.div
-            className="p-4 rounded-md mb-6 border border-primary/25 bg-surface border border-hairline-soft shadow-sm motion-token-enter motion-token-hover"
+            className="mb-6 motion-token-enter motion-token-hover"
             viewport={presets.viewport}
             {...fadeUp(0.07)}
             {...hoverLift(-2, 1.004)}
           >
+            <Card className="rounded-md border-primary/25 bg-surface p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3 mb-3">
               <p className="text-sm font-medium text-heading inline-flex items-center gap-2">
                 <Lock size={14} className="text-primary-strong" />
                 Your Access
               </p>
-              <span
+              <Badge
+                variant="outline"
                 className={`text-xs px-2 py-1 rounded-md border ${
                   hasCreateCampaignPermission
                     ? "text-primary-strong bg-primary/10 border-primary/25"
@@ -1661,46 +1702,49 @@ function DashboardContent() {
                 }`}
               >
                 {hasCreateCampaignPermission ? "Can create campaigns" : "Campaign creation locked"}
-              </span>
+              </Badge>
             </div>
             <div className="flex flex-wrap gap-2">
               {grantedPermissions.length > 0 ? (
                 grantedPermissions.map((perm) => (
-                  <span key={perm} className="text-[11px] uppercase tracking-wide px-2 py-1 rounded-md border border-primary/20 bg-white text-primary-strong">
+                  <Badge key={perm} variant="outline" className="text-[11px] uppercase tracking-wide px-2 py-1 rounded-md border-primary/20 bg-white text-primary-strong">
                     {perm.replaceAll("_", " ")}
-                  </span>
+                  </Badge>
                 ))
               ) : (
                 <span className="text-xs text-muted">No active permissions yet. Request access from your organization admin.</span>
               )}
             </div>
+            </Card>
           </motion.div>
         )}
 
         {isOrgTeamMember && myAccessRequests.length > 0 && (
           <motion.div
-            className="p-4 rounded-md mb-6 border border-border/60 bg-white/92 shadow-sm motion-token-enter"
+            className="mb-6 motion-token-enter"
             viewport={presets.viewport}
             {...fadeUp(0.09)}
           >
+            <Card className="rounded-md border-border/60 bg-white/92 p-4 shadow-sm">
             <p className="text-sm font-medium text-heading mb-2">My Pending Access Workflow</p>
             <div className="flex flex-col gap-2">
               {myAccessRequests.slice(0, 4).map((req) => (
                 <div key={req.id} className="flex items-center justify-between text-[13px] leading-tight bg-white border border-primary/15 rounded-md px-3 py-2">
                   <span className="text-heading">{req.event_name} • {req.requested_action}</span>
-                  <span className={`font-medium ${
+                  <Badge variant="outline" className={`font-medium ${
                     req.status === "approved" ? "text-success" : req.status === "rejected" ? "text-red-500" : "text-amber-600"
                   }`}>
                     {req.status}
-                  </span>
+                  </Badge>
                 </div>
               ))}
             </div>
+            </Card>
           </motion.div>
         )}
 
         {!isOrgTeamMember && !isOrgOwner && myOrgJoinRequests.length > 0 && (
-          <div className="glass-panel p-4 rounded-md mb-6">
+          <Card className="glass-panel p-4 rounded-md mb-6">
             <p className="text-sm font-medium text-heading mb-2">My Organization Join Requests</p>
             <div className="flex flex-col gap-2">
               {myOrgJoinRequests.slice(0, 4).map((req) => (
@@ -1715,29 +1759,29 @@ function DashboardContent() {
                       </span>
                     )}
                   </div>
-                  <span className={`font-medium shrink-0 border px-2 py-1 rounded-md ${formatJoinStatus(req.status).className}`}>
+                  <Badge variant="outline" className={`font-medium shrink-0 border px-2 py-1 rounded-md ${formatJoinStatus(req.status).className}`}>
                     {formatJoinStatus(req.status).label}
-                  </span>
+                  </Badge>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {!isOrgTeamMember && isOrgOwner && (orgJoinInbox.length > 0 || inboxRequests.length > 0 || failedNotifications.length > 0) && (
-          <div className="glass-panel p-4 rounded-md mb-6 border border-primary/20 bg-primary/5">
+          <Alert className="glass-panel p-4 rounded-md mb-6 border-primary/20 bg-primary/5">
+            <ShieldCheck size={14} className="text-primary-strong" />
             <p className="text-sm font-medium text-heading inline-flex items-center gap-2">
-              <ShieldCheck size={14} className="text-primary-strong" />
               Admin Workspace
             </p>
-            <p className="text-xs text-muted mt-1">
+            <AlertDescription className="text-xs text-muted mt-1">
               Review organization join requests, access approvals, and notification health.
-            </p>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         {!isOrgTeamMember && isOrgOwner && orgJoinInbox.length > 0 && (
-          <div className="glass-panel p-4 rounded-md mb-6">
+          <Card className="glass-panel p-4 rounded-md mb-6">
             <p className="text-sm font-medium text-heading mb-2">Organization Join Inbox</p>
             <div className="flex flex-col gap-2">
               {orgJoinInbox.slice(0, 4).map((req) => (
@@ -1746,54 +1790,60 @@ function DashboardContent() {
                     Requester: {req.requester_email} • Wants to join: {req.requested_org_name}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
+                    <ShadButton
+                      size="xs"
                       className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-tight font-medium tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "approve")}
                     >
                       Approve
-                    </button>
-                    <button
+                    </ShadButton>
+                    <ShadButton
+                      variant="outline"
+                      size="xs"
                       className="px-2 py-1 rounded-md border border-border text-[13px] leading-tight font-normal tracking-[0.01em]"
                       onClick={() => reviewOrgJoinRequest(req.id, "reject")}
                     >
                       Reject
-                    </button>
+                    </ShadButton>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {!isOrgTeamMember && isOrgOwner && inboxRequests.length > 0 && (
-          <div className="glass-panel p-4 rounded-md mb-6">
+          <Card className="glass-panel p-4 rounded-md mb-6">
             <p className="text-sm font-medium text-heading mb-2">Pending Access Inbox</p>
             <div className="flex flex-col gap-2">
               {inboxRequests.slice(0, 4).map((req) => (
                 <div key={req.id} className="flex items-center justify-between gap-3 text-[13px] leading-tight bg-white/60 border border-border/50 rounded-md px-3 py-2">
                   <span className="text-heading truncate">{req.requester_email} • {req.event_name} • {req.requested_action}</span>
                   <div className="flex items-center gap-2 shrink-0">
-                    <button
+                    <ShadButton
+                      size="xs"
                       className="px-2 py-1 rounded-md bg-primary text-primary-foreground text-[13px] leading-tight font-medium tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "approve")}
                     >
                       Approve
-                    </button>
-                    <button
+                    </ShadButton>
+                    <ShadButton
+                      variant="outline"
+                      size="xs"
                       className="px-2 py-1 rounded-md border border-border text-[13px] leading-tight font-normal tracking-[0.01em]"
                       onClick={() => reviewInboxRequest(req.id, "reject")}
                     >
                       Reject
-                    </button>
+                    </ShadButton>
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {!isOrgTeamMember && failedNotifications.length > 0 && (
-          <div className="glass-panel p-4 rounded-md mb-6">
+          <Card className="glass-panel p-4 rounded-md mb-6">
             <p className="text-sm font-medium text-heading mb-2">Failed Notifications</p>
             <div className="flex flex-col gap-2">
               {failedNotifications.slice(0, 6).map((row) => (
@@ -1801,28 +1851,30 @@ function DashboardContent() {
                   <span className="text-heading truncate">
                     {row.event_name} • {row.requester_email} • {row.requested_action}
                   </span>
-                  <button
+                  <ShadButton
+                    variant="outline"
+                    size="xs"
                     className="px-2 py-1 rounded-md border border-border text-[13px] leading-tight font-normal inline-flex items-center gap-1 shrink-0"
                     onClick={() => retryNotification(row.id, row.status)}
                     disabled={retryingNotificationId === row.id}
                   >
                     <RefreshCw size={12} className={retryingNotificationId === row.id ? "animate-spin" : ""} />
                     {retryingNotificationId === row.id ? "Retrying" : "Retry"}
-                  </button>
+                  </ShadButton>
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Event Cards List */}
         {events.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border border-dashed border-border rounded-xl gap-4 px-6">
+          <Card className="flex flex-col items-center justify-center text-center py-24 sm:py-32 bg-surface/30 border-dashed border-border rounded-xl gap-4 px-6">
             <div className="flex flex-col gap-1">
               <p className="text-heading font-medium">No campaigns yet</p>
               <p className="text-sm text-muted">Create your first campaign to start inviting attendees.</p>
             </div>
-          </div>
+          </Card>
         ) : (
           <div className="grid min-w-0 gap-4 sm:grid-cols-2 delay-300">
             {filteredEvents.length > 0 ? (
@@ -1831,17 +1883,20 @@ function DashboardContent() {
                 return (
                 <motion.div
                   key={evt.id}
-                  className={`group motion-token-enter motion-token-hover flex flex-col justify-between p-6 rounded-md  ${
+                  className="group motion-token-enter motion-token-hover"
+                  viewport={presets.viewport}
+                  {...staggerItem(idx, 0.05, 0.28, 16, 0.3)}
+                  {...hoverLift(-6, 1.01)}
+                >
+                  <Card
+                    className={`flex h-full flex-col justify-between p-6 rounded-md ${
                     isPreviewMode
                       ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
                       : isTeamMemberMode || isOrgAdminMode
                         ? "bg-white/95 border border-primary/20 shadow-md hover:shadow-lg hover:border-primary/40"
                       : "glass-panel hover:shadow-2xl hover:shadow-black/10 hover:border-primary/40"
                   } ${status.label === "Past" ? "opacity-75 grayscale-[0.3]" : ""}`}
-                  viewport={presets.viewport}
-                  {...staggerItem(idx, 0.05, 0.28, 16, 0.3)}
-                  {...hoverLift(-6, 1.01)}
-                >
+                  >
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       {evt.logo_url && (
@@ -1858,12 +1913,12 @@ function DashboardContent() {
                       )}
                     </div>
                     <div className="flex flex-col items-end gap-2 ml-auto">
-                      <span className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
+                      <Badge variant="outline" className={`text-[13px] font-medium tracking-[0.01em] leading-tight px-3 py-1 rounded-md border ${status.classes}`}>
                         {status.label}
-                      </span>
-                      <div className="flex items-center text-[13px] font-medium leading-tight text-primary-strong bg-primary/10 px-3 py-1 rounded-md">
+                      </Badge>
+                      <Badge variant="outline" className="flex items-center text-[13px] font-medium leading-tight text-primary-strong bg-primary/10 px-3 py-1 rounded-md">
                         {evt.attendeeCount} Attendee{evt.attendeeCount !== 1 && 's'}
-                      </div>
+                      </Badge>
                     </div>
                   </div>
                   
@@ -1888,19 +1943,21 @@ function DashboardContent() {
                     </div>
                   </div>
                   
-                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className="mt-auto pt-3 border-t border-border/60 flex items-center justify-between text-sm font-medium text-heading hover:text-ink hover:bg-white/20 rounded-inline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 cursor-pointer group-hover:text-ink">
+                  <Separator className="mt-auto" />
+                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mt-3 h-auto justify-between px-0 text-sm font-medium text-heading hover:text-ink hover:bg-white/20 rounded-inline cursor-pointer group-hover:text-ink")}>
                     View Campaign
                     <motion.span {...hoverIconNudge(3)} className="inline-flex">
                       <ChevronRight size={20} className="transition-transform duration-200" />
                     </motion.span>
                   </Link>
+                  </Card>
                 </motion.div>
                 );
               })
             ) : (
-              <div className="col-span-full text-center py-12 glass-panel rounded-xl border-dashed">
+              <Card className="col-span-full text-center py-12 glass-panel rounded-xl border-dashed">
                 <p className="text-muted text-sm">No campaigns match your search/filter criteria.</p>
-              </div>
+              </Card>
             )}
           </div>
         )}
@@ -1909,33 +1966,30 @@ function DashboardContent() {
   </div>
 
       {/* Event Creation Modal */}
-      {isEventModalOpen && !isPreviewMode && (
-        <div className={dashboardModalBackdrop}>
-          <div 
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" 
-          />
-          <div className="relative w-full max-w-[480px] max-h-[92dvh] min-h-0 flex flex-col glass-panel bg-white border border-border/70 rounded-xl shadow-2xl animate-in zoom-in-95 duration-200">
-            {/* Modal Header */}
-            <div className="px-8 pt-6 pb-3 flex items-center justify-between border-b border-border/50 shrink-0">
+      <Dialog open={isEventModalOpen && !isPreviewMode} onOpenChange={(open) => !open && setIsEventModalOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[480px] max-h-[92dvh] min-h-0 flex flex-col glass-panel bg-white border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-8 pt-6 pb-3 flex-row items-center justify-between border-b border-border/50 shrink-0">
               <div className="flex flex-col gap-1">
-                <h2 className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Create New Campaign</h2>
-                <p className="text-[13px] text-muted">Add details for your upcoming campaign.</p>
+                <DialogTitle className="text-xl font-bold text-heading tracking-[-0.02em] leading-tight">Create New Campaign</DialogTitle>
+                <DialogDescription className="text-[13px] text-muted">Add details for your upcoming campaign.</DialogDescription>
               </div>
-              <button onClick={() => setIsEventModalOpen(false)} className="text-muted hover:text-heading p-1"><X size={20}/></button>
-            </div>
+              <ShadButton type="button" variant="ghost" size="icon-sm" onClick={() => setIsEventModalOpen(false)} className="text-muted hover:text-heading">
+                <X size={20}/>
+              </ShadButton>
+            </DialogHeader>
 
-            {/* Modal Body + Footer */}
             <form onSubmit={handleEventSubmit} className="flex flex-col flex-1 min-h-0">
               <div className="flex-1 overflow-y-auto p-8 pt-5 custom-scrollbar">
               <div className="flex flex-col gap-5">
                 <div className="flex flex-col gap-1.5">
-                  <TextInput
-                    label="Name of the Campaign"
+                  <Label htmlFor="dashboard-event-name">Name of the Campaign <span className="text-primary-strong">*</span></Label>
+                  <Input
+                    id="dashboard-event-name"
                     required
                     placeholder="e.g. TechConf 2026"
                     value={eventForm.name}
                     maxLength={EVENT_NAME_MAX_CHARS}
-                    onChange={(v) => setEventForm({ ...eventForm, name: v })}
+                    onChange={(e) => setEventForm({ ...eventForm, name: e.target.value })}
                   />
                   <div className="flex justify-end">
                     <span className={`text-[11px] font-medium ${eventForm.name.length >= EVENT_NAME_MAX_CHARS ? "text-amber-600" : "text-muted"}`}>
@@ -1944,57 +1998,66 @@ function DashboardContent() {
                   </div>
                 </div>
 
-                <TextArea
-                  label="Campaign Description"
-                  placeholder="Describe your campaign (e.g. goals, audience)..."
-                  value={eventForm.description}
-                  maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
-                  onChange={(v: string) => setEventForm({ ...eventForm, description: v })}
-                />
+                <div className="grid gap-2">
+                  <Label htmlFor="dashboard-event-description">Campaign Description</Label>
+                  <ShadTextarea
+                    id="dashboard-event-description"
+                    placeholder="Describe your campaign (e.g. goals, audience)..."
+                    value={eventForm.description}
+                    maxLength={CAMPAIGN_DESCRIPTION_MAX_CHARS}
+                    onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  />
+                </div>
                 
                 <div className="flex flex-col gap-2 w-full">
                   <div className="flex items-center gap-1">
                      <label className="text-[14px] font-normal text-heading leading-tight tracking-[0.01em]">Location Type</label>
                   </div>
-                  <div className="flex gap-4 mb-1">
-                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" id="dashboard-event-location-onsite" name="locationType" value="onsite" checked={eventForm.location_type === "onsite"} onChange={() => setEventForm({ ...eventForm, location_type: "onsite" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                  <RadioGroup className="flex gap-4 mb-1" value={eventForm.location_type} onValueChange={(value) => setEventForm({ ...eventForm, location_type: value as "onsite" | "webinar", ...(value === "webinar" ? { location: "" } : {}) })}>
+                     <Label htmlFor="dashboard-event-location-onsite" className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <RadioGroupItem id="dashboard-event-location-onsite" value="onsite" />
                         Onsite
-                     </label>
-                     <label className="flex items-center gap-2 cursor-pointer text-sm text-heading">
-                        <input type="radio" id="dashboard-event-location-webinar" name="locationType" value="webinar" checked={eventForm.location_type === "webinar"} onChange={() => setEventForm({ ...eventForm, location_type: "webinar", location: "" })} className="accent-primary h-4 w-4 cursor-pointer" />
+                     </Label>
+                     <Label htmlFor="dashboard-event-location-webinar" className="flex items-center gap-2 cursor-pointer text-sm text-heading">
+                        <RadioGroupItem id="dashboard-event-location-webinar" value="webinar" />
                         Webinar
-                     </label>
-                  </div>
+                     </Label>
+                  </RadioGroup>
                 </div>
 
                 {eventForm.location_type === "webinar" ? (
                    <div className="flex flex-col gap-2 w-full group opacity-75">
-                     <label className="text-[14px] font-normal text-heading leading-tight tracking-[0.01em]">Location <span className="text-primary-strong">*</span></label>
-                     <div className="flex h-11 items-center bg-surface border border-border/60 rounded-md shadow-sm px-4 overflow-hidden cursor-not-allowed">
-                        <Globe size={18} className="text-muted mr-2" />
-                        <input id="dashboard-event-webinar-readonly" name="locationWebinarLabel" type="text" value="Webinar" disabled className="h-full flex-1 py-0 text-[16px] leading-[1.6] text-muted bg-transparent outline-none cursor-not-allowed" />
-                     </div>
+                     <Label htmlFor="dashboard-event-webinar-readonly" className="text-[14px] font-normal text-heading leading-tight tracking-[0.01em]">Location <span className="text-primary-strong">*</span></Label>
+                     <InputGroup className="h-11 bg-surface border-border/60 cursor-not-allowed">
+                        <InputGroupAddon><Globe size={18} className="text-muted" /></InputGroupAddon>
+                        <InputGroupInput id="dashboard-event-webinar-readonly" name="locationWebinarLabel" type="text" value="Webinar" disabled className="text-muted cursor-not-allowed" readOnly />
+                     </InputGroup>
                    </div>
                 ) : (
-                  <TextInput
-                    label="Location"
-                    required
-                    placeholder="e.g. San Francisco, CA"
-                    value={eventForm.location}
-                    onChange={(v) => setEventForm({ ...eventForm, location: v })}
-                  />
+                  <div className="grid gap-2">
+                    <Label htmlFor="dashboard-event-location">Location <span className="text-primary-strong">*</span></Label>
+                    <Input
+                      id="dashboard-event-location"
+                      required
+                      placeholder="e.g. San Francisco, CA"
+                      value={eventForm.location}
+                      onChange={(e) => setEventForm({ ...eventForm, location: e.target.value })}
+                    />
+                  </div>
                 )}
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <TextInput
-                  label="Campaign Date"
-                    required
-                    type="date"
-                    min={minCampaignDate}
-                    value={eventForm.date}
-                    onChange={(v) => setEventForm({ ...eventForm, date: v })}
-                  />
+                  <div className="grid gap-2">
+                    <Label htmlFor="dashboard-event-date">Campaign Date <span className="text-primary-strong">*</span></Label>
+                    <Input
+                      id="dashboard-event-date"
+                      required
+                      type="date"
+                      min={minCampaignDate}
+                      value={eventForm.date}
+                      onChange={(e) => setEventForm({ ...eventForm, date: e.target.value })}
+                    />
+                  </div>
                   <TimeInput
                     label="Campaign Time"
                     required
@@ -2021,84 +2084,83 @@ function DashboardContent() {
               </div>
 
               {/* Modal Footer */}
-              <div className="shrink-0 border-t border-hairline-soft bg-white p-6 form-actions">
-                <Button 
+              <DialogFooter className="shrink-0 border-t border-hairline-soft bg-white p-6 form-actions">
+                <ShadButton 
+                  type="button"
                   variant="secondary" 
-                  fullWidth 
                   onClick={() => setIsEventModalOpen(false)}
-                  className="order-2 sm:order-1"
+                  className="order-2 w-full sm:order-1"
                 >
                   Cancel
-                </Button>
-                <Button 
+                </ShadButton>
+                <ShadButton 
                   type="submit" 
-                  fullWidth 
                   disabled={isSubmittingEvent || (isOrgTeamMember && !hasCreateCampaignPermission)}
-                  className="order-1 sm:order-2"
+                  className="order-1 w-full sm:order-2"
                 >
                   {isSubmittingEvent ? "Creating..." : "Create Campaign"}
-                </Button>
-              </div>
+                </ShadButton>
+              </DialogFooter>
             </form>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isUsernameModalOpen && !isPreviewMode && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSavingUsername && setIsUsernameModalOpen(false)}
-          />
-          <div className="relative w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white/90 border border-border/70 rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-8 pt-8 pb-4 flex items-center justify-between shrink-0">
+      <Dialog open={isUsernameModalOpen && !isPreviewMode} onOpenChange={(open) => !open && !isSavingUsername && !isSavingPassword && setIsUsernameModalOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[480px] max-h-[92dvh] flex flex-col glass-panel bg-white/90 border border-border/70 rounded-md p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-8 pt-8 pb-4 flex-row items-center justify-between shrink-0">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Account Settings</h2>
-                <p className="text-sm text-muted">Manage your profile, organization, and security preferences.</p>
+                <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">Account Settings</DialogTitle>
+                <DialogDescription className="text-sm text-muted">Manage your profile, organization, and security preferences.</DialogDescription>
               </div>
-              <button
+              <ShadButton
+                type="button"
+                variant="outline"
+                size="icon-lg"
                 onClick={() => {
                   if (!isSavingUsername && !isSavingPassword) setIsUsernameModalOpen(false);
                 }}
                 className="w-12 h-12 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
               >
                 <X size={20} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             <div className="flex-1 min-h-0 overflow-y-auto p-8 pt-4 flex flex-col gap-8">
               <form onSubmit={handleSaveUsername} className="flex flex-col gap-4">
                 <h3 className="font-semibold text-heading text-lg leading-none mb-1">Profile & Organization</h3>
-                <TextInput
-                  label="Email"
-                  value={userEmail}
-                  onChange={() => {}}
-                  disabled
-                  readOnly
-                />
-                <TextInput
-                  label="Username"
-                  required
-                  placeholder="choose_a_username"
-                  value={usernameDraft}
-                  onChange={(v) => {
-                    setUsernameDraft(v);
+                <div className="grid gap-2">
+                  <Label htmlFor="dashboard-settings-email">Email</Label>
+                  <Input id="dashboard-settings-email" value={userEmail} onChange={() => {}} disabled readOnly />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="dashboard-settings-username">Username <span className="text-primary-strong">*</span></Label>
+                  <Input
+                    id="dashboard-settings-username"
+                    required
+                    placeholder="choose_a_username"
+                    value={usernameDraft}
+                    onChange={(e) => {
+                    setUsernameDraft(e.target.value);
                     if (usernameError) setUsernameError("");
                   }}
-                />
+                  />
+                </div>
                 <p className="text-[13px] text-muted -mt-1">Allowed: letters, numbers, underscore, dot. Can be changed once every 24 days.</p>
-                <TextInput
-                  label="Organization Name"
-                  required
-                  placeholder="Your organization"
-                  value={organizationDraft}
-                  maxLength={120}
-                  onChange={(v) => {
-                    setOrganizationDraft(v);
+                <div className="grid gap-2">
+                  <Label htmlFor="dashboard-settings-organization">Organization Name <span className="text-primary-strong">*</span></Label>
+                  <Input
+                    id="dashboard-settings-organization"
+                    required
+                    placeholder="Your organization"
+                    value={organizationDraft}
+                    maxLength={120}
+                    onChange={(e) => {
+                    setOrganizationDraft(e.target.value);
                     if (usernameError) setUsernameError("");
                   }}
-                  disabled={isOrgTeamMember || hasPendingOrgJoin}
-                  readOnly={isOrgTeamMember || hasPendingOrgJoin}
-                />
+                    disabled={isOrgTeamMember || hasPendingOrgJoin}
+                    readOnly={isOrgTeamMember || hasPendingOrgJoin}
+                  />
+                </div>
                 <p className="text-[13px] text-muted -mt-1">
                   {isOrgTeamMember || hasPendingOrgJoin
                     ? "Organization name is read-only for team members."
@@ -2115,73 +2177,78 @@ function DashboardContent() {
                     cropApplyLabel="Apply logo"
                   />
                 )}
-                {usernameError && <p className="text-sm font-normal leading-[1.6] text-red-500">{usernameError}</p>}
+                {usernameError && (
+                  <Alert variant="destructive">
+                    <AlertCircle aria-hidden="true" />
+                    <AlertDescription>{usernameError}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="pt-2">
-                  <Button
+                  <ShadButton
                     type="submit"
-                    fullWidth
                     disabled={isSavingUsername}
-                    className="shadow-md shadow-black/5"
+                    className="w-full shadow-md shadow-black/5"
                   >
                     {isSavingUsername ? "Saving Profile..." : "Save Profile Settings"}
-                  </Button>
+                  </ShadButton>
                 </div>
               </form>
               
-              <hr className="border-border/40" />
+              <Separator className="bg-border/40" />
               
               <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
                 <h3 className="font-semibold text-heading text-lg leading-none mb-1">Security</h3>
-                <TextInput
-                  type="password"
-                  label="Current Password"
-                  value={currentPasswordDraft}
-                  onChange={setCurrentPasswordDraft}
-                />
-                <TextInput
-                  type="password"
-                  label="New Password"
-                  value={newPasswordDraft}
-                  onChange={setNewPasswordDraft}
-                />
-                {passwordError && <p className="text-sm font-normal leading-[1.6] text-red-500">{passwordError}</p>}
+                <div className="grid gap-2">
+                  <Label htmlFor="dashboard-settings-current-password">Current Password</Label>
+                  <Input id="dashboard-settings-current-password" type="password" value={currentPasswordDraft} onChange={(e) => setCurrentPasswordDraft(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="dashboard-settings-new-password">New Password</Label>
+                  <Input id="dashboard-settings-new-password" type="password" value={newPasswordDraft} onChange={(e) => setNewPasswordDraft(e.target.value)} />
+                </div>
+                {passwordError && (
+                  <Alert variant="destructive">
+                    <AlertCircle aria-hidden="true" />
+                    <AlertDescription>{passwordError}</AlertDescription>
+                  </Alert>
+                )}
                 <div className="pt-2">
-                  <Button
+                  <ShadButton
                     type="submit"
-                    fullWidth
                     variant="secondary"
                     disabled={isSavingPassword || !currentPasswordDraft || !newPasswordDraft}
+                    className="w-full"
                   >
                     {isSavingPassword ? "Updating Password..." : "Update Password"}
-                  </Button>
+                  </ShadButton>
                 </div>
               </form>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isOwnerProfileSetupModalOpen && !isPreviewMode && isOrgOwner && (
-        <div className={dashboardModalBackdrop}>
-          <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
-          <div className="relative w-full max-w-[560px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-10 pt-10 pb-7 border-b border-border/10 shrink-0">
-              <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+      <Dialog open={isOwnerProfileSetupModalOpen && !isPreviewMode && isOrgOwner}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[560px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-10 pt-10 pb-7 border-b border-border/10 shrink-0">
+              <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                 Complete your profile
-              </h2>
-              <p className="mt-2 text-sm text-muted leading-[1.6]">
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-sm text-muted leading-[1.6]">
                 Username is required. Organization logo is optional and can be added anytime from Account Settings.
-              </p>
-            </div>
+              </DialogDescription>
+            </DialogHeader>
             <div className="min-h-0 flex-1 overflow-y-auto px-10 py-8 flex flex-col gap-4">
-              <TextInput
-                label="Username"
-                required
-                placeholder="choose_a_username"
-                value={ownerProfileUsernameDraft}
-                onChange={setOwnerProfileUsernameDraft}
-                error={ownerProfileSetupError.toLowerCase().includes("username") ? ownerProfileSetupError : ""}
-              />
+              <div className="grid gap-2">
+                <Label htmlFor="dashboard-owner-profile-username">Username <span className="text-primary-strong">*</span></Label>
+                <Input
+                  id="dashboard-owner-profile-username"
+                  required
+                  placeholder="choose_a_username"
+                  value={ownerProfileUsernameDraft}
+                  aria-invalid={ownerProfileSetupError.toLowerCase().includes("username")}
+                  onChange={(e) => setOwnerProfileUsernameDraft(e.target.value)}
+                />
+              </div>
               <FilePicker
                 label="Organization Logo"
                 value={ownerProfilePhotoDraft}
@@ -2198,12 +2265,14 @@ function DashboardContent() {
               {ownerProfileSetupError &&
                 !ownerProfileSetupError.toLowerCase().includes("username") &&
                 !ownerProfileSetupError.toLowerCase().includes("profile") ? (
-                <p className="text-sm text-red-500">{ownerProfileSetupError}</p>
+                <Alert variant="destructive">
+                  <AlertCircle aria-hidden="true" />
+                  <AlertDescription>{ownerProfileSetupError}</AlertDescription>
+                </Alert>
               ) : null}
-              <Button
-                variant="primary"
+              <ShadButton
                 size="lg"
-                fullWidth
+                className="w-full"
                 disabled={isSavingUsername}
                 onClick={async () => {
                   const ok = await saveMandatoryOwnerProfileSetup();
@@ -2214,29 +2283,25 @@ function DashboardContent() {
                 }}
               >
                 {isSavingUsername ? "Saving..." : "Continue"}
-              </Button>
+              </ShadButton>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isOwnerOnboardingModalOpen && !isPreviewMode && isOrgOwner && (
-        <div className={dashboardModalBackdrop}>
-          <div className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in" />
-          <div className="relative w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-10 pt-10 pb-7 border-b border-border/10">
-              <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+      <Dialog open={isOwnerOnboardingModalOpen && !isPreviewMode && isOrgOwner}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[560px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-10 pt-10 pb-7 border-b border-border/10">
+              <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                 Invite your team
-              </h2>
-              <p className="mt-2 text-sm text-muted leading-[1.6]">
+              </DialogTitle>
+              <DialogDescription className="mt-2 text-sm text-muted leading-[1.6]">
                 Your organization profile is ready. Add teammates now, or skip and manage access later from Team Access.
-              </p>
-            </div>
+              </DialogDescription>
+            </DialogHeader>
             <div className="px-10 py-8 flex flex-col gap-3">
-              <Button
-                variant="primary"
+              <ShadButton
                 size="lg"
-                fullWidth
+                className="w-full"
                 disabled={isSavingOwnerOnboarding}
                 onClick={async () => {
                   const ok = await markOwnerOnboardingCompleted();
@@ -2245,14 +2310,14 @@ function DashboardContent() {
                   router.replace("/dashboard");
                   void openTeamAccessModal("add");
                 }}
-                icon={<Users size={18} />}
               >
+                <Users size={18} />
                 Add Team Members
-              </Button>
-              <Button
+              </ShadButton>
+              <ShadButton
                 variant="secondary"
                 size="lg"
-                fullWidth
+                className="w-full"
                 disabled={isSavingOwnerOnboarding}
                 onClick={async () => {
                   const ok = await markOwnerOnboardingCompleted();
@@ -2263,72 +2328,65 @@ function DashboardContent() {
                 }}
               >
                 Skip for Now
-              </Button>
+              </ShadButton>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
-      {isTeamModalOpen && !isPreviewMode && (
-        <div className={dashboardModalBackdrop}>
-          <div
-            className="absolute inset-0 bg-heading/40 backdrop-blur-md transition-opacity animate-in fade-in"
-            onClick={() => !isSubmittingTeamInvite && setIsTeamModalOpen(false)}
-          />
-          <div className="relative w-full max-w-[660px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="flex shrink-0 flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
+      <Dialog open={isTeamModalOpen && !isPreviewMode} onOpenChange={(open) => !open && !isSubmittingTeamInvite && setIsTeamModalOpen(false)}>
+          <DialogContent showCloseButton={false} className="w-full max-w-[660px] max-h-[92dvh] flex flex-col glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="flex shrink-0 flex-col gap-6 border-b border-border/10 px-5 pb-6 pt-8 sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:pb-8 sm:pt-10 lg:px-12 lg:pb-8 lg:pt-12">
               <div className="flex flex-col gap-1">
-                <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
+                <DialogTitle className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
                   {teamModalView === "list" && "Organization Team"}
                   {teamModalView === "add" && "Invite Member"}
                   {teamModalView === "edit" && "Manage Access"}
-                </h2>
-                <p className="text-sm text-muted">
+                </DialogTitle>
+                <DialogDescription className="text-sm text-muted">
                   {teamModalView === "list" && "Manage your organization team members and their roles."}
                   {teamModalView === "add" && "Step 1: Enter member information."}
                   {teamModalView === "edit" && (teamInviteEmail ? `Step 2: Set permissions for ${teamInviteEmail}` : "Manage permissions")}
-                </p>
+                </DialogDescription>
               </div>
-              <button
+              <ShadButton
                 type="button"
+                variant="outline"
+                size="icon-lg"
                 onClick={() => setIsTeamModalOpen(false)}
                 className="w-12 h-12 rounded-md border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all duration-150"
                 aria-label="Close modal"
               >
                 <X size={20} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
               {teamModalView === "list" && (
                 <div className="flex flex-col gap-8">
                   {!isOrgTeamMember && (
-                    <Button 
-                      variant="primary" 
-                      size="md"
+                    <ShadButton 
                       onClick={() => {
                         setTeamInviteEmail("");
                         setTeamInviteRoleLabel("");
                         setTeamPermissionDraft([]);
                         setTeamModalView("add");
                       }}
-                      icon={<Plus size={18} />}
-                      fullWidth
+                      className="w-full"
                     >
+                      <Plus size={18} />
                       Invite New Member
-                    </Button>
+                    </ShadButton>
                   )}
 
                   <div className="flex flex-col gap-4 max-h-[520px] overflow-y-auto pr-2">
                     {teamMembers.length === 0 ? (
-                      <div className="py-12 text-center flex flex-col items-center gap-3 bg-surface/30 rounded-xl border border-dashed border-border/50">
+                      <Card className="py-12 text-center flex flex-col items-center gap-3 bg-surface/30 rounded-xl border-dashed border-border/50">
                         <Users size={32} className="text-muted/40" />
                         <p className="text-sm text-muted">No members added yet.</p>
-                      </div>
+                      </Card>
                     ) : (
                       teamMembers.map((m) => (
-                        <div 
+                        <Card 
                           key={m.id} 
                           className="group w-full flex items-center justify-between px-4 py-4 bg-white/60 border border-border/60 rounded-xl hover:border-primary/30 hover:bg-white hover:shadow-sm transition-all duration-200"
                         >
@@ -2338,26 +2396,26 @@ function DashboardContent() {
                             </div>
                             <div className="flex flex-col gap-2 min-w-0">
                               <span className="text-base font-semibold text-heading truncate leading-[1.4]">{m.member_email}</span>
-                              <span className="text-[15px] leading-tight text-muted font-semibold bg-surface/55 w-fit px-3.5 py-1.5 rounded-md border border-border/35">
+                              <Badge variant="outline" className="text-[15px] leading-tight text-muted font-semibold bg-surface/55 w-fit px-3.5 py-1.5 rounded-md border-border/35">
                                 {m.role_label}
-                              </span>
+                              </Badge>
                             </div>
                           </div>
                           
                           {!isOrgTeamMember && (
-                            <Button
+                            <ShadButton
                               variant="secondary"
                               size="sm"
-                              icon={<Pencil size={14} />}
                               onClick={() => {
                                 void openTeamMemberEdit(m);
                               }}
                               className="transition-all shadow-sm border-primary/20 text-primary-strong"
                             >
+                              <Pencil size={14} />
                               Edit Access
-                            </Button>
+                            </ShadButton>
                           )}
-                        </div>
+                        </Card>
                       ))
                     )}
                   </div>
@@ -2378,49 +2436,45 @@ function DashboardContent() {
                   className="flex flex-col gap-8"
                 >
                   <div className="flex flex-col gap-6">
-                    <div className="bg-primary/5 p-6 rounded-xl border border-primary/10 mb-2">
+                    <Card className="bg-primary/5 p-6 rounded-xl border-primary/10 mb-2">
                       <p className="text-[13px] text-primary-strong font-medium">Step 1: Member Details</p>
                       <p className="text-[11px] text-muted leading-relaxed">Enter the details of the person you want to invite. You will configure their permissions in the next step.</p>
+                    </Card>
+                    <div className="grid gap-2">
+                      <Label htmlFor="dashboard-team-email">Member Email <span className="text-primary-strong">*</span></Label>
+                      <Input id="dashboard-team-email" required type="email" placeholder="colleague@company.com" value={teamInviteEmail} onChange={(e) => setTeamInviteEmail(e.target.value)} />
                     </div>
-                    <TextInput
-                      label="Member Email"
-                      required
-                      type="email"
-                      placeholder="colleague@company.com"
-                      value={teamInviteEmail}
-                      onChange={setTeamInviteEmail}
-                    />
-                    <TextInput
-                      label="Role Label"
-                      required
-                      placeholder="e.g. Media Manager, Lead Designer"
-                      value={teamInviteRoleLabel}
-                      onChange={setTeamInviteRoleLabel}
-                    />
+                    <div className="grid gap-2">
+                      <Label htmlFor="dashboard-team-role">Role Label <span className="text-primary-strong">*</span></Label>
+                      <Input id="dashboard-team-role" required placeholder="e.g. Media Manager, Lead Designer" value={teamInviteRoleLabel} onChange={(e) => setTeamInviteRoleLabel(e.target.value)} />
+                    </div>
                   </div>
                   
-                  {teamError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-100">{teamError}</p>}
+                  {teamError && (
+                    <Alert variant="destructive">
+                      <AlertCircle aria-hidden="true" />
+                      <AlertDescription>{teamError}</AlertDescription>
+                    </Alert>
+                  )}
                   
                   <div className="form-actions pt-2">
-                    <Button 
+                    <ShadButton 
                       type="button" 
                       variant="secondary" 
-                      fullWidth 
-                      className="order-2 sm:order-1"
+                      className="order-2 w-full sm:order-1"
                       onClick={() => {
                         setTeamModalView("list");
                         setIsTeamModalOpen(false);
                       }}
                     >
                       Back
-                    </Button>
-                    <Button 
+                    </ShadButton>
+                    <ShadButton 
                       type="submit" 
-                      fullWidth 
-                      className="order-1 sm:order-2"
+                      className="order-1 w-full sm:order-2"
                     >
                       Next: Set Permissions
-                    </Button>
+                    </ShadButton>
                   </div>
                 </form>
               )}
@@ -2434,16 +2488,13 @@ function DashboardContent() {
                   className="flex flex-col gap-8"
                 >
                   <div className="flex flex-col gap-6">
-                    <TextInput
-                      label="Role Label"
-                      required
-                      placeholder="e.g. Director"
-                      value={teamInviteRoleLabel}
-                      onChange={setTeamInviteRoleLabel}
-                    />
+                    <div className="grid gap-2">
+                      <Label htmlFor="dashboard-team-edit-role">Role Label <span className="text-primary-strong">*</span></Label>
+                      <Input id="dashboard-team-edit-role" required placeholder="e.g. Director" value={teamInviteRoleLabel} onChange={(e) => setTeamInviteRoleLabel(e.target.value)} />
+                    </div>
                     
                     <div className="flex flex-col gap-3">
-                      <label className="text-[13px] font-semibold text-heading uppercase tracking-wider opacity-60">Permissions</label>
+                      <Label className="text-[13px] font-semibold text-heading uppercase tracking-wider opacity-60">Permissions</Label>
                       <div className="grid gap-3">
                         {[
                           { id: "create_event", label: "Create Campaigns", desc: "Allow creating new events and campaigns" },
@@ -2451,7 +2502,7 @@ function DashboardContent() {
                           { id: "edit_cards", label: "Edit Cards", desc: "Can edit attendee card details" },
                           { id: "delete_cards", label: "Delete Cards", desc: "Can remove attendee cards" },
                         ].map((perm) => (
-                          <label 
+                          <Label 
                             key={perm.id} 
                             className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer hover:bg-surface/50 ${
                               teamPermissionDraft.includes(perm.id) 
@@ -2460,15 +2511,14 @@ function DashboardContent() {
                             }`}
                           >
                             <div className="pt-1">
-                              <input
+                              <Checkbox
                                 id={`team-permission-${perm.id}`}
                                 name={`teamPermission_${perm.id}`}
-                                type="checkbox"
                                 className="w-4 h-4 rounded-md accent-primary"
                                 checked={teamPermissionDraft.includes(perm.id)}
-                                onChange={(e) =>
+                                onCheckedChange={(checked) =>
                                   setTeamPermissionDraft((prev) =>
-                                    e.target.checked ? Array.from(new Set([...prev, perm.id])) : prev.filter((p) => p !== perm.id),
+                                    checked ? Array.from(new Set([...prev, perm.id])) : prev.filter((p) => p !== perm.id),
                                   )
                                 }
                               />
@@ -2477,53 +2527,54 @@ function DashboardContent() {
                               <span className="text-sm font-semibold text-heading leading-none mb-1">{perm.label}</span>
                               <span className="text-[11px] text-muted leading-tight">{perm.desc}</span>
                             </div>
-                          </label>
+                          </Label>
                         ))}
                       </div>
                     </div>
                   </div>
 
-                  {teamError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-md border border-red-100">{teamError}</p>}
+                  {teamError && (
+                    <Alert variant="destructive">
+                      <AlertCircle aria-hidden="true" />
+                      <AlertDescription>{teamError}</AlertDescription>
+                    </Alert>
+                  )}
 
                   <div className="form-actions pt-2">
-                    <Button 
+                    <ShadButton 
                       type="button" 
                       variant="secondary" 
-                      fullWidth 
-                      className="order-2 sm:order-1"
+                      className="order-2 w-full sm:order-1"
                       onClick={() => setTeamModalView("list")}
                     >
                       Back
-                    </Button>
-                    <Button 
+                    </ShadButton>
+                    <ShadButton 
                       type="submit" 
-                      fullWidth 
                       disabled={isSubmittingTeamInvite}
-                      className="order-1 sm:order-2"
+                      className="order-1 w-full sm:order-2"
                     >
                       {isSubmittingTeamInvite ? "Saving..." : "Update Permissions"}
-                    </Button>
+                    </ShadButton>
                   </div>
                 </form>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
 
       {/* Request Permission Modal */}
-      {isRequestPermissionModalOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center overflow-y-auto bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] backdrop-blur-sm animate-in fade-in duration-200 sm:p-6">
-          <div className="bg-white/95 border border-border/40 w-full max-w-[500px] max-h-[92dvh] flex flex-col rounded-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-border/10 flex items-center justify-between bg-primary/2 shrink-0">
+      <Dialog open={isRequestPermissionModalOpen} onOpenChange={(open) => !open && setIsRequestPermissionModalOpen(false)}>
+          <DialogContent showCloseButton={false} className="bg-white/95 border border-border/40 w-full max-w-[500px] max-h-[92dvh] flex flex-col rounded-md p-0 shadow-2xl overflow-hidden">
+            <DialogHeader className="px-6 py-5 border-b border-border/10 flex-row items-center justify-between bg-primary/2 shrink-0">
               <div className="flex items-center gap-2">
                 <AlertCircle className="text-danger" size={20} />
-                <h2 className="text-xl font-semibold text-heading tracking-tight">Request Creation Access</h2>
+                <DialogTitle className="text-xl font-semibold text-heading tracking-tight">Request Creation Access</DialogTitle>
               </div>
-              <button onClick={() => setIsRequestPermissionModalOpen(false)} className="text-muted hover:text-heading transition-colors">
+              <ShadButton type="button" variant="ghost" size="icon-sm" onClick={() => setIsRequestPermissionModalOpen(false)} className="text-muted hover:text-heading">
                 <X size={20} />
-              </button>
-            </div>
+              </ShadButton>
+            </DialogHeader>
             
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
               <p className="text-sm text-muted mb-6 leading-[1.6]">
@@ -2532,8 +2583,9 @@ function DashboardContent() {
               
               <form onSubmit={handleRequestPermission}>
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-heading mb-2">Reason for access</label>
-                  <textarea
+                  <Label htmlFor="dashboard-permission-reason" className="block text-sm font-medium text-heading mb-2">Reason for access</Label>
+                  <ShadTextarea
+                    id="dashboard-permission-reason"
                     className="w-full min-h-[120px] bg-white border border-border/40 rounded-md p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all placeholder:text-muted/40"
                     placeholder="E.g., I need to create a campaign for the upcoming tech conference..."
                     value={permissionRequestReason}
@@ -2542,19 +2594,18 @@ function DashboardContent() {
                   />
                 </div>
                 
-                <div className="form-actions">
-                  <Button type="button" variant="secondary" fullWidth className="order-2 sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
+                <DialogFooter className="form-actions -mx-0 -mb-0 rounded-none border-0 bg-transparent p-0">
+                  <ShadButton type="button" variant="secondary" className="order-2 w-full sm:order-1" onClick={() => setIsRequestPermissionModalOpen(false)}>
                     Cancel
-                  </Button>
-                  <Button type="submit" fullWidth disabled={isSubmittingPermissionRequest} className="order-1 sm:order-2">
+                  </ShadButton>
+                  <ShadButton type="submit" disabled={isSubmittingPermissionRequest} className="order-1 w-full sm:order-2">
                     {isSubmittingPermissionRequest ? "Sending..." : "Send Request"}
-                  </Button>
-                </div>
+                  </ShadButton>
+                </DialogFooter>
               </form>
             </div>
-          </div>
-        </div>
-      )}
+          </DialogContent>
+      </Dialog>
     </main>
   );
 }
