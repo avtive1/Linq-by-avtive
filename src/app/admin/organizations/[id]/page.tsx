@@ -2,8 +2,10 @@ import { getAdminUserById } from "@/lib/admin";
 import { queryNeon, runWithRlsBypassAsync } from "@/lib/neon-db";
 import { Users, Calendar, ArrowLeft, Mail, Sparkles, Rocket, TrendingUp, Target } from "lucide-react";
 import Link from "next/link";
-import { Button } from "@/components/ui";
-import { getEventStatus } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn, getEventStatus } from "@/lib/utils";
 import { isValidUuid } from "@/lib/validation/uuid";
 
 export const revalidate = 0;
@@ -14,9 +16,9 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
     return (
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Invalid Organization Id</h2>
-        <Button href="/admin" variant="primary" className="mt-4">
+        <Link href="/admin" className={cn(buttonVariants({ variant: "default" }), "mt-4")}>
           Back to Dashboard
-        </Button>
+        </Link>
       </div>
     );
   }
@@ -26,9 +28,9 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
     return (
       <div className="flex flex-col items-center justify-center p-20">
         <h2 className="text-2xl font-semibold tracking-[-0.03em] leading-[1.15] text-heading">Organization Not Found</h2>
-        <Button href="/admin" variant="primary" className="mt-4">
+        <Link href="/admin" className={cn(buttonVariants({ variant: "default" }), "mt-4")}>
           Back to Dashboard
-        </Button>
+        </Link>
       </div>
     );
   }
@@ -86,15 +88,18 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  
+
   const recentEventsCount = events.filter(e => new Date(e.created_at) >= thirtyDaysAgo).length;
   const newAttendeesCount = attendees.filter(a => new Date(a.created_at) >= thirtyDaysAgo).length;
-  
+
   const avgGrowthRate = recentEventsCount > 0 ? (newAttendeesCount / recentEventsCount).toFixed(1) : "0";
 
   return (
     <div className="px-2 sm:px-4 lg:px-6 py-12 sm:py-16">
-      <Link href="/admin" className="flex items-center gap-2 text-sm font-medium text-muted hover:text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 rounded-md w-fit mb-6">
+      <Link
+        href="/admin"
+        className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "gap-2 text-muted hover:text-primary mb-6 w-fit")}
+      >
         <ArrowLeft size={16} />
         Back to Dashboard
       </Link>
@@ -106,36 +111,33 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
               {profile?.organization_name || "Organization Overview"}
             </h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-xs font-semibold uppercase tracking-wide text-primary-strong bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
+              <Badge variant="outline" className="text-xs font-semibold uppercase tracking-wide text-primary-strong bg-primary/10 border-primary/20 px-2.5 py-1">
                 @{profile?.username || user?.username || "unknown"}
-              </span>
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted bg-surface px-2.5 py-1 rounded-md border border-border flex items-center gap-1.5">
+              </Badge>
+              <Badge variant="outline" className="text-xs font-semibold uppercase tracking-wide text-muted bg-surface border-border px-2.5 py-1 gap-1.5">
                 <Calendar size={14} /> {events.length} Campaigns
-              </span>
-              <span className="text-xs font-semibold uppercase tracking-wide text-muted bg-surface px-2.5 py-1 rounded-md border border-border flex items-center gap-1.5">
+              </Badge>
+              <Badge variant="outline" className="text-xs font-semibold uppercase tracking-wide text-muted bg-surface border-border px-2.5 py-1 gap-1.5">
                 <Users size={14} /> {attendees.length} Members
-              </span>
+              </Badge>
               <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
               <p className="text-sm text-muted font-normal flex items-center gap-2">
                 <Mail size={16} /> {user?.emailAddresses?.[0]?.emailAddress || "unknown"}
               </p>
             </div>
           </div>
-          <Button
+          <Link
             href={`/dashboard?impersonate=${user.id}`}
-            variant="secondary"
-            className="w-full justify-center sm:w-auto sm:min-w-[12rem]"
-            icon={<Sparkles size={16} />}
+            className={cn(buttonVariants({ variant: "secondary" }), "w-full justify-center sm:w-auto sm:min-w-[12rem] gap-2")}
           >
+            <Sparkles size={16} />
             View as Organization
-          </Button>
+          </Link>
         </div>
       </div>
 
-
-
       {/* Premium Event Performance Grid */}
-      <div className="card-base mb-10 p-6">
+      <Card className="mb-10 p-6 bg-white border-border/70 shadow-sm">
         <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex flex-col gap-1">
             <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] flex items-center gap-3">
@@ -145,19 +147,21 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             <p className="text-sm text-muted font-normal mt-1">Detailed breakdown of recent event engagement levels.</p>
           </div>
           <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-xs font-semibold uppercase tracking-wide px-2.5 py-1.5 rounded-sm border border-primary/20 bg-primary/5 text-primary-strong shadow-xs">
+            <Badge variant="outline" className="text-xs font-semibold uppercase tracking-wide border-primary/20 bg-primary/5 text-primary-strong shadow-xs px-2.5 py-1.5">
               Last 30 Days
-            </span>
+            </Badge>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="card-primary group flex flex-col gap-6 p-8">
+          <Card className="group flex flex-col gap-6 p-8 bg-surface/40 border-hairline-soft hover:bg-white transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex h-14 w-14 items-center justify-center rounded-md border border-primary/25 bg-primary/12 text-primary-strong">
                 <Rocket size={26} />
               </div>
-              <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Active Velocity</span>
+              <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary-strong px-2.5 py-1">
+                Active Velocity
+              </Badge>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{recentEventsCount}</span>
@@ -169,14 +173,16 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10 mt-2">
               <div className="h-full bg-primary rounded-full w-2/3 animate-pulse" />
             </div>
-          </div>
+          </Card>
 
-          <div className="card-primary group flex flex-col gap-6 p-8">
+          <Card className="group flex flex-col gap-6 p-8 bg-surface/40 border-hairline-soft hover:bg-white transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex h-14 w-14 items-center justify-center rounded-md border border-primary/25 bg-primary/12 text-primary-strong">
                 <TrendingUp size={26} />
               </div>
-              <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Network Impact</span>
+              <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary-strong px-2.5 py-1">
+                Network Impact
+              </Badge>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02] group-hover:text-ink transition-colors">{newAttendeesCount}</span>
@@ -188,14 +194,16 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10 mt-2">
               <div className="h-full bg-primary rounded-full w-3/4 animate-pulse" />
             </div>
-          </div>
+          </Card>
 
-          <div className="card-primary group flex flex-col gap-6 p-8">
+          <Card className="group flex flex-col gap-6 p-8 bg-surface/40 border-hairline-soft hover:bg-white transition-colors">
             <div className="flex items-center justify-between">
               <div className="flex h-14 w-14 items-center justify-center rounded-md border border-primary/25 bg-primary/12 text-primary-strong">
                 <Target size={26} />
               </div>
-              <span className="ui-label-primary px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20">Engagement Core</span>
+              <Badge variant="outline" className="border-primary/20 bg-primary/10 text-primary-strong px-2.5 py-1">
+                Engagement Core
+              </Badge>
             </div>
             <div className="flex flex-col gap-2">
               <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{avgGrowthRate}</span>
@@ -207,9 +215,9 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             <div className="h-1.5 w-full overflow-hidden rounded-full bg-primary/10 mt-2">
               <div className="h-full bg-primary rounded-full w-1/2 animate-pulse" />
             </div>
-          </div>
+          </Card>
         </div>
-      </div>
+      </Card>
 
       <div className="flex flex-col gap-4">
         <h2 className="text-2xl font-semibold text-heading tracking-[-0.03em] leading-[1.15] pl-2 flex items-center gap-3">
@@ -217,7 +225,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
           Hosted Events
         </h2>
         
-        <div className="overflow-hidden rounded-2xl border border-border/40 bg-white shadow-md">
+        <Card className="overflow-hidden bg-white shadow-md border-border/40 p-0">
           <div className="w-full overflow-x-auto">
           <table className="w-full min-w-[900px] text-left border-collapse">
             <thead>
@@ -240,14 +248,14 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
                     <td className="py-5 px-6 text-muted text-sm font-normal">{evt.date}</td>
                     <td className="py-5 px-6 text-muted text-sm font-normal truncate max-w-[200px]">{evt.location}</td>
                     <td className="py-5 px-6">
-                      <span className={`text-xs font-semibold tracking-wide leading-tight px-2.5 py-1 rounded-md border ${status.classes}`}>
+                      <Badge variant="outline" className={cn("text-xs font-semibold tracking-wide leading-tight px-2.5 py-1", status.classes)}>
                         {status.label}
-                      </span>
+                      </Badge>
                     </td>
                     <td className="py-5 px-6 text-center">
-                      <span className="inline-flex items-center justify-center bg-heading/10 text-heading font-semibold px-3 py-1.5 rounded-md text-sm leading-tight">
+                      <Badge variant="outline" className="bg-heading/10 text-heading font-semibold px-3 py-1.5 border-heading/20 text-sm leading-tight">
                         {aCount}
-                      </span>
+                      </Badge>
                     </td>
                   </tr>
                 );
@@ -260,7 +268,7 @@ export default async function OrganizationDrillDownPage(props: { params: Promise
             </tbody>
           </table>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

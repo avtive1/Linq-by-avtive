@@ -12,7 +12,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import OrganizationsTable from "./_components/OrganizationsTable";
-import { Button } from "@/components/ui";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export const revalidate = 0; // Ensures this page is always fresh when loaded by admin
 
@@ -95,9 +99,9 @@ export default async function AdminDashboardPage() {
     const orgName = profile?.organization_name || user.user_metadata?.organization_name || "";
     const orgNameKey = (profile?.organization_name_key) || (orgName.toLowerCase().trim().replace(/[^a-z0-9]/g, ""));
     const effectiveName = orgName.trim() || `@${profile?.username || user.email?.split("@")[0] || "unknown"}`;
-    
+
     const latestEventWithLogo = rawEvents.find(e => e.user_id === user.id && e.logo_url);
-    
+
     // PRIORITY: 1. Master Organization Table -> 2. Profile Logo -> 3. Campaign Logo
     const masterOrgLogo = orgLogoLookup.get(orgNameKey);
     const logoUrl = (masterOrgLogo?.trim()) || (profile?.organization_logo_url?.trim()) || (latestEventWithLogo?.logo_url?.trim()) || (user.user_metadata?.organization_logo_url?.trim());
@@ -117,19 +121,19 @@ export default async function AdminDashboardPage() {
     }
 
     const org = orgMap.get(effectiveName);
-    
+
     // Aggregate counts from all users in this "organization"
     const userEvents = rawEvents.filter(e => e.user_id === user.id);
     org.eventCount += userEvents.length;
     userEvents.forEach(e => org.eventIds.add(e.id));
-    
+
     // Update logo/username if this user has more campaigns (likely the primary owner) or has a real profile logo
     const hasProfileLogo = profile?.organization_logo_url?.trim() || masterOrgLogo;
     if (hasProfileLogo || (userEvents.length > 0 && userEvents.length >= (org.eventCount - userEvents.length))) {
-       org.id = user.id;
-       org.username = profile?.username || user.email?.split("@")[0];
-       org.email = user.email;
-       if (logoUrl) org.organizationLogoUrl = logoUrl;
+      org.id = user.id;
+      org.username = profile?.username || user.email?.split("@")[0];
+      org.email = user.email;
+      if (logoUrl) org.organizationLogoUrl = logoUrl;
     }
   });
 
@@ -159,33 +163,33 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 py-6 pl-[max(0.5rem,env(safe-area-inset-left))] pr-[max(0.5rem,env(safe-area-inset-right))] sm:pl-[max(1rem,env(safe-area-inset-left))] sm:pr-[max(1rem,env(safe-area-inset-right))] lg:pl-[max(1.5rem,env(safe-area-inset-left))] lg:pr-[max(1.5rem,env(safe-area-inset-right))]">
-      <div className="relative animate-slide-up overflow-hidden rounded-xl border border-hairline-soft bg-white p-5 sm:p-6">
+      <Card className="relative animate-slide-up overflow-hidden rounded-xl border border-hairline-soft bg-white p-5 sm:p-6 shadow-sm">
         <div className="flex w-full min-w-0 flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 flex-col gap-3">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-[0.04em] text-primary-strong">
+            <Badge variant="outline" className="w-fit gap-2 border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-[0.04em] text-primary-strong">
               <ShieldCheck size={14} />
               Super Admin Command Center
-            </div>
+            </Badge>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-heading wrap-break-word" style={{ fontWeight: 700 }}>Platform Overview</h1>
             <p className="max-w-2xl min-w-0 text-sm font-normal leading-[1.6] text-muted">
               A centralized operational view for governance, organization growth, and recent activity across the platform.
             </p>
           </div>
           <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:w-auto lg:shrink-0 lg:grid-cols-2 lg:gap-4">
-            <div className="card-primary px-5 py-4">
+            <Card className="px-5 py-4 border-hairline-soft bg-surface/50 shadow-none">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Avg events/org</p>
               <p className="mt-1.5 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgEventsPerOrg}</p>
-            </div>
-            <div className="card-primary px-5 py-4">
+            </Card>
+            <Card className="px-5 py-4 border-hairline-soft bg-surface/50 shadow-none">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted">Avg attendees/event</p>
               <p className="mt-1.5 text-3xl font-semibold tracking-[-0.03em] text-heading">{avgAttendeesPerEvent}</p>
-            </div>
+            </Card>
           </div>
         </div>
-      </div>
+      </Card>
 
       <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="card-primary group flex items-center gap-5 p-6 animate-slide-up">
+        <Card className="group flex items-center gap-5 p-6 animate-slide-up bg-white">
           <div className="relative z-10 w-14 h-14 rounded-md bg-surface border border-hairline-soft flex items-center justify-center text-ink shrink-0">
             <Building2 size={28} strokeWidth={2} />
           </div>
@@ -193,9 +197,9 @@ export default async function AdminDashboardPage() {
             <span className="text-xs font-semibold uppercase tracking-wide text-muted mb-1">Total Organizations</span>
             <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{totalOrgs}</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="card-primary group flex items-center gap-5 p-6 animate-slide-up delay-75">
+        <Card className="group flex items-center gap-5 p-6 animate-slide-up delay-75 bg-white">
           <div className="relative z-10 w-14 h-14 rounded-md bg-surface border border-hairline-soft flex items-center justify-center text-ink shrink-0">
             <BarChart3 size={28} strokeWidth={2} />
           </div>
@@ -203,9 +207,9 @@ export default async function AdminDashboardPage() {
             <span className="text-xs font-semibold uppercase tracking-wide text-muted mb-1">Total Campaigns</span>
             <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{totalEvents}</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="card-primary group flex items-center gap-5 p-6 animate-slide-up delay-150">
+        <Card className="group flex items-center gap-5 p-6 animate-slide-up delay-150 bg-white">
           <div className="relative z-10 w-14 h-14 rounded-md bg-surface border border-hairline-soft flex items-center justify-center text-ink shrink-0">
             <Users size={28} strokeWidth={2} />
           </div>
@@ -213,7 +217,7 @@ export default async function AdminDashboardPage() {
             <span className="text-xs font-semibold uppercase tracking-wide text-muted mb-1">Total Leads</span>
             <span className="text-5xl font-medium text-heading tracking-[-0.01em] leading-[1.02]">{totalAttendees}</span>
           </div>
-        </div>
+        </Card>
       </div>
 
       <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3 animate-slide-up delay-300">
@@ -225,14 +229,13 @@ export default async function AdminDashboardPage() {
           <OrganizationsTable
             initialOrganizations={organizations}
             toolbarAction={
-              <Button
+              <Link
+                key="create-organization"
                 href="/admin/organizations/new"
-                variant="primary"
-                size="md"
-                className="w-full justify-center sm:w-auto sm:min-w-[11rem]"
+                className={cn(buttonVariants({ variant: "default" }), "w-full justify-center sm:w-auto sm:min-w-[11rem] bg-primary text-primary-foreground")}
               >
                 Create Organization
-              </Button>
+              </Link>
             }
           />
         </div>
@@ -248,18 +251,18 @@ export default async function AdminDashboardPage() {
             </span>
           </div>
 
-          <div className="card-primary p-4">
-            <div className="mb-2 inline-flex items-center gap-2 rounded-md border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-semibold text-primary-strong">
+          <Card className="p-4 bg-white border-hairline-soft">
+            <Badge variant="outline" className="mb-2 gap-1.5 border-primary/20 bg-primary/10 px-2 py-1 text-xs font-semibold text-primary-strong">
               <Sparkles size={12} />
               Live Feed
-            </div>
+            </Badge>
             <div className="flex flex-col gap-3">
               {recentOrgs.map(org => (
-                <div key={org.id} className="card-secondary group p-3">
+                <Card key={org.id} className="group p-3 bg-surface/40 border-hairline-soft hover:bg-white transition-colors">
                   <div className="flex items-start justify-between">
-                    <span className="rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary-strong">
+                    <Badge variant="outline" className="border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary-strong">
                       New Organization
-                    </span>
+                    </Badge>
                     <span className="text-xs font-normal text-muted">
                       {org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}
                     </span>
@@ -270,16 +273,17 @@ export default async function AdminDashboardPage() {
                   <p className="mt-1 truncate text-xs font-normal text-muted">
                     {`@${org.username}`}
                   </p>
-                  <div className="mt-3 flex items-center justify-between border-t border-border/30 pt-2">
+                  <Separator className="my-3 bg-border/40" />
+                  <div className="flex items-center justify-between">
                     <span className="truncate text-xs font-normal text-muted">{org.email}</span>
                     <Link
                       href={`/admin/organizations/${org.id}`}
-                      className="inline-flex h-12 items-center gap-1 rounded-md border border-hairline-strong bg-white px-3 text-xs font-semibold leading-none text-ink transition-colors hover:bg-surface"
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-8 gap-1 bg-white text-xs font-semibold")}
                     >
                       Open Org <ChevronRight size={10} />
                     </Link>
                   </div>
-                </div>
+                </Card>
               ))}
               {recentOrgs.length === 0 && (
                 <p className="rounded-md border border-dashed border-border bg-surface/40 py-8 text-center text-sm text-muted">
@@ -287,7 +291,7 @@ export default async function AdminDashboardPage() {
                 </p>
               )}
             </div>
-          </div>
+          </Card>
 
         </div>
       </div>

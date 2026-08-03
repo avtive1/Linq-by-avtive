@@ -4,6 +4,11 @@ import { useState, useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { ChevronRight, Search, ArrowUpDown } from "lucide-react";
 import Image from "next/image";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface Organization {
   id: string;
@@ -78,27 +83,27 @@ export default function OrganizationsTable({ initialOrganizations, toolbarAction
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="relative min-w-0 max-w-xl flex-1 group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-steel/60 group-focus-within:text-ink transition-colors sm:left-5" size={20} />
-          <input
-              id="admin-organizations-search"
-              name="adminOrganizationsSearch"
-              type="text"
-              placeholder="Search by username, email or organization..."
-            className="h-11 w-full rounded-md border border-hairline-strong bg-white py-0 pl-12 pr-4 text-base font-normal leading-normal text-ink transition-all placeholder:text-muted focus:border-2 focus:border-brand-blue focus:outline-none sm:pl-14"
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-steel/60 group-focus-within:text-ink transition-colors sm:left-5 z-10" size={20} />
+          <Input
+            id="admin-organizations-search"
+            name="adminOrganizationsSearch"
+            type="text"
+            placeholder="Search by username, email or organization..."
+            className="h-11 w-full bg-white pl-12 sm:pl-14 text-base text-ink"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end sm:shrink-0">
           {toolbarAction}
-          <div className="inline-flex h-11 items-center gap-1.5 rounded-md border border-hairline bg-surface px-3 text-xs font-medium text-steel whitespace-nowrap">
+          <Badge variant="outline" className="h-11 px-3 gap-1.5 text-xs font-medium bg-surface text-steel whitespace-nowrap">
             Showing <span className="font-semibold text-ink">{filteredAndSortedOrgs.length}</span> of{" "}
             <span className="font-semibold text-ink">{initialOrganizations.length}</span>
-          </div>
+          </Badge>
         </div>
       </div>
 
-      <div className="min-w-0 overflow-hidden rounded-2xl border border-border/40 bg-white/60 shadow-md">
+      <Card className="min-w-0 overflow-hidden bg-white/60 shadow-md p-0 border-border/40">
         <div className="w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
           <table className="w-full min-w-[860px] border-collapse text-left">
             <thead>
@@ -171,19 +176,19 @@ export default function OrganizationsTable({ initialOrganizations, toolbarAction
                   </td>
                   <td className="py-5 px-6 text-sm text-muted font-normal">{org.created_at ? new Date(org.created_at).toLocaleDateString() : "—"}</td>
                   <td className="py-5 px-6 text-center">
-                    <span className="inline-flex items-center justify-center rounded-md bg-info/10 px-3 py-1.5 text-sm font-semibold leading-tight text-info border border-info/20">
+                    <Badge variant="outline" className="bg-info/10 px-3 py-1.5 text-sm font-semibold leading-tight text-info border-info/20">
                       {org.eventCount}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="py-5 px-6 text-center">
-                    <span className="inline-flex items-center justify-center rounded-md bg-heading/10 px-3 py-1.5 text-sm font-semibold leading-tight text-heading border border-heading/20">
+                    <Badge variant="outline" className="bg-heading/10 px-3 py-1.5 text-sm font-semibold leading-tight text-heading border-heading/20">
                       {org.attendeeCount}
-                    </span>
+                    </Badge>
                   </td>
                   <td className="py-5 px-6 text-right">
                     <Link
                       href={`/admin/organizations/${org.id}`}
-                      className="no-underline ml-auto inline-flex h-12 items-center justify-center gap-1.5 rounded-md border border-hairline-strong bg-white px-5 text-xs font-semibold leading-none text-ink transition-colors hover:bg-surface"
+                      className={cn(buttonVariants({ variant: "outline", size: "sm" }), "h-10 px-4 gap-1.5 text-xs font-semibold bg-white text-ink hover:bg-surface")}
                     >
                       Deep Dive <ChevronRight size={13} />
                     </Link>
@@ -198,7 +203,7 @@ export default function OrganizationsTable({ initialOrganizations, toolbarAction
             </tbody>
           </table>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
