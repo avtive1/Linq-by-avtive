@@ -306,7 +306,7 @@ export default function CardView({
                   type="button"
                   variant={viewMode === "horizontal" ? "default" : "ghost"}
                   onClick={() => changeViewMode("horizontal")}
-                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] ${viewMode === "horizontal" ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-8 min-w-[120px] px-3.5 rounded-sm text-sm leading-tight font-semibold tracking-[0.01em] ${viewMode === "horizontal" ? "shadow-md" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Post View
                 </Button>
@@ -314,7 +314,7 @@ export default function CardView({
                   type="button"
                   variant={viewMode === "vertical" ? "default" : "ghost"}
                   onClick={() => changeViewMode("vertical")}
-                  className={`h-12 min-w-[132px] px-4 rounded-md text-sm leading-tight font-semibold tracking-[0.01em] ${viewMode === "vertical" ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                  className={`h-8 min-w-[120px] px-3.5 rounded-sm text-sm leading-tight font-semibold tracking-[0.01em] ${viewMode === "vertical" ? "shadow-md" : "text-muted hover:text-heading hover:bg-white/20"}`}
                 >
                   Badge View
                 </Button>

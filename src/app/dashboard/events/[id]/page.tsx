@@ -1925,9 +1925,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               </div>
 
-              <div className="p-3 rounded-md bg-white/60 border border-white/60 text-sm font-normal text-muted/90 leading-relaxed shadow-sm">
+              <p className="pt-1 text-sm font-normal text-slate-600 leading-relaxed">
                 This campaign is currently locked for <span className="text-heading font-semibold">Administrative Inspection</span>. You have high-level visibility over all engagement metrics and lead data, but record modification and deletion are restricted to maintain audit integrity.
-              </div>
+              </p>
 
 
             </div>
