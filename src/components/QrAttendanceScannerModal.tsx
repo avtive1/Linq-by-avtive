@@ -27,6 +27,42 @@ interface QrAttendanceScannerModalProps {
   onAttendanceMarked?: (attendeeId: string) => void;
 }
 
+/** True only when the browser itself rejected the camera permission request. */
+function isCameraPermissionError(err: unknown): boolean {
+  const name = err instanceof DOMException ? err.name : "";
+  if (name === "NotAllowedError" || name === "SecurityError") {
+    return true;
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  const text = `${name} ${msg}`.toLowerCase();
+  return (
+    text.includes("notallowederror") ||
+    text.includes("permission denied") ||
+    text.includes("permission to use the camera") ||
+    text.includes("securityerror")
+  );
+}
+
+/** Render a readable camera error message, hiding cross-browser noise. */
+function describeCameraError(err: unknown): string {
+  const name = err instanceof DOMException ? err.name : undefined;
+  const msg = err instanceof Error ? err.message : String(err);
+  switch (name) {
+    case "NotFoundError":
+    case "DevicesNotFoundError":
+      return "No camera was detected on this device";
+    case "OverconstrainedError":
+      return "The camera could not satisfy the requested settings";
+    case "AbortError":
+      return "The camera request was aborted";
+    case "NotReadableError":
+      return "The camera is already in use by another app or page";
+    default:
+      break;
+  }
+  return msg || "unknown error";
+}
+
 /** Synthesize a pleasant audio beep using Web Audio API */
 function playSuccessBeep() {
   try {
@@ -95,6 +131,16 @@ export function QrAttendanceScannerModal({
   const lastScannedCodeRef = useRef<string | null>(null);
   const resetTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Keep latest prop values in refs so the scanner effect stays stable and
+  // does not tear down / restart the camera on every parent re-render.
+  const eventIdRef = useRef(eventId);
+  const onAttendanceMarkedRef = useRef(onAttendanceMarked);
+
+  useEffect(() => {
+    eventIdRef.current = eventId;
+    onAttendanceMarkedRef.current = onAttendanceMarked;
+  }, [eventId, onAttendanceMarked]);
+
   const processQrScan = useCallback(
     async (qrPayload: string) => {
       if (isProcessingRef.current) return;
@@ -111,7 +157,7 @@ export function QrAttendanceScannerModal({
       lastScannedCodeRef.current = qrPayload;
 
       try {
-        const response = await fetch(`/api/events/${eventId}/attendance/scan`, {
+        const response = await fetch(`/api/events/${eventIdRef.current}/attendance/scan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ qrPayload }),
@@ -137,8 +183,8 @@ export function QrAttendanceScannerModal({
           });
 
           setScannedCount((c) => c + 1);
-          if (attendee?.id && onAttendanceMarked) {
-            onAttendanceMarked(attendee.id);
+          if (attendee?.id && onAttendanceMarkedRef.current) {
+            onAttendanceMarkedRef.current(attendee.id);
           }
         } else if (body?.data?.alreadyAttended) {
           playErrorBeep();
@@ -170,7 +216,7 @@ export function QrAttendanceScannerModal({
         }, 2600);
       }
     },
-    [eventId, onAttendanceMarked],
+    [],
   );
 
   const [retryCount, setRetryCount] = useState(0);
@@ -187,78 +233,112 @@ export function QrAttendanceScannerModal({
     const elementId = "qr-attendance-reader";
 
     const startScanner = async () => {
-      try {
-        const qrScanner = new Html5Qrcode(elementId, {
-          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-          verbose: false,
-        });
-        html5QrcodeRef.current = qrScanner;
+      const config = {
+        fps: 15,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+        // Force the bundled ZXing decoder instead of the native BarcodeDetector.
+        // The native detector silently fails to read the dense attendance QR
+        // (a ~200-char JSON payload) from on-screen displays, and html5-qrcode
+        // never falls back to ZXing during live camera scanning.
+        useBarCodeDetectorIfSupported: false,
+      };
 
-        const config = {
-          fps: 15,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
-        };
+      const onScanSuccess = (decodedText: string) => {
+        if (mounted) {
+          processQrScan(decodedText);
+        }
+      };
+      const onScanError = () => {
+        // Frame decoding error (normal while scanning)
+      };
 
-        const onScanSuccess = (decodedText: string) => {
-          if (mounted) {
-            processQrScan(decodedText);
-          }
-        };
-        const onScanError = () => {
-          // Frame decoding error (normal while scanning)
-        };
-
-        let started = false;
-
-        // Strategy 1: Try environment camera (ideal for mobile rear cameras)
+      // Attempt to start scanning with a given camera. A fresh Html5Qrcode
+      // instance is used per attempt so a failed start() never leaves the
+      // library in a broken state and never blocks a subsequent attempt.
+      // Returns `null` on success or the underlying error on failure so the
+      // real reason is preserved and surfaced to the user.
+      const tryStart = async (
+        cameraIdOrConfig: string | { facingMode: string },
+      ): Promise<unknown> => {
+        let scanner: Html5Qrcode | null = null;
         try {
-          await qrScanner.start({ facingMode: "environment" }, config, onScanSuccess, onScanError);
-          started = true;
-        } catch {
-          // Fall through to strategy 2
-        }
-
-        // Strategy 2: Fallback to user/front camera (ideal for laptop integrated cameras)
-        if (!started && mounted) {
+          scanner = new Html5Qrcode(elementId, {
+            formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+            verbose: false,
+          });
+          html5QrcodeRef.current = scanner;
+          await scanner.start(cameraIdOrConfig, config, onScanSuccess, onScanError);
+          return null;
+        } catch (err) {
+          // Tear down this attempt cleanly before trying a different camera.
           try {
-            await qrScanner.start({ facingMode: "user" }, config, onScanSuccess, onScanError);
-            started = true;
-          } catch {
-            // Fall through to strategy 3
-          }
-        }
-
-        // Strategy 3: Query explicit media devices list
-        if (!started && mounted) {
-          try {
-            const devices = await Html5Qrcode.getCameras();
-            if (devices && devices.length > 0) {
-              const cameraId = devices[0].id;
-              await qrScanner.start(cameraId, config, onScanSuccess, onScanError);
-              started = true;
+            if (scanner?.isScanning) {
+              await scanner.stop();
             }
           } catch {
-            // Devices query failed
+            // Ignore stop errors
+          }
+          try {
+            scanner?.clear();
+          } catch {
+            // Ignore clear errors
+          }
+          html5QrcodeRef.current = null;
+          return err;
+        }
+      };
+
+      let lastError: unknown = null;
+
+      // Strategy 1: Enumerate cameras and start with an explicit deviceId.
+      // This is the most reliable path — the browser attaches to a physical
+      // camera directly instead of guessing with facingMode constraints.
+      try {
+        const devices = await Html5Qrcode.getCameras();
+        if (devices && devices.length > 0) {
+          const backCamera = devices.find((d) => /back|rear|environment/i.test(d.label || ""));
+          const candidates = backCamera ? [backCamera.id, devices[0].id] : [devices[0].id];
+          for (const cameraId of candidates) {
+            if (!mounted) return;
+            const err = await tryStart(cameraId);
+            if (err === null) return;
+            lastError = err;
           }
         }
+      } catch (err) {
+        lastError = err;
+      }
 
-        if (!started) {
-          throw new Error("Could not start camera stream. Please check camera connection or permissions.");
-        }
+      // Strategy 2: Fall back to facingMode on a fresh instance per attempt.
+      if (!mounted) return;
+      const envErr = await tryStart({ facingMode: "environment" });
+      if (envErr === null) return;
+      lastError = envErr;
 
+      const userErr = await tryStart({ facingMode: "user" });
+      if (userErr === null) return;
+      lastError = userErr;
+
+      // Every attempt failed — surface the real reason instead of a generic
+      // message so the user can actually diagnose it.
+      if (lastError !== null) {
+        throw lastError;
+      }
+      throw new Error("Could not start camera stream on this device.");
+    };
+
+    // Short delay to ensure DOM element is mounted
+    const initTimer = setTimeout(async () => {
+      try {
+        await startScanner();
         if (mounted) {
           setIsInitializing(false);
         }
       } catch (err: unknown) {
         if (mounted) {
           setIsInitializing(false);
-          const errMsg = err instanceof Error ? err.message : String(err);
-          const isPermissionErr =
-            errMsg.toLowerCase().includes("permission") ||
-            errMsg.toLowerCase().includes("allowed") ||
-            errMsg.toLowerCase().includes("denied") ||
-            errMsg.toLowerCase().includes("notallowederror");
+          const isPermissionErr = isCameraPermissionError(err);
 
           if (isPermissionErr) {
             setInitError(
@@ -266,15 +346,12 @@ export function QrAttendanceScannerModal({
             );
           } else {
             setInitError(
-              `Unable to start camera: ${errMsg}. Please ensure your camera is enabled and allowed in your browser settings.`
+              `Unable to start camera: ${describeCameraError(err)}. Please ensure the camera is enabled, not used by another app, and allowed in your browser settings.`
             );
           }
         }
       }
-    };
-
-    // Short delay to ensure DOM element is mounted
-    const initTimer = setTimeout(startScanner, 150);
+    }, 150);
 
     return () => {
       mounted = false;
@@ -287,12 +364,12 @@ export function QrAttendanceScannerModal({
             if (scanner.isScanning) {
               await scanner.stop();
             }
-          } catch (e) {
+          } catch {
             // Suppress stop errors
           } finally {
             try {
               scanner.clear();
-            } catch (e) {
+            } catch {
               // Suppress clear errors
             }
           }
@@ -386,21 +463,19 @@ export function QrAttendanceScannerModal({
           {/* Scanner Container — Always rendered with non-zero dimensions so html5-qrcode can mount video stream */}
           <div
             id="qr-attendance-reader"
-            className={`w-full min-h-[280px] overflow-hidden rounded-xl border border-white/15 bg-black ${
-              initError ? "hidden" : "block"
-            }`}
+            className={`w-full min-h-[280px] overflow-hidden rounded-xl border border-white/15 bg-black ${initError ? "hidden" : "block"
+              }`}
           />
 
           {/* Scan Feedback Overlay Banner */}
           {scanResult && (
             <div
-              className={`absolute inset-x-4 top-4 z-20 flex items-start gap-3 rounded-xl p-4 shadow-xl border animate-in slide-in-from-top-4 duration-200 ${
-                scanResult.type === "success"
+              className={`absolute inset-x-4 top-4 z-20 flex items-start gap-3 rounded-xl p-4 shadow-xl border animate-in slide-in-from-top-4 duration-200 ${scanResult.type === "success"
                   ? "bg-emerald-950/90 border-emerald-500/50 text-emerald-100"
                   : scanResult.type === "warning"
                     ? "bg-amber-950/90 border-amber-500/50 text-amber-100"
                     : "bg-red-950/90 border-red-500/50 text-red-100"
-              }`}
+                }`}
             >
               {scanResult.type === "success" && (
                 <CheckCircle2 className="h-6 w-6 text-emerald-400 shrink-0 mt-0.5" />
