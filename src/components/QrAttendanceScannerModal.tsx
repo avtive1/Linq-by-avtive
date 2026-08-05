@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { X, CheckCircle2, AlertTriangle, ShieldAlert, Camera, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { readResponsePayload } from "@/lib/http/read-response-payload";
 
 interface ScannedAttendee {
   id: string;
@@ -11,6 +12,16 @@ interface ScannedAttendee {
   role?: string;
   company?: string;
   track?: string;
+}
+
+interface ScanApiPayload {
+  data?: {
+    success?: boolean;
+    message?: string;
+    alreadyAttended?: boolean;
+    attendee?: ScannedAttendee;
+  };
+  error?: unknown;
 }
 
 interface ScanResultState {
@@ -61,6 +72,18 @@ function describeCameraError(err: unknown): string {
       break;
   }
   return msg || "unknown error";
+}
+
+/** Extract a readable message from the attendance scan API response. */
+function getPayloadMessage(body: ScanApiPayload | null): string {
+  const err = body?.error;
+  if (typeof err === "string" && err.trim()) return err.trim();
+  if (err && typeof err === "object" && "message" in err) {
+    const msg = (err as { message?: unknown }).message;
+    if (typeof msg === "string" && msg.trim()) return msg.trim();
+  }
+  if (body?.data?.message) return body.data.message;
+  return "Unable to verify attendance. Please try scanning again.";
 }
 
 /** Synthesize a pleasant audio beep using Web Audio API */
@@ -163,7 +186,8 @@ export function QrAttendanceScannerModal({
           body: JSON.stringify({ qrPayload }),
         });
 
-        const body = await response.json();
+        const payload = await readResponsePayload(response);
+        const body = payload as ScanApiPayload;
 
         if (response.ok && body?.data?.success) {
           const attendee = body.data.attendee as ScannedAttendee;
@@ -191,21 +215,24 @@ export function QrAttendanceScannerModal({
           const attendee = body.data.attendee as ScannedAttendee;
           setScanResult({
             type: "warning",
-            message: body.error || "Attendance has already been marked for this attendee.",
+            message: body.data.message || "Attendance has already been marked for this attendee.",
             attendee,
           });
         } else {
           playErrorBeep();
           setScanResult({
             type: "error",
-            message: body.error || "Unable to verify attendance. Please try scanning again.",
+            message: `Request failed (${response.status}): ${getPayloadMessage(body)}`,
           });
         }
-      } catch {
+      } catch (err) {
         playErrorBeep();
+        const isNetworkFailure = err instanceof TypeError;
         setScanResult({
           type: "error",
-          message: "Network error occurred while verifying attendance. Please check your connection.",
+          message: isNetworkFailure
+            ? "Network error occurred while verifying attendance. Please check your connection."
+            : `Unexpected error: ${err instanceof Error ? err.message : String(err)}`,
         });
       } finally {
         if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
@@ -383,10 +410,17 @@ export function QrAttendanceScannerModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-white/10 bg-gray-950 text-white shadow-2xl">
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4 animate-in fade-in duration-200">
+      <style>{`
+        #qr-attendance-reader video {
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover;
+        }
+      `}</style>
+      <div className="relative flex h-full w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-white/10 bg-gray-950 text-white shadow-2xl sm:h-[min(88vh,760px)]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-4 bg-gray-900/60">
+        <div className="flex shrink-0 items-center justify-between border-b border-white/10 px-4 py-3 sm:px-5 sm:py-4 bg-gray-900/60">
           <div className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/20 text-primary-strong">
               <Camera size={18} />
@@ -420,8 +454,8 @@ export function QrAttendanceScannerModal({
           </div>
         </div>
 
-        {/* Viewport Area */}
-        <div className="relative flex flex-col items-center justify-center p-6 bg-black min-h-[340px]">
+        {/* Viewport Area — flex-1 so the camera region fills whatever height is available without overflowing */}
+        <div className="relative flex min-h-0 flex-1 flex-col items-center justify-center bg-black p-3 sm:p-6">
           {isInitializing && !initError && (
             <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/90 text-gray-400">
               <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -430,12 +464,12 @@ export function QrAttendanceScannerModal({
           )}
 
           {initError && (
-            <div className="z-10 flex flex-col items-center text-center p-6 bg-red-950/40 border border-red-500/30 rounded-xl my-4 gap-3 max-w-sm">
+            <div className="z-10 flex max-h-full w-full flex-col items-center text-center overflow-hidden p-4 sm:p-6 bg-red-950/40 border border-red-500/30 rounded-xl gap-3 max-w-sm">
               <ShieldAlert size={36} className="text-red-400 shrink-0" />
               <p className="text-sm text-red-200 font-medium leading-relaxed">
                 {initError}
               </p>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 shrink-0">
                 <Button
                   type="button"
                   variant="default"
@@ -460,12 +494,16 @@ export function QrAttendanceScannerModal({
             </div>
           )}
 
-          {/* Scanner Container — Always rendered with non-zero dimensions so html5-qrcode can mount video stream */}
-          <div
-            id="qr-attendance-reader"
-            className={`w-full min-h-[280px] overflow-hidden rounded-xl border border-white/15 bg-black ${initError ? "hidden" : "block"
-              }`}
-          />
+          {/* Scanner wrapper — flex-1 fills the viewport; the target frame is a
+              sibling of #qr-attendance-reader because html5-qrcode clears the
+              reader's innerHTML when it mounts the video stream. */}
+          <div className="relative flex min-h-0 w-full flex-1">
+            <div
+              id="qr-attendance-reader"
+              className={`h-full w-full overflow-hidden rounded-xl border border-white/15 bg-black ${initError ? "hidden" : "block"
+                }`}
+            />
+          </div>
 
           {/* Scan Feedback Overlay Banner */}
           {scanResult && (
@@ -517,7 +555,7 @@ export function QrAttendanceScannerModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-white/10 px-5 py-3.5 bg-gray-900/80 flex items-center justify-between">
+        <div className="flex shrink-0 items-center justify-between border-t border-white/10 px-4 py-3 sm:px-5 sm:py-3.5 bg-gray-900/80">
           <p className="text-xs text-gray-400">
             Position attendee QR code inside the frame to scan.
           </p>
