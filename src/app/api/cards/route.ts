@@ -49,6 +49,8 @@ export async function POST(req: Request) {
             to: attendeeEmail,
             eventName: String(eventRow?.name || "the event"),
             attendanceCode,
+            attendeeId: createdCardId,
+            eventId,
           });
           if (!emailResult.queued) {
             logger.warn(

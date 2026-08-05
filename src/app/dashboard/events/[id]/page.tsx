@@ -59,7 +59,9 @@ import {
   SlidersHorizontal,
   MoreVertical,
   AlertCircle,
+  QrCode,
 } from "lucide-react";
+import { QrAttendanceScannerModal } from "@/components/QrAttendanceScannerModal";
 
 import { CardData, EventData } from "@/types/card";
 import { toast } from "sonner";
@@ -315,6 +317,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const [rejectingRegistrationId, setRejectingRegistrationId] = useState<string | null>(null);
   const [registrationRejectionReason, setRegistrationRejectionReason] = useState("");
   const [reviewingRegistrationId, setReviewingRegistrationId] = useState<string | null>(null);
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState(false);
   const [attendanceModalCardId, setAttendanceModalCardId] = useState<string | null>(null);
   const [attendanceCodeInput, setAttendanceCodeInput] = useState("");
   const [markingAttendanceId, setMarkingAttendanceId] = useState<string | null>(null);
@@ -678,6 +681,24 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   const closeAttendanceModal = () => {
     setAttendanceModalCardId(null);
     setAttendanceCodeInput("");
+  };
+
+  const handleOpenMarkAttendanceScanner = () => {
+    if (status.label !== "Today") {
+      toast.error("Attendance can only be marked while the event is live.");
+      return;
+    }
+
+    if (typeof navigator === "undefined" || !navigator.mediaDevices) {
+      toast.error(
+        "Attendance scanning requires a camera-enabled device. Please open this page on a mobile phone or another device with a camera."
+      );
+      return;
+    }
+
+    // Open the scanner modal directly — it handles camera permission
+    // prompting and error display via Html5Qrcode.getCameras() internally.
+    setIsQrScannerOpen(true);
   };
 
   const handleSendCustomEmail = async () => {
@@ -2203,6 +2224,30 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             />
           </InputGroup>
 
+          {/* Mark Attendance Button */}
+          {isEventOwner && !isPreviewMode && (
+            <ShadButton
+              variant={status.label === "Today" ? "default" : "outline"}
+              size="lg"
+              onClick={handleOpenMarkAttendanceScanner}
+              disabled={status.label !== "Today"}
+              title={status.label !== "Today" ? "Attendance can only be marked while the event is live." : "Scan attendance QR codes"}
+              className={`w-full justify-center sm:w-auto gap-2 ${
+                status.label !== "Today"
+                  ? "cursor-not-allowed opacity-50 bg-gray-100 text-steel border-hairline"
+                  : "bg-primary text-primary-foreground hover:bg-primary/95"
+              }`}
+            >
+              <QrCode size={18} className="text-current" />
+              <span>Mark Attendance</span>
+              {status.label !== "Today" && (
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 ml-1">
+                  Not Live
+                </span>
+              )}
+            </ShadButton>
+          )}
+
           {/* Download CSV Button */}
           {cards.length > 0 && (
             <ShadButton
@@ -2376,21 +2421,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
-                    {isEventOwner && !isPreviewMode && card.hasAttendanceCode && !card.attended && (
-                      <ShadButton
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => {
-                          setAttendanceModalCardId(card.id);
-                          setAttendanceCodeInput("");
-                        }}
-                        disabled={markingAttendanceId === card.id}
-                        className="shrink-0 rounded-md bg-white/60 border-white/60"
-                      >
-                        <ShieldCheck size={14} />
-                        Mark attended
-                      </ShadButton>
-                    )}
                     <Link
                       href={`/cards/${card.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`}
                       className={cn(buttonVariants({ variant: "secondary" }), "shrink-0 rounded-md bg-white/60 border-white/60 transition-all duration-200 group-hover:border-primary/30 group-hover:text-ink")}
@@ -2549,52 +2579,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(attendanceModalCardId)} onOpenChange={(open) => !open && closeAttendanceModal()}>
-          <DialogContent showCloseButton={false} className="w-full max-w-[420px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
-            <DialogHeader className="px-6 pt-6 pb-3 flex-row items-start justify-between">
-              <div>
-                <DialogTitle className="text-xl font-semibold text-heading tracking-[-0.03em] leading-[1.15]">
-                  Mark attended
-                </DialogTitle>
-                <DialogDescription className="text-sm text-muted mt-1">
-                  Enter the 6-digit code the guest or visitor received by email.
-                </DialogDescription>
-              </div>
-              <ShadButton
-                type="button"
-                variant="outline"
-                size="icon-sm"
-                onClick={closeAttendanceModal}
-                className="w-9 h-9 rounded-sm border border-border flex items-center justify-center text-muted hover:text-heading hover:bg-surface transition-all"
-              >
-                <X size={16} />
-              </ShadButton>
-            </DialogHeader>
-            <div className="px-6 pb-6 flex flex-col gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="event-attendance-code">Attendance code</Label>
-                <Input
-                  id="event-attendance-code"
-                  value={attendanceCodeInput}
-                  onChange={(e) => setAttendanceCodeInput(e.target.value)}
-                  placeholder="000000"
-                  maxLength={6}
-                />
-              </div>
-              <div className="flex gap-2 justify-end">
-                <ShadButton variant="secondary" onClick={closeAttendanceModal}>
-                  Cancel
-                </ShadButton>
-                <ShadButton
-                  onClick={() => void submitAttendance()}
-                  disabled={markingAttendanceId === attendanceModalCardId}
-                >
-                  {markingAttendanceId === attendanceModalCardId ? "Verifying..." : "Confirm"}
-                </ShadButton>
-              </div>
-            </div>
-          </DialogContent>
-      </Dialog>
+      <QrAttendanceScannerModal
+        isOpen={isQrScannerOpen}
+        onClose={() => setIsQrScannerOpen(false)}
+        eventId={id}
+        eventName={eventData?.name || "Event"}
+        onAttendanceMarked={(attendeeId) => {
+          setCards((prev) =>
+            prev.map((c) => (c.id === attendeeId ? { ...c, attended: true } : c))
+          );
+        }}
+      />
 
       <Dialog open={isEmailModalOpen && Boolean(emailModalAttendee)} onOpenChange={(open) => !open && !isSendingEmail && setIsEmailModalOpen(false)}>
           <DialogContent showCloseButton={false} className="w-full max-w-[480px] glass-panel bg-white/95 border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">

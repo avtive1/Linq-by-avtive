@@ -87,6 +87,27 @@ export function emailCodeDisplay(label: string, code: string): string {
               </table>`;
 }
 
+export const ATTENDANCE_QR_CID = "attendance-qr-code@avtive.app";
+
+export function emailQrCodeDisplay(label: string, qrDataUrlOrCid?: string | null): string {
+  const src =
+    qrDataUrlOrCid && (qrDataUrlOrCid.startsWith("cid:") || !qrDataUrlOrCid.startsWith("data:"))
+      ? qrDataUrlOrCid
+      : `cid:${ATTENDANCE_QR_CID}`;
+
+  return `
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;border:1px solid #e0e2e8;border-radius:10px;background:#fafbfc;">
+                <tr>
+                  <td align="center" style="padding:22px 20px;">
+                    <p style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#6b6f7e;">${escapeHtml(label)}</p>
+                    <div style="display:inline-block;padding:12px;background:#ffffff;border:1px solid #e0e2e8;border-radius:8px;">
+                      <img src="${src}" alt="Attendance QR Code" width="180" height="180" style="display:block;width:180px;height:180px;border:0;outline:none;text-decoration:none;" />
+                    </div>
+                  </td>
+                </tr>
+              </table>`;
+}
+
 export function emailPrimaryButton(label: string, href: string): string {
   const safeHref = escapeHtml(href);
   const safeLabel = escapeHtml(label);

@@ -8,11 +8,21 @@ import { logger } from "@/lib/logger-server";
 import { queryNeonAsSystem } from "@/lib/neon-db";
 import { sendTransactionalEmail } from "@/lib/notifications/email";
 
+export type EmailAttachmentPayload = {
+  filename: string;
+  content?: string;
+  path?: string;
+  cid?: string;
+  contentType?: string;
+  contentDisposition?: "inline" | "attachment";
+};
+
 export type QueuedBrandedEmail = {
   to: string;
   subject: string;
   text: string;
   html?: string;
+  attachments?: EmailAttachmentPayload[];
 };
 
 type OutboxRow = {
@@ -131,10 +141,24 @@ async function markFailed(row: OutboxRow, error: string) {
 }
 
 async function deliverEmailRow(row: OutboxRow) {
+  const customAttachments = (row.payload.attachments || []).map((att) => {
+    if (att.content && !att.path) {
+      return {
+        ...att,
+        content: Buffer.from(att.content, "base64"),
+      };
+    }
+    return att;
+  });
+
   const result = await sendTransactionalEmail({
     ...row.payload,
     attachments: row.payload.html
-      ? [getOrganizationEmailLogoAttachment(), ...getEmailSocialIconAttachments()]
+      ? [
+          getOrganizationEmailLogoAttachment(),
+          ...getEmailSocialIconAttachments(),
+          ...customAttachments,
+        ]
       : undefined,
     messageId: `<${row.id}@avtive.app>`,
   });

@@ -1,5 +1,6 @@
 import {
   emailCodeDisplay,
+  emailQrCodeDisplay,
   emailHighlightBox,
   emailLinkFallback,
   emailParagraph,
@@ -14,9 +15,16 @@ export function generateRegistrationApprovedEmailHtml(params: {
   cardLink: string;
   eventLink: string;
   attendanceCode?: string | null;
+  qrDataUrl?: string | null;
 }): string {
   const eventName = escapeHtml(params.eventName);
   const attendanceCode = String(params.attendanceCode || "").trim();
+
+  const attendanceHtml = params.qrDataUrl
+    ? emailQrCodeDisplay("Your attendance QR code", params.qrDataUrl)
+    : attendanceCode
+      ? emailCodeDisplay("Your attendance code", attendanceCode)
+      : "";
 
   return wrapAvtiveEmailLayout({
     pageTitle: "Registration Approved",
@@ -24,7 +32,7 @@ export function generateRegistrationApprovedEmailHtml(params: {
     bodyHtml: `
               ${emailHighlightBox(`<strong>Great news!</strong> Your registration for <strong>${eventName}</strong> has been approved.`, "success")}
               ${emailParagraph("You're all set for the event. Use the links below to view your attendee card and event page.")}
-              ${attendanceCode ? emailCodeDisplay("Your attendance code", attendanceCode) : ""}
+              ${attendanceHtml}
               ${emailPrimaryButton("View Attendee Card", params.cardLink)}
               ${emailSecondaryButton("View Event Page", params.eventLink)}
               ${emailLinkFallback(params.cardLink)}`,
@@ -49,4 +57,3 @@ export function generateRegistrationRejectedEmailHtml(params: {
               ${emailLinkFallback(params.eventLink)}`,
   });
 }
-

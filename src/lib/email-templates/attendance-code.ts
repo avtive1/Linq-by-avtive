@@ -1,5 +1,6 @@
 import {
   emailCodeDisplay,
+  emailQrCodeDisplay,
   emailParagraph,
   escapeHtml,
   wrapAvtiveEmailLayout,
@@ -7,14 +8,21 @@ import {
 
 export function generateVisitorAttendanceCodeEmailHtml(params: {
   eventName: string;
-  attendanceCode: string;
+  attendanceCode?: string;
+  qrDataUrl?: string | null;
 }): string {
+  const displayHtml = params.qrDataUrl
+    ? emailQrCodeDisplay("Attendance QR code", params.qrDataUrl)
+    : params.attendanceCode
+      ? emailCodeDisplay("Attendance code", params.attendanceCode)
+      : "";
+
   return wrapAvtiveEmailLayout({
-    pageTitle: "Your Attendance Code",
-    headline: "Your attendance code",
+    pageTitle: "Your Attendance QR Code",
+    headline: "Your attendance QR code",
     bodyHtml: `
-              ${emailParagraph(`Here is your attendance code for <strong style="color:#1c1c1e;">${escapeHtml(params.eventName)}</strong>. Present it at the event entrance.`)}
-              ${emailCodeDisplay("Attendance code", params.attendanceCode)}
+              ${emailParagraph(`Here is your attendance QR code for <strong style="color:#1c1c1e;">${escapeHtml(params.eventName)}</strong>. Present it at the event entrance.`)}
+              ${displayHtml}
               ${emailParagraph("Keep this email handy when you arrive.", 0)}`,
   });
 }
@@ -22,8 +30,8 @@ export function generateVisitorAttendanceCodeEmailHtml(params: {
 export function appendAttendanceCodeToApprovedEmailText(text: string, attendanceCode: string): string {
   return (
     `${text}\n\n` +
-    `Your attendance code: ${attendanceCode}\n` +
-    `Present this code at the event entrance.`
+    `Your attendance QR code is included in the HTML version of this email.\n` +
+    `Attendance code: ${attendanceCode}\n` +
+    `Present this QR code at the event entrance.`
   );
 }
-

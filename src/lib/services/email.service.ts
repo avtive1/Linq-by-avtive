@@ -1,4 +1,4 @@
-import { enqueueBrandedTransactionalEmail } from "@/lib/notifications/email-outbox";
+import { enqueueBrandedTransactionalEmail, type EmailAttachmentPayload } from "@/lib/notifications/email-outbox";
 import { toPublicCompactUrl } from "@/lib/services/shortLink.service";
 import {
   appendAttendanceCodeToApprovedEmailText,
@@ -8,8 +8,8 @@ import {
   generateRegistrationApprovedEmailHtml,
   generateRegistrationRejectedEmailHtml,
 } from "@/lib/email-templates/registration-approved";
-import { escapeHtml, emailParagraph, wrapAvtiveEmailLayout } from "@/lib/email-templates/layout";
-
+import { generateAttendanceQrDataUrl } from "@/lib/security/attendance-qr";
+import { escapeHtml, emailParagraph, wrapAvtiveEmailLayout, ATTENDANCE_QR_CID } from "@/lib/email-templates/layout";
 
 function buildCardTargetPath(cardId: string, shareToken?: string | null) {
   const path = `/cards/${encodeURIComponent(cardId)}?share=true`;
@@ -41,6 +41,32 @@ export async function sendRegistrationApprovedEmail(input: {
 
   const attendanceCode = String(input.attendanceCode || "").trim();
 
+  let qrDataUrl: string | null = null;
+  const attachments: EmailAttachmentPayload[] = [];
+
+  if (attendanceCode && input.cardId && input.eventId) {
+    try {
+      qrDataUrl = await generateAttendanceQrDataUrl({
+        attendeeId: input.cardId,
+        eventId: input.eventId,
+        code: attendanceCode,
+      });
+
+      if (qrDataUrl) {
+        const base64Content = qrDataUrl.replace(/^data:image\/png;base64,/, "");
+        attachments.push({
+          filename: "attendance-qr.png",
+          content: base64Content,
+          cid: ATTENDANCE_QR_CID,
+          contentType: "image/png",
+          contentDisposition: "inline",
+        });
+      }
+    } catch {
+      qrDataUrl = null;
+    }
+  }
+
   let text =
     `Hi there,\n\n` +
     `Your event registration for "${input.eventName}" is approved!\n\n` +
@@ -57,6 +83,7 @@ export async function sendRegistrationApprovedEmail(input: {
     cardLink,
     eventLink,
     attendanceCode,
+    qrDataUrl: qrDataUrl ? `cid:${ATTENDANCE_QR_CID}` : null,
   });
 
   return enqueueBrandedTransactionalEmail({
@@ -64,6 +91,7 @@ export async function sendRegistrationApprovedEmail(input: {
     subject: "Your Event Registration is Approved",
     text,
     html,
+    attachments: attachments.length > 0 ? attachments : undefined,
   });
 }
 
@@ -71,22 +99,53 @@ export async function sendVisitorAttendanceCodeEmail(input: {
   to: string;
   eventName: string;
   attendanceCode: string;
+  attendeeId?: string;
+  eventId?: string;
 }) {
+  let qrDataUrl: string | null = null;
+  const attachments: EmailAttachmentPayload[] = [];
+
+  if (input.attendanceCode && input.attendeeId && input.eventId) {
+    try {
+      qrDataUrl = await generateAttendanceQrDataUrl({
+        attendeeId: input.attendeeId,
+        eventId: input.eventId,
+        code: input.attendanceCode,
+      });
+
+      if (qrDataUrl) {
+        const base64Content = qrDataUrl.replace(/^data:image\/png;base64,/, "");
+        attachments.push({
+          filename: "attendance-qr.png",
+          content: base64Content,
+          cid: ATTENDANCE_QR_CID,
+          contentType: "image/png",
+          contentDisposition: "inline",
+        });
+      }
+    } catch {
+      qrDataUrl = null;
+    }
+  }
+
   const text =
     `Hi there,\n\n` +
-    `Your attendance code for "${input.eventName}" is: ${input.attendanceCode}\n\n` +
-    `Present this code at the event entrance.`;
+    `Your attendance QR code for "${input.eventName}" is included in the HTML version of this email.\n\n` +
+    `Attendance code: ${input.attendanceCode}\n\n` +
+    `Present this QR code at the event entrance.`;
 
   const html = generateVisitorAttendanceCodeEmailHtml({
     eventName: input.eventName,
     attendanceCode: input.attendanceCode,
+    qrDataUrl: qrDataUrl ? `cid:${ATTENDANCE_QR_CID}` : null,
   });
 
   return enqueueBrandedTransactionalEmail({
     to: input.to,
-    subject: `Your attendance code for ${input.eventName}`,
+    subject: `Your attendance QR code for ${input.eventName}`,
     text,
     html,
+    attachments: attachments.length > 0 ? attachments : undefined,
   });
 }
 
@@ -103,10 +162,9 @@ export async function sendRegistrationRejectedEmail(input: {
 
   const text =
     `Hi there,\n\n` +
-    `Your registration for "${input.eventName}" was not approved.\n\n` +
-    `Reason: ${input.rejectionReason}\n\n` +
-    `Event link: ${eventLink}\n\n` +
-    `You may contact the organizer if you would like to re-apply.`;
+    `Your event registration for "${input.eventName}" was not approved.\n\n` +
+    `Reason:\n${input.rejectionReason}\n\n` +
+    `Event page:\n${eventLink}`;
 
   const html = generateRegistrationRejectedEmailHtml({
     eventName: input.eventName,
@@ -116,7 +174,7 @@ export async function sendRegistrationRejectedEmail(input: {
 
   return enqueueBrandedTransactionalEmail({
     to: input.to,
-    subject: "Registration Update for " + input.eventName,
+    subject: "Update on Your Event Registration",
     text,
     html,
   });
