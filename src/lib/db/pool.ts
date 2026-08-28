@@ -2,16 +2,75 @@ import {
   neon,
   type NeonQueryFunction,
 } from "@neondatabase/serverless";
+import { Pool, type QueryResultRow } from "pg";
 import { logger } from "@/lib/logger-server";
 
-/**
- * Singleton Neon HTTP client.
- *
- * Connection pooling is handled by Neon's pooler (PgBouncer) when DATABASE_URL
- * uses the `-pooler` hostname. The app reuses one client instance per process —
- * it does not open a new TCP connection per request.
- */
-let sqlClient: NeonQueryFunction<false, false> | null = null;
+export interface UniversalSqlClient {
+  query<T extends QueryResultRow = Record<string, unknown>>(
+    query: string,
+    params?: unknown[],
+  ): Promise<T[]>;
+  transaction(queries: Array<any>): Promise<unknown[]>;
+  end?(): Promise<void>;
+}
+
+class PgClientAdapter implements UniversalSqlClient {
+  private pool: Pool;
+
+  constructor(connectionString: string) {
+    const cleanConnStr = connectionString
+      .replace(/([?&])sslmode=[^&]+&?/g, "$1")
+      .replace(/([?&])ssl=[^&]+&?/g, "$1")
+      .replace(/\?&/, "?")
+      .replace(/[?&]$/, "");
+
+    this.pool = new Pool({
+      connectionString: cleanConnStr,
+      ssl: { rejectUnauthorized: false },
+      max: 10,
+    });
+  }
+
+  query<T extends QueryResultRow = Record<string, unknown>>(
+    query: string,
+    params: unknown[] = [],
+  ): Promise<T[]> & { sql: string; params: unknown[] } {
+    const promise = this.pool.query<T>(query, params).then((res) => res.rows);
+    return Object.assign(promise, { sql: query, params });
+  }
+
+  async transaction(queries: Array<any>): Promise<unknown[]> {
+    const client = await this.pool.connect();
+    try {
+      await client.query("BEGIN");
+      const results: unknown[] = [];
+      for (const q of queries) {
+        if (typeof q === "object" && q !== null && "sql" in q) {
+          const res = await client.query(q.sql, q.params || []);
+          results.push(res.rows);
+        } else if (typeof q === "string") {
+          const res = await client.query(q);
+          results.push(res.rows);
+        } else {
+          results.push(await q);
+        }
+      }
+      await client.query("COMMIT");
+      return results;
+    } catch (error) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
+  async end(): Promise<void> {
+    await this.pool.end().catch(() => {});
+  }
+}
+
+let sqlClient: UniversalSqlClient | NeonQueryFunction<false, false> | null = null;
 
 export type DbPoolConfig = {
   /** Max retry attempts for transient failures (default: 3) */
@@ -52,19 +111,30 @@ export function setDbPoolConfigForTests(config: Partial<DbPoolConfig>) {
 function isPoolerUrl(url: string): boolean {
   try {
     const host = new URL(url.replace(/^postgres(ql)?:\/\//, "https://")).hostname;
-    return host.includes("-pooler");
+    return host.includes("-pooler") || host.includes(".pooler.supabase.com");
   } catch {
-    return url.includes("-pooler");
+    return url.includes("-pooler") || url.includes(".pooler.supabase.com");
+  }
+}
+
+function isNeonHost(url: string): boolean {
+  try {
+    const host = new URL(url.replace(/^postgres(ql)?:\/\//, "https://")).hostname;
+    return host.includes(".neon.tech");
+  } catch {
+    return url.includes(".neon.tech");
   }
 }
 
 /**
- * Prefer Neon pooler URL for runtime API traffic.
- * Falls back to DATABASE_URL_DIRECT only when pooler is not configured.
+ * Prefer pooler URL for runtime API traffic.
+ * Falls back to DATABASE_URL_DIRECT / DIRECT_URL only when pooler is not configured.
  */
 export function getConnectionString(): string {
   const pooler = process.env.DATABASE_URL?.trim();
-  const direct = process.env.DATABASE_URL_DIRECT?.trim();
+  const direct =
+    process.env.DATABASE_URL_DIRECT?.trim() ||
+    process.env.DIRECT_URL?.trim();
   let value = pooler || direct;
 
   if (!value) {
@@ -73,7 +143,7 @@ export function getConnectionString(): string {
 
   if (poolConfig.warnOnDirectUrl && !isPoolerUrl(value)) {
     logger.warn(
-      "[db] DATABASE_URL is not a Neon pooler URL. Use the `-pooler` endpoint in production to avoid connection exhaustion.",
+      "[db] DATABASE_URL is not a pooler URL. Use the pooler endpoint in production to avoid connection exhaustion.",
     );
   }
 
@@ -94,14 +164,22 @@ export function getConnectionString(): string {
   return value;
 }
 
-export function getSqlClient(): NeonQueryFunction<false, false> {
+export function getSqlClient(): any {
   if (!sqlClient) {
-    sqlClient = neon(getConnectionString());
+    const connStr = getConnectionString();
+    if (isNeonHost(connStr)) {
+      sqlClient = neon(connStr);
+    } else {
+      sqlClient = new PgClientAdapter(connStr);
+    }
   }
   return sqlClient;
 }
 
 export async function resetSqlClient(): Promise<void> {
+  if (sqlClient && typeof (sqlClient as any).end === "function") {
+    await (sqlClient as any).end();
+  }
   sqlClient = null;
 }
 

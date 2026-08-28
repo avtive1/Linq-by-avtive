@@ -4,7 +4,17 @@ import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { validateRequiredEnv } from "@/lib/env";
 import "./globals.css";
+
+if (process.env.NEXT_RUNTIME !== "edge") {
+  validateRequiredEnv([
+    "NEXT_PUBLIC_APP_URL",
+    "DATABASE_URL",
+    "NEON_AUTH_BASE_URL",
+    "NEON_AUTH_COOKIE_SECRET",
+  ]);
+}
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -31,8 +41,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${dmSans.variable} ${dmMono.variable} font-sans`}>
-      <body className={dmSans.className}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${dmSans.variable} ${dmMono.variable} font-sans`}
+    >
+      <body suppressHydrationWarning className={dmSans.className}>
         <ClerkProvider>
           <Toaster position="top-center" richColors />
           {children}
