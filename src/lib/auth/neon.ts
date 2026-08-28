@@ -1,8 +1,18 @@
 import { createNeonAuth } from "@neondatabase/auth/next/server";
+import { validateRequiredEnv } from "@/lib/env";
 
 const isNextBuild =
   process.env.NEXT_PHASE === "phase-production-build" ||
   process.env.npm_lifecycle_event === "build";
+
+if (!isNextBuild) {
+  validateRequiredEnv([
+    "NEON_AUTH_BASE_URL",
+    "NEON_AUTH_COOKIE_SECRET",
+    "DATABASE_URL",
+    "DATABASE_URL_DIRECT",
+  ]);
+}
 
 function requiredEnv(name: string) {
   const value = process.env[name]?.trim();

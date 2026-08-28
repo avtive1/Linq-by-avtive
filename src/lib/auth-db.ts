@@ -21,6 +21,11 @@ export function normalizeAuthEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+const ARGON2_OPTIONS = {
+  memoryCost: 19456,
+  timeCost: 2,
+};
+
 function getArgon2() {
   if (!argon2ModulePromise) {
     argon2ModulePromise = import("argon2");
@@ -80,47 +85,29 @@ async function ensureBootstrapSuperAdmin() {
       : requestedUsername;
 
     const argon2 = await getArgon2();
-    const passwordHash = await argon2.hash(password);
+    const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
 
-    const existingProfile = await queryNeonOneAsSystem<{ id: string }>(
-      `SELECT id FROM public.profiles WHERE id = $1 LIMIT 1`,
-      [userId],
+    await queryNeonAsSystem(
+      `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
+       VALUES ($1, $2, $3, $4, 'admin', now())
+       ON CONFLICT (id) DO UPDATE
+       SET role = 'admin',
+           username = EXCLUDED.username,
+           organization_name = EXCLUDED.organization_name,
+           organization_name_key = EXCLUDED.organization_name_key`,
+      [userId, username, organizationName, organizationKey || null],
     );
-    if (existingProfile?.id) {
-      await queryNeonAsSystem(
-        `UPDATE public.profiles
-         SET role = 'admin',
-             username = $1,
-             organization_name = $2,
-             organization_name_key = $3
-         WHERE id = $4`,
-        [username, organizationName, organizationKey || null, userId],
-      );
-    } else {
-      await queryNeonAsSystem(
-        `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
-         VALUES ($1, $2, $3, $4, 'admin', now())`,
-        [userId, username, organizationName, organizationKey || null],
-      );
-    }
 
-    if (existingAuth?.user_id) {
-      await queryNeonAsSystem(
-        `UPDATE public.auth_users
-         SET email = $1,
-             email_normalized = $1,
-             password_hash = $2,
-             updated_at = now()
-         WHERE user_id = $3`,
-        [email, passwordHash, userId],
-      );
-    } else {
-      await queryNeonAsSystem(
-        `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
-         VALUES ($1, $2, $2, $3, now(), now())`,
-        [userId, email, passwordHash],
-      );
-    }
+    await queryNeonAsSystem(
+      `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
+       VALUES ($1, $2, $2, $3, now(), now())
+       ON CONFLICT (user_id) DO UPDATE
+       SET email = EXCLUDED.email,
+           email_normalized = EXCLUDED.email_normalized,
+           password_hash = EXCLUDED.password_hash,
+           updated_at = now()`,
+      [userId, email, passwordHash],
+    );
 
     if (organizationKey) {
       await queryNeonAsSystem(
@@ -389,7 +376,7 @@ export async function createOrganizationOwnerByAdmin(input: {
 
   const userId = crypto.randomUUID();
   const argon2 = await getArgon2();
-  const hash = await argon2.hash(input.password);
+  const hash = await argon2.hash(input.password, ARGON2_OPTIONS);
   const requestedBaseUsername =
     (email.split("@")[0] || "user").toLowerCase().replace(/[^a-z0-9_.]/g, "").slice(0, 18) || "user";
   let pendingUsername = `${requestedBaseUsername}_${userId.replace(/-/g, "").slice(0, 8)}`;
@@ -464,7 +451,7 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   if (!row?.user_id) return false;
 
   const argon2 = await getArgon2();
-  const hash = await argon2.hash(newPassword);
+  const hash = await argon2.hash(newPassword, ARGON2_OPTIONS);
   await queryNeonAsSystem(
     `UPDATE public.auth_users
      SET password_hash = $1,

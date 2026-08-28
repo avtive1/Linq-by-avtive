@@ -90,12 +90,19 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     session = null;
   }
 
+  const { AUTH_COOKIE_NAME, verifySessionToken } = await import("@/lib/auth/session-token");
+  const jwtCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  let jwtPayload: { userId: string; email: string } | null = null;
+  if (jwtCookie) {
+    jwtPayload = await verifySessionToken(jwtCookie);
+  }
+
   const { userId: clerkUserId } = await auth();
   const neonUserId = String(session?.user?.id || "").trim();
-  const userId = neonUserId || clerkUserId || undefined;
+  const userId = jwtPayload?.userId || neonUserId || clerkUserId || undefined;
 
   const tokenRole = String(session?.user?.role || "").toLowerCase();
-  const tokenEmail = String(session?.user?.email || "").trim().toLowerCase();
+  const tokenEmail = String(jwtPayload?.email || session?.user?.email || "").trim().toLowerCase();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
