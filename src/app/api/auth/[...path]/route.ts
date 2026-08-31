@@ -6,11 +6,39 @@ import { createSessionToken, verifySessionToken, AUTH_COOKIE_NAME } from "@/lib/
 
 const neonHandler = neonAuth.handler() as Record<string, any>;
 
-export async function GET(req: Request, props: { params: Promise<{ path?: string[] }> }) {
-  const { path = [] } = await props.params;
-  const endpoint = path.join("/");
+async function resolveEndpoint(req: Request, props?: { params?: Promise<{ path?: string[] }> | { path?: string[] } }): Promise<string> {
+  try {
+    const paramsObj = await Promise.resolve(props?.params);
+    if (paramsObj?.path && Array.isArray(paramsObj.path) && paramsObj.path.length > 0) {
+      return paramsObj.path.join("/");
+    }
+  } catch {}
 
-  if (endpoint === "get-session") {
+  try {
+    const pathname = new URL(req.url).pathname;
+    return pathname.replace(/^\/api\/auth\/?/, "").replace(/\/$/, "");
+  } catch {
+    return "";
+  }
+}
+
+async function parseRequestBody(req: Request): Promise<Record<string, any>> {
+  try {
+    return (await req.json()) as Record<string, any>;
+  } catch {
+    try {
+      const text = await req.text();
+      return text ? (JSON.parse(text) as Record<string, any>) : {};
+    } catch {
+      return {};
+    }
+  }
+}
+
+export async function GET(req: Request, props: { params: Promise<{ path?: string[] }> }) {
+  const endpoint = await resolveEndpoint(req, props);
+
+  if (endpoint === "get-session" || endpoint === "session") {
     const cookieStore = await cookies();
     const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
     if (token) {
@@ -46,24 +74,10 @@ export async function GET(req: Request, props: { params: Promise<{ path?: string
   }
 }
 
-async function parseRequestBody(req: Request): Promise<Record<string, any>> {
-  try {
-    return (await req.json()) as Record<string, any>;
-  } catch {
-    try {
-      const text = await req.text();
-      return text ? (JSON.parse(text) as Record<string, any>) : {};
-    } catch {
-      return {};
-    }
-  }
-}
-
 export async function POST(req: Request, props: { params: Promise<{ path?: string[] }> }) {
-  const { path = [] } = await props.params;
-  const endpoint = path.join("/");
+  const endpoint = await resolveEndpoint(req, props);
 
-  if (endpoint === "sign-in/email") {
+  if (endpoint === "sign-in/email" || endpoint === "signin/email" || endpoint === "sign-in") {
     try {
       const body = await parseRequestBody(req);
       const email = String(body.email || "").trim().toLowerCase();
@@ -96,6 +110,12 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
 
       return NextResponse.json({
         data: {
+          session: {
+            id: user.user_id,
+            userId: user.user_id,
+            token,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
           user: {
             id: user.user_id,
             email: user.email,
@@ -111,7 +131,34 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
     }
   }
 
-  if (endpoint === "sign-up/email") {
+  if (endpoint === "migrate-legacy-login") {
+    try {
+      const body = await parseRequestBody(req);
+      const email = String(body.email || "").trim().toLowerCase();
+      const password = String(body.password || "");
+
+      if (!email || !password) {
+        return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+      }
+
+      const user = await verifyPassword(email, password);
+      if (!user) {
+        return NextResponse.json({ error: "Invalid email or password." }, { status: 401 });
+      }
+
+      return NextResponse.json({
+        data: {
+          canMigrate: true,
+          name: user.username || user.email,
+        },
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Migration failed.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
+
+  if (endpoint === "sign-up/email" || endpoint === "signup/email" || endpoint === "sign-up") {
     try {
       const body = await parseRequestBody(req);
       const email = String(body.email || "").trim().toLowerCase();
@@ -144,6 +191,12 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
 
       return NextResponse.json({
         data: {
+          session: {
+            id: registered.userId,
+            userId: registered.userId,
+            token,
+            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          },
           user: {
             id: registered.userId,
             email: registered.email,
@@ -159,7 +212,7 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
     }
   }
 
-  if (endpoint === "sign-out") {
+  if (endpoint === "sign-out" || endpoint === "signout") {
     const cookieStore = await cookies();
     cookieStore.delete(AUTH_COOKIE_NAME);
     return NextResponse.json({ data: { success: true } });
@@ -175,4 +228,3 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
 export const PUT = neonHandler.PUT;
 export const DELETE = neonHandler.DELETE;
 export const PATCH = neonHandler.PATCH;
-
