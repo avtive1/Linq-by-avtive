@@ -118,10 +118,15 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail || !password) {
+      setError("Please enter your email and password.");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      const trimmedEmail = email.trim().toLowerCase();
-
       if (needsOtpStep) {
         const code = otp.trim();
         if (!code) {

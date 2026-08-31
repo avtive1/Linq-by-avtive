@@ -83,18 +83,20 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return res;
   }
 
-  let session: Awaited<ReturnType<typeof neonAuth.getSession>>["data"] = null;
-  try {
-    session = (await neonAuth.getSession()).data;
-  } catch {
-    session = null;
-  }
-
   const { AUTH_COOKIE_NAME, verifySessionToken } = await import("@/lib/auth/session-token");
   const jwtCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   let jwtPayload: { userId: string; email: string } | null = null;
   if (jwtCookie) {
     jwtPayload = await verifySessionToken(jwtCookie);
+  }
+
+  let session: Awaited<ReturnType<typeof neonAuth.getSession>>["data"] = null;
+  if (!jwtPayload) {
+    try {
+      session = (await neonAuth.getSession()).data;
+    } catch {
+      session = null;
+    }
   }
 
   const { userId: clerkUserId } = await auth();

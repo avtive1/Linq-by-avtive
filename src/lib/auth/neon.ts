@@ -36,3 +36,43 @@ export const neonAuth = createNeonAuth({
   },
   logLevel: process.env.NEON_AUTH_LOG_LEVEL === "debug" ? "debug" : "warn",
 });
+
+// Circuit Breaker + Timeout wrapper to prevent blocking calls on Neon Auth failure
+let lastFailureTime = 0;
+const BREAKER_COOLDOWN_MS = 30000; // 30 seconds
+
+const originalGetSession = neonAuth.getSession.bind(neonAuth);
+
+(neonAuth as any).getSession = async function (...args: any[]) {
+  const now = Date.now();
+  if (now - lastFailureTime < BREAKER_COOLDOWN_MS) {
+    return { data: null };
+  }
+
+  let timeoutId: NodeJS.Timeout | undefined;
+  const timeoutPromise = new Promise<{ data: null }>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve({ data: null });
+    }, 800);
+  });
+
+  const start = Date.now();
+  try {
+    const res = await Promise.race([
+      originalGetSession(...args),
+      timeoutPromise,
+    ]);
+    if (timeoutId) clearTimeout(timeoutId);
+
+    // If request took longer than 800ms, assume it timed out or is extremely slow
+    if (Date.now() - start >= 800) {
+      lastFailureTime = Date.now();
+    }
+    return res;
+  } catch (err) {
+    if (timeoutId) clearTimeout(timeoutId);
+    lastFailureTime = Date.now();
+    throw err;
+  }
+};
+
