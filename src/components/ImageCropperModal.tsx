@@ -93,6 +93,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
             <p className="text-xs text-muted font-medium mt-1">{subtitle}</p>
           </div>
           <button 
+            type="button"
             onClick={onClose}
             className="p-2 rounded-[4px] hover:bg-black/5 text-muted transition-all duration-150 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
           >
@@ -139,6 +140,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
 
           <div className="form-actions">
             <Button 
+              type="button"
               variant="secondary" 
               fullWidth 
               onClick={onClose}
@@ -148,6 +150,7 @@ export const ImageCropperModal: React.FC<ImageCropperModalProps> = ({
               Cancel
             </Button>
             <Button 
+              type="button"
               variant="primary" 
               fullWidth 
               onClick={handleApply}

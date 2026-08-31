@@ -99,16 +99,7 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
       }
 
       const token = await createSessionToken(user.user_id, user.email);
-      const cookieStore = await cookies();
-      cookieStore.set(AUTH_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60,
-      });
-
-      return NextResponse.json({
+      const response = NextResponse.json({
         data: {
           session: {
             id: user.user_id,
@@ -125,6 +116,16 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
           },
         },
       });
+
+      response.cookies.set(AUTH_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return response;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Sign-in failed.";
       return NextResponse.json({ error: { message } }, { status: 500 });
@@ -180,16 +181,7 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
       });
 
       const token = await createSessionToken(registered.userId, registered.email);
-      const cookieStore = await cookies();
-      cookieStore.set(AUTH_COOKIE_NAME, token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 30 * 24 * 60 * 60,
-      });
-
-      return NextResponse.json({
+      const response = NextResponse.json({
         data: {
           session: {
             id: registered.userId,
@@ -206,6 +198,16 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
           },
         },
       });
+
+      response.cookies.set(AUTH_COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      return response;
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Sign-up failed.";
       return NextResponse.json({ error: { message } }, { status: 400 });
@@ -213,9 +215,9 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
   }
 
   if (endpoint === "sign-out" || endpoint === "signout") {
-    const cookieStore = await cookies();
-    cookieStore.delete(AUTH_COOKIE_NAME);
-    return NextResponse.json({ data: { success: true } });
+    const response = NextResponse.json({ data: { success: true } });
+    response.cookies.delete(AUTH_COOKIE_NAME);
+    return response;
   }
 
   try {

@@ -47,76 +47,103 @@ function normalizeBootstrapUsername(email: string) {
 async function ensureBootstrapSuperAdmin() {
   if (superAdminEnsured) return;
   try {
-    const email = String(process.env.SUPERADMIN_EMAIL || "").trim().toLowerCase();
-    const password = String(process.env.SUPERADMIN_PASSWORD || "");
-    if (!email || !password) return;
+    const superAdminPassword = String(process.env.SUPERADMIN_PASSWORD || "");
+    const adminPassword = String(process.env.ADMIN_PASSWORD || superAdminPassword);
+    if (!superAdminPassword && !adminPassword) return;
 
     await ensureAuthSchema();
+
+    const rawAdminEmails = [
+      process.env.SUPERADMIN_EMAIL,
+      process.env.ADMIN_EMAIL,
+      ...(process.env.ADMIN_EMAILS || "").split(","),
+      process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+      ...(process.env.NEXT_PUBLIC_ADMIN_EMAILS || "").split(","),
+    ];
+
+    const adminEmails = Array.from(
+      new Set(
+        rawAdminEmails
+          .map((e) => String(e || "").trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    );
+
+    if (adminEmails.length === 0) return;
 
     const organizationName = normalizeOrganizationName(
       String(process.env.SUPERADMIN_ORGANIZATION_NAME || "Platform Admin"),
     );
     const organizationKey = toOrganizationKey(organizationName);
-    const requestedUsername = normalizeBootstrapUsername(
-      String(process.env.SUPERADMIN_USERNAME || email),
-    );
-
-    const existingAuth = await queryNeonOneAsSystem<{ user_id: string }>(
-      `SELECT user_id
-       FROM public.auth_users
-       WHERE email_normalized = $1 OR LOWER(email) = $1
-       LIMIT 1`,
-      [email],
-    );
-
-    let userId = existingAuth?.user_id || "";
-    if (!userId) userId = crypto.randomUUID();
-
-    const usernameTakenByOther = await queryNeonOneAsSystem<{ id: string }>(
-      `SELECT id
-       FROM public.profiles
-       WHERE username = $1
-         AND id <> $2
-       LIMIT 1`,
-      [requestedUsername, userId],
-    );
-    const username = usernameTakenByOther?.id
-      ? `${requestedUsername}_${userId.replace(/-/g, "").slice(0, 8)}`
-      : requestedUsername;
-
     const argon2 = await getArgon2();
-    const passwordHash = await argon2.hash(password, ARGON2_OPTIONS);
 
-    await queryNeonAsSystem(
-      `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
-       VALUES ($1, $2, $3, $4, 'admin', now())
-       ON CONFLICT (id) DO UPDATE
-       SET role = 'admin',
-           username = EXCLUDED.username,
-           organization_name = EXCLUDED.organization_name,
-           organization_name_key = EXCLUDED.organization_name_key`,
-      [userId, username, organizationName, organizationKey || null],
-    );
+    const superAdminEmail = String(process.env.SUPERADMIN_EMAIL || "").trim().toLowerCase();
 
-    await queryNeonAsSystem(
-      `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
-       VALUES ($1, $2, $2, $3, now(), now())
-       ON CONFLICT (user_id) DO UPDATE
-       SET email = EXCLUDED.email,
-           email_normalized = EXCLUDED.email_normalized,
-           password_hash = EXCLUDED.password_hash,
-           updated_at = now()`,
-      [userId, email, passwordHash],
-    );
+    for (const email of adminEmails) {
+      const pwd = email === superAdminEmail ? superAdminPassword : adminPassword;
+      if (!pwd) continue;
+      const passwordHash = await argon2.hash(pwd, ARGON2_OPTIONS);
 
-    if (organizationKey) {
-      await queryNeonAsSystem(
-        `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
-         VALUES ($1, $2, $3, now(), now())
-         ON CONFLICT (organization_name_key)
-         DO UPDATE SET owner_user_id = EXCLUDED.owner_user_id, organization_name = EXCLUDED.organization_name, updated_at = now()`,
-        [organizationName, organizationKey, userId],
+      const requestedUsername = normalizeBootstrapUsername(
+        email === superAdminEmail
+          ? String(process.env.SUPERADMIN_USERNAME || email)
+          : email,
       );
+
+      const existingAuth = await queryNeonOneAsSystem<{ user_id: string }>(
+        `SELECT user_id
+         FROM public.auth_users
+         WHERE email_normalized = $1 OR LOWER(email) = $1
+         LIMIT 1`,
+        [email],
+      );
+
+      let userId = existingAuth?.user_id || "";
+      if (!userId) userId = crypto.randomUUID();
+
+      const usernameTakenByOther = await queryNeonOneAsSystem<{ id: string }>(
+        `SELECT id
+         FROM public.profiles
+         WHERE username = $1
+           AND id <> $2
+         LIMIT 1`,
+        [requestedUsername, userId],
+      );
+      const username = usernameTakenByOther?.id
+        ? `${requestedUsername}_${userId.replace(/-/g, "").slice(0, 8)}`
+        : requestedUsername;
+
+      await queryNeonAsSystem(
+        `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
+         VALUES ($1, $2, $3, $4, 'admin', now())
+         ON CONFLICT (id) DO UPDATE
+         SET role = 'admin',
+             username = EXCLUDED.username,
+             organization_name = EXCLUDED.organization_name,
+             organization_name_key = EXCLUDED.organization_name_key`,
+        [userId, username, organizationName, organizationKey || null],
+      );
+
+      await queryNeonAsSystem(
+        `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
+         VALUES ($1, $2, $2, $3, now(), now())
+         ON CONFLICT (user_id) DO UPDATE
+         SET email = EXCLUDED.email,
+             email_normalized = EXCLUDED.email_normalized,
+             password_hash = EXCLUDED.password_hash,
+             updated_at = now()`,
+        [userId, email, passwordHash],
+      );
+
+      if (organizationKey) {
+        await queryNeonAsSystem(
+          `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
+           VALUES ($1, $2, $3, now(), now())
+           ON CONFLICT (organization_name_key)
+           DO UPDATE SET owner_user_id = EXCLUDED.owner_user_id, organization_name = EXCLUDED.organization_name, updated_at = now()`,
+          [organizationName, organizationKey, userId],
+        );
+      }
     }
 
     superAdminEnsured = true;

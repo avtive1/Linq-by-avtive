@@ -63,7 +63,10 @@ export async function PATCH(req: Request) {
       organization_name_changed_at: string | null;
       profile_photo_url: string | null;
     }>(
-      `SELECT username, organization_name, username_changed_at, organization_name_changed_at, to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url
+      `SELECT username, organization_name,
+              to_jsonb(p.*)->>'username_changed_at' AS username_changed_at,
+              to_jsonb(p.*)->>'organization_name_changed_at' AS organization_name_changed_at,
+              to_jsonb(p.*)->>'profile_photo_url' AS profile_photo_url
        FROM public.profiles p
        WHERE id = $1`,
       [userId],

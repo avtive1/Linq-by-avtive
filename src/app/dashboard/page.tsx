@@ -589,14 +589,14 @@ function DashboardContent() {
       });
       const payload = await res.json().catch(() => null);
       if (!res.ok) {
-        setOwnerProfileSetupError(getPayloadError(payload, "Could not save profile setup. Image size limit should be less than 1MB."));
+        setOwnerProfileSetupError(getPayloadError(payload, "Could not save profile setup. Please try again."));
         return false;
       }
       setUserName(cleaned);
       setIsOwnerProfileSetupModalOpen(false);
       return true;
     } catch {
-      setOwnerProfileSetupError("Could not save profile setup. Image size limit should be less than 1MB.");
+      setOwnerProfileSetupError("Could not save profile setup. Please try again.");
       return false;
     } finally {
       setIsSavingUsername(false);
@@ -645,8 +645,10 @@ function DashboardContent() {
   const isOrgAdminMode = !isPreviewMode && !isOrgTeamMember && isOrgOwner;
   const minCampaignDate = useMemo(() => {
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today.toISOString().slice(0, 10);
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   }, []);
   const orgDisplayName = toOrganizationDisplayName(organizationName);
   const ownerStatusMetrics = useMemo(() => {
@@ -759,7 +761,8 @@ function DashboardContent() {
       fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId));
     } catch (err: unknown) {
       logger.error({ err }, "Dashboard operation failed");
-      toast.error("Failed to create event. Please try again.");
+      const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmittingEvent(false);
     }
@@ -2081,8 +2084,8 @@ function DashboardContent() {
   cropApplyLabel="Apply logo"
 />
 
-<p className="mt-1 text-xs text-red-500">
-  Logo size must be less than 1 MB, otherwise the logo will not be updated.
+<p className="mt-1 text-xs text-muted">
+  PNG, JPG, or WebP up to 20 MB. Images are automatically cropped and optimized.
 </p>
               </div>
               </div>

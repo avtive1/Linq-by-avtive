@@ -125,6 +125,7 @@ export function FreeformImageCropModal({
         <div className="shrink-0 px-5 py-5 sm:px-6 flex flex-col gap-6">
           <div className="form-actions">
             <Button
+              type="button"
               variant="secondary"
               fullWidth
               onClick={onClose}
@@ -134,6 +135,7 @@ export function FreeformImageCropModal({
               Cancel
             </Button>
             <Button
+              type="button"
               variant="primary"
               fullWidth
               onClick={handleApply}

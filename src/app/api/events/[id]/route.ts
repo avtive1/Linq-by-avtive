@@ -11,11 +11,12 @@ import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 
 function isPastEventDate(dateStr: string) {
-  const parsed = new Date(`${dateStr}T00:00:00`);
+  const parsed = new Date(`${dateStr}T23:59:59`);
   if (Number.isNaN(parsed.getTime())) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return parsed < today;
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  return parsed < yesterday;
 }
 
 async function getCurrentUserId() {

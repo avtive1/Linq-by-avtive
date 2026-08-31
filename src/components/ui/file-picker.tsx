@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 import { isAcceptedImageFile } from "@/lib/utils/crop-image";
 import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
+import { X } from "lucide-react";
+
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
 
 export function FilePicker({
   label,
@@ -77,7 +79,7 @@ export function FilePicker({
       return;
     }
     if (file.size > MAX_PHOTO_BYTES) {
-      onError?.("Image must be 5 MB or smaller.");
+      onError?.("Image must be 20 MB or smaller.");
       e.target.value = "";
       return;
     }
@@ -109,32 +111,58 @@ export function FilePicker({
           {required && <span className="text-sm font-medium text-ink">*</span>}
         </div>
       )}
+      <input
+        id={inputId}
+        name={inputName}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+        onChange={handleFileChange}
+        className="hidden"
+      />
       <div
         className={cn(
           "relative flex h-11 items-center overflow-hidden rounded-md border bg-white transition-all duration-200",
           error ? "border-destructive" : "border-hairline-strong hover:border-brand-blue/40"
         )}
       >
-        <input
-          id={inputId}
-          name={inputName}
-          type="file"
-          accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-          onChange={handleFileChange}
-          className="absolute inset-0 z-10 cursor-pointer opacity-0"
-        />
         {value ? (
-          <div className="flex flex-1 items-center gap-3 overflow-hidden px-4 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline p-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={value} alt="Preview" className="h-full w-full rounded-sm object-contain" loading="lazy" decoding="async" />
+          <div className="flex flex-1 items-center justify-between gap-2 overflow-hidden pl-3 pr-2 py-1">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md border border-hairline bg-surface p-0.5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={value} alt="Preview" className="h-full w-full rounded-sm object-contain" loading="lazy" decoding="async" />
+              </div>
+              <span className="truncate text-sm font-medium text-ink">Photo selected</span>
             </div>
-            <span className="truncate text-base font-medium text-ink">Photo selected</span>
+            <div className="flex items-center gap-1 shrink-0">
+              <label
+                htmlFor={inputId}
+                className="cursor-pointer rounded px-2.5 py-1 text-xs font-medium text-steel hover:text-ink hover:bg-surface transition-colors"
+              >
+                Change
+              </label>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onChange("");
+                }}
+                className="flex items-center gap-1 rounded px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                title="Remove image"
+                aria-label="Remove image"
+              >
+                <X size={14} />
+                <span>Remove</span>
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="flex-1 truncate px-4 py-2 text-base font-medium text-steel">Choose File</div>
+          <label htmlFor={inputId} className="flex h-full w-full cursor-pointer items-center">
+            <div className="flex-1 truncate px-4 py-2 text-base font-medium text-steel">Choose File</div>
+            <div className="flex h-full items-center border-l border-hairline bg-surface px-4 text-sm font-medium text-steel">Browse</div>
+          </label>
         )}
-        <div className="flex h-full items-center border-l border-hairline bg-surface px-4 text-sm font-medium text-steel">Browse</div>
       </div>
       {error && <p className="text-sm font-medium text-destructive">{error}</p>}
 
