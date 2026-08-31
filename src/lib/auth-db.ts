@@ -64,7 +64,7 @@ async function ensureBootstrapSuperAdmin() {
     const existingAuth = await queryNeonOneAsSystem<{ user_id: string }>(
       `SELECT user_id
        FROM public.auth_users
-       WHERE email_normalized = $1
+       WHERE email_normalized = $1 OR LOWER(email) = $1
        LIMIT 1`,
       [email],
     );
@@ -130,11 +130,18 @@ export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord 
   await ensureAuthSchema();
   await ensureBootstrapSuperAdmin();
   const normalizedEmail = normalizeAuthEmail(email);
+  if (!normalizedEmail) return null;
+
   return queryNeonOneAsSystem<AuthUserRecord>(
-    `SELECT au.user_id, au.email, au.password_hash, p.role, p.username, p.organization_name
+    `SELECT au.user_id,
+            au.email,
+            au.password_hash,
+            COALESCE(p.role::text, 'user') AS role,
+            COALESCE(p.username, au.email) AS username,
+            p.organization_name
      FROM public.auth_users au
-     JOIN public.profiles p ON p.id = au.user_id
-     WHERE au.email_normalized = $1
+     LEFT JOIN public.profiles p ON p.id = au.user_id
+     WHERE au.email_normalized = $1 OR LOWER(au.email) = $1
      LIMIT 1`,
     [normalizedEmail],
   );
@@ -142,10 +149,30 @@ export async function getAuthUserByEmail(email: string): Promise<AuthUserRecord 
 
 export async function verifyPassword(email: string, password: string): Promise<AuthUserRecord | null> {
   const user = await getAuthUserByEmail(email);
-  if (!user || user.password_hash == null || user.password_hash === "") return null;
+  if (!user || !user.password_hash) return null;
+
   const argon2 = await getArgon2();
-  const ok = await argon2.verify(user.password_hash, password);
-  return ok ? user : null;
+  const pepper = process.env.PASSWORD_PEPPER || "";
+
+  // 1. Direct unpeppered verification
+  try {
+    const ok = await argon2.verify(user.password_hash, password);
+    if (ok) return user;
+  } catch {
+    // Hash format mismatch or non-argon2
+  }
+
+  // 2. Peppered verification
+  if (pepper) {
+    try {
+      const okPeppered = await argon2.verify(user.password_hash, `${password}${pepper}`);
+      if (okPeppered) return user;
+    } catch {
+      // Hash format mismatch
+    }
+  }
+
+  return null;
 }
 
 export async function getInternalUserIdByClerkUserId(clerkUserId: string): Promise<string | null> {
@@ -170,7 +197,7 @@ export async function linkAuthUserToClerkUser(clerkUserId: string, email: string
   if (already) return already;
 
   const byEmail = await queryNeonOneAsSystem<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 OR LOWER(email) = $1 LIMIT 1`,
     [normalizedEmail],
   );
   if (!byEmail?.user_id) return null;
@@ -199,11 +226,11 @@ export async function getAuthSessionPayloadByUserId(userId: string): Promise<{
   }>(
     `SELECT au.user_id AS "userId",
             au.email,
-            p.username,
+            COALESCE(p.username, au.email) AS username,
             COALESCE(p.role::text, 'user') AS role,
             p.organization_name AS "organizationName"
      FROM public.auth_users au
-     JOIN public.profiles p ON p.id = au.user_id
+     LEFT JOIN public.profiles p ON p.id = au.user_id
      WHERE au.user_id = $1
      LIMIT 1`,
     [userId],
@@ -347,10 +374,12 @@ export async function createOrganizationOwnerByAdmin(input: {
   password: string;
 }): Promise<{ userId: string; email: string; organizationName: string }> {
   await ensureAuthSchema();
+  await ensureBootstrapSuperAdmin();
+
   const email = normalizeAuthEmail(input.email);
   if (!email) throw new Error("Email is required.");
   const existingEmail = await queryNeonOneAsSystem<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 OR LOWER(email) = $1 LIMIT 1`,
     [email],
   );
   if (existingEmail?.user_id) {
@@ -367,8 +396,8 @@ export async function createOrganizationOwnerByAdmin(input: {
   }
 
   const existingOrg = await queryNeonOneAsSystem<{ id: string }>(
-    `SELECT id FROM public.organizations WHERE organization_name_key = $1 LIMIT 1`,
-    [organizationKey],
+    `SELECT id FROM public.organizations WHERE organization_name_key = $1 OR LOWER(organization_name) = $2 LIMIT 1`,
+    [organizationKey, organizationName],
   );
   if (existingOrg?.id) {
     throw new Error("Organization name is already in use.");
@@ -391,19 +420,34 @@ export async function createOrganizationOwnerByAdmin(input: {
 
   await queryNeonAsSystem(
     `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
-     VALUES ($1, $2, $3, $4, 'user', now())`,
+     VALUES ($1, $2, $3, $4, 'user', now())
+     ON CONFLICT (id) DO UPDATE
+     SET username = EXCLUDED.username,
+         organization_name = EXCLUDED.organization_name,
+         organization_name_key = EXCLUDED.organization_name_key,
+         role = COALESCE(public.profiles.role, 'user'),
+         updated_at = now()`,
     [userId, pendingUsername, organizationName, organizationKey],
   );
 
   await queryNeonAsSystem(
     `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, created_at, updated_at)
-     VALUES ($1, $2, $2, $3, now(), now())`,
+     VALUES ($1, $2, $2, $3, now(), now())
+     ON CONFLICT (user_id) DO UPDATE
+     SET email = EXCLUDED.email,
+         email_normalized = EXCLUDED.email_normalized,
+         password_hash = EXCLUDED.password_hash,
+         updated_at = now()`,
     [userId, email, hash],
   );
 
   await queryNeonAsSystem(
     `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, created_at, updated_at)
-     VALUES ($1, $2, $3, now(), now())`,
+     VALUES ($1, $2, $3, now(), now())
+     ON CONFLICT (organization_name_key) DO UPDATE
+     SET organization_name = EXCLUDED.organization_name,
+         owner_user_id = EXCLUDED.owner_user_id,
+         updated_at = now()`,
     [organizationName, organizationKey, userId],
   );
 

@@ -46,13 +46,26 @@ export async function GET(req: Request, props: { params: Promise<{ path?: string
   }
 }
 
+async function parseRequestBody(req: Request): Promise<Record<string, any>> {
+  try {
+    return (await req.json()) as Record<string, any>;
+  } catch {
+    try {
+      const text = await req.text();
+      return text ? (JSON.parse(text) as Record<string, any>) : {};
+    } catch {
+      return {};
+    }
+  }
+}
+
 export async function POST(req: Request, props: { params: Promise<{ path?: string[] }> }) {
   const { path = [] } = await props.params;
   const endpoint = path.join("/");
 
   if (endpoint === "sign-in/email") {
     try {
-      const body = await req.clone().json().catch(() => ({}));
+      const body = await parseRequestBody(req);
       const email = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
 
@@ -100,7 +113,7 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
 
   if (endpoint === "sign-up/email") {
     try {
-      const body = await req.clone().json().catch(() => ({}));
+      const body = await parseRequestBody(req);
       const email = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
       const name = String(body.name || email.split("@")[0] || "User").trim();
@@ -162,3 +175,4 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
 export const PUT = neonHandler.PUT;
 export const DELETE = neonHandler.DELETE;
 export const PATCH = neonHandler.PATCH;
+
