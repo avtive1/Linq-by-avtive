@@ -13,7 +13,13 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
   if (parts.length === 0) return false;
 
   if (parts[0] === "events") {
-    return parts[1] === userId;
+    if (parts[1] === userId) return true;
+    const targetOwnerId = parts[1];
+    const membership = await queryNeonOne<{ id: string }>(
+      `SELECT id FROM public.organization_members WHERE member_user_id = $1 AND org_owner_user_id = $2 AND status = 'active' LIMIT 1`,
+      [userId, targetOwnerId],
+    );
+    return Boolean(membership?.id);
   }
   if (parts[0] === "attendees" || parts[0] === "card-previews") {
     const eventId = parts[1];

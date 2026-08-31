@@ -74,25 +74,29 @@ async function loadCanvasImageSource(
   const raw = String(src || "").trim();
   if (!raw) throw new Error("Missing image source.");
 
-  // Blob/data URLs via fetch + ImageBitmap avoid canvas taint from HTMLImageElement + crossOrigin.
-  if (raw.startsWith("data:") || raw.startsWith("blob:")) {
-    const response = await fetch(raw);
-    if (!response.ok) throw new Error("Failed to read selected image.");
-    const blob = await response.blob();
-    const bitmap = await createImageBitmap(blob);
-    return {
-      source: bitmap,
-      width: bitmap.width,
-      height: bitmap.height,
-      cleanup: () => bitmap.close(),
-    };
+  if (typeof createImageBitmap === "function" && (raw.startsWith("data:") || raw.startsWith("blob:"))) {
+    try {
+      const response = await fetch(raw);
+      if (response.ok) {
+        const blob = await response.blob();
+        const bitmap = await createImageBitmap(blob);
+        return {
+          source: bitmap,
+          width: bitmap.width,
+          height: bitmap.height,
+          cleanup: () => bitmap.close(),
+        };
+      }
+    } catch {
+      // Fallback to Image element
+    }
   }
 
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
-    img.addEventListener("load", () => resolve(img));
-    img.addEventListener("error", () => reject(new Error("Failed to load image for cropping.")));
     img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Failed to load image for cropping."));
     img.src = raw;
   });
 
@@ -114,6 +118,23 @@ function clampCropToImage(
   return { x, y, width, height };
 }
 
+const MAX_OUTPUT_DIMENSION = 1000;
+
+function calculateOutputDimensions(
+  width: number,
+  height: number,
+  maxDim = MAX_OUTPUT_DIMENSION,
+): { width: number; height: number } {
+  if (width <= maxDim && height <= maxDim) {
+    return { width: Math.max(1, Math.round(width)), height: Math.max(1, Math.round(height)) };
+  }
+  const ratio = Math.min(maxDim / width, maxDim / height);
+  return {
+    width: Math.max(1, Math.round(width * ratio)),
+    height: Math.max(1, Math.round(height * ratio)),
+  };
+}
+
 export async function cropImageAreaToDataUrl(
   imageSrc: string,
   pixelCrop: PixelCrop,
@@ -126,14 +147,17 @@ export async function cropImageAreaToDataUrl(
     ? clampCropToImage(pixelCrop, width, height)
     : fallbackCenterCrop(width, height, aspect);
 
+  const outDim = calculateOutputDimensions(crop.width, crop.height);
   const canvas = document.createElement("canvas");
-  canvas.width = crop.width;
-  canvas.height = crop.height;
+  canvas.width = outDim.width;
+  canvas.height = outDim.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("No 2d context");
 
   try {
-    ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, crop.width, crop.height);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, outDim.width, outDim.height);
     const dataUrl =
       outputType === "image/jpeg"
         ? canvas.toDataURL(outputType, quality)
@@ -158,19 +182,18 @@ export async function cropLoadedImageElementToDataUrl(
   if (!width || !height) throw new Error("Image has invalid dimensions.");
 
   const crop = clampCropToImage(pixelCrop, width, height);
-  const bitmap = await createImageBitmap(image, crop.x, crop.y, crop.width, crop.height);
+  const outDim = calculateOutputDimensions(crop.width, crop.height);
 
   const canvas = document.createElement("canvas");
-  canvas.width = crop.width;
-  canvas.height = crop.height;
+  canvas.width = outDim.width;
+  canvas.height = outDim.height;
   const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    bitmap.close();
-    throw new Error("No 2d context");
-  }
+  if (!ctx) throw new Error("No 2d context");
 
   try {
-    ctx.drawImage(bitmap, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, outDim.width, outDim.height);
     const dataUrl =
       outputType === "image/jpeg"
         ? canvas.toDataURL(outputType, quality)
@@ -179,7 +202,7 @@ export async function cropLoadedImageElementToDataUrl(
       throw new Error("Cropped image could not be encoded.");
     }
     return dataUrl;
-  } finally {
-    bitmap.close();
+  } catch (err) {
+    throw new Error(err instanceof Error ? err.message : "Failed to crop image.");
   }
 }

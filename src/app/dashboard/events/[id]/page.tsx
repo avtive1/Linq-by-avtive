@@ -807,7 +807,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     setIsSavingEdit(true);
     try {
-      let logo_url = eventData?.logo_url || "";
+      let logo_url = "";
       if (editForm.logo && editForm.logo.startsWith("data:")) {
         if (!userId) {
           throw new Error("You must be logged in to update campaign logo.");
@@ -829,7 +829,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           throw new Error(getPayloadError(uploadPayload, "Campaign logo upload failed."));
         }
         logo_url = String(uploadedUrl);
-      } else if (typeof editForm.logo === "string" && editForm.logo.trim()) {
+      } else if (typeof editForm.logo === "string") {
         logo_url = editForm.logo.trim();
       }
 

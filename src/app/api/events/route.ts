@@ -8,11 +8,12 @@ import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 
 function isPastEventDate(dateStr: string) {
-  const parsed = new Date(`${dateStr}T00:00:00`);
+  const parsed = new Date(`${dateStr}T23:59:59`);
   if (Number.isNaN(parsed.getTime())) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  return parsed < today;
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  return parsed < yesterday;
 }
 
 function generateShortId(length = 8) {
@@ -232,15 +233,30 @@ export async function POST(req: Request) {
     }
     if (!canCreate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
-    const created = await insertRow(
-      "events",
-      {
-        ...payload,
-        user_id: ownerId,
-        registration_form_config: payload.registration_form_config,
-      },
-      "id",
-    );
+    let created: Record<string, unknown> | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        created = await insertRow(
+          "events",
+          {
+            ...payload,
+            short_id: generateShortId(),
+            user_id: ownerId,
+            registration_form_config: payload.registration_form_config,
+          },
+          "id",
+        );
+        if (created?.id) break;
+      } catch (err: unknown) {
+        const isDuplicateKey =
+          typeof err === "object" &&
+          err !== null &&
+          "code" in err &&
+          String((err as { code?: string }).code) === "23505";
+        if (isDuplicateKey && attempt < 2) continue;
+        throw err;
+      }
+    }
     if (!created?.id) return NextResponse.json({ error: "Failed to create event." }, { status: 400 });
 
     return NextResponse.json({ data: { id: String(created.id) } }, { status: 201 });
