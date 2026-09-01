@@ -745,12 +745,27 @@ function DashboardContent() {
         logo_url: logoUrl,
       };
 
-      const createRes = await fetch("/api/events", {
+      let createRes = await fetch("/api/events", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
-      const createPayload = await readResponsePayload(createRes);
+      let createPayload = await readResponsePayload(createRes);
+
+      // Automatic client-side retry if duplicate short ID occurs
+      if (!createRes.ok) {
+        const errorMsg = getPayloadError(createPayload, "");
+        if (errorMsg.includes("duplicate key") || errorMsg.includes("events_short_id_key") || errorMsg.includes("23505")) {
+          await new Promise((r) => setTimeout(r, 200));
+          createRes = await fetch("/api/events", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+          createPayload = await readResponsePayload(createRes);
+        }
+      }
+
       if (!createRes.ok) throw new Error(getPayloadError(createPayload, "Failed to create event."));
 
       toast.success(`Event "${eventForm.name}" created successfully!`);
@@ -761,8 +776,12 @@ function DashboardContent() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err || "Unknown error");
       logger.error({ error: errorMessage }, "Dashboard operation failed");
-      const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
-      toast.error(message);
+      if (errorMessage.includes("duplicate key") || errorMessage.includes("events_short_id_key")) {
+        toast.error("Generating unique ID, please retry.");
+      } else {
+        const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
+        toast.error(message);
+      }
     } finally {
       setIsSubmittingEvent(false);
     }
