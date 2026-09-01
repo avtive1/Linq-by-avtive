@@ -16,22 +16,7 @@ function isPastEventDate(dateStr: string) {
   return parsed < bufferTime;
 }
 
-function generateShortId(length = 10) {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-  let result = "";
-  const randomValues = new Uint8Array(length);
-  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
-    crypto.getRandomValues(randomValues);
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(randomValues[i] % chars.length);
-    }
-  } else {
-    for (let i = 0; i < length; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-  }
-  return result;
-}
+import { getOrGenerateUniqueShortId } from "@/lib/events/short-id";
 
 function getViewerAdminAccess(params: {
   viewerId: string;
@@ -241,13 +226,15 @@ export async function POST(req: Request) {
     if (!canCreate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
     let created: Record<string, unknown> | null = null;
+    let lastError: unknown = null;
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
+        const uniqueShortId = await getOrGenerateUniqueShortId();
         created = await insertRow(
           "events",
           {
             ...payload,
-            short_id: generateShortId(10),
+            short_id: uniqueShortId,
             user_id: ownerId,
             registration_form_config: payload.registration_form_config,
           },
@@ -255,6 +242,7 @@ export async function POST(req: Request) {
         );
         if (created?.id) break;
       } catch (err: unknown) {
+        lastError = err;
         const errStr = String(err instanceof Error ? err.message : err);
         const isDuplicateKey =
           errStr.includes("unique constraint") ||
@@ -262,11 +250,17 @@ export async function POST(req: Request) {
           errStr.includes("events_short_id_key") ||
           errStr.includes("23505") ||
           (typeof err === "object" && err !== null && "code" in err && String((err as { code?: string }).code) === "23505");
-        if (isDuplicateKey && attempt < 4) continue;
+        if (isDuplicateKey && attempt < 4) {
+          await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
+          continue;
+        }
         throw err;
       }
     }
-    if (!created?.id) return NextResponse.json({ error: "Failed to create event." }, { status: 400 });
+    if (!created?.id) {
+      const message = lastError instanceof Error ? lastError.message : "Failed to create event.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
 
     return NextResponse.json({ data: { id: String(created.id) } }, { status: 201 });
     }, { allowAdminBypass: true });
