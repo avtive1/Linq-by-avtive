@@ -758,7 +758,8 @@ function DashboardContent() {
       setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "10:00", logo: "" });
       fetchData(targetOwnerId);
     } catch (err: unknown) {
-      logger.error({ err }, "Dashboard operation failed");
+      const errorMessage = err instanceof Error ? err.message : String(err || "Unknown error");
+      logger.error({ error: errorMessage }, "Dashboard operation failed");
       const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
       toast.error(message);
     } finally {

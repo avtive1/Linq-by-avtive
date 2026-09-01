@@ -16,11 +16,19 @@ function isPastEventDate(dateStr: string) {
   return parsed < yesterday;
 }
 
-function generateShortId(length = 8) {
+function generateShortId(length = 10) {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  const randomValues = new Uint8Array(length);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    crypto.getRandomValues(randomValues);
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(randomValues[i] % chars.length);
+    }
+  } else {
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
   }
   return result;
 }
@@ -234,13 +242,13 @@ export async function POST(req: Request) {
     if (!canCreate) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
 
     let created: Record<string, unknown> | null = null;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       try {
         created = await insertRow(
           "events",
           {
             ...payload,
-            short_id: generateShortId(),
+            short_id: generateShortId(10),
             user_id: ownerId,
             registration_form_config: payload.registration_form_config,
           },
@@ -248,12 +256,14 @@ export async function POST(req: Request) {
         );
         if (created?.id) break;
       } catch (err: unknown) {
+        const errStr = String(err instanceof Error ? err.message : err);
         const isDuplicateKey =
-          typeof err === "object" &&
-          err !== null &&
-          "code" in err &&
-          String((err as { code?: string }).code) === "23505";
-        if (isDuplicateKey && attempt < 2) continue;
+          errStr.includes("unique constraint") ||
+          errStr.includes("duplicate key") ||
+          errStr.includes("events_short_id_key") ||
+          errStr.includes("23505") ||
+          (typeof err === "object" && err !== null && "code" in err && String((err as { code?: string }).code) === "23505");
+        if (isDuplicateKey && attempt < 4) continue;
         throw err;
       }
     }
