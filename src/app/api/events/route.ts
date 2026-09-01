@@ -159,6 +159,7 @@ export async function POST(req: Request) {
       horizontal_text_color?: string;
       vertical_text_color?: string;
       is_branding_finalized?: boolean;
+      _uniqueId?: string;
     };
 
     const ownerId = String(body.ownerId || viewerId);
@@ -229,7 +230,8 @@ export async function POST(req: Request) {
     let lastError: unknown = null;
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        const uniqueShortId = await getOrGenerateUniqueShortId();
+        const candidate = attempt === 0 ? body._uniqueId : undefined;
+        const uniqueShortId = await getOrGenerateUniqueShortId(candidate);
         created = await insertRow(
           "events",
           {

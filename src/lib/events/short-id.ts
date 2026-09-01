@@ -2,19 +2,38 @@ import { queryNeonOne } from "@/lib/neon-db";
 
 /**
  * Generates a collision-resistant timestamp-based short ID for events.
- * Format: Base36 Timestamp + Base36 Random Suffix (e.g. "m6m8z5k9x2a")
+ * Format: Base36 Timestamp + Base36 Random Suffix (e.g. "m6m8z5k_9x2a")
  */
-export function generateUniqueEventShortId(): string {
+export function generateUniqueEventShortId(customCandidate?: string): string {
+  if (customCandidate) {
+    const sanitized = customCandidate.trim().replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 32);
+    if (sanitized.length >= 6) return sanitized;
+  }
   const timestamp = Date.now().toString(36);
-  const randomPart = Math.random().toString(36).substring(2, 7);
-  return `${timestamp}${randomPart}`;
+  const randomPart = Math.random().toString(36).substring(2, 8);
+  return `${timestamp}_${randomPart}`;
 }
 
 /**
  * Checks the database for collisions and returns a guaranteed unique short ID.
  * Retries up to `maxAttempts` times before using a crypto-random UUID fallback.
  */
-export async function getOrGenerateUniqueShortId(maxAttempts = 5): Promise<string> {
+export async function getOrGenerateUniqueShortId(preferredCandidate?: string, maxAttempts = 5): Promise<string> {
+  if (preferredCandidate) {
+    const candidate = generateUniqueEventShortId(preferredCandidate);
+    try {
+      const existing = await queryNeonOne<{ id: string }>(
+        `SELECT id FROM public.events WHERE short_id = $1 LIMIT 1`,
+        [candidate],
+      );
+      if (!existing?.id) {
+        return candidate;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const candidate = generateUniqueEventShortId();
     try {
