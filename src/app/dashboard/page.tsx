@@ -1943,6 +1943,7 @@ function DashboardContent() {
             {filteredEvents.length > 0 ? (
               filteredEvents.map((evt, idx) => {
                 const status = getEventStatus(evt.date);
+                const eventHref = `/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`;
                 return (
                 <motion.div
                   key={evt.id}
@@ -1952,7 +1953,8 @@ function DashboardContent() {
                   {...hoverLift(-6, 1.01)}
                 >
                   <Card
-                    className={`flex h-full flex-col justify-between p-6 rounded-md ${
+                    onClick={() => router.push(eventHref)}
+                    className={`flex h-full flex-col justify-between p-6 rounded-md cursor-pointer transition-all duration-200 ${
                     isPreviewMode
                       ? "bg-white/90 border border-heading/20 shadow-md hover:shadow-lg hover:border-heading/40"
                       : isTeamMemberMode || isOrgAdminMode
@@ -2007,12 +2009,12 @@ function DashboardContent() {
                   </div>
                   
                   <Separator className="mt-auto" />
-                  <Link href={`/dashboard/events/${evt.id}${isPreviewMode && impersonateId ? `?impersonate=${encodeURIComponent(impersonateId)}` : ""}`} className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mt-3 h-auto justify-between px-0 text-sm font-medium text-heading hover:text-ink hover:bg-white/20 rounded-inline cursor-pointer group-hover:text-ink")}>
+                  <div className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mt-3 h-auto justify-between px-0 text-sm font-medium text-heading hover:text-ink hover:bg-white/20 rounded-inline cursor-pointer group-hover:text-ink")}>
                     View Campaign
                     <motion.span {...hoverIconNudge(3)} className="inline-flex">
                       <ChevronRight size={20} className="transition-transform duration-200" />
                     </motion.span>
-                  </Link>
+                  </div>
                   </Card>
                 </motion.div>
                 );
