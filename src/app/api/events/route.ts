@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import crypto from "crypto";
-import { createClient } from "@supabase/supabase-js";
 import { getServerAuthSession } from "@/auth";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { queryNeon, queryNeonOne, queryNeonOneAsSystem } from "@/lib/neon-db";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 import { getOrGenerateUniqueShortId } from "@/lib/events/short-id";
 
-const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 function isPastEventDate(dateStr: string) {
   const parsed = new Date(`${dateStr}T23:59:59`);
@@ -44,8 +43,11 @@ export async function GET(req: Request) {
   try {
     const cookieStore = await cookies();
     return await withApiTenantContext(cookieStore, async () => {
-      const session = await getServerAuthSession();
-      const viewerId = String(session?.user?.id || "").trim();
+      const [session, authUserId] = await Promise.all([
+        getServerAuthSession(),
+        getServerUserIdFromCookies(cookieStore),
+      ]);
+      const viewerId = String(authUserId || session?.user?.id || "").trim();
       if (!viewerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       const sessionRole = String(session?.user?.role || "").toLowerCase();
       const sessionEmail = String(session?.user?.email || "").toLowerCase().trim();
@@ -140,8 +142,12 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerAuthSession();
-    const viewerId = String(session?.user?.id || "").trim();
+    const cookieStore = await cookies();
+    const [session, authUserId] = await Promise.all([
+      getServerAuthSession(),
+      getServerUserIdFromCookies(cookieStore),
+    ]);
+    const viewerId = String(authUserId || session?.user?.id || "").trim();
     if (!viewerId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -185,7 +191,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Map ownerId to the database column user_id
+    // 2. Map ownerId to user_id
     const rawOwner = ownerId ? String(ownerId).trim() : "";
     const targetUserId = rawOwner && rawOwner !== "undefined" && rawOwner !== "null" && rawOwner.length > 0
       ? rawOwner
@@ -199,44 +205,41 @@ export async function POST(req: Request) {
       safeShortId = crypto.randomUUID().substring(0, 8);
     }
 
-    // 4. Insert into Supabase with correctly mapped database column names
-    const insertPayload = {
-      name: trimmedName,
-      description: String(description || "").trim().slice(0, 220),
-      location: trimmedLocation,
-      location_type: location_type === "webinar" ? "webinar" : "onsite",
-      date: trimmedDate,
-      time: String(time || "10:00").trim() || "10:00",
-      logo_url: String(logo_url || ""),
-      user_id: targetUserId, // <--- Correct column in public.events
-      short_id: safeShortId,
-      registration_form_config: normalizeRegistrationFormConfig(
-        registration_form_config || getDefaultRegistrationFormConfig()
-      ),
-      card_color: String(card_color || "purple").trim() || "purple",
-      card_font: sanitizeStoredCardFont(card_font),
-      horizontal_text_color: String(horizontal_text_color || "").trim(),
-      vertical_text_color: String(vertical_text_color || "").trim(),
-      is_branding_finalized: Boolean(is_branding_finalized ?? false),
-    };
+    // 4. Insert into database using direct Neon Postgres pool with system authority
+    const row = await queryNeonOneAsSystem<{ id: string; short_id: string }>(
+      `INSERT INTO public.events
+       (name, description, location, location_type, date, time, logo_url, user_id, short_id,
+        registration_form_config, card_color, card_font, horizontal_text_color, vertical_text_color, is_branding_finalized)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15)
+       RETURNING id, short_id`,
+      [
+        trimmedName,
+        String(description || "").trim().slice(0, 220),
+        trimmedLocation,
+        location_type === "webinar" ? "webinar" : "onsite",
+        trimmedDate,
+        String(time || "10:00").trim() || "10:00",
+        String(logo_url || ""),
+        targetUserId,
+        safeShortId,
+        JSON.stringify(normalizeRegistrationFormConfig(registration_form_config || getDefaultRegistrationFormConfig())),
+        String(card_color || "purple").trim() || "purple",
+        sanitizeStoredCardFont(card_font),
+        String(horizontal_text_color || "").trim(),
+        String(vertical_text_color || "").trim(),
+        Boolean(is_branding_finalized ?? false),
+      ],
+    );
 
-    const { data, error } = await supabase
-      .from("events")
-      .insert([insertPayload])
-      .select("id, short_id")
-      .single();
-
-    if (error) {
-      console.error("Supabase Insert Error:", error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+    if (!row?.id) {
+      return NextResponse.json({ error: "Failed to create event." }, { status: 400 });
     }
 
     return NextResponse.json(
-      { data: { id: data.id, shortId: data.short_id }, success: true },
+      { data: { id: row.id, shortId: row.short_id }, success: true },
       { status: 201 }
     );
   } catch (err: unknown) {
-    console.error("Route Error:", err);
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
