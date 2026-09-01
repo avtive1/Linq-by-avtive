@@ -686,6 +686,7 @@ function DashboardContent() {
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingEvent) return;
     if (isPreviewMode) {
       toast.error("Admin org preview is read-only.");
       return;
