@@ -51,7 +51,10 @@ export async function GET(req: Request) {
       const sessionEmail = String(session?.user?.email || "").toLowerCase().trim();
 
       const url = new URL(req.url);
-      const ownerId = String(url.searchParams.get("ownerId") || viewerId);
+      const rawOwner = url.searchParams.get("ownerId")?.trim();
+      const ownerId = rawOwner && rawOwner !== "undefined" && rawOwner !== "null" && rawOwner.length > 0
+        ? rawOwner
+        : viewerId;
       const includeRoleStats = url.searchParams.get("includeRoleStats") === "true";
 
       const { isAdminByRole, isAdminByEmail } = getViewerAdminAccess({
@@ -183,7 +186,10 @@ export async function POST(req: Request) {
     }
 
     // 2. Map ownerId to the database column user_id
-    const targetUserId = String(ownerId || viewerId).trim();
+    const rawOwner = ownerId ? String(ownerId).trim() : "";
+    const targetUserId = rawOwner && rawOwner !== "undefined" && rawOwner !== "null" && rawOwner.length > 0
+      ? rawOwner
+      : viewerId;
 
     // 3. Generate collision-safe short_id
     let safeShortId = _uniqueId ? String(_uniqueId).trim() : "";
