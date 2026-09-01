@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getAdminUserById } from "@/lib/admin";
-import { queryNeonOne } from "@/lib/neon-db";
+import { queryNeonOne, queryNeonOneAsSystem } from "@/lib/neon-db";
 import { parseEventSponsors } from "@/lib/sponsors";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { ensureAuthSchema } from "@/lib/auth-db";
@@ -16,7 +16,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const { id } = await params;
     if (!isValidUuid(id)) return NextResponse.json({ error: "Invalid event id." }, { status: 400 });
 
-    const eventRow = await queryNeonOne<{
+    const eventRow = await queryNeonOneAsSystem<{
       user_id: string | null;
       name: string | null;
       location: string | null;

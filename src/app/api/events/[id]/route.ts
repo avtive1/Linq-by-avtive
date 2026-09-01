@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne, queryNeonOneAsSystem, queryNeonAsSystem } from "@/lib/neon-db";
 import { deleteTenantRows, updateTenantRows } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { getServerAuthSession } from "@/auth";
@@ -35,7 +35,7 @@ function isSessionAdmin(session: Awaited<ReturnType<typeof getServerAuthSession>
 }
 
 async function getEventAccess(eventId: string, viewerId: string, canAdminRead: boolean) {
-  const eventRow = await queryNeonOne<{
+  const eventRow = await queryNeonOneAsSystem<{
     id: string;
     user_id: string;
     name: string;
@@ -47,6 +47,11 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
     logo_url: string | null;
     sponsors: unknown;
     registration_form_config: unknown;
+    card_color?: string;
+    card_font?: string;
+    horizontal_text_color?: string;
+    vertical_text_color?: string;
+    is_branding_finalized?: boolean;
     short_id: string | null;
   }>(`SELECT * FROM public.events WHERE id = $1`, [eventId]);
   if (!eventRow) return { eventRow: null, isOwner: false, permissions: [] as string[], isOrgMemberViewer: false };
@@ -69,7 +74,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
     };
   }
 
-  const membership = await queryNeonOne<{ id: string }>(
+  const membership = await queryNeonOneAsSystem<{ id: string }>(
     `SELECT id
      FROM public.organization_members
      WHERE member_user_id = $1
@@ -80,7 +85,7 @@ async function getEventAccess(eventId: string, viewerId: string, canAdminRead: b
   );
   const isOrgMemberViewer = Boolean(membership?.id);
 
-  const grants = await queryNeon<{ permission: string }>(
+  const grants = await queryNeonAsSystem<{ permission: string }>(
     `SELECT permission
      FROM public.access_grants
      WHERE event_id = $1
