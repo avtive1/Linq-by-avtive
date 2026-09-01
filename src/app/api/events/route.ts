@@ -12,8 +12,8 @@ function isPastEventDate(dateStr: string) {
   if (Number.isNaN(parsed.getTime())) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-  return parsed < yesterday;
+  const bufferTime = new Date(today.getTime() - 48 * 60 * 60 * 1000);
+  return parsed < bufferTime;
 }
 
 function generateShortId(length = 10) {
@@ -193,7 +193,6 @@ export async function POST(req: Request) {
       horizontal_text_color: String(body.horizontal_text_color || "").trim(),
       vertical_text_color: String(body.vertical_text_color || "").trim(),
       is_branding_finalized: Boolean(body.is_branding_finalized ?? false),
-      short_id: generateShortId(),
     };
 
     if (!payload.name || !payload.location || !payload.date) {
