@@ -484,12 +484,15 @@ function DashboardContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap on auth/URL gate; fetchData intentionally omitted to avoid loops
   }, [router, impersonateId, onboardingIntent, session?.user, userId, refreshTick, isSessionPending, isInternalUserLoading]);
 
-  const fetchData = async (userId: string, getIsMounted?: () => boolean) => {
+  const fetchData = async (targetUserId?: string, getIsMounted?: () => boolean) => {
     try {
-      // 1. Fetch all events owned by this user
-      const eventsRes = await fetch(
-        `/api/events?ownerId=${encodeURIComponent(userId)}&includeRoleStats=true`,
-      );
+      const cleanUserId = targetUserId && targetUserId !== "undefined" && targetUserId !== "null"
+        ? targetUserId
+        : (effectiveUserId || userId);
+      const url = cleanUserId
+        ? `/api/events?ownerId=${encodeURIComponent(cleanUserId)}&includeRoleStats=true`
+        : `/api/events?includeRoleStats=true`;
+      const eventsRes = await fetch(url);
       const eventsPayload = await readResponsePayload(eventsRes);
       if (!eventsRes.ok) {
         const message = getPayloadError(eventsPayload, "Failed to load events.");
@@ -801,8 +804,10 @@ function DashboardContent() {
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
-      setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "10:00", logo: "" });
-      fetchData(targetOwnerId);
+      const refreshOwnerId = targetOwnerId && targetOwnerId !== "undefined" && targetOwnerId !== "null"
+        ? targetOwnerId
+        : (effectiveUserId || userId);
+      fetchData(refreshOwnerId);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err || "Unknown error");
       logger.error({ error: errorMessage }, "Dashboard operation failed");
