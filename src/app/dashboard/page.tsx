@@ -162,7 +162,7 @@ function DashboardContent() {
     location: "",
     location_type: "onsite" as "onsite" | "webinar",
     date: "",
-    time: "",
+    time: "10:00",
     logo: "",
   });
   const [isSubmittingEvent, setIsSubmittingEvent] = useState(false);
@@ -700,7 +700,7 @@ function DashboardContent() {
       setIsRequestPermissionModalOpen(true);
       return;
     }
-    if (!eventForm.name || (!eventForm.location && eventForm.location_type === "onsite") || !eventForm.date || !eventForm.time) {
+    if (!eventForm.name.trim() || (!eventForm.location.trim() && eventForm.location_type === "onsite") || !eventForm.date) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -708,41 +708,39 @@ function DashboardContent() {
       toast.error(`Campaign name can be up to ${EVENT_NAME_MAX_CHARS} characters.`);
       return;
     }
-    if (eventForm.date < minCampaignDate) {
-      toast.error("Campaign date must be today or in the future.");
-      return;
-    }
 
+    const effectiveUserId = userId || String(session?.user?.id || "");
     setIsSubmittingEvent(true);
     try {
-      if (!userId) throw new Error("No user found");
-      
       let logoUrl = "";
       if (eventForm.logo) {
         try {
           const uploadRes = await fetch("/api/media/upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dataUrl: eventForm.logo, folder: `events/${userId}` }),
+            body: JSON.stringify({ dataUrl: eventForm.logo, folder: `events/${effectiveUserId || "general"}` }),
           });
           const uploadPayload = await readResponsePayload(uploadRes);
           const uploadData = asPayloadRecord(uploadPayload);
-          if (!uploadRes.ok || !uploadData?.url) throw new Error(getPayloadError(uploadPayload, "Logo upload failed."));
-          logoUrl = String(uploadData.url);
+          if (uploadRes.ok && uploadData?.url) {
+            logoUrl = String(uploadData.url);
+          } else {
+            logger.warn({ uploadPayload }, "Logo upload response was not successful");
+          }
         } catch (uploadErr) {
           logger.error({ err: uploadErr }, "Logo upload failed");
-          toast.error("Logo upload failed, but creating event anyway...");
         }
       }
       
+      const targetOwnerId = impersonateId || (isOrgTeamMember ? (orgOwnerUserId || effectiveUserId) : effectiveUserId) || undefined;
       const data = {
-        name: eventForm.name,
-        description: eventForm.description,
-        location: eventForm.location_type === "webinar" ? "Webinar" : eventForm.location,
+        name: eventForm.name.trim(),
+        description: eventForm.description.trim(),
+        location: eventForm.location_type === "webinar" ? "Webinar" : eventForm.location.trim(),
         location_type: eventForm.location_type,
         date: eventForm.date,
-        time: eventForm.time,
-        ownerId: impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId),
+        time: eventForm.time || "10:00",
+        ownerId: targetOwnerId,
         logo_url: logoUrl,
       };
 
@@ -757,8 +755,8 @@ function DashboardContent() {
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
-      setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
-      fetchData(impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId));
+      setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "10:00", logo: "" });
+      fetchData(targetOwnerId);
     } catch (err: unknown) {
       logger.error({ err }, "Dashboard operation failed");
       const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
