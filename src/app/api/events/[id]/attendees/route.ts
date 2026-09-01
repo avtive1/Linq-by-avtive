@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { queryNeon, queryNeonOne } from "@/lib/neon-db";
+import { queryNeon, queryNeonOne, queryNeonOneAsSystem } from "@/lib/neon-db";
 import { updateAttendeeForTenant } from "@/lib/db/tenant-mutations";
 import { getServerAuthSession } from "@/auth";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
@@ -34,7 +34,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     const requestUrl = new URL(req.url);
     const impersonateId = requestUrl.searchParams.get("impersonate");
 
-    const event = await queryNeonOne<{ user_id: string | null }>(
+    const event = await queryNeonOneAsSystem<{ user_id: string | null }>(
       `SELECT user_id FROM public.events WHERE id = $1`,
       [id],
     );
@@ -45,7 +45,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
     let isOrgTeamViewer = false;
     if (event?.user_id) {
-      const membership = await queryNeonOne<{ id: string }>(
+      const membership = await queryNeonOneAsSystem<{ id: string }>(
         `SELECT id
          FROM public.organization_members
          WHERE member_user_id = $1
