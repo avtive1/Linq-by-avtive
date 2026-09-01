@@ -342,26 +342,54 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let isMounted = true;
-    if (isSessionPending || isInternalUserLoading || (sessionUserId && !userId)) return;
+    if (isSessionPending || isInternalUserLoading) return;
 
-    const loadKey = `${id}|${userId}|${String(impersonateId ?? "")}|${isPreviewMode}`;
-    const loadKeyChanged = eventPageLoadKeyRef.current !== loadKey;
-    const silentPoll = !loadKeyChanged && refreshTick > 0;
-    if (loadKeyChanged) {
-      eventPageLoadKeyRef.current = loadKey;
-    }
+    const resolveAuthedUserIdWithRetry = async (): Promise<string> => {
+      if (userId) return userId;
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        if (!isMounted) return "";
+        try {
+          const authRes = await fetch("/api/auth/me", { cache: "no-store" });
+          const authPayload = await readResponsePayload(authRes);
+          const resolvedUserId =
+            authPayload &&
+            typeof authPayload === "object" &&
+            "data" in authPayload &&
+            authPayload.data &&
+            typeof authPayload.data === "object" &&
+            "userId" in authPayload.data &&
+            typeof authPayload.data.userId === "string"
+              ? authPayload.data.userId
+              : "";
+          if (resolvedUserId) return resolvedUserId;
+        } catch {}
+        await new Promise((r) => setTimeout(r, 150));
+      }
+      return "";
+    };
 
     const checkUser = async () => {
       if (!isMounted) return;
-      if (!userId) {
+      const effectiveViewerId = userId || (await resolveAuthedUserIdWithRetry());
+      if (!isMounted) return;
+      if (!effectiveViewerId) {
+        setIsLoading(false);
         router.replace("/login");
         return;
       }
-      setCurrentUserId(userId);
-      fetchEventData(userId);
+
+      const loadKey = `${id}|${effectiveViewerId}|${String(impersonateId ?? "")}|${isPreviewMode}`;
+      const loadKeyChanged = eventPageLoadKeyRef.current !== loadKey;
+      const silentPoll = !loadKeyChanged && refreshTick > 0;
+      if (loadKeyChanged) {
+        eventPageLoadKeyRef.current = loadKey;
+      }
+
+      setCurrentUserId(effectiveViewerId);
+      await fetchEventData(effectiveViewerId, silentPoll);
     };
 
-    const fetchEventData = async (viewerId: string) => {
+    const fetchEventData = async (viewerId: string, silentPoll = false) => {
       if (!id || id === "id" || !isValidUuid(id)) {
         if (isMounted) {
           setEventData(null);

@@ -301,7 +301,7 @@ function DashboardContent() {
     };
 
     const checkUser = async () => {
-      if (isSessionPending || isInternalUserLoading || (sessionUserId && !userId)) return;
+      if (isSessionPending || isInternalUserLoading) return;
       const loadKey = `${userId}|${sessionUserId || ""}|${String(impersonateId ?? "")}|${String(onboardingIntent ?? "")}`;
       if (dashboardLoadKeyRef.current === loadKey && refreshTick === 0) {
         return;
