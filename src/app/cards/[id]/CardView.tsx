@@ -103,12 +103,18 @@ export default function CardView({
         skipFonts: false,
       });
 
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.download = `avtive-${viewMode}-${
         card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"
       }.png`;
-      link.href = dataUrl;
+      link.href = blobUrl;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
       toast.success("Card downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download card");

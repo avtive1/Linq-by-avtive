@@ -81,6 +81,7 @@ function SponsorStripRow({
               alt={s.name?.trim() || "Sponsor"}
               title={s.name?.trim() || undefined}
               className="object-contain"
+              crossOrigin="anonymous"
               style={{
                 height: logoHeightPx,
                 width: "auto",
@@ -221,6 +222,7 @@ function OrganizationBrand({
             src={logoUrl.startsWith("data:") ? logoUrl : optimizeCdnImageUrl(logoUrl, { width: 128, quality: "auto" })}
             alt={name || "Organization logo"}
             className="h-full w-full object-cover"
+            crossOrigin="anonymous"
             decoding="async"
           />
         ) : (
@@ -566,7 +568,7 @@ export function CardPreview({
         {verticalSide === 1 ? (
           <div className={`absolute left-[166px] top-[541px] z-40 isolate flex h-[244px] w-[244px] items-center justify-center overflow-hidden rounded-lg border border-white/25 shadow-md ${hasRealPhoto ? "bg-white/10" : "bg-white"}`}>
             {hasRealPhoto ? (
-              <img src={photoUrl} alt="" className="h-full w-full object-cover" />
+              <img src={photoUrl} alt="" className="h-full w-full object-cover" crossOrigin="anonymous" />
             ) : (
               <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
             )}
@@ -574,7 +576,7 @@ export function CardPreview({
         ) : (
           <div className="absolute left-[166px] top-[541px] z-4 h-[244px] w-[244px] overflow-hidden rounded-lg border border-white/25 bg-white shadow-md">
             {qrUrl ? (
-              <img src={qrUrl} className="h-full w-full object-contain" alt="QR Code" />
+              <img src={qrUrl} className="h-full w-full object-contain" alt="QR Code" crossOrigin="anonymous" />
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-linear-to-br from-[#eceff3] to-[#dbe3ec] px-3 text-center">
                 <p className="m-0 text-[13px] font-semibold leading-snug text-slate-600">
@@ -729,6 +731,7 @@ export function CardPreview({
               src={photoUrl}
               className="w-full h-full object-cover"
               alt={data.name?.trim() ? `Photo of ${data.name.trim()}` : "Attendee photo"}
+              crossOrigin="anonymous"
             />
           ) : (
             <DefaultAvatarPlaceholder className="w-full h-full" />
