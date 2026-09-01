@@ -175,7 +175,7 @@ export async function POST(req: Request) {
       location: String(body.location || "").trim(),
       location_type: body.location_type || "onsite",
       date: String(body.date || ""),
-      time: String(body.time || ""),
+      time: String(body.time || "10:00").trim() || "10:00",
       logo_url: String(body.logo_url || ""),
       registration_form_config: normalizeRegistrationFormConfig(
         body.registration_form_config || getDefaultRegistrationFormConfig(),
@@ -188,7 +188,7 @@ export async function POST(req: Request) {
       short_id: generateShortId(),
     };
 
-    if (!payload.name || !payload.location || !payload.date || !payload.time) {
+    if (!payload.name || !payload.location || !payload.date) {
       return NextResponse.json({ error: "Missing required event fields." }, { status: 400 });
     }
     if (isPastEventDate(payload.date)) {
