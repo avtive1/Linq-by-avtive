@@ -2,30 +2,21 @@
 
 import { useEffect, useState } from "react";
 
-export function useInternalUserId(isAuthenticated: boolean, isPending = false) {
+export function useInternalUserId(isAuthenticated = true, isPending = false) {
   const [userId, setUserId] = useState("");
-  const [isLoading, setIsLoading] = useState(() => isPending || isAuthenticated);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     if (isPending) return;
-    if (!isAuthenticated) {
-      queueMicrotask(() => {
-        if (!cancelled) {
-          setUserId("");
-          setIsLoading(false);
-        }
-      });
-      return;
-    }
 
-    queueMicrotask(() => {
-      if (!cancelled) setIsLoading(true);
-    });
     fetch("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
       .then((payload) => {
-        if (!cancelled) setUserId(String(payload?.data?.userId || ""));
+        if (!cancelled) {
+          const resolved = String(payload?.data?.userId || "").trim();
+          setUserId(resolved);
+        }
       })
       .catch(() => {
         if (!cancelled) setUserId("");
