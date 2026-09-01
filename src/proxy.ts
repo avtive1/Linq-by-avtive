@@ -93,7 +93,7 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   let session: Awaited<ReturnType<typeof neonAuth.getSession>>["data"] = null;
   if (!jwtPayload) {
     try {
-      session = (await neonAuth.getSession()).data;
+      session = (await neonAuth.getSession({ headers: request.headers })).data;
     } catch {
       session = null;
     }
