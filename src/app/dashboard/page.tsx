@@ -182,9 +182,11 @@ function DashboardContent() {
   const [permissionRequestReason, setPermissionRequestReason] = useState("");
   const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
   const { data: session, isPending: isSessionPending } = authClient.useSession();
-  const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(session?.user), isSessionPending);
+  const sessionUserId = session?.user?.id;
+  const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(sessionUserId), isSessionPending);
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick } = useAutoRefresh(Boolean(userId));
+  const dashboardLoadKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -299,13 +301,18 @@ function DashboardContent() {
     };
 
     const checkUser = async () => {
-      if (isSessionPending || isInternalUserLoading || (session?.user && !userId)) return;
+      if (isSessionPending || isInternalUserLoading || (sessionUserId && !userId)) return;
+      const loadKey = `${userId}|${sessionUserId || ""}|${String(impersonateId ?? "")}|${String(onboardingIntent ?? "")}`;
+      if (dashboardLoadKeyRef.current === loadKey && refreshTick === 0) {
+        return;
+      }
+      dashboardLoadKeyRef.current = loadKey;
       try {
         setBootstrapError("");
-        const userId = await resolveAuthedUserIdWithRetry();
+        const resolvedUserId = await resolveAuthedUserIdWithRetry();
         if (!isMounted) return;
         
-        if (!userId) {
+        if (!resolvedUserId) {
           router.replace("/login");
           return;
         }
@@ -482,7 +489,7 @@ function DashboardContent() {
     checkUser();
     return () => { isMounted = false; };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- bootstrap on auth/URL gate; fetchData intentionally omitted to avoid loops
-  }, [router, impersonateId, onboardingIntent, session?.user, userId, refreshTick, isSessionPending, isInternalUserLoading]);
+  }, [router, impersonateId, onboardingIntent, sessionUserId, userId, refreshTick, isSessionPending, isInternalUserLoading]);
 
   const fetchData = async (targetUserId?: string, getIsMounted?: () => boolean) => {
     try {

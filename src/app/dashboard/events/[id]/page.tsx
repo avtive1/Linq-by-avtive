@@ -333,7 +333,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     logoUrl: "",
   });
   const { data: session, isPending: isSessionPending } = authClient.useSession();
-  const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(session?.user), isSessionPending);
+  const sessionUserId = session?.user?.id;
+  const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(sessionUserId), isSessionPending);
   const { presets, fadeUp, staggerItem, hoverLift, hoverIconNudge } = useDashboardMotion();
   const { refreshTick, triggerRefresh } = useAutoRefresh(Boolean(userId));
   /** When only `refreshTick` changes (focus / interval), refetch without full-page skeleton so modals and file pickers are not unmounted mid-interaction. */
@@ -341,7 +342,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let isMounted = true;
-    if (isSessionPending || isInternalUserLoading || (session?.user && !userId)) return;
+    if (isSessionPending || isInternalUserLoading || (sessionUserId && !userId)) return;
 
     const loadKey = `${id}|${userId}|${String(impersonateId ?? "")}|${isPreviewMode}`;
     const loadKeyChanged = eventPageLoadKeyRef.current !== loadKey;
@@ -565,7 +566,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     checkUser();
     return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode, session?.user, userId, refreshTick, isSessionPending, isInternalUserLoading, isBrandingOpen]);
+  }, [id, router, impersonateId, isPreviewMode, sessionUserId, userId, refreshTick, isSessionPending, isInternalUserLoading]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const minCampaignDate = useMemo(() => {
