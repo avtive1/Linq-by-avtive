@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
 import { getServerAuthSession } from "@/auth";
 import { queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
 import { getOrGenerateUniqueShortId } from "@/lib/events/short-id";
-import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 function isPastEventDate(dateStr: string) {
@@ -142,9 +143,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const rawBody = await req.json();
+    const body = await req.json();
 
-    // Safely destructure expected fields and explicitly strip non-column fields like _uniqueId
+    // 1. Destructure expected fields and ignore non-column fields like `_uniqueId`
     const {
       name,
       description = "",
@@ -152,8 +153,8 @@ export async function POST(req: Request) {
       location_type = "onsite",
       date,
       time = "10:00",
-      ownerId,
       logo_url = "",
+      ownerId,
       registration_form_config,
       card_color = "purple",
       card_font,
@@ -161,9 +162,8 @@ export async function POST(req: Request) {
       vertical_text_color = "",
       is_branding_finalized = false,
       _uniqueId,
-    } = rawBody;
+    } = body;
 
-    // Validate required fields
     const trimmedName = String(name || "").trim();
     const trimmedLocation = String(location || "").trim();
     const trimmedDate = String(date || "").trim();
@@ -182,13 +182,18 @@ export async function POST(req: Request) {
       );
     }
 
-    // Map ownerId to the database column user_id
+    // 2. Map ownerId to the database column user_id
     const targetUserId = String(ownerId || viewerId).trim();
 
-    // Generate guaranteed unique short_id using _uniqueId candidate if valid
-    const safeShortId = await getOrGenerateUniqueShortId(_uniqueId);
+    // 3. Generate collision-safe short_id
+    let safeShortId = _uniqueId ? String(_uniqueId).trim() : "";
+    try {
+      safeShortId = await getOrGenerateUniqueShortId(safeShortId || undefined);
+    } catch {
+      safeShortId = crypto.randomUUID().substring(0, 8);
+    }
 
-    // Prepare clean database row matching public.events schema
+    // 4. Insert into Supabase with correctly mapped database column names
     const insertPayload = {
       name: trimmedName,
       description: String(description || "").trim().slice(0, 220),
@@ -197,7 +202,7 @@ export async function POST(req: Request) {
       date: trimmedDate,
       time: String(time || "10:00").trim() || "10:00",
       logo_url: String(logo_url || ""),
-      user_id: targetUserId,
+      user_id: targetUserId, // <--- Correct column in public.events
       short_id: safeShortId,
       registration_form_config: normalizeRegistrationFormConfig(
         registration_form_config || getDefaultRegistrationFormConfig()
@@ -209,7 +214,6 @@ export async function POST(req: Request) {
       is_branding_finalized: Boolean(is_branding_finalized ?? false),
     };
 
-    // Insert into Supabase / PostgreSQL
     const { data, error } = await supabase
       .from("events")
       .insert([insertPayload])
@@ -217,11 +221,8 @@ export async function POST(req: Request) {
       .single();
 
     if (error) {
-      console.error("[POST /api/events] Supabase Insert Error:", error);
-      return NextResponse.json(
-        { error: error.message || "Failed to insert event into database." },
-        { status: 400 }
-      );
+      console.error("Supabase Insert Error:", error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
     return NextResponse.json(
@@ -229,8 +230,8 @@ export async function POST(req: Request) {
       { status: 201 }
     );
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Internal Server Error";
-    console.error("[POST /api/events] Route Error:", err);
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error("Route Error:", err);
+    const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
