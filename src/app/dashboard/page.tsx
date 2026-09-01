@@ -486,9 +486,9 @@ function DashboardContent() {
 
   const fetchData = async (targetUserId?: string, getIsMounted?: () => boolean) => {
     try {
-      const cleanUserId = targetUserId && targetUserId !== "undefined" && targetUserId !== "null"
+      const cleanUserId = (targetUserId && targetUserId !== "undefined" && targetUserId !== "null")
         ? targetUserId
-        : (effectiveUserId || userId);
+        : (userId || String(session?.user?.id || ""));
       const url = cleanUserId
         ? `/api/events?ownerId=${encodeURIComponent(cleanUserId)}&includeRoleStats=true`
         : `/api/events?includeRoleStats=true`;
@@ -526,7 +526,8 @@ function DashboardContent() {
       setTopRoles(topRoles);
 
     } catch (err: unknown) {
-      logger.error({ err }, "Error fetching dashboard data");
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error({ error: errMsg }, "Error fetching dashboard data");
       setTopRoles([]);
       toast.error("Could not load data. Please refresh and try again.");
     }
@@ -722,7 +723,7 @@ function DashboardContent() {
           const uploadRes = await fetch("/api/media/upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ dataUrl: eventForm.logo, folder: `events/${effectiveUserId || "general"}` }),
+            body: JSON.stringify({ dataUrl: eventForm.logo, folder: `events/${userId || "general"}` }),
           });
           const uploadPayload = await readResponsePayload(uploadRes);
           const uploadData = asPayloadRecord(uploadPayload);
@@ -736,7 +737,7 @@ function DashboardContent() {
         }
       }
       
-      const targetOwnerId = impersonateId || (isOrgTeamMember ? (orgOwnerUserId || effectiveUserId) : effectiveUserId) || undefined;
+      const targetOwnerId = impersonateId || (isOrgTeamMember ? (orgOwnerUserId || userId) : userId) || undefined;
       const baseData = {
         name: eventForm.name.trim(),
         description: eventForm.description.trim(),
@@ -804,9 +805,10 @@ function DashboardContent() {
       toast.success(`Event "${eventForm.name}" created successfully!`);
       router.refresh();
       setIsEventModalOpen(false);
-      const refreshOwnerId = targetOwnerId && targetOwnerId !== "undefined" && targetOwnerId !== "null"
+      setEventForm({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "10:00", logo: "" });
+      const refreshOwnerId = (targetOwnerId && targetOwnerId !== "undefined" && targetOwnerId !== "null")
         ? targetOwnerId
-        : (effectiveUserId || userId);
+        : (userId || String(session?.user?.id || ""));
       fetchData(refreshOwnerId);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err || "Unknown error");
