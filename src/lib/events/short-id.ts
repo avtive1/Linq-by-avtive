@@ -1,4 +1,4 @@
-import { queryNeonOne } from "@/lib/neon-db";
+import { queryNeonOneAsSystem } from "@/lib/neon-db";
 
 /**
  * Generates a collision-resistant timestamp-based short ID for events.
@@ -22,7 +22,7 @@ export async function getOrGenerateUniqueShortId(preferredCandidate?: string, ma
   if (preferredCandidate) {
     const candidate = generateUniqueEventShortId(preferredCandidate);
     try {
-      const existing = await queryNeonOne<{ id: string }>(
+      const existing = await queryNeonOneAsSystem<{ id: string }>(
         `SELECT id FROM public.events WHERE short_id = $1 LIMIT 1`,
         [candidate],
       );
@@ -37,7 +37,7 @@ export async function getOrGenerateUniqueShortId(preferredCandidate?: string, ma
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const candidate = generateUniqueEventShortId();
     try {
-      const existing = await queryNeonOne<{ id: string }>(
+      const existing = await queryNeonOneAsSystem<{ id: string }>(
         `SELECT id FROM public.events WHERE short_id = $1 LIMIT 1`,
         [candidate],
       );

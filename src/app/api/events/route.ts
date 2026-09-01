@@ -232,6 +232,7 @@ export async function POST(req: Request) {
       try {
         const candidate = attempt === 0 ? body._uniqueId : undefined;
         const uniqueShortId = await getOrGenerateUniqueShortId(candidate);
+        console.log(`[POST /api/events] attempt ${attempt}, short_id: ${uniqueShortId}`);
         created = await insertRow(
           "events",
           {
@@ -242,9 +243,11 @@ export async function POST(req: Request) {
           },
           "id",
         );
+        console.log(`[POST /api/events] insertRow result:`, created);
         if (created?.id) break;
       } catch (err: unknown) {
         lastError = err;
+        console.error(`[POST /api/events] attempt ${attempt} error:`, err);
         const errStr = String(err instanceof Error ? err.message : err);
         const isDuplicateKey =
           errStr.includes("unique constraint") ||
@@ -267,6 +270,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ data: { id: String(created.id) } }, { status: 201 });
     }, { allowAdminBypass: true });
   } catch (error: unknown) {
+    console.error("[POST /api/events] top-level error:", error);
     return apiRouteErrorResponse(error, "Failed to create event.");
   }
 }
