@@ -61,9 +61,6 @@
     </linearGradient>
   </defs>
 
-  <!-- Base Canvas -->
-  <rect width="576" height="1024" fill="url(#bgGlowV)"/>
-
   <!-- Radial atmospheric spotlights -->
   <circle cx="450" cy="620" r="260" fill="#00F0FF" opacity="0.13" filter="url(#glowCyanV)" />
   <circle cx="200" cy="880" r="220" fill="#E024C3" opacity="0.15" filter="url(#glowMagentaV)" />
