@@ -158,6 +158,9 @@ export async function cropImageAreaToDataUrl(
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(source, crop.x, crop.y, crop.width, crop.height, 0, 0, outDim.width, outDim.height);
+    if (outputType === "image/png") {
+      removeWhiteBackgroundFromCanvas(canvas);
+    }
     const dataUrl =
       outputType === "image/jpeg"
         ? canvas.toDataURL(outputType, quality)
@@ -171,11 +174,54 @@ export async function cropImageAreaToDataUrl(
   }
 }
 
+/**
+ * Remove solid white / near-white background from an image canvas, making it transparent.
+ */
+export function removeWhiteBackgroundFromCanvas(
+  canvas: HTMLCanvasElement,
+  threshold = 240,
+  colorTolerance = 30
+) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imgData.data;
+  const totalPixels = data.length;
+
+  for (let i = 0; i < totalPixels; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+
+    if (a === 0) continue;
+
+    // Check if pixel is light neutral / white
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    const isNeutral =
+      Math.abs(r - g) < colorTolerance &&
+      Math.abs(r - b) < colorTolerance &&
+      Math.abs(g - b) < colorTolerance;
+
+    if (brightness >= threshold && isNeutral) {
+      if (brightness >= 250) {
+        data[i + 3] = 0;
+      } else {
+        const factor = (250 - brightness) / (250 - threshold);
+        data[i + 3] = Math.round(a * Math.max(0, Math.min(1, factor)));
+      }
+    }
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+}
+
 export async function cropLoadedImageElementToDataUrl(
   image: HTMLImageElement,
   pixelCrop: PixelCrop,
   outputType: "image/png" | "image/jpeg" = "image/png",
   quality = 0.92,
+  autoRemoveWhiteBg = true,
 ): Promise<string> {
   const width = image.naturalWidth || image.width;
   const height = image.naturalHeight || image.height;
@@ -194,6 +240,11 @@ export async function cropLoadedImageElementToDataUrl(
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(image, crop.x, crop.y, crop.width, crop.height, 0, 0, outDim.width, outDim.height);
+
+    if (outputType === "image/png" && autoRemoveWhiteBg) {
+      removeWhiteBackgroundFromCanvas(canvas);
+    }
+
     const dataUrl =
       outputType === "image/jpeg"
         ? canvas.toDataURL(outputType, quality)

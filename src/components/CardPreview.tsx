@@ -11,11 +11,7 @@ import { preloadGoogleCardFontCss } from "@/lib/card-font-runtime";
 import { optimizeCdnImageUrl } from "@/lib/utils/cdn-image";
 import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 
-/** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
-const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
 const SPONSOR_STRIP_MAX_W_H1_PX = 1120;
-const SPONSOR_LOGO_HEIGHT_V_PX = 56;
-const SPONSOR_STRIP_MAX_W_V_PX = 528;
 
 /**
  * Sponsor row: intrinsic logo widths + uniform flex gap (not equal-width columns).
@@ -87,6 +83,9 @@ function SponsorStripRow({
                 width: "auto",
                 maxWidth: imgCapPx,
                 maxHeight: logoHeightPx,
+                background: "transparent",
+                mixBlendMode: "lighten",
+                filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
               }}
               onLoad={(e) => onLogoLoad(key, e.currentTarget)}
             />
@@ -109,6 +108,37 @@ function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
       return true;
     })
     .slice(0, 6);
+}
+
+function getCombinedLogos(data: CardData | Partial<CardData>): SponsorEntry[] {
+  const custom = filterSponsors(data.sponsors);
+  const out: SponsorEntry[] = [];
+
+  // If company / organization logo is provided, include it in the same single line
+  const orgLogo = data.organizationLogoUrl?.trim();
+  if (orgLogo && !orgLogo.includes("figma.com/api/mcp/asset")) {
+    out.push({
+      name: data.organizationName?.trim() || "Company",
+      logo_url: orgLogo,
+    });
+  }
+
+  for (const s of custom) {
+    if (!out.some((x) => x.logo_url === s.logo_url)) {
+      out.push(s);
+    }
+  }
+
+  // If no custom sponsors and no organization logo, default to the 3 standard partner logos
+  if (out.length === 0) {
+    return [
+      { name: "avtive", logo_url: "/card-assets/avtive-white-logo.svg" },
+      { name: "NSTP Defining Innovation", logo_url: "/card-assets/nstp-logo.svg" },
+      { name: "LEAP Pakistan", logo_url: "/card-assets/leap-pakistan-logo.svg" },
+    ];
+  }
+
+  return out.slice(0, 6);
 }
 
 function getLocalTimeZoneLabel() {
@@ -150,54 +180,12 @@ function formatSessionTimeWithZone(rawTime?: string) {
   return display;
 }
 
-function OrganizationBrand({
-  name,
-  logoUrl,
-  iconClassName,
-  nameBoxClassName,
-  nameTextClassName,
-  textColorClassName = "text-white",
-  nameTextStyle,
-}: {
-  name: string;
-  logoUrl?: string;
-  iconClassName: string;
-  nameBoxClassName: string;
-  nameTextClassName: string;
-  textColorClassName?: string;
-  nameTextStyle?: React.CSSProperties;
-}) {
-  return (
-    <>
-      <div className={`overflow-hidden rounded-md bg-white/95 ${iconClassName}`}>
-        {logoUrl && (!logoUrl.startsWith("data:") || isValidImageDataUrl(logoUrl)) ? (
-          <img
-            src={logoUrl.startsWith("data:") ? logoUrl : optimizeCdnImageUrl(logoUrl, { width: 128, quality: "auto" })}
-            alt={name || "Organization logo"}
-            className="h-full w-full object-cover"
-            crossOrigin="anonymous"
-            decoding="async"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-xs font-bold text-heading/70">
-            {name?.trim()?.slice(0, 2).toUpperCase() || "OR"}
-          </div>
-        )}
-      </div>
-      <div className={`flex items-center overflow-hidden ${nameBoxClassName}`}>
-        <p className={`m-0 w-full truncate font-extrabold ${textColorClassName} ${nameTextClassName}`} style={nameTextStyle}>{name || "Organization"}</p>
-      </div>
-    </>
-  );
-}
-
 type ColorTheme = {
   start: string;
   end: string;
   accent: string;
   textColor?: string;
   titleColor?: string;
-  /** Event title on vertical card white panel (horizontal posters still use `titleColor` on the gradient). */
   verticalEventTitleColor?: string;
 };
 
@@ -219,99 +207,59 @@ const COLOR_THEMES: Record<string, ColorTheme> = {
     verticalEventTitleColor: "#FFFFFF",
   },
   purple: {
-    start: "#41295a",
-    end: "#2f0743",
-    accent: "#FFD400",
+    start: "#281347",
+    end: "#110224",
+    accent: "#E63A8D",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
-  },
-  red: {
-    start: "#c94b4b",
-    end: "#4b134f",
-    accent: "#FFFFFF",
-    textColor: "#FFFFFF",
-    titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
-  },
-  pink: {
-    start: "#EE0979",
-    end: "#FF6A00",
-    accent: "#FFFFFF",
-    textColor: "#FFFFFF",
-    titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
+    verticalEventTitleColor: "#000000",
   },
   blue: {
-    start: "#D3CCE3",
-    end: "#E9E4F0",
-    accent: "#000000",
-    textColor: "#000000",
-    titleColor: "#5A2ED3",
+    start: "#0c1a30",
+    end: "#050b14",
+    accent: "#38bdf8",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#000000",
+  },
+  pink: {
+    start: "#3b1028",
+    end: "#18040f",
+    accent: "#f472b6",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#000000",
+  },
+  red: {
+    start: "#3a0e0e",
+    end: "#160303",
+    accent: "#f87171",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#000000",
+  },
+  green: {
+    start: "#0c2b18",
+    end: "#031208",
+    accent: "#4ade80",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#000000",
   },
 };
 
-function longestEventNameLineLength(eventName?: string): number {
-  const raw = String(eventName || "").trim();
-  if (!raw) return 0;
-  const lines = raw
-    .split(/<br\s*\/?>/i)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (!lines.length) return 0;
-  return Math.max(...lines.map((line) => line.length));
-}
-
-function getHorizontalEventTitleStyle(baseStyle: React.CSSProperties, eventName?: string): React.CSSProperties {
-  const len = longestEventNameLineLength(eventName);
-  if (len <= 12) {
-    return { ...baseStyle, fontSize: "100px", lineHeight: "0.91", letterSpacing: "-0.04em", maxWidth: "750px" };
-  }
-  if (len <= 16) {
-    return { ...baseStyle, fontSize: "82px", lineHeight: "0.92", letterSpacing: "-0.035em", maxWidth: "720px" };
-  }
-  if (len <= 20) {
-    return { ...baseStyle, fontSize: "68px", lineHeight: "0.93", letterSpacing: "-0.03em", maxWidth: "680px" };
-  }
-  if (len <= 24) {
-    return { ...baseStyle, fontSize: "56px", lineHeight: "0.94", letterSpacing: "-0.025em", maxWidth: "640px" };
-  }
-  return { ...baseStyle, fontSize: "46px", lineHeight: "0.95", letterSpacing: "-0.02em", maxWidth: "600px" };
-}
-
-function getVerticalEventTitleStyle(
-  baseStyle: React.CSSProperties,
-  eventName?: string,
-): React.CSSProperties {
-  const len = longestEventNameLineLength(eventName);
-  if (len <= 12) {
-    return { ...baseStyle, fontSize: "74.67px", lineHeight: "69.33px", letterSpacing: "-2.99px" };
-  }
-  if (len <= 16) {
-    return { ...baseStyle, fontSize: "58px", lineHeight: "1.02", letterSpacing: "-2px" };
-  }
-  if (len <= 20) {
-    return { ...baseStyle, fontSize: "48px", lineHeight: "1.04", letterSpacing: "-1.5px" };
-  }
-  if (len <= 24) {
-    return { ...baseStyle, fontSize: "40px", lineHeight: "1.06", letterSpacing: "-1px" };
-  }
-  return { ...baseStyle, fontSize: "34px", lineHeight: "1.08", letterSpacing: "-0.5px" };
-}
-
 function resolveTheme(color?: string): ColorTheme {
   const raw = String(color || "").trim();
-  if (!raw) return COLOR_THEMES.purple;
+  if (!raw) return COLOR_THEMES.karakoram;
   if (COLOR_THEMES[raw]) return COLOR_THEMES[raw];
 
-  // Custom user-picked color variant: preserve layout, force dark typography.
   return {
     start: raw,
     end: raw,
-    accent: "#0B0B0B",
-    textColor: "#0B0B0B",
-    titleColor: "#0B0B0B",
-    verticalEventTitleColor: "#0B0B0B",
+    accent: "#00F0FF",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#FFFFFF",
   };
 }
 
@@ -329,22 +277,11 @@ export function CardPreview({
   verticalSide?: 1 | 2;
 }) {
   const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const isWebinarLocation = (data.location || "").trim().toLowerCase() === "webinar";
-  const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
   const sessionTimeLabel = formatSessionTimeWithZone(data.sessionTime);
-  const isCustomTheme = !COLOR_THEMES[String(data.color || "").trim()];
   const surfaceMotionClass = preview
     ? ""
     : "animate-fade-in will-change-transform transition-all duration-500 group";
 
-  const theme = resolveTheme(data.color);
-  const horizontalTextColorOverride = String(data.horizontalTextColor || "").trim();
-  const verticalTextColorOverride = String(data.verticalTextColor || "").trim();
-  const hasHorizontalTextOverride = Boolean(horizontalTextColorOverride);
-  const hasVerticalTextOverride = Boolean(verticalTextColorOverride);
-  const horizontalTextColor = horizontalTextColorOverride || (theme.textColor || "#FFFFFF");
-  const verticalTextColor = verticalTextColorOverride || (theme.textColor || "#FFFFFF");
-  
   const storedFontKey = String(data.fontFamily || "inter").trim() || "inter";
   const googleFamily = parseGoogleFamilyFromStored(storedFontKey);
 
@@ -489,20 +426,12 @@ export function CardPreview({
             START HERE, GO ANYWHERE
           </p>
           <p className="m-0 text-[12px] font-medium text-slate-400 mb-2">Co-organized by:</p>
-          <div className="flex items-center justify-center gap-5">
-            {filterSponsors(data.sponsors).length > 0 ? (
-              <SponsorStripRow
-                sponsors={filterSponsors(data.sponsors)}
-                logoHeightPx={36}
-                maxStripWidthPx={500}
-              />
-            ) : (
-              <>
-                <img src="/card-assets/avtive-white-logo.svg" className="h-[30px] w-auto object-contain" alt="avtive" />
-                <img src="/card-assets/nstp-logo.svg" className="h-[30px] w-auto object-contain" alt="NSTP" />
-                <img src="/card-assets/leap-pakistan-logo.svg" className="h-[30px] w-auto object-contain" alt="LEAP Pakistan" />
-              </>
-            )}
+          <div className="flex items-center justify-center gap-5 max-w-[500px]">
+            <SponsorStripRow
+              sponsors={getCombinedLogos(data)}
+              logoHeightPx={32}
+              maxStripWidthPx={480}
+            />
           </div>
         </div>
       </div>
@@ -577,23 +506,15 @@ export function CardPreview({
         </p>
       </div>
 
-      {/* Co-organized by & Logos */}
+      {/* Co-organized by & Logos (Single line containing company + sponsor logos) */}
       <div className="absolute left-[58px] bottom-[38px] z-20 flex flex-col gap-2">
         <p className="m-0 text-[14px] font-medium text-slate-400">Co-organized by:</p>
-        <div className="flex items-center gap-6">
-          {filterSponsors(data.sponsors).length > 0 ? (
-            <SponsorStripRow
-              sponsors={filterSponsors(data.sponsors)}
-              logoHeightPx={42}
-              maxStripWidthPx={500}
-            />
-          ) : (
-            <>
-              <img src="/card-assets/avtive-white-logo.svg" className="h-[36px] w-auto object-contain" alt="avtive" />
-              <img src="/card-assets/nstp-logo.svg" className="h-[36px] w-auto object-contain" alt="NSTP" />
-              <img src="/card-assets/leap-pakistan-logo.svg" className="h-[36px] w-auto object-contain" alt="LEAP Pakistan" />
-            </>
-          )}
+        <div className="flex items-center gap-6 max-w-[550px]">
+          <SponsorStripRow
+            sponsors={getCombinedLogos(data)}
+            logoHeightPx={38}
+            maxStripWidthPx={540}
+          />
         </div>
       </div>
 
