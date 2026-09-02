@@ -181,22 +181,29 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
       });
 
       const token = await createSessionToken(registered.userId, registered.email);
+      const userPayload = {
+        id: registered.userId,
+        email: registered.email,
+        name: name || registered.email,
+        role: "user",
+        organizationName: name,
+      };
+      const sessionPayload = {
+        id: registered.userId,
+        userId: registered.userId,
+        token,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+
       const response = NextResponse.json({
         data: {
-          session: {
-            id: registered.userId,
-            userId: registered.userId,
-            token,
-            expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          },
-          user: {
-            id: registered.userId,
-            email: registered.email,
-            name: name || registered.email,
-            role: "user",
-            organizationName: name,
-          },
+          session: sessionPayload,
+          user: userPayload,
+          token,
         },
+        user: userPayload,
+        session: sessionPayload,
+        token,
       });
 
       response.cookies.set(AUTH_COOKIE_NAME, token, {
