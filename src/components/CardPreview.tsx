@@ -84,7 +84,6 @@ function SponsorStripRow({
                 maxWidth: imgCapPx,
                 maxHeight: logoHeightPx,
                 background: "transparent",
-                mixBlendMode: "lighten",
                 filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
               }}
               onLoad={(e) => onLogoLoad(key, e.currentTarget)}
