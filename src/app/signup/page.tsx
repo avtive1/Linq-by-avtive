@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import GradientBackground from "@/components/GradientBackground";
@@ -218,7 +219,14 @@ export default function SignupPage() {
         </Link>
         {/* Card Header Label */}
         <div className="mb-6 flex justify-center">
-          <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-text-xmuted">AVTIVE</span>
+          <Image
+            src="/linq-logo.png"
+            alt="Linq"
+            width={110}
+            height={32}
+            className="h-8 w-auto object-contain"
+            priority
+          />
         </div>
 
         {/* Signup Card */}

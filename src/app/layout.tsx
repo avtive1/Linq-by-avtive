@@ -29,7 +29,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Avtive — Your Conference Card",
+  title: "Linq — Your Conference Card",
   description: "Register once. Generate a card for every event you attend.",
 };
 
