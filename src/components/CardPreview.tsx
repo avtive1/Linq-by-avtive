@@ -254,11 +254,10 @@ function resolveTheme(color?: string): ColorTheme {
 
   return {
     start: raw,
-    end: raw,
-    accent: "#00F0FF",
+    end: "#06080F",
+    accent: raw.startsWith("#") || raw.startsWith("rgb") ? raw : "#00F0FF",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#FFFFFF",
   };
 }
 
