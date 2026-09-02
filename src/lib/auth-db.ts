@@ -320,48 +320,89 @@ export async function registerUser(input: {
   const linkedin = String(input.linkedin || "").trim();
 
   const existingEmail = await queryNeonOneAsSystem<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 OR LOWER(email) = $1 LIMIT 1`,
     [email],
   );
-  if (existingEmail?.user_id) {
-    throw new Error("An account with this email already exists.");
-  }
 
   const existingUsername = await queryNeonOneAsSystem<{ id: string }>(
     `SELECT id FROM public.profiles WHERE username = $1 LIMIT 1`,
     [username],
   );
-  if (existingUsername?.id) {
-    throw new Error("Username already exists.");
+
+  let userId: string;
+  let passwordHash: string | null = null;
+  if (input.password) {
+    const argon2 = await getArgon2();
+    passwordHash = await argon2.hash(input.password, ARGON2_OPTIONS);
   }
 
-  const userId = crypto.randomUUID();
-  const hash = input.password ? (await getArgon2()).hash(input.password) : Promise.resolve(null);
-  const passwordHash = await hash;
+  if (existingEmail?.user_id) {
+    userId = existingEmail.user_id;
+    if (existingUsername?.id && existingUsername.id !== userId) {
+      throw new Error("Username already exists.");
+    }
 
-  await queryNeonAsSystem(
-    `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
-     VALUES ($1, $2, $3, $4, 'user', now())`,
-    [userId, username, organizationName, organizationKey],
-  );
+    await queryNeonAsSystem(
+      `UPDATE public.profiles
+       SET username = COALESCE($1, username),
+           organization_name = COALESCE($2, organization_name),
+           organization_name_key = COALESCE($3, organization_name_key),
+           updated_at = now()
+       WHERE id = $4`,
+      [username || null, organizationName || null, organizationKey || null, userId],
+    );
 
-  await queryNeonAsSystem(
-    `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, neon_auth_user_id, created_at, updated_at)
-     VALUES ($1, $2, $2, $3, $4, now(), now())`,
-    [userId, email, passwordHash, input.neonAuthUserId || null],
-  );
+    if (passwordHash || input.neonAuthUserId) {
+      await queryNeonAsSystem(
+        `UPDATE public.auth_users
+         SET password_hash = COALESCE($1, password_hash),
+             neon_auth_user_id = COALESCE($2, neon_auth_user_id),
+             updated_at = now()
+         WHERE user_id = $3`,
+        [passwordHash, input.neonAuthUserId || null, userId],
+      );
+    }
+  } else {
+    if (existingUsername?.id) {
+      throw new Error("Username already exists.");
+    }
+
+    userId = crypto.randomUUID();
+
+    await queryNeonAsSystem(
+      `INSERT INTO public.profiles (id, username, organization_name, organization_name_key, role, created_at)
+       VALUES ($1, $2, $3, $4, 'user', now())
+       ON CONFLICT (id) DO UPDATE
+       SET username = EXCLUDED.username,
+           organization_name = EXCLUDED.organization_name,
+           organization_name_key = EXCLUDED.organization_name_key`,
+      [userId, username, organizationName, organizationKey],
+    );
+
+    await queryNeonAsSystem(
+      `INSERT INTO public.auth_users (user_id, email, email_normalized, password_hash, neon_auth_user_id, created_at, updated_at)
+       VALUES ($1, $2, $2, $3, $4, now(), now())
+       ON CONFLICT (user_id) DO UPDATE
+       SET email = EXCLUDED.email,
+           email_normalized = EXCLUDED.email_normalized,
+           password_hash = COALESCE(EXCLUDED.password_hash, auth_users.password_hash),
+           neon_auth_user_id = COALESCE(EXCLUDED.neon_auth_user_id, auth_users.neon_auth_user_id),
+           updated_at = now()`,
+      [userId, email, passwordHash, input.neonAuthUserId || null],
+    );
+  }
 
   if (organizationKey) {
-    const existingOrg = await queryNeonOneAsSystem<{ id: string; owner_user_id: string | null }>(
-      `SELECT id, owner_user_id
-       FROM public.organizations
-       WHERE organization_name_key = $1
-       LIMIT 1`,
-      [organizationKey],
+    await queryNeonAsSystem(
+      `INSERT INTO public.organizations (organization_name, organization_name_key, owner_user_id, organization_logo_url, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, now(), now())
+       ON CONFLICT (organization_name_key) DO UPDATE
+       SET organization_name = EXCLUDED.organization_name,
+           owner_user_id = COALESCE(public.organizations.owner_user_id, EXCLUDED.owner_user_id),
+           organization_logo_url = COALESCE(public.organizations.organization_logo_url, EXCLUDED.organization_logo_url),
+           updated_at = now()`,
+      [organizationName, organizationKey, userId, organizationLogoUrl || null],
     );
-    if (!existingOrg?.id || !existingOrg.owner_user_id) {
-      throw new Error("Organization is not available for self-registration.");
-    }
   }
 
   // Optional column support: persist uploaded organization logo if schema has organization_logo_url.
