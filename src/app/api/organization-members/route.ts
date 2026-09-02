@@ -262,7 +262,7 @@ export async function POST(req: Request) {
       [ownerId],
     );
     const organizationName = String(ownerProfile?.organization_name || "your organization");
-    const acceptInviteUrl = `${getPublicAppUrl()}/invite/org-member?t=${encodeURIComponent(inviteRaw)}`;
+    const acceptInviteUrl = `${getPublicAppUrl(req)}/invite/org-member?t=${encodeURIComponent(inviteRaw)}`;
 
     try {
       const invRes = await sendTeamMemberInviteEmail({
