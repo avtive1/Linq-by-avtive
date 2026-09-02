@@ -7,7 +7,7 @@ import { queryNeon, queryNeonOne, queryNeonOneAsSystem } from "@/lib/neon-db";
 import { getDefaultRegistrationFormConfig, normalizeRegistrationFormConfig } from "@/lib/registration-form";
 import { sanitizeStoredCardFont } from "@/lib/card-fonts";
 import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
-import { getOrGenerateUniqueShortId } from "@/lib/events/short-id";
+import { logger } from "@/lib/logger-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -101,7 +101,7 @@ export async function GET(req: Request) {
 
       const roleStatsQuery = includeRoleStats
         ? queryNeon<{ role: string; count: string | number }>(
-            `SELECT a.role, COUNT(*)::int AS count
+          `SELECT a.role, COUNT(*)::int AS count
              FROM public.attendees a
              INNER JOIN public.events e ON e.id = a.event_id
              WHERE e.user_id = $1
@@ -109,8 +109,8 @@ export async function GET(req: Request) {
              GROUP BY a.role
              ORDER BY count DESC, a.role ASC
              LIMIT 5`,
-            [ownerId],
-          )
+          [ownerId],
+        )
         : Promise.resolve([] as Array<{ role: string; count: string | number }>);
 
       const [rows, roleStats] = await Promise.all([eventsQuery, roleStatsQuery]);
@@ -154,7 +154,6 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // 1. Destructure expected fields and ignore non-column fields like `_uniqueId`
     const {
       name,
       description = "",
@@ -170,7 +169,6 @@ export async function POST(req: Request) {
       horizontal_text_color = "",
       vertical_text_color = "",
       is_branding_finalized = false,
-      _uniqueId,
     } = body;
 
     const trimmedName = String(name || "").trim();
@@ -191,48 +189,77 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. Map ownerId to user_id
     const rawOwner = ownerId ? String(ownerId).trim() : "";
     const targetUserId = rawOwner && rawOwner !== "undefined" && rawOwner !== "null" && rawOwner.length > 0
       ? rawOwner
       : viewerId;
 
-    // 3. Generate collision-safe short_id
-    let safeShortId = _uniqueId ? String(_uniqueId).trim() : "";
-    try {
-      safeShortId = await getOrGenerateUniqueShortId(safeShortId || undefined);
-    } catch {
-      safeShortId = crypto.randomUUID().substring(0, 8);
+    const MAX_RETRIES = 5;
+    let row: { id: string; short_id: string } | null = null;
+    let lastError: unknown = null;
+
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      // 12-char unique hex string per iteration
+      const safeShortId = crypto.randomBytes(6).toString("hex");
+
+      try {
+        row = await queryNeonOneAsSystem<{ id: string; short_id: string }>(
+          `INSERT INTO public.events
+           (name, description, location, location_type, date, time, logo_url, user_id, short_id,
+            registration_form_config, card_color, card_font, horizontal_text_color, vertical_text_color, is_branding_finalized)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15)
+           ON CONFLICT (short_id) DO NOTHING
+           RETURNING id, short_id`,
+          [
+            trimmedName,
+            String(description || "").trim().slice(0, 220),
+            trimmedLocation,
+            location_type === "webinar" ? "webinar" : "onsite",
+            trimmedDate,
+            String(time || "10:00").trim() || "10:00",
+            String(logo_url || ""),
+            targetUserId,
+            safeShortId,
+            JSON.stringify(normalizeRegistrationFormConfig(registration_form_config || getDefaultRegistrationFormConfig())),
+            String(card_color || "purple").trim() || "purple",
+            sanitizeStoredCardFont(card_font),
+            String(horizontal_text_color || "").trim(),
+            String(vertical_text_color || "").trim(),
+            Boolean(is_branding_finalized ?? false),
+          ],
+        );
+
+        if (row?.id) {
+          logger.info(
+            { eventId: row.id, shortId: row.short_id, attempt },
+            "Event successfully created with unique short_id",
+          );
+          break;
+        }
+      } catch (insertError: unknown) {
+        lastError = insertError;
+        console.error(`[DB Insert Attempt ${attempt} Error]:`, insertError);
+
+        const errObj = insertError as { code?: string; message?: string };
+        const isUniqueConstraint =
+          errObj?.code === "23505" ||
+          errObj?.code === "P2002" ||
+          errObj?.message?.includes("events_short_id_key") ||
+          errObj?.message?.includes("short_id");
+
+        if (isUniqueConstraint && attempt < MAX_RETRIES) {
+          continue;
+        }
+
+        throw insertError;
+      }
     }
 
-    // 4. Insert into database using direct Neon Postgres pool with system authority
-    const row = await queryNeonOneAsSystem<{ id: string; short_id: string }>(
-      `INSERT INTO public.events
-       (name, description, location, location_type, date, time, logo_url, user_id, short_id,
-        registration_form_config, card_color, card_font, horizontal_text_color, vertical_text_color, is_branding_finalized)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10::jsonb, $11, $12, $13, $14, $15)
-       RETURNING id, short_id`,
-      [
-        trimmedName,
-        String(description || "").trim().slice(0, 220),
-        trimmedLocation,
-        location_type === "webinar" ? "webinar" : "onsite",
-        trimmedDate,
-        String(time || "10:00").trim() || "10:00",
-        String(logo_url || ""),
-        targetUserId,
-        safeShortId,
-        JSON.stringify(normalizeRegistrationFormConfig(registration_form_config || getDefaultRegistrationFormConfig())),
-        String(card_color || "purple").trim() || "purple",
-        sanitizeStoredCardFont(card_font),
-        String(horizontal_text_color || "").trim(),
-        String(vertical_text_color || "").trim(),
-        Boolean(is_branding_finalized ?? false),
-      ],
-    );
-
     if (!row?.id) {
-      return NextResponse.json({ error: "Failed to create event." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Failed to create event: could not generate unique short ID." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json(
@@ -241,6 +268,7 @@ export async function POST(req: Request) {
     );
   } catch (err: unknown) {
     const errorMessage = err instanceof Error ? err.message : "Internal Server Error";
+    console.error("[Events POST Error]:", err);
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

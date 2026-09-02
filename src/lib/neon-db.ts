@@ -97,26 +97,27 @@ function stripTrailingSemicolon(sql: string): string {
   return sql.trim().replace(/;\s*$/, "");
 }
 
-function tenantSessionQueries(context: TenantContext, sql: string, params: unknown[]) {
-  const client = getSqlClient();
+export type DbQueryDescriptor = { sql: string; params?: unknown[] };
+
+function tenantSessionQueries(context: TenantContext, sql: string, params: unknown[]): DbQueryDescriptor[] {
   const statement = stripTrailingSemicolon(sql);
   const rlsRole = getRlsRuntimeRoleName();
 
   if (context.bypassRls) {
     return [
-      client.query("SELECT set_config('app.bypass_rls', 'true', true)", []),
-      client.query(statement, params),
+      { sql: "SELECT set_config('app.bypass_rls', 'true', true)", params: [] },
+      { sql: statement, params },
     ];
   }
 
-  const scoped = [
-    client.query(`SET LOCAL ROLE ${rlsRole}`, []),
-    client.query("SELECT set_config('app.current_tenant', $1, true)", [context.tenantId]),
+  const scoped: DbQueryDescriptor[] = [
+    { sql: `SET LOCAL ROLE ${rlsRole}`, params: [] },
+    { sql: "SELECT set_config('app.current_tenant', $1, true)", params: [context.tenantId] },
   ];
   if (context.userId) {
-    scoped.push(client.query("SELECT set_config('app.current_user', $1, true)", [context.userId]));
+    scoped.push({ sql: "SELECT set_config('app.current_user', $1, true)", params: [context.userId] });
   }
-  scoped.push(client.query(statement, params));
+  scoped.push({ sql: statement, params });
   return scoped;
 }
 
