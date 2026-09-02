@@ -50,8 +50,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
               href="/admin"
               className="group no-link-underline flex min-w-0 flex-1 items-center gap-3 sm:gap-4 rounded-md transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2"
             >
-              <div className="shrink-0 overflow-hidden rounded-md border border-white/30 bg-white/95 px-2.5 py-1 shadow-sm flex items-center justify-center">
-                <Image src="/linq-logo.png" alt="Linq logo" width={110} height={32} className="h-7 w-auto object-contain" priority />
+              <div className="shrink-0 flex items-center justify-center">
+                <Image src="/linq-logo.png" alt="Linq logo" width={110} height={36} className="h-9 w-auto object-contain" priority />
               </div>
               <div className="flex min-w-0 flex-col">
                 <h1 className="text-xl font-semibold leading-tight tracking-[0.02em]" style={{ color: "#FFFFFF" }}>
