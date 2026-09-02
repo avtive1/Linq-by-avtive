@@ -23,6 +23,6 @@
   </g>
   <!-- NSTP Typography -->
   <text x="42" y="27" font-family="Inter, -apple-system, sans-serif" font-size="25" font-weight="900" fill="#FFFFFF" letter-spacing="0.5px">NSTP</text>
-  <!-- Subtitle -->
-  <text x="43" y="41" font-family="Inter, -apple-system, sans-serif" font-size="9" font-weight="500" fill="#E2E8F0" letter-spacing="0.2px">Defining Innovation</text>
+  <!-- Subtitle in pure white -->
+  <text x="43" y="41" font-family="Inter, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#FFFFFF" letter-spacing="0.2px">Defining Innovation</text>
 </svg>

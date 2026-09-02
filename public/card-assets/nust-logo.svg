@@ -8,8 +8,8 @@
     <path d="M -5,3 Q 0,0 5,3 L 5,-4 Q 0,-6 -5,-4 Z" fill="#00E676" />
     <polygon points="0,-7 2,-4 -2,-4" fill="#FFB800" />
   </g>
-  <!-- NUST Typography -->
+  <!-- NUST Typography in pure white -->
   <text x="42" y="27" font-family="Inter, -apple-system, sans-serif" font-size="25" font-weight="900" fill="#FFFFFF" letter-spacing="0.5px">NUST</text>
-  <!-- Subtitle -->
-  <text x="43" y="41" font-family="Inter, -apple-system, sans-serif" font-size="9" font-weight="500" fill="#E2E8F0" letter-spacing="0.2px">Sector H-12, Islamabad</text>
+  <!-- Subtitle in pure white -->
+  <text x="43" y="41" font-family="Inter, -apple-system, sans-serif" font-size="9" font-weight="600" fill="#FFFFFF" letter-spacing="0.2px">Sector H-12, Islamabad</text>
 </svg>
