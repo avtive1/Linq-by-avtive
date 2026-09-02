@@ -36,7 +36,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
     if (!parsed.ok) return parsed.response;
-    const payload = { ...(parsed.data as Record<string, unknown>), event_id: event.id };
+    const payload = { ...parsed.data, event_id: event.id };
 
     const cookieStore = await cookies();
     const authUserId = await getServerUserIdFromCookies(cookieStore);

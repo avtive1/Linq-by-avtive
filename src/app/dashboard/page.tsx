@@ -756,57 +756,15 @@ function DashboardContent() {
         logo_url: logoUrl,
       };
 
-      let createRes: Response | null = null;
-      let createPayload: unknown = null;
-      let lastError: Error | null = null;
-      const maxRetries = 5;
+      const createRes = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(baseData),
+      });
+      const createPayload = await readResponsePayload(createRes);
 
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          const timestamp = Date.now().toString(36);
-          const random = Math.random().toString(36).substring(2, 8);
-          const uniqueId = `${timestamp}_${random}`;
-
-          const data = {
-            ...baseData,
-            _uniqueId: uniqueId,
-          };
-
-          createRes = await fetch("/api/events", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-          });
-          createPayload = await readResponsePayload(createRes);
-
-          if (createRes.ok) {
-            break;
-          }
-
-          const errorMsg = getPayloadError(createPayload, "");
-          const isDuplicateKey =
-            errorMsg.includes("duplicate key") ||
-            errorMsg.includes("events_short_id_key") ||
-            errorMsg.includes("23505");
-
-          if (!isDuplicateKey) {
-            throw new Error(errorMsg || "Failed to create event.");
-          }
-
-          logger.warn({ attempt, errorMsg }, "Duplicate short_id generated, retrying with fresh ID...");
-          lastError = new Error(errorMsg);
-          await new Promise((r) => setTimeout(r, Math.min(200 * Math.pow(1.5, attempt), 1000)));
-        } catch (err) {
-          if (attempt === maxRetries - 1) {
-            throw err;
-          }
-          lastError = err instanceof Error ? err : new Error(String(err));
-          await new Promise((r) => setTimeout(r, Math.min(200 * Math.pow(1.5, attempt), 1000)));
-        }
-      }
-
-      if (!createRes || !createRes.ok) {
-        throw new Error(getPayloadError(createPayload, lastError?.message || "Failed to create event after multiple attempts."));
+      if (!createRes.ok) {
+        throw new Error(getPayloadError(createPayload, "Failed to create event."));
       }
 
       toast.success(`Event "${eventForm.name}" created successfully!`);
@@ -820,12 +778,8 @@ function DashboardContent() {
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err || "Unknown error");
       logger.error({ error: errorMessage }, "Dashboard operation failed");
-      if (errorMessage.includes("duplicate key") || errorMessage.includes("events_short_id_key")) {
-        toast.error("Generating unique ID, please retry.");
-      } else {
-        const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
-        toast.error(message);
-      }
+      const message = err instanceof Error ? err.message : "Failed to create event. Please try again.";
+      toast.error(message);
     } finally {
       setIsSubmittingEvent(false);
     }

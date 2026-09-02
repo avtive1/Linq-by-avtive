@@ -5,13 +5,41 @@ import {
 import { Pool, type QueryResultRow } from "pg";
 import { logger } from "@/lib/logger-server";
 
+export type SqlQueryDescriptor = { sql: string; params?: unknown[] };
+
 export interface UniversalSqlClient {
   query<T extends QueryResultRow = Record<string, unknown>>(
     query: string,
     params?: unknown[],
   ): Promise<T[]>;
-  transaction(queries: Array<any>): Promise<unknown[]>;
+  transaction(queries: Array<SqlQueryDescriptor | string>): Promise<unknown[]>;
   end?(): Promise<void>;
+}
+
+class NeonClientAdapter implements UniversalSqlClient {
+  private client: any;
+
+  constructor(connectionString: string) {
+    this.client = neon(connectionString);
+  }
+
+  async query<T extends QueryResultRow = Record<string, unknown>>(
+    query: string,
+    params: unknown[] = [],
+  ): Promise<T[]> {
+    const result = await this.client(query, params as any[]);
+    return result as T[];
+  }
+
+  async transaction(queries: Array<SqlQueryDescriptor | string>): Promise<unknown[]> {
+    const neonQueries = queries.map((q) => {
+      if (typeof q === "object" && q !== null && "sql" in q) {
+        return this.client(q.sql, (q.params || []) as any[]);
+      }
+      return this.client(q);
+    });
+    return (await this.client.transaction(neonQueries as any)) as unknown[];
+  }
 }
 
 class PgClientAdapter implements UniversalSqlClient {
@@ -31,15 +59,15 @@ class PgClientAdapter implements UniversalSqlClient {
     });
   }
 
-  query<T extends QueryResultRow = Record<string, unknown>>(
+  async query<T extends QueryResultRow = Record<string, unknown>>(
     query: string,
     params: unknown[] = [],
-  ): Promise<T[]> & { sql: string; params: unknown[] } {
-    const promise = this.pool.query<T>(query, params).then((res) => res.rows);
-    return Object.assign(promise, { sql: query, params });
+  ): Promise<T[]> {
+    const res = await this.pool.query<T>(query, params);
+    return res.rows;
   }
 
-  async transaction(queries: Array<any>): Promise<unknown[]> {
+  async transaction(queries: Array<SqlQueryDescriptor | string>): Promise<unknown[]> {
     const client = await this.pool.connect();
     try {
       await client.query("BEGIN");
@@ -51,8 +79,6 @@ class PgClientAdapter implements UniversalSqlClient {
         } else if (typeof q === "string") {
           const res = await client.query(q);
           results.push(res.rows);
-        } else {
-          results.push(await q);
         }
       }
       await client.query("COMMIT");
@@ -70,7 +96,7 @@ class PgClientAdapter implements UniversalSqlClient {
   }
 }
 
-let sqlClient: UniversalSqlClient | NeonQueryFunction<false, false> | null = null;
+let sqlClient: UniversalSqlClient | null = null;
 
 export type DbPoolConfig = {
   /** Max retry attempts for transient failures (default: 3) */
@@ -164,11 +190,11 @@ export function getConnectionString(): string {
   return value;
 }
 
-export function getSqlClient(): any {
+export function getSqlClient(): UniversalSqlClient {
   if (!sqlClient) {
     const connStr = getConnectionString();
     if (isNeonHost(connStr)) {
-      sqlClient = neon(connStr);
+      sqlClient = new NeonClientAdapter(connStr);
     } else {
       sqlClient = new PgClientAdapter(connStr);
     }
@@ -177,8 +203,8 @@ export function getSqlClient(): any {
 }
 
 export async function resetSqlClient(): Promise<void> {
-  if (sqlClient && typeof (sqlClient as any).end === "function") {
-    await (sqlClient as any).end();
+  if (sqlClient && typeof sqlClient.end === "function") {
+    await sqlClient.end();
   }
   sqlClient = null;
 }
