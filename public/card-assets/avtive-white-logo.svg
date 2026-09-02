@@ -1,0 +1,10 @@
+<svg width="240" height="70" viewBox="0 0 240 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Polygon icon -->
+  <g transform="translate(4, 10) scale(0.022)">
+    <path d="M39.1631 246.323L457.86 1380.85L1345.42 1494.69L1127.39 896.556L548.548 819.374L880.414 348.585L39.1631 246.323Z" fill="#F5B51B"/>
+    <path d="M2261.92 250.182L1779.55 948.65L1482.41 381.39L1127.39 896.557L548.549 819.375L1059.86 90.036L2261.92 250.182Z" fill="#0FB287"/>
+    <path d="M1908.83 1174.4L1220.01 2170.01L814.817 1425.23L1345.42 1494.69L1127.39 896.554L1482.42 381.386L1908.83 1174.4Z" fill="#00C0F0"/>
+  </g>
+  <!-- Wordmark 'avtive' in bold pure white -->
+  <text x="68" y="46" font-family="Inter, -apple-system, sans-serif" font-size="34" font-weight="800" fill="#FFFFFF" letter-spacing="-0.5px">avtive</text>
+</svg>

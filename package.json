@@ -89,5 +89,15 @@
     "tsx": "^4.23.4",
     "typescript": "^5",
     "vitest": "^3.2.6"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "@sentry/cli@2.58.6": true,
+    "argon2@0.44.0": true,
+    "core-js@3.50.0": true,
+    "esbuild@0.28.2": true,
+    "node@26.8.1": true,
+    "prisma@6.19.3": true
   }
 }

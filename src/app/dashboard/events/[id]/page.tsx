@@ -123,6 +123,7 @@ type ActiveGrant = {
 type PendingRegistrationRequest = RegistrationRequestSummary;
 const CORE_PREVIEW_FIELD_IDS = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
 const BRAND_THEME_COLORS = [
+  { name: "karakoram", start: "#06080F", end: "#0B0F19" },
   { name: "purple", start: "#41295a", end: "#2f0743" },
   { name: "red", start: "#c94b4b", end: "#4b134f" },
   { name: "pink", start: "#EE0979", end: "#FF6A00" },

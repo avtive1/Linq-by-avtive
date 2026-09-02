@@ -1,0 +1,100 @@
+<svg width="576" height="1024" viewBox="0 0 576 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bgGlowV" cx="65%" cy="55%" r="75%">
+      <stop offset="0%" stop-color="#0e1526" />
+      <stop offset="50%" stop-color="#080c14" />
+      <stop offset="100%" stop-color="#04060a" />
+    </radialGradient>
+
+    <!-- Cyan Glow Filter -->
+    <filter id="glowCyanV" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="12" result="blur1" />
+      <feGaussianBlur stdDeviation="4" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Magenta Glow Filter -->
+    <filter id="glowMagentaV" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="14" result="blur1" />
+      <feGaussianBlur stdDeviation="5" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Amber Glow Filter -->
+    <filter id="glowAmberV" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur1" />
+      <feGaussianBlur stdDeviation="3" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur1" />
+        <feMergeNode in="blur2" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <linearGradient id="cyanRibbonGradV" x1="576" y1="400" x2="0" y2="950" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.95" />
+      <stop offset="50%" stop-color="#00C8FF" stop-opacity="0.9" />
+      <stop offset="85%" stop-color="#00E676" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#00F0FF" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="magentaRibbonGradV" x1="576" y1="520" x2="50" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FF2E93" stop-opacity="0.9" />
+      <stop offset="45%" stop-color="#E024C3" stop-opacity="0.95" />
+      <stop offset="80%" stop-color="#9333EA" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0" />
+    </linearGradient>
+
+    <linearGradient id="amberRibbonGradV" x1="576" y1="350" x2="300" y2="650" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFB800" stop-opacity="0.85" />
+      <stop offset="70%" stop-color="#FF7A00" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#FF0055" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Base Canvas -->
+  <rect width="576" height="1024" fill="url(#bgGlowV)"/>
+
+  <!-- Radial atmospheric spotlights -->
+  <circle cx="450" cy="620" r="260" fill="#00F0FF" opacity="0.13" filter="url(#glowCyanV)" />
+  <circle cx="200" cy="880" r="220" fill="#E024C3" opacity="0.15" filter="url(#glowMagentaV)" />
+
+  <!-- Filament Background Lines -->
+  <g opacity="0.25" stroke-width="1.2">
+    <path d="M 576,380 C 480,450 380,620 280,780 C 200,900 120,980 0,1024" stroke="#FF9A00" fill="none" />
+    <path d="M 576,410 C 470,480 360,650 260,800 C 180,910 100,990 0,1024" stroke="#00F0FF" fill="none" />
+    <path d="M 576,440 C 450,510 340,680 240,820 C 160,920 80,1000 0,1024" stroke="#00E676" fill="none" />
+    <path d="M 576,480 C 430,550 320,710 220,850 C 140,940 50,1010 0,1024" stroke="#E024C3" fill="none" />
+    <path d="M 576,520 C 410,590 300,740 200,880 C 120,960 30,1020 0,1024" stroke="#9333EA" fill="none" />
+  </g>
+
+  <!-- Amber/Gold Ribbon -->
+  <path d="M 576,360 C 490,410 400,530 330,680" 
+        stroke="url(#amberRibbonGradV)" stroke-width="4.5" fill="none" filter="url(#glowAmberV)" />
+
+  <!-- Main Electric Cyan / Aqua Ribbon -->
+  <path d="M 576,430 C 440,510 320,690 220,850 C 150,950 80,1000 0,1024" 
+        stroke="url(#cyanRibbonGradV)" stroke-width="6.5" fill="none" filter="url(#glowCyanV)" />
+  <path d="M 576,432 C 438,512 318,692 218,852 C 148,952 78,1002 0,1024" 
+        stroke="#FFFFFF" stroke-width="2" fill="none" opacity="0.9" />
+
+  <!-- Hot Magenta Ribbon -->
+  <path d="M 576,530 C 420,620 280,780 180,920 C 120,990 60,1020 0,1024" 
+        stroke="url(#magentaRibbonGradV)" stroke-width="7" fill="none" filter="url(#glowMagentaV)" />
+  <path d="M 576,532 C 418,622 278,782 178,922 C 118,992 58,1022 0,1024" 
+        stroke="#FFAEEB" stroke-width="2" fill="none" opacity="0.85" />
+
+  <!-- Sparkles -->
+  <circle cx="370" cy="620" r="2.5" fill="#00F0FF" opacity="0.9" filter="url(#glowCyanV)"/>
+  <circle cx="210" cy="850" r="3" fill="#FFB8FF" opacity="0.9" filter="url(#glowMagentaV)"/>
+  <circle cx="490" cy="420" r="2" fill="#FFD000" opacity="0.8"/>
+</svg>
