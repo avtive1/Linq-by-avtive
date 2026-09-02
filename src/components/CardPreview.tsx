@@ -344,22 +344,30 @@ export function CardPreview({
     ? (data.location.toLowerCase() === "webinar" ? "WEBINAR" : data.location.split(",")[0].trim().toUpperCase())
     : "NSTP";
 
+  const theme = resolveTheme(data.color);
+  const activeHorizontalTextColor = data.horizontalTextColor || "#FFFFFF";
+  const activeVerticalTextColor = data.verticalTextColor || "#FFFFFF";
+
   if (isVertical) {
     return (
       <div 
         id={id}
-        className={`relative overflow-hidden shadow-2xl bg-[#06080F] ${surfaceMotionClass}`}
+        className={`relative overflow-hidden shadow-2xl poster-vertical ${surfaceMotionClass}`}
         style={{ 
           width: "576px", 
           height: "1024px", 
           fontFamily: selectedFont,
-          background: "#06080F",
+          background: theme.start === theme.end && theme.start.startsWith("#")
+            ? `linear-gradient(165deg, ${theme.start} 0%, #06080F 100%)`
+            : `linear-gradient(165deg, ${theme.start} 0%, ${theme.end} 100%)`,
+          color: activeVerticalTextColor,
         }}
       >
         {/* Background Neon Vector Artwork */}
         <img 
           src="/card-assets/safar-neon-curves-vertical.svg" 
           className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" 
+          style={{ mixBlendMode: "screen", opacity: 0.85 }}
           alt="" 
         />
         <div 
@@ -371,11 +379,14 @@ export function CardPreview({
         <div className="absolute left-[36px] top-[44px] z-20 max-w-[500px]">
           <h2 
             className="m-0 text-[26px] font-black tracking-[-0.02em] leading-none uppercase"
-            style={{ color: "#FFFFFF" }}
+            style={{ color: activeVerticalTextColor }}
           >
             MEET YOU AT<br />{venueHeader}
           </h2>
-          <div className="mt-4 inline-flex items-center px-4 py-1.5 rounded-md bg-[#2A1B4E] border border-[#8B5CF6]/60 shadow-[0_0_15px_rgba(139,92,246,0.35)]">
+          <div 
+            className="mt-4 inline-flex items-center px-4 py-1.5 rounded-md border shadow-[0_0_15px_rgba(139,92,246,0.35)]"
+            style={{ backgroundColor: "#2A1B4E", borderColor: theme.accent || "#8B5CF6" }}
+          >
             <span 
               className="text-[16px] font-bold tracking-[2px] uppercase leading-none"
               style={{ color: "#FFFFFF" }}
@@ -385,7 +396,7 @@ export function CardPreview({
           </div>
           <h1 
             className="m-0 mt-3 text-[32px] font-extrabold tracking-[-0.02em] leading-tight uppercase"
-            style={{ color: "#FFFFFF" }}
+            style={{ color: activeVerticalTextColor }}
           >
             {data.eventName || "DEVTECH"}
           </h1>
@@ -400,7 +411,10 @@ export function CardPreview({
         {/* Profile Circle or QR */}
         {verticalSide === 1 ? (
           <div className="absolute left-1/2 top-[440px] -translate-x-1/2 z-20 flex flex-col items-center text-center w-full px-6">
-            <div className="relative isolate mb-5 flex h-[210px] w-[210px] items-center justify-center overflow-hidden rounded-full border-[3px] border-white/50 ring-4 ring-[#00F0FF]/40 shadow-[0_0_35px_rgba(0,240,255,0.45)] bg-[#0c121e]">
+            <div 
+              className="relative isolate mb-5 flex h-[210px] w-[210px] items-center justify-center overflow-hidden rounded-full border-[3px] border-white/50 ring-4 shadow-[0_0_35px_rgba(0,240,255,0.45)]"
+              style={{ ringColor: theme.accent || "#00F0FF", backgroundColor: "#0c121e" }}
+            >
               {hasRealPhoto ? (
                 <img src={photoUrl} alt="" className="h-full w-full object-cover" crossOrigin="anonymous" />
               ) : (
@@ -409,7 +423,7 @@ export function CardPreview({
             </div>
             <p 
               className="m-0 text-[32px] font-bold leading-tight"
-              style={{ color: "#FFFFFF" }}
+              style={{ color: activeVerticalTextColor }}
             >
               {data.name || "Attendee Name"}
             </p>
@@ -444,7 +458,7 @@ export function CardPreview({
         <div className="absolute left-0 bottom-[28px] w-full px-[36px] z-20 flex flex-col items-center text-center">
           <p 
             className="m-0 text-[17px] font-semibold tracking-[1px] uppercase mb-2.5"
-            style={{ color: "#FFFFFF" }}
+            style={{ color: activeVerticalTextColor }}
           >
             START HERE, GO ANYWHERE
           </p>
@@ -470,9 +484,11 @@ export function CardPreview({
   const posterStyle: React.CSSProperties = {
     width: "1200px",
     height: "628px",
-    background: "#06080F",
+    background: theme.start === theme.end && theme.start.startsWith("#")
+      ? `linear-gradient(135deg, ${theme.start} 0%, #06080F 100%)`
+      : `linear-gradient(135deg, ${theme.start} 0%, ${theme.end} 100%)`,
     fontFamily: selectedFont,
-    color: "#FFFFFF",
+    color: activeHorizontalTextColor,
   };
 
   // Horizontal Card — Universal Modern Social Post Layout
@@ -480,13 +496,14 @@ export function CardPreview({
     <div
       id={id}
       key={data.designType}
-      className={`relative overflow-hidden shadow-2xl poster bg-[#06080F] text-white ${surfaceMotionClass}`}
+      className={`relative overflow-hidden shadow-2xl poster ${surfaceMotionClass}`}
       style={posterStyle}
     >
       {/* Luminous Neon Waves Overlay */}
       <img 
         src="/card-assets/safar-neon-curves.svg" 
         className="absolute inset-0 w-full h-full object-cover pointer-events-none z-0" 
+        style={{ mixBlendMode: "screen", opacity: 0.85 }}
         alt="" 
       />
       <div 
@@ -498,7 +515,7 @@ export function CardPreview({
       <div className="absolute left-[58px] top-[48px] z-20">
         <h2 
           className="m-0 text-[38px] font-black tracking-[-0.02em] leading-none uppercase"
-          style={{ color: "#FFFFFF" }}
+          style={{ color: activeHorizontalTextColor }}
         >
           MEET YOU AT<br />{venueHeader}
         </h2>
@@ -506,7 +523,10 @@ export function CardPreview({
 
       {/* Attending Pill Badge + Event Name */}
       <div className="absolute left-[58px] top-[152px] z-20 flex items-center gap-4 flex-wrap max-w-[700px]">
-        <div className="px-4 py-2 rounded-md bg-[#2A1B4E] border border-[#8B5CF6]/60 shadow-[0_0_15px_rgba(139,92,246,0.35)] flex items-center justify-center shrink-0">
+        <div 
+          className="px-4 py-2 rounded-md border shadow-[0_0_15px_rgba(139,92,246,0.35)] flex items-center justify-center shrink-0"
+          style={{ backgroundColor: "#2A1B4E", borderColor: theme.accent || "#8B5CF6" }}
+        >
           <span 
             className="text-[20px] font-bold tracking-[2.5px] uppercase leading-none"
             style={{ color: "#FFFFFF" }}
@@ -516,14 +536,14 @@ export function CardPreview({
         </div>
         <h1 
           className="m-0 text-[34px] font-extrabold tracking-[-0.02em] leading-none uppercase"
-          style={{ color: "#FFFFFF" }}
+          style={{ color: activeHorizontalTextColor }}
         >
           {data.eventName || "DEVTECH"}
         </h1>
         {data.cardRole === "guest" && data.guestCategory && (
           <span 
             className="text-[20px] font-bold tracking-[1px] uppercase leading-none"
-            style={{ color: "#00F0FF" }}
+            style={{ color: theme.accent || "#00F0FF" }}
           >
             AS {data.guestCategory}
           </span>
@@ -534,7 +554,7 @@ export function CardPreview({
       <div className="absolute left-[58px] top-[260px] z-20 flex flex-col gap-1">
         <p 
           className="m-0 text-[23px] font-bold tracking-tight leading-tight"
-          style={{ color: "#FFFFFF" }}
+          style={{ color: activeHorizontalTextColor }}
         >
           {data.sessionDate || "2026-09-17"}
         </p>
@@ -550,7 +570,7 @@ export function CardPreview({
       <div className="absolute left-[58px] top-[365px] z-20">
         <p 
           className="m-0 text-[21px] font-semibold tracking-[0.5px] uppercase"
-          style={{ color: "#FFFFFF" }}
+          style={{ color: activeHorizontalTextColor }}
         >
           START HERE, GO ANYWHERE
         </p>
@@ -575,7 +595,10 @@ export function CardPreview({
 
       {/* Attendee Profile Section on Right */}
       <section className="absolute right-[50px] top-[95px] z-20 w-[320px] flex flex-col items-center text-center">
-        <div className="relative isolate mb-5 flex h-[210px] w-[210px] items-center justify-center overflow-hidden rounded-full border-[3px] border-white/50 ring-4 ring-[#00F0FF]/40 shadow-[0_0_35px_rgba(0,240,255,0.4)] bg-[#0b0f19]">
+        <div 
+          className="relative isolate mb-5 flex h-[210px] w-[210px] items-center justify-center overflow-hidden rounded-full border-[3px] border-white/50 ring-4 shadow-[0_0_35px_rgba(0,240,255,0.4)]"
+          style={{ ringColor: theme.accent || "#00F0FF", backgroundColor: "#0b0f19" }}
+        >
           {hasRealPhoto ? (
             <img
               src={photoUrl}
@@ -593,7 +616,7 @@ export function CardPreview({
         </div>
         <h2 
           className="m-0 font-extrabold text-[27px] leading-tight"
-          style={{ color: "#FFFFFF" }}
+          style={{ color: activeHorizontalTextColor }}
         >
           {data.name || "Attendee Name"}
         </h2>
