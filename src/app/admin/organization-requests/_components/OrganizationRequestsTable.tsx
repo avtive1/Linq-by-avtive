@@ -12,6 +12,9 @@ import {
   XCircle,
   AlertCircle,
   Eye,
+  Copy,
+  Check,
+  ExternalLink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +47,16 @@ export function OrganizationRequestsTable({
   const [activeTab, setActiveTab] = useState<FilterStatus>("ALL");
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+  const [hasCopiedLink, setHasCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/organization/register`;
+    navigator.clipboard.writeText(url).then(() => {
+      setHasCopiedLink(true);
+      setTimeout(() => setHasCopiedLink(false), 2500);
+    });
+  };
 
   const filteredAndSorted = useMemo(() => {
     let list = [...initialRequests];
@@ -169,15 +182,42 @@ export function OrganizationRequestsTable({
         ))}
       </div>
 
-      {/* Search Input */}
-      <div className="relative w-full max-w-lg">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={18} />
-        <Input
-          placeholder="Search by organization, contact name, email, or reference #..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 h-10 bg-white border-hairline-soft text-sm"
-        />
+      {/* Search Input & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="relative w-full max-w-lg">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" size={18} />
+          <Input
+            placeholder="Search by organization, contact name, email, or reference #..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-10 bg-white border-hairline-soft text-sm"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleCopyLink}
+            className="h-10 text-xs font-semibold gap-1.5 border-hairline-strong bg-white hover:bg-surface text-heading shadow-2xs"
+          >
+            {hasCopiedLink ? <Check size={14} className="text-emerald-600" /> : <Copy size={14} />}
+            <span>{hasCopiedLink ? "Link Copied!" : "Copy Registration Link"}</span>
+          </Button>
+          <Link href="/organization/register" target="_blank" rel="noreferrer">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 text-xs font-semibold gap-1.5 border-hairline-strong bg-white hover:bg-surface text-heading shadow-2xs"
+              title="Open public registration form in new tab"
+            >
+              <ExternalLink size={14} />
+              <span>Open Form</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* Table Card */}
