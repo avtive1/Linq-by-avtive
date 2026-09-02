@@ -61,7 +61,7 @@ export async function getServerAuthSession(): Promise<AppAuthSession | null> {
   try {
     const { headers } = await import("next/headers");
     const reqHeaders = await headers();
-    const { data: session } = await neonAuth.getSession({ fetchOptions: { headers: reqHeaders } });
+    const { data: session } = await (neonAuth as any).getSession({ fetchOptions: { headers: reqHeaders } });
     const neonUser = session?.user as NeonSessionUser | undefined;
     const neonAuthUserId = String(neonUser?.id || "").trim();
     const email = String(neonUser?.email || "").trim().toLowerCase();
