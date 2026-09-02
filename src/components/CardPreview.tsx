@@ -31,7 +31,7 @@ function SponsorStripRow({
   logoHeightPx: number;
   maxStripWidthPx?: number;
 }) {
-  const items = sponsors.slice(0, 5);
+  const items = sponsors.slice(0, 6);
   const count = items.length;
   const [opticalPadByKey, setOpticalPadByKey] = useState<Record<string, number>>({});
 
@@ -108,7 +108,7 @@ function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
       if (url.includes("figma.com/api/mcp/asset")) return false;
       return true;
     })
-    .slice(0, 5);
+    .slice(0, 6);
 }
 
 function HorizontalSponsorsDesign1({ sponsors }: { sponsors?: SponsorEntry[] }) {
