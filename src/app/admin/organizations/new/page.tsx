@@ -16,6 +16,7 @@ import {
   AlertCircle,
   Copy,
   Check,
+  ClipboardList,
 } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import {
@@ -216,6 +217,16 @@ export default function NewOrganizationByAdminPage() {
             </div>
           </div>
         </CardHeader>
+
+        <div className="mx-6 sm:mx-8 mb-2 p-3.5 bg-amber-50/80 border border-amber-200/90 rounded-xl flex items-center justify-between gap-3 text-xs text-amber-950">
+          <div className="flex items-center gap-2">
+            <ClipboardList size={16} className="text-amber-800 shrink-0" />
+            <span className="font-medium">Have an incoming registration request to approve?</span>
+          </div>
+          <Link href="/admin/organization-requests" className="font-bold text-amber-900 underline hover:text-amber-950 shrink-0 whitespace-nowrap">
+            View Requests →
+          </Link>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <CardContent className="px-6 sm:px-8 py-4 flex flex-col gap-5">
