@@ -1,0 +1,28 @@
+<svg width="240" height="70" viewBox="0 0 240 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Radial green node burst icon -->
+  <g transform="translate(24, 34)">
+    <circle cx="0" cy="0" r="3.5" fill="#00E676"/>
+    <!-- Inner ring -->
+    <circle cx="0" cy="-9" r="2.2" fill="#00E676"/>
+    <circle cx="6.4" cy="-6.4" r="2.2" fill="#00E676"/>
+    <circle cx="9" cy="0" r="2.2" fill="#00E676"/>
+    <circle cx="6.4" cy="6.4" r="2.2" fill="#00E676"/>
+    <circle cx="0" cy="9" r="2.2" fill="#00E676"/>
+    <circle cx="-6.4" cy="6.4" r="2.2" fill="#00E676"/>
+    <circle cx="-9" cy="0" r="2.2" fill="#00E676"/>
+    <circle cx="-6.4" cy="-6.4" r="2.2" fill="#00E676"/>
+    <!-- Outer ring rays -->
+    <circle cx="0" cy="-17" r="1.8" fill="#00E676"/>
+    <circle cx="12" cy="-12" r="1.8" fill="#00E676"/>
+    <circle cx="17" cy="0" r="1.8" fill="#00E676"/>
+    <circle cx="12" cy="12" r="1.8" fill="#00E676"/>
+    <circle cx="0" cy="17" r="1.8" fill="#00E676"/>
+    <circle cx="-12" cy="12" r="1.8" fill="#00E676"/>
+    <circle cx="-17" cy="0" r="1.8" fill="#00E676"/>
+    <circle cx="-12" cy="-12" r="1.8" fill="#00E676"/>
+  </g>
+  <!-- NSTP Typography -->
+  <text x="52" y="38" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="0.5px">NSTP</text>
+  <!-- Subtitle -->
+  <text x="53" y="52" font-family="Inter, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#E2E8F0" letter-spacing="0.2px">Defining Innovation</text>
+</svg>
