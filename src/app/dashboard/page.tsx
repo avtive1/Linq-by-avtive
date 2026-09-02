@@ -120,6 +120,7 @@ function DashboardContent() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [bootstrapError, setBootstrapError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
@@ -319,9 +320,10 @@ function DashboardContent() {
 
         // Check for admin using server-owned config only.
         let isActuallyAdmin = false;
+        let adminPayload: Record<string, unknown> | null = null;
         try {
           const adminRes = await fetch("/api/auth/admin-state", { cache: "no-store" });
-          const adminPayload = await adminRes.json().catch(() => ({}));
+          adminPayload = await adminRes.json().catch(() => ({}));
           isActuallyAdmin = Boolean(
             adminRes.ok &&
               adminPayload &&
@@ -338,6 +340,17 @@ function DashboardContent() {
         
         if (isActuallyAdmin) {
           setIsAdmin(true);
+          const adminData =
+            adminPayload &&
+            typeof adminPayload === "object" &&
+            "data" in adminPayload &&
+            adminPayload.data &&
+            typeof adminPayload.data === "object"
+              ? (adminPayload.data as Record<string, unknown>)
+              : null;
+          if (adminData && "pendingRequestsCount" in adminData) {
+            setPendingRequestsCount(Number(adminData.pendingRequestsCount || 0));
+          }
         }
 
         // Logic for Effective User ID
@@ -1187,6 +1200,39 @@ function DashboardContent() {
             <AlertDescription>{bootstrapError}</AlertDescription>
           </Alert>
         ) : null}
+
+        {isAdmin && !isPreviewMode && (
+          <div className="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-primary/10 border border-primary/25 rounded-xl text-ink shadow-xs animate-slide-up">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
+                <ShieldCheck size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-heading">Super Admin Console</span>
+                  {pendingRequestsCount > 0 && (
+                    <Badge variant="outline" className="border-amber-300 bg-amber-100 text-amber-900 text-xs font-bold px-2 py-0.5">
+                      {pendingRequestsCount} Pending Org Request{pendingRequestsCount > 1 ? "s" : ""}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted mt-0.5">
+                  Review incoming organization onboarding requests, approve new companies, and manage all platform tenants.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin"
+              className={cn(
+                buttonVariants({ variant: "default", size: "sm" }),
+                "shrink-0 gap-1.5 bg-primary text-primary-foreground text-xs font-semibold shadow-xs hover:bg-primary/90"
+              )}
+            >
+              Open Super Admin Panel
+              <ChevronRight size={14} />
+            </Link>
+          </div>
+        )}
         {/* Header row */}
         <motion.div
           className="mb-10 flex min-w-0 flex-col gap-4 sm:mb-12 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-6"
