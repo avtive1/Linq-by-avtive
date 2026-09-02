@@ -628,3 +628,16 @@ a:hover {
     @apply font-sans;
   }
 }
+
+/* Card Canvas Typography Contrast Guard */
+.poster,
+.poster h1,
+.poster h2,
+.poster h3,
+.poster h4,
+.poster h5,
+.poster h6,
+.poster p,
+.poster span {
+  color: #ffffff;
+}

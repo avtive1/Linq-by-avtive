@@ -369,19 +369,31 @@ export function CardPreview({
 
         {/* Top Header */}
         <div className="absolute left-[36px] top-[44px] z-20 max-w-[500px]">
-          <h2 className="m-0 text-[26px] font-black text-white tracking-[-0.02em] leading-none uppercase">
+          <h2 
+            className="m-0 text-[26px] font-black tracking-[-0.02em] leading-none uppercase"
+            style={{ color: "#FFFFFF" }}
+          >
             MEET YOU AT<br />{venueHeader}
           </h2>
           <div className="mt-4 inline-flex items-center px-4 py-1.5 rounded-md bg-[#2A1B4E] border border-[#8B5CF6]/60 shadow-[0_0_15px_rgba(139,92,246,0.35)]">
-            <span className="text-[16px] font-bold tracking-[2px] uppercase text-white leading-none">
+            <span 
+              className="text-[16px] font-bold tracking-[2px] uppercase leading-none"
+              style={{ color: "#FFFFFF" }}
+            >
               {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
             </span>
           </div>
-          <h1 className="m-0 mt-3 text-[32px] font-extrabold text-white tracking-[-0.02em] leading-tight uppercase">
-            {data.eventName || "SAFAR-E-KARAKORAM"}
+          <h1 
+            className="m-0 mt-3 text-[32px] font-extrabold tracking-[-0.02em] leading-tight uppercase"
+            style={{ color: "#FFFFFF" }}
+          >
+            {data.eventName || "DEVTECH"}
           </h1>
-          <p className="m-0 mt-2 text-[17px] font-medium text-slate-300">
-            {data.sessionDate || "10th September 2026"} {sessionTimeLabel ? `(${sessionTimeLabel})` : "(1:00pm - 2:00 pm)"}
+          <p 
+            className="m-0 mt-2 text-[17px] font-medium"
+            style={{ color: "#CBD5E1" }}
+          >
+            {data.sessionDate || "2026-09-17"} {sessionTimeLabel ? `(${sessionTimeLabel})` : "(10:00 AM (GMT+5))"}
           </p>
         </div>
 
@@ -395,14 +407,23 @@ export function CardPreview({
                 <img src="/card-assets/safar-default-avatar.svg" className="h-full w-full object-cover" alt="Default profile" />
               )}
             </div>
-            <p className="m-0 text-[32px] font-bold text-white leading-tight">
-              {data.name || "Zia-ur-Rehman"}
+            <p 
+              className="m-0 text-[32px] font-bold leading-tight"
+              style={{ color: "#FFFFFF" }}
+            >
+              {data.name || "Attendee Name"}
             </p>
-            <p className="m-0 mt-1 text-[20px] font-semibold text-slate-200 uppercase tracking-wider">
-              {data.role || "CEO"}
+            <p 
+              className="m-0 mt-1 text-[20px] font-semibold uppercase tracking-wider"
+              style={{ color: "#E2E8F0" }}
+            >
+              {data.role || "ROLE/TITLE"}
             </p>
-            <p className="m-0 mt-0.5 text-[17px] font-medium text-slate-300 opacity-90">
-              {data.company || "The Leap Pakistan"}
+            <p 
+              className="m-0 mt-0.5 text-[17px] font-medium opacity-90"
+              style={{ color: "#CBD5E1" }}
+            >
+              {data.company || "Organization"}
             </p>
           </div>
         ) : (
@@ -421,10 +442,18 @@ export function CardPreview({
 
         {/* Bottom Slogan & Logos */}
         <div className="absolute left-0 bottom-[28px] w-full px-[36px] z-20 flex flex-col items-center text-center">
-          <p className="m-0 text-[17px] font-semibold tracking-[1px] text-white uppercase mb-2.5">
+          <p 
+            className="m-0 text-[17px] font-semibold tracking-[1px] uppercase mb-2.5"
+            style={{ color: "#FFFFFF" }}
+          >
             START HERE, GO ANYWHERE
           </p>
-          <p className="m-0 text-[12px] font-medium text-slate-400 mb-2">Co-organized by:</p>
+          <p 
+            className="m-0 text-[12px] font-medium mb-2"
+            style={{ color: "#94A3B8" }}
+          >
+            Co-organized by:
+          </p>
           <div className="flex items-center justify-center gap-5 max-w-[500px]">
             <SponsorStripRow
               sponsors={getCombinedLogos(data)}
@@ -443,6 +472,7 @@ export function CardPreview({
     height: "628px",
     background: "#06080F",
     fontFamily: selectedFont,
+    color: "#FFFFFF",
   };
 
   // Horizontal Card — Universal Modern Social Post Layout
@@ -450,7 +480,7 @@ export function CardPreview({
     <div
       id={id}
       key={data.designType}
-      className={`relative overflow-hidden shadow-2xl poster bg-[#06080F] ${surfaceMotionClass}`}
+      className={`relative overflow-hidden shadow-2xl poster bg-[#06080F] text-white ${surfaceMotionClass}`}
       style={posterStyle}
     >
       {/* Luminous Neon Waves Overlay */}
@@ -466,48 +496,74 @@ export function CardPreview({
 
       {/* Top-Left Header: MEET YOU AT [LOCATION / NSTP] */}
       <div className="absolute left-[58px] top-[48px] z-20">
-        <h2 className="m-0 text-[38px] font-black text-white tracking-[-0.02em] leading-none uppercase">
+        <h2 
+          className="m-0 text-[38px] font-black tracking-[-0.02em] leading-none uppercase"
+          style={{ color: "#FFFFFF" }}
+        >
           MEET YOU AT<br />{venueHeader}
         </h2>
       </div>
 
       {/* Attending Pill Badge + Event Name */}
       <div className="absolute left-[58px] top-[152px] z-20 flex items-center gap-4 flex-wrap max-w-[700px]">
-        <div className="px-4 py-2 rounded-md bg-[#2A1B4E] border border-[#8B5CF6]/50 shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center justify-center shrink-0">
-          <span className="text-[20px] font-bold tracking-[2.5px] uppercase text-white leading-none">
+        <div className="px-4 py-2 rounded-md bg-[#2A1B4E] border border-[#8B5CF6]/60 shadow-[0_0_15px_rgba(139,92,246,0.35)] flex items-center justify-center shrink-0">
+          <span 
+            className="text-[20px] font-bold tracking-[2.5px] uppercase leading-none"
+            style={{ color: "#FFFFFF" }}
+          >
             {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
           </span>
         </div>
-        <h1 className="m-0 text-[34px] font-extrabold text-white tracking-[-0.02em] leading-none uppercase">
-          {data.eventName || "SAFAR-E-KARAKORAM"}
+        <h1 
+          className="m-0 text-[34px] font-extrabold tracking-[-0.02em] leading-none uppercase"
+          style={{ color: "#FFFFFF" }}
+        >
+          {data.eventName || "DEVTECH"}
         </h1>
         {data.cardRole === "guest" && data.guestCategory && (
-          <span className="text-[20px] font-bold tracking-[1px] uppercase text-[#00F0FF] leading-none">
+          <span 
+            className="text-[20px] font-bold tracking-[1px] uppercase leading-none"
+            style={{ color: "#00F0FF" }}
+          >
             AS {data.guestCategory}
           </span>
         )}
       </div>
 
       {/* Session Date & Time */}
-      <div className="absolute left-[58px] top-[260px] z-20 flex flex-col gap-1 text-white">
-        <p className="m-0 text-[23px] font-bold tracking-tight text-white leading-tight">
-          {data.sessionDate || "10th September 2026"}
+      <div className="absolute left-[58px] top-[260px] z-20 flex flex-col gap-1">
+        <p 
+          className="m-0 text-[23px] font-bold tracking-tight leading-tight"
+          style={{ color: "#FFFFFF" }}
+        >
+          {data.sessionDate || "2026-09-17"}
         </p>
-        <p className="m-0 text-[18px] font-medium text-slate-300 leading-tight">
-          {sessionTimeLabel ? `(${sessionTimeLabel})` : "(1:00pm - 2:00 pm)"}
+        <p 
+          className="m-0 text-[18px] font-medium leading-tight"
+          style={{ color: "#CBD5E1" }}
+        >
+          {sessionTimeLabel ? `(${sessionTimeLabel})` : "(10:00 AM (GMT+5))"}
         </p>
       </div>
 
       {/* Slogan */}
       <div className="absolute left-[58px] top-[365px] z-20">
-        <p className="m-0 text-[21px] font-semibold tracking-[0.5px] text-white uppercase">
+        <p 
+          className="m-0 text-[21px] font-semibold tracking-[0.5px] uppercase"
+          style={{ color: "#FFFFFF" }}
+        >
           START HERE, GO ANYWHERE
         </p>
       </div>
 
       {/* Co-organized by & Logos (Single line containing company + sponsor logos) */}
       <div className="absolute left-[58px] bottom-[38px] z-20 flex flex-col gap-2">
-        <p className="m-0 text-[14px] font-medium text-slate-400">Co-organized by:</p>
+        <p 
+          className="m-0 text-[14px] font-medium"
+          style={{ color: "#94A3B8" }}
+        >
+          Co-organized by:
+        </p>
         <div className="flex items-center gap-6 max-w-[550px]">
           <SponsorStripRow
             sponsors={getCombinedLogos(data)}
@@ -535,14 +591,23 @@ export function CardPreview({
             />
           )}
         </div>
-        <h2 className="m-0 font-extrabold text-[27px] text-white leading-tight">
-          {data.name || "Zia-ur-Rehman"}
+        <h2 
+          className="m-0 font-extrabold text-[27px] leading-tight"
+          style={{ color: "#FFFFFF" }}
+        >
+          {data.name || "Attendee Name"}
         </h2>
-        <p className="m-0 font-bold text-[18px] text-slate-200 mt-1 uppercase tracking-wider">
-          {data.role || "CEO"}
+        <p 
+          className="m-0 font-bold text-[18px] mt-1 uppercase tracking-wider"
+          style={{ color: "#E2E8F0" }}
+        >
+          {data.role || "ROLE/TITLE"}
         </p>
-        <p className="m-0 font-medium text-[16px] text-slate-300 mt-0.5 opacity-90">
-          {data.company || "The Leap Pakistan"}
+        <p 
+          className="m-0 font-medium text-[16px] mt-0.5 opacity-90"
+          style={{ color: "#CBD5E1" }}
+        >
+          {data.company || "Organization"}
         </p>
       </section>
     </div>
