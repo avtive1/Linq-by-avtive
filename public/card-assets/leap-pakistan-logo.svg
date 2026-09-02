@@ -1,25 +1,25 @@
 <svg width="160" height="48" viewBox="0 0 160 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- LEAP text group -->
+  <!-- LEAP text group in pure white -->
   <g transform="translate(4, 3)">
-    <!-- 'LE' in Lavender/Purple -->
-    <text x="0" y="27" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#9353D3" letter-spacing="1px">LE</text>
+    <!-- 'LE' in Pure White -->
+    <text x="0" y="27" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="1px">LE</text>
     
-    <!-- Stylized 'A' with orange diagonal stroke -->
+    <!-- Stylized 'A' with bright orange accent -->
     <g transform="translate(42, -1)">
       <!-- Left leg of A in White -->
       <path d="M4 28 L12 4 L17 4 L12 28 Z" fill="#FFFFFF"/>
       <!-- Right leg / slice of A in Bright Orange -->
       <path d="M10 4 L23 28 L18 28 L13 14 Z" fill="#FF7900"/>
-      <!-- Crossbar in Orange -->
-      <path d="M7 19 L18 19 L17 15 L9 15 Z" fill="#FF7900"/>
+      <!-- Crossbar in White -->
+      <path d="M7 19 L18 19 L17 15 L9 15 Z" fill="#FFFFFF"/>
     </g>
 
-    <!-- 'P' in White -->
+    <!-- 'P' in Pure White -->
     <text x="69" y="27" font-family="Inter, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="1px">P</text>
     
-    <!-- "— PAKISTAN —" subtext -->
-    <line x1="2" y1="38" x2="22" y2="38" stroke="#FF7900" stroke-width="1.2"/>
-    <text x="28" y="41" font-family="Inter, -apple-system, sans-serif" font-size="8.5" font-weight="700" fill="#FF7900" letter-spacing="1.8px">PAKISTAN</text>
-    <line x1="86" y1="38" x2="106" y2="38" stroke="#FF7900" stroke-width="1.2"/>
+    <!-- "— PAKISTAN —" subtext in Pure White -->
+    <line x1="2" y1="38" x2="22" y2="38" stroke="#FFFFFF" stroke-width="1.2"/>
+    <text x="28" y="41" font-family="Inter, -apple-system, sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" letter-spacing="1.8px">PAKISTAN</text>
+    <line x1="86" y1="38" x2="106" y2="38" stroke="#FFFFFF" stroke-width="1.2"/>
   </g>
 </svg>
