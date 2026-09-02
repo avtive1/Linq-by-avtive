@@ -23,6 +23,7 @@ model Profile {
   profile_photo_url                   String?
   owner_profile_setup_completed_at    DateTime? @db.Timestamptz(6)
   owner_onboarding_team_step_completed_at DateTime? @db.Timestamptz(6)
+  username_changed_at                 DateTime? @db.Timestamptz(6)
   created_at                          DateTime  @default(now()) @db.Timestamptz(6)
   updated_at                          DateTime? @default(now()) @db.Timestamptz(6)
 
@@ -302,3 +303,50 @@ model EmailOutbox {
 
   @@map("email_outbox")
 }
+
+model OrganizationRegistrationRequest {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  reference_number        String    @unique
+  status                  String    @default("PENDING")
+  applicant_user_id       String?   @db.Uuid
+
+  contact_name            String
+  contact_email           String
+  contact_phone           String
+  contact_designation     String
+  contact_linkedin        String?
+
+  organization_name       String
+  organization_name_key   String
+  organization_website    String?
+  organization_description String?
+  organization_logo_url   String
+  social_links            Json      @default("{}")
+
+  industry                String?
+  organization_type       String?
+  company_size            String?
+  country                 String?
+  city                    String?
+  address                 String?
+  phone                   String?
+  email                   String?
+
+  reviewed_by_user_id     String?   @db.Uuid
+  reviewed_at             DateTime? @db.Timestamptz(6)
+  admin_notes             String?
+  rejection_reason        String?
+  changes_requested_notes String?
+  created_organization_id String?   @db.Uuid
+
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([reference_number], map: "org_reg_req_ref_num_idx")
+  @@index([status, created_at(sort: Desc)], map: "org_reg_req_status_created_idx")
+  @@index([contact_email], map: "org_reg_req_contact_email_idx")
+  @@index([organization_name_key], map: "org_reg_req_name_key_idx")
+  @@index([applicant_user_id], map: "org_reg_req_applicant_user_idx")
+  @@map("organization_registration_requests")
+}
+
