@@ -449,18 +449,7 @@ export default function CardView({
               className="w-full max-w-[860px]"
               maxScale={0.82}
             >
-              {horizontalPreviewUrl && !horizontalPreviewFailed ? (
-                // eslint-disable-next-line @next/next/no-img-element -- Remote preview URL from storage; next/image would need allowlist churn
-                <img
-                  src={horizontalPreviewUrl}
-                  alt="Horizontal card preview"
-                  className="h-full w-full object-contain"
-                  loading="eager"
-                  onError={() => setHorizontalPreviewFailed(true)}
-                />
-              ) : (
-                <CardPreview data={card} isVertical={false} />
-              )}
+              <CardPreview data={card} isVertical={false} />
             </CardArtboardScaler>
           ) : (
             <>

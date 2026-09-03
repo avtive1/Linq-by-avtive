@@ -1,6 +1,6 @@
 import type { SponsorEntry } from "@/types/card";
 
-export const MAX_EVENT_SPONSORS = 6;
+export const MAX_EVENT_SPONSORS = 5;
 
 export function parseEventSponsors(raw: unknown): SponsorEntry[] {
   if (raw == null) return [];

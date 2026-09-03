@@ -31,12 +31,8 @@ function preserveApprovedGuestIdentityFields(
 }
 
 function stripBrandingMutations(payload: Record<string, unknown>) {
-  const sanitized = { ...payload };
-  delete sanitized.card_color;
-  delete sanitized.design_type;
-  delete sanitized.card_font;
-  delete sanitized.custom_fields;
-  return sanitized;
+  // Allow attendees to customize their card color and aesthetics
+  return { ...payload };
 }
 
 async function getAuthedSessionAndPermission(
