@@ -179,14 +179,12 @@ export async function cropImageAreaToDataUrl(
  */
 export function removeWhiteBackgroundFromCanvas(
   canvas: HTMLCanvasElement,
-  threshold = 215,
-  colorTolerance = 40
+  threshold = 240,
+  colorTolerance = 30
 ) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  const width = canvas.width;
-  const height = canvas.height;
-  const imgData = ctx.getImageData(0, 0, width, height);
+  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const data = imgData.data;
   const totalPixels = data.length;
 
@@ -198,7 +196,7 @@ export function removeWhiteBackgroundFromCanvas(
 
     if (a === 0) continue;
 
-    // Check if pixel is light neutral / white / off-white
+    // Check if pixel is light neutral / white
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
     const isNeutral =
       Math.abs(r - g) < colorTolerance &&
@@ -206,39 +204,11 @@ export function removeWhiteBackgroundFromCanvas(
       Math.abs(g - b) < colorTolerance;
 
     if (brightness >= threshold && isNeutral) {
-      if (brightness >= 240) {
+      if (brightness >= 250) {
         data[i + 3] = 0;
       } else {
-        const factor = (240 - brightness) / (240 - threshold);
+        const factor = (250 - brightness) / (250 - threshold);
         data[i + 3] = Math.round(a * Math.max(0, Math.min(1, factor)));
-      }
-    }
-  }
-
-  // Sample the 4 corners to remove any remaining uniform background
-  const corners = [
-    0, // top-left
-    (width - 1) * 4, // top-right
-    (height - 1) * width * 4, // bottom-left
-    ((height - 1) * width + (width - 1)) * 4, // bottom-right
-  ];
-
-  for (const c of corners) {
-    const cr = data[c];
-    const cg = data[c + 1];
-    const cb = data[c + 2];
-    const ca = data[c + 3];
-    if (ca === 0) continue;
-
-    const cBrightness = (cr * 299 + cg * 587 + cb * 114) / 1000;
-    if (cBrightness > 190) {
-      for (let i = 0; i < totalPixels; i += 4) {
-        const dr = Math.abs(data[i] - cr);
-        const dg = Math.abs(data[i + 1] - cg);
-        const db = Math.abs(data[i + 2] - cb);
-        if (dr < 35 && dg < 35 && db < 35) {
-          data[i + 3] = 0;
-        }
       }
     }
   }

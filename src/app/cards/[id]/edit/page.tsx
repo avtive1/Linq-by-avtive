@@ -7,7 +7,7 @@ import { CardTypographyPicker } from "@/components/CardTypographyPicker";
 import { ArrowLeft } from "lucide-react";
 import { HorizontalPreviewScaler } from "@/components/HorizontalPreviewScaler";
 import { VerticalPreviewScaler } from "@/components/VerticalPreviewScaler";
-import { CardPreview } from "@/components/CardPreview";
+import { CardPreview, isValidCssColor } from "@/components/CardPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import { toast } from "sonner";
 import { parseEventSponsors } from "@/lib/sponsors";
@@ -44,13 +44,21 @@ type FormState = {
 };
 
 const colors = [
-  { name: "karakoram", start: "#06080F", end: "#0B0F19" },
-  { name: "purple", start: "#41295a", end: "#2f0743" },
-  { name: "red",    start: "#c94b4b", end: "#4b134f" },
-  { name: "pink",   start: "#EE0979", end: "#FF6A00" },
-  { name: "blue",   start: "#D3CCE3", end: "#E9E4F0" },
+  { name: "purple", label: "Electric Purple", start: "#41295a", end: "#2f0743" },
+  { name: "red",    label: "Crimson",         start: "#c94b4b", end: "#4b134f" },
+  { name: "pink",   label: "Sunset Blaze",    start: "#EE0979", end: "#FF6A00" },
+  { name: "blue",   label: "Ocean Mist",      start: "#D3CCE3", end: "#E9E4F0" },
 ];
 const presetColorNames = new Set(colors.map((c) => c.name));
+
+const TEXT_COLOR_QUICK_SWATCHES = [
+  { hex: "#FFFFFF", label: "Pure White" },
+  { hex: "#E0F2FE", label: "Cyber Ice" },
+  { hex: "#FEF08A", label: "Golden Glow" },
+  { hex: "#DCFCE7", label: "Light Mint" },
+  { hex: "#FCE7F3", label: "Soft Rose" },
+  { hex: "#0F172A", label: "Dark Slate" },
+];
 
 async function readResponsePayload(res: Response): Promise<unknown> {
   const contentType = res.headers.get("content-type") || "";
@@ -75,7 +83,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const { id } = use(params);
   const shareToken = String(searchParams.get("token") || "").trim();
   const isShareEditMode = searchParams.get("share") === "true";
-  const canCustomizeBranding = !shareToken && !isShareEditMode;
+  const canCustomizeBranding = true;
   const cardRef = useRef<HTMLDivElement>(null);
   const verticalFrontRef = useRef<HTMLDivElement>(null);
   const verticalBackRef = useRef<HTMLDivElement>(null);
@@ -116,6 +124,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
   const [draftCustomColor, setDraftCustomColor] = useState("#2563EB");
   const [customColorAnchorRect, setCustomColorAnchorRect] = useState<DOMRect | null>(null);
+  const [customColorText, setCustomColorText] = useState("purple");
   const [showTextColorPicker, setShowTextColorPicker] = useState(false);
   const [draftTextColor, setDraftTextColor] = useState("#FFFFFF");
   const [textColorAnchorRect, setTextColorAnchorRect] = useState<DOMRect | null>(null);
@@ -224,6 +233,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           organizationName,
           organizationLogoUrl,
         });
+        setCustomColorText(resolvedCardColor || "purple");
         const customFieldsRaw = (record.custom_fields && typeof record.custom_fields === "object" && !Array.isArray(record.custom_fields))
           ? (record.custom_fields as Record<string, unknown>)
           : {};
@@ -346,20 +356,14 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         linkedin: formatQrLink(form.linkedin),
         photo_url,
       };
-      if (canCustomizeBranding) {
-        updatePayload.design_type = "design1";
-        updatePayload.card_color = form.color;
-      }
+      updatePayload.design_type = "design1";
+      updatePayload.card_color = form.color;
+      updatePayload.card_font = form.fontFamily;
       const nextCustomFields: Record<string, unknown> = { ...existingCustomFields };
-      if (canCustomizeBranding) {
-        if (horizontalTextColor.trim()) nextCustomFields.__horizontal_text_color = horizontalTextColor.trim();
-        else delete nextCustomFields.__horizontal_text_color;
-        if (verticalTextColor.trim()) nextCustomFields.__vertical_text_color = verticalTextColor.trim();
-        else delete nextCustomFields.__vertical_text_color;
-      } else {
-        delete nextCustomFields.__horizontal_text_color;
-        delete nextCustomFields.__vertical_text_color;
-      }
+      if (horizontalTextColor.trim()) nextCustomFields.__horizontal_text_color = horizontalTextColor.trim();
+      else delete nextCustomFields.__horizontal_text_color;
+      if (verticalTextColor.trim()) nextCustomFields.__vertical_text_color = verticalTextColor.trim();
+      else delete nextCustomFields.__vertical_text_color;
       updatePayload.custom_fields = nextCustomFields;
 
       const res = await fetch(`/api/cards/${id}`, {
@@ -675,16 +679,22 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         {canCustomizeBranding ? (
         <div className="w-full max-w-[1040px] mt-8 flex flex-col lg:flex-row gap-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
 
-          {/* Item 2: Theme Selection */}
-          <div className="relative flex-1 flex flex-col gap-3 items-center lg:items-start">
-            <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Theme color</span>
-            <div className="flex gap-2 h-10 items-center">
+          {/* Item 1: Theme Selection */}
+          <div className="relative flex-1 flex flex-col gap-2 items-center lg:items-start">
+            <div className="flex items-center justify-between w-full">
+              <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Theme color</span>
+              <span className="text-[11px] font-medium text-muted/80">
+                {colors.find((c) => c.name === form.color)?.label || form.color}
+              </span>
+            </div>
+            <div className="flex gap-2 h-10 items-center flex-wrap">
                 {colors.map((c) => (
                   <button
                       key={c.name}
                       type="button"
                       onClick={() => {
                         setShowCustomColorPicker(false);
+                        setCustomColorText(c.start);
                         update("color")(c.name);
                       }}
                       className={`w-8 h-8 rounded-full transition-all duration-150 relative overflow-hidden flex items-center justify-center p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-95 ${
@@ -696,6 +706,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                         background: `linear-gradient(135deg, ${c.start}, ${c.end})`,
                         backgroundClip: "border-box",
                       }}
+                      title={c.label}
+                      aria-label={c.label}
                   >
                       <span className="absolute inset-0 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),inset_0_-1px_2px_rgba(0,0,0,0.2)] pointer-events-none" />
                   </button>
@@ -738,55 +750,147 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                     onChange={(next) => setDraftCustomColor(next)}
                     onCancel={() => setShowCustomColorPicker(false)}
                     onConfirm={() => {
+                      setCustomColorText(draftCustomColor);
                       update("color")(draftCustomColor);
                       setShowCustomColorPicker(false);
                     }}
                   />
                 )}
             </div>
+
+            {/* Manual Color Text Input (HEX, RGB, CSS formats) with validation */}
+            <div className="w-full mt-1">
+              <div className="relative flex items-center">
+                <span
+                  className="absolute left-2.5 h-4 w-4 rounded-full border border-black/20 shadow-xs pointer-events-none shrink-0"
+                  style={{
+                    background: isValidCssColor(customColorText)
+                      ? customColorText
+                      : isValidCssColor(form.color)
+                      ? (colors.find((c) => c.name === form.color)?.start || form.color)
+                      : "#41295a",
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="#FF5733 or rgb(255, 87, 51)"
+                  value={customColorText}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCustomColorText(val);
+                    if (isValidCssColor(val.trim())) {
+                      update("color")(val.trim());
+                    }
+                  }}
+                  className="h-8 w-full max-w-[240px] rounded-md border border-border/70 bg-white/90 pl-8 pr-2.5 text-xs text-heading placeholder:text-muted/50 focus:border-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors"
+                />
+              </div>
+              {customColorText.trim() && !isValidCssColor(customColorText.trim()) && (
+                <span className="mt-0.5 block text-[10px] text-amber-700 font-medium">
+                  Enter a valid HEX (#FF5733), RGB, or CSS color
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
-          {/* Item 3: Text Color Selection */}
-          <div className="relative flex-1 flex flex-col gap-3 items-center justify-center">
-            <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Text color</span>
-            <div className="flex h-10 items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
-              <button
-                type="button"
-                onClick={(e) => {
-                  setActiveTextTarget("horizontal");
-                  setShowCustomColorPicker(false);
-                  setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
-                  setDraftTextColor(horizontalTextColor || "#FFFFFF");
-                  setShowTextColorPicker(true);
-                }}
-                className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
-                  activeTextTarget === "horizontal"
-                    ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
-                    : "text-heading/75 hover:bg-slate-100/80"
-                }`}
-              >
-                T1 - Horizontal
-              </button>
-              <div className="mx-1 h-5 w-px bg-border/70" />
-              <button
-                type="button"
-                onClick={(e) => {
-                  setActiveTextTarget("vertical");
-                  setShowCustomColorPicker(false);
-                  setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
-                  setDraftTextColor(verticalTextColor || "#000000");
-                  setShowTextColorPicker(true);
-                }}
-                className={`h-8 px-3 text-[12px] font-semibold rounded-sm transition-all ${
-                  activeTextTarget === "vertical"
-                    ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
-                    : "text-heading/75 hover:bg-slate-100/80"
-                }`}
-              >
-                T2 - Vertical
-              </button>
+          {/* Item 2: Text Color Selection */}
+          <div className="relative flex-1 flex flex-col gap-2 items-center justify-center">
+            <div className="flex items-center justify-between w-full">
+              <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Text color</span>
+              <span className="text-[11px] font-medium text-muted/80">
+                {activeTextTarget === "horizontal"
+                  ? (horizontalTextColor || "#FFFFFF")
+                  : (verticalTextColor || "#FFFFFF")}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex h-10 items-center rounded-md border border-border/60 bg-white/85 p-1 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTextTarget("horizontal");
+                  }}
+                  className={`h-8 px-2.5 text-[12px] font-semibold rounded-sm transition-all flex items-center gap-1.5 ${
+                    activeTextTarget === "horizontal"
+                      ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                      : "text-heading/75 hover:bg-slate-100/80"
+                  }`}
+                >
+                  <span 
+                    className="w-2.5 h-2.5 rounded-full border border-black/20" 
+                    style={{ backgroundColor: horizontalTextColor || "#FFFFFF" }} 
+                  />
+                  T1 (Social)
+                </button>
+                <div className="mx-1 h-4 w-px bg-border/70" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTextTarget("vertical");
+                  }}
+                  className={`h-8 px-2.5 text-[12px] font-semibold rounded-sm transition-all flex items-center gap-1.5 ${
+                    activeTextTarget === "vertical"
+                      ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
+                      : "text-heading/75 hover:bg-slate-100/80"
+                  }`}
+                >
+                  <span 
+                    className="w-2.5 h-2.5 rounded-full border border-black/20" 
+                    style={{ backgroundColor: verticalTextColor || "#FFFFFF" }} 
+                  />
+                  T2 (Badge)
+                </button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                {TEXT_COLOR_QUICK_SWATCHES.map((sw) => {
+                  const currentColor = activeTextTarget === "horizontal"
+                    ? (horizontalTextColor || "#FFFFFF")
+                    : (verticalTextColor || "#FFFFFF");
+                  const isSelected = currentColor.toUpperCase() === sw.hex.toUpperCase();
+                  return (
+                    <button
+                      key={sw.hex}
+                      type="button"
+                      onClick={() => {
+                        if (activeTextTarget === "horizontal") {
+                          setHorizontalTextColor(sw.hex);
+                          setForm((f) => ({ ...f, horizontalTextColor: sw.hex }));
+                        } else {
+                          setVerticalTextColor(sw.hex);
+                          setForm((f) => ({ ...f, verticalTextColor: sw.hex }));
+                        }
+                      }}
+                      className={`w-6 h-6 rounded-full border transition-transform ${
+                        isSelected
+                          ? "ring-2 ring-primary ring-offset-1 scale-110 border-primary"
+                          : "border-slate-300 hover:scale-110"
+                      }`}
+                      style={{ backgroundColor: sw.hex }}
+                      title={sw.label}
+                      aria-label={sw.label}
+                    />
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    setShowCustomColorPicker(false);
+                    setTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
+                    const currentActive = activeTextTarget === "horizontal"
+                      ? (horizontalTextColor || "#FFFFFF")
+                      : (verticalTextColor || "#FFFFFF");
+                    setDraftTextColor(currentActive);
+                    setShowTextColorPicker(true);
+                  }}
+                  className="w-7 h-7 rounded-full border border-slate-300 flex items-center justify-center p-0 text-[12px] font-bold text-slate-700 bg-white hover:bg-slate-100 transition-transform active:scale-95"
+                  title="Custom text color"
+                >
+                  +
+                </button>
+              </div>
             </div>
             {showTextColorPicker && (
               <CustomColorPicker
@@ -810,7 +914,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
 
           <div className="w-px bg-white/25 hidden lg:block mx-1" />
 
-          {/* Item 4: Typography Selection */}
+          {/* Item 3: Typography Selection */}
           <div className="flex-1 flex flex-col gap-2 max-w-[280px] lg:max-w-none">
             <span className="text-[13px] font-normal tracking-[0.01em] leading-tight text-muted/65">Typography</span>
             <div className="min-h-[44px] w-full lg:max-w-[320px]">
@@ -820,8 +924,8 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                   buttonClassName="min-h-[48px]"
                 />
             </div>
+          </div>
         </div>
-      </div>
         ) : (
           <div className="w-full max-w-[1040px] mt-8 animate-slide-up bg-white/45 border border-white/20 px-6 py-6 sm:px-8 sm:py-8 rounded-xl glass-panel shadow-md backdrop-blur-xl">
             <p className="text-sm text-muted text-center lg:text-left">

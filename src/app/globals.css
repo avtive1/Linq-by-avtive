@@ -629,28 +629,4 @@ a:hover {
   }
 }
 
-/* Card Canvas Typography Contrast Guard */
-.poster,
-.poster-vertical {
-  color: #ffffff;
-}
-
-.poster h1,
-.poster h2,
-.poster h3,
-.poster h4,
-.poster h5,
-.poster h6,
-.poster p,
-.poster span,
-.poster-vertical h1,
-.poster-vertical h2,
-.poster-vertical h3,
-.poster-vertical h4,
-.poster-vertical h5,
-.poster-vertical h6,
-.poster-vertical p,
-.poster-vertical span {
-  color: inherit;
-}
 

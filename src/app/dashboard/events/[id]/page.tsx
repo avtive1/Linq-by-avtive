@@ -86,7 +86,7 @@ import {
   dashboardPreviewBannerInner,
   dashboardModalBackdrop,
 } from "@/lib/ui/dashboard-shell";
-import { CardPreview } from "@/components/CardPreview";
+import { CardPreview, isValidCssColor } from "@/components/CardPreview";
 import { BrandingDualPreview } from "@/components/BrandingDualPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import {
@@ -116,20 +116,31 @@ type PendingAccessRequest = {
 };
 type ActiveGrant = {
   id: string;
+  grantee_user_id: string;
   grantee_email: string;
+  grantee_name: string;
+  role_label: string;
   permission: string;
   created_at: string;
 };
 type PendingRegistrationRequest = RegistrationRequestSummary;
 const CORE_PREVIEW_FIELD_IDS = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
 const BRAND_THEME_COLORS = [
-  { name: "karakoram", start: "#06080F", end: "#0B0F19" },
-  { name: "purple", start: "#41295a", end: "#2f0743" },
-  { name: "red", start: "#c94b4b", end: "#4b134f" },
-  { name: "pink", start: "#EE0979", end: "#FF6A00" },
-  { name: "blue", start: "#D3CCE3", end: "#E9E4F0" },
+  { name: "purple", label: "Electric Purple", start: "#41295a", end: "#2f0743", accent: "#FFD400" },
+  { name: "red",    label: "Crimson",         start: "#c94b4b", end: "#4b134f", accent: "#FFFFFF" },
+  { name: "pink",   label: "Sunset Blaze",    start: "#EE0979", end: "#FF6A00", accent: "#FFFFFF" },
+  { name: "blue",   label: "Ocean Mist",      start: "#D3CCE3", end: "#E9E4F0", accent: "#000000" },
 ];
 const BRAND_PRESET_THEME_NAMES = new Set(BRAND_THEME_COLORS.map((c) => c.name));
+
+const TEXT_COLOR_QUICK_SWATCHES = [
+  { hex: "#FFFFFF", label: "Pure White" },
+  { hex: "#E0F2FE", label: "Cyber Ice" },
+  { hex: "#FEF08A", label: "Golden Glow" },
+  { hex: "#DCFCE7", label: "Light Mint" },
+  { hex: "#FCE7F3", label: "Soft Rose" },
+  { hex: "#0F172A", label: "Dark Slate" },
+];
 
 type CardBrandingDraft = {
   card_color: string;
@@ -2948,11 +2959,17 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
                 <Card className="relative z-20 min-h-0 shrink-0 overflow-visible rounded-none border-x-0 border-b-0 border-t border-border/40 bg-white/80 px-5 py-5 shadow-none sm:px-8">
                   <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+                    {/* Item 1: Theme & Background Color */}
                     <div className="relative flex flex-col gap-2">
-                      <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
-                        Theme color
-                      </Label>
-                      <div className="flex h-11 items-center gap-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
+                          Theme & Background
+                        </Label>
+                        <span className="text-[11px] font-medium text-muted/80">
+                          {BRAND_THEME_COLORS.find((c) => c.name === brandingDraft.card_color)?.label || "Custom Gradient"}
+                        </span>
+                      </div>
+                      <div className="flex h-11 items-center gap-2 flex-wrap">
                         {BRAND_THEME_COLORS.map((c) => (
                           <ShadButton
                             key={c.name}
@@ -2965,11 +2982,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             }}
                             className={`w-8 h-8 rounded-md border p-0 transition-all ${
                               brandingDraft.card_color === c.name
-                                ? "ring-2 ring-primary ring-offset-2 scale-110 border-transparent"
+                                ? "ring-2 ring-primary ring-offset-2 scale-110 border-transparent shadow-sm"
                                 : "border-white/40 hover:scale-105"
                             }`}
                             style={{ background: `linear-gradient(135deg, ${c.start}, ${c.end})` }}
-                            aria-label={`Set ${c.name} theme`}
+                            aria-label={`Set ${c.label} theme`}
+                            title={c.label}
                           />
                         ))}
                         <ShadButton
@@ -3026,8 +3044,38 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           }}
                         />
                       )}
+
+                      {/* Manual Color Text Input (HEX, RGB, CSS formats) with validation */}
+                      <div className="w-full mt-1">
+                        <div className="relative flex items-center">
+                          <span
+                            className="absolute left-2.5 h-4 w-4 rounded-full border border-black/20 shadow-xs pointer-events-none shrink-0"
+                            style={{
+                              background: isValidCssColor(brandingDraft.card_color)
+                                ? (BRAND_THEME_COLORS.find((c) => c.name === brandingDraft.card_color)?.start || brandingDraft.card_color)
+                                : "#41295a",
+                            }}
+                          />
+                          <input
+                            type="text"
+                            placeholder="#FF5733 or rgb(255, 87, 51)"
+                            value={brandingDraft.card_color || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              editBrandingDraft((prev) => ({ ...prev, card_color: val }));
+                            }}
+                            className="h-8 w-full max-w-[240px] rounded-md border border-border/70 bg-white/90 pl-8 pr-2.5 text-xs text-heading placeholder:text-muted/50 focus:border-primary focus:bg-white focus:outline-none focus:ring-1 focus:ring-primary shadow-xs transition-colors"
+                          />
+                        </div>
+                        {brandingDraft.card_color?.trim() && !isValidCssColor(brandingDraft.card_color.trim()) && (
+                          <span className="mt-0.5 block text-[10px] text-amber-700 font-medium">
+                            Enter a valid HEX (#FF5733), RGB, or CSS color
+                          </span>
+                        )}
+                      </div>
                     </div>
 
+                    {/* Item 2: Text Color with Quick Swatches & Spectrum Picker */}
                     <div className="relative flex flex-col gap-2">
                       <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Text color
@@ -3117,6 +3165,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       )}
                     </div>
 
+                    {/* Item 3: Typography */}
                     <div className="relative z-30 flex flex-col gap-2 overflow-visible sm:col-span-2 lg:col-span-1">
                       <Label className="text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">
                         Typography
