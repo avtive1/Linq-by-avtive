@@ -8,7 +8,11 @@ export function useInternalUserId(isAuthenticated = true, isPending = false) {
 
   useEffect(() => {
     let cancelled = false;
-    if (isPending) return;
+
+    // Timeout safety fallback: never let isLoading stay true indefinitely
+    const safetyTimer = setTimeout(() => {
+      if (!cancelled) setIsLoading(false);
+    }, 4000);
 
     fetch("/api/auth/me", { cache: "no-store" })
       .then((res) => (res.ok ? res.json() : null))
@@ -22,13 +26,17 @@ export function useInternalUserId(isAuthenticated = true, isPending = false) {
         if (!cancelled) setUserId("");
       })
       .finally(() => {
-        if (!cancelled) setIsLoading(false);
+        if (!cancelled) {
+          clearTimeout(safetyTimer);
+          setIsLoading(false);
+        }
       });
 
     return () => {
       cancelled = true;
+      clearTimeout(safetyTimer);
     };
-  }, [isAuthenticated, isPending]);
+  }, [isAuthenticated]);
 
   return { userId, isLoading };
 }

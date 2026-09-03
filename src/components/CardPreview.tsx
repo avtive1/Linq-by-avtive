@@ -8,7 +8,6 @@ import QRCode from "qrcode";
 import { CardData, SponsorEntry } from "@/types/card";
 import { cssFontStackForGoogleFamily, parseGoogleFamilyFromStored } from "@/lib/card-fonts";
 import { preloadGoogleCardFontCss } from "@/lib/card-font-runtime";
-import { optimizeCdnImageUrl } from "@/lib/utils/cdn-image";
 import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 
 const SPONSOR_STRIP_MAX_W_H1_PX = 1120;
@@ -31,10 +30,10 @@ function SponsorStripRow({
   const count = items.length;
   const [opticalPadByKey, setOpticalPadByKey] = useState<Record<string, number>>({});
 
-  const innerBudget = maxStripWidthPx * 0.94;
+  const innerBudget = maxStripWidthPx * 0.96;
   const fairShareW = innerBudget / Math.max(count, 1);
   /** Cap near fair share so N logos + optical padding rarely overflow the strip */
-  const imgCapPx = Math.max(40, Math.floor(fairShareW * 0.92));
+  const imgCapPx = Math.max(70, Math.floor(fairShareW * 1.15));
 
   const onLogoLoad = useCallback(
     (key: string, el: HTMLImageElement) => {
@@ -43,7 +42,7 @@ function SponsorStripRow({
       if (!nw || !nh) return;
       const renderedW = Math.min(imgCapPx, (nw / nh) * logoHeightPx);
       const deficit = Math.max(0, fairShareW - renderedW);
-      const pad = Math.min(22, Math.round(deficit * 0.34));
+      const pad = Math.min(18, Math.round(deficit * 0.28));
       setOpticalPadByKey((prev) => (prev[key] === pad ? prev : { ...prev, [key]: pad }));
     },
     [fairShareW, imgCapPx, logoHeightPx],
@@ -60,7 +59,7 @@ function SponsorStripRow({
         maxWidth: maxStripWidthPx,
         ...(count > 1
           ? {}
-          : { gap: "clamp(10px, 1.9vmin, 26px)" }),
+          : { gap: "clamp(12px, 2vmin, 28px)" }),
       }}
     >
       {items.map((s, i) => {
@@ -84,7 +83,7 @@ function SponsorStripRow({
                 maxWidth: imgCapPx,
                 maxHeight: logoHeightPx,
                 background: "transparent",
-                filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.4))",
+                filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.35))",
               }}
               onLoad={(e) => onLogoLoad(key, e.currentTarget)}
             />
@@ -95,107 +94,72 @@ function SponsorStripRow({
   );
 }
 
-function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
-  if (!s?.length) return [];
-  return s
-    .filter((x) => x.logo_url?.trim())
-    .filter((x) => {
-      const url = String(x.logo_url || "").toLowerCase();
-      // Ignore legacy placeholder assets so the strip stays empty unless real logos were uploaded.
-      if (!url) return false;
-      if (url.includes("figma.com/api/mcp/asset")) return false;
-      return true;
-    })
-    .slice(0, 6);
+function formatSessionTimeWithZone(raw?: string): string | null {
+  const value = String(raw || "").trim();
+  if (!value) return null;
+  const match = value.match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return value;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return value;
+  const period = hours >= 12 ? "PM" : "AM";
+  const normalizedHours = hours % 12 === 0 ? 12 : hours % 12;
+  const formattedMinutes = String(minutes).padStart(2, "0");
+  return `${normalizedHours}:${formattedMinutes} ${period} (GMT+5)`;
 }
 
-function getCombinedLogos(data: CardData | Partial<CardData>): SponsorEntry[] {
-  const custom = filterSponsors(data.sponsors);
-  const out: SponsorEntry[] = [];
+function getCombinedLogos(data: Partial<CardData>): SponsorEntry[] {
+  const list: SponsorEntry[] = [];
+  const seen = new Set<string>();
 
-  // If company / organization logo is provided, include it in the same single line
-  const orgLogo = data.organizationLogoUrl?.trim();
-  if (orgLogo && !orgLogo.includes("figma.com/api/mcp/asset")) {
-    out.push({
-      name: data.organizationName?.trim() || "Company",
-      logo_url: orgLogo,
-    });
+  const orgLogo = String(data.organizationLogoUrl || "").trim();
+  const orgName = String(data.organizationName || "").trim();
+  if (orgLogo && !seen.has(orgLogo)) {
+    seen.add(orgLogo);
+    list.push({ logo_url: orgLogo, name: orgName || "Host Organization" });
   }
 
-  for (const s of custom) {
-    if (!out.some((x) => x.logo_url === s.logo_url)) {
-      out.push(s);
+  const primaryEventLogo = String(data.logo || "").trim();
+  if (primaryEventLogo && !seen.has(primaryEventLogo)) {
+    seen.add(primaryEventLogo);
+    list.push({ logo_url: primaryEventLogo, name: data.eventName || "Event Partner" });
+  }
+
+  if (Array.isArray(data.sponsors)) {
+    for (const s of data.sponsors) {
+      const url = String(s?.logo_url || "").trim();
+      if (url && !seen.has(url)) {
+        seen.add(url);
+        list.push({ logo_url: url, name: s.name || "Partner" });
+      }
     }
   }
 
-  // If no custom sponsors and no organization logo, default to the 3 standard partner logos
-  if (out.length === 0) {
-    return [
-      { name: "avtive", logo_url: "/card-assets/avtive-white-logo.svg" },
-      { name: "NSTP Defining Innovation", logo_url: "/card-assets/nstp-logo.svg" },
-      { name: "LEAP Pakistan", logo_url: "/card-assets/leap-pakistan-logo.svg" },
-    ];
+  if (list.length === 0) {
+    list.push({
+      logo_url: "/card-assets/safar-linq-logo.svg",
+      name: "LINQ",
+    });
   }
 
-  return out.slice(0, 6);
+  return list;
 }
 
-function getLocalTimeZoneLabel() {
-  try {
-    const offsetParts = new Intl.DateTimeFormat(undefined, { timeZoneName: "shortOffset" }).formatToParts(new Date());
-    const gmtOffset = offsetParts.find((part) => part.type === "timeZoneName")?.value?.trim();
-    if (gmtOffset) return gmtOffset;
-
-    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(new Date());
-    const fallbackTz = parts.find((part) => part.type === "timeZoneName")?.value?.trim();
-    return fallbackTz || "";
-  } catch {
-    return "";
-  }
-}
-
-function formatSessionTimeWithZone(rawTime?: string) {
-  const fallback = "05:00 PM";
-  const input = String(rawTime || "").trim();
-  const timeValue = input || fallback;
-  const tz = getLocalTimeZoneLabel();
-
-  const hasAmPm = /\b(am|pm)\b/i.test(timeValue);
-  const hasTzToken = /\b(?:gmt|utc|[a-z]{2,5})[+\-]?\d*:?\d*\b/i.test(timeValue);
-  const hhmmMatch = timeValue.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
-
-  let display = timeValue;
-  if (!hasAmPm && hhmmMatch) {
-    const hour24 = Number(hhmmMatch[1]);
-    const minute = hhmmMatch[2];
-    const meridiem = hour24 >= 12 ? "PM" : "AM";
-    const hour12 = hour24 % 12 || 12;
-    display = `${String(hour12).padStart(2, "0")}:${minute} ${meridiem}`;
-  }
-
-  if (tz && !hasTzToken) {
-    return `${display} (${tz})`;
-  }
-  return display;
-}
-
-type ColorTheme = {
+export type ColorTheme = {
   start: string;
   end: string;
   accent: string;
   textColor?: string;
   titleColor?: string;
-  verticalEventTitleColor?: string;
 };
 
-const COLOR_THEMES: Record<string, ColorTheme> = {
+export const COLOR_THEMES: Record<string, ColorTheme> = {
   karakoram: {
     start: "#06080F",
     end: "#0B0F19",
     accent: "#00F0FF",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#FFFFFF",
   },
   "dark-neon": {
     start: "#06080F",
@@ -203,39 +167,34 @@ const COLOR_THEMES: Record<string, ColorTheme> = {
     accent: "#00F0FF",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#FFFFFF",
   },
   purple: {
-    start: "#281347",
-    end: "#110224",
-    accent: "#E63A8D",
+    start: "#41295a",
+    end: "#2f0743",
+    accent: "#c084fc",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#000000",
-  },
-  blue: {
-    start: "#0c1a30",
-    end: "#050b14",
-    accent: "#38bdf8",
-    textColor: "#FFFFFF",
-    titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#000000",
-  },
-  pink: {
-    start: "#3b1028",
-    end: "#18040f",
-    accent: "#f472b6",
-    textColor: "#FFFFFF",
-    titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#000000",
   },
   red: {
-    start: "#3a0e0e",
-    end: "#160303",
+    start: "#c94b4b",
+    end: "#4b134f",
     accent: "#f87171",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#000000",
+  },
+  pink: {
+    start: "#EE0979",
+    end: "#FF6A00",
+    accent: "#f472b6",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+  },
+  blue: {
+    start: "#0c1a30",
+    end: "#1e3a8a",
+    accent: "#38bdf8",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
   },
   green: {
     start: "#0c2b18",
@@ -243,19 +202,19 @@ const COLOR_THEMES: Record<string, ColorTheme> = {
     accent: "#4ade80",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#000000",
   },
 };
 
 function resolveTheme(color?: string): ColorTheme {
-  const raw = String(color || "").trim();
+  const raw = String(color || "").trim().toLowerCase();
   if (!raw) return COLOR_THEMES.karakoram;
   if (COLOR_THEMES[raw]) return COLOR_THEMES[raw];
 
+  const custom = String(color || "").trim();
   return {
-    start: raw,
-    end: "#06080F",
-    accent: raw.startsWith("#") || raw.startsWith("rgb") ? raw : "#00F0FF",
+    start: custom,
+    end: custom,
+    accent: custom.startsWith("#") || custom.startsWith("rgb") ? custom : "#00F0FF",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
   };
@@ -344,10 +303,14 @@ export function CardPreview({
     : "NSTP";
 
   const theme = resolveTheme(data.color);
-  const activeHorizontalTextColor = data.horizontalTextColor || "#FFFFFF";
-  const activeVerticalTextColor = data.verticalTextColor || "#FFFFFF";
+  const cardGradient =
+    theme.start === theme.end
+      ? theme.start
+      : `linear-gradient(135deg, ${theme.start} 0%, ${theme.end} 100%)`;
 
   if (isVertical) {
+    const verticalTextColor = data.verticalTextColor?.trim() || "#FFFFFF";
+
     return (
       <div 
         id={id}
@@ -356,10 +319,8 @@ export function CardPreview({
           width: "576px", 
           height: "1024px", 
           fontFamily: selectedFont,
-          background: theme.start === theme.end && theme.start.startsWith("#")
-            ? `linear-gradient(165deg, ${theme.start} 0%, #06080F 100%)`
-            : `linear-gradient(165deg, ${theme.start} 0%, ${theme.end} 100%)`,
-          color: activeVerticalTextColor,
+          background: cardGradient,
+          color: verticalTextColor,
         }}
       >
         {/* Background Neon Vector Artwork */}
@@ -378,7 +339,7 @@ export function CardPreview({
         <div className="absolute left-[36px] top-[44px] z-20 max-w-[500px]">
           <h2 
             className="m-0 text-[26px] font-black tracking-[-0.02em] leading-none uppercase"
-            style={{ color: activeVerticalTextColor }}
+            style={{ color: verticalTextColor }}
           >
             MEET YOU AT<br />{venueHeader}
           </h2>
@@ -395,15 +356,15 @@ export function CardPreview({
           </div>
           <h1 
             className="m-0 mt-3 text-[32px] font-extrabold tracking-[-0.02em] leading-tight uppercase"
-            style={{ color: activeVerticalTextColor }}
+            style={{ color: verticalTextColor }}
           >
-            {data.eventName || "DEVTECH"}
+            {data.eventName || "SAFAR-E-KARAKORAM"}
           </h1>
           <p 
-            className="m-0 mt-2 text-[17px] font-medium"
-            style={{ color: "#CBD5E1" }}
+            className="m-0 mt-2 text-[17px] font-medium opacity-85"
+            style={{ color: verticalTextColor }}
           >
-            {data.sessionDate || "2026-09-17"} {sessionTimeLabel ? `(${sessionTimeLabel})` : "(10:00 AM (GMT+5))"}
+            {data.sessionDate || "10th September 2026"} {sessionTimeLabel ? `(${sessionTimeLabel})` : "(1:00pm - 2:00 pm)"}
           </p>
         </div>
 
@@ -422,19 +383,19 @@ export function CardPreview({
             </div>
             <p 
               className="m-0 text-[32px] font-bold leading-tight"
-              style={{ color: activeVerticalTextColor }}
+              style={{ color: verticalTextColor }}
             >
               {data.name || "Attendee Name"}
             </p>
             <p 
-              className="m-0 mt-1 text-[20px] font-semibold uppercase tracking-wider"
-              style={{ color: "#E2E8F0" }}
+              className="m-0 mt-1 text-[20px] font-semibold uppercase tracking-wider opacity-90"
+              style={{ color: verticalTextColor }}
             >
               {data.role || "ROLE/TITLE"}
             </p>
             <p 
-              className="m-0 mt-0.5 text-[17px] font-medium opacity-90"
-              style={{ color: "#CBD5E1" }}
+              className="m-0 mt-0.5 text-[17px] font-medium opacity-85"
+              style={{ color: verticalTextColor }}
             >
               {data.company || "Organization"}
             </p>
@@ -457,21 +418,21 @@ export function CardPreview({
         <div className="absolute left-0 bottom-[28px] w-full px-[36px] z-20 flex flex-col items-center text-center">
           <p 
             className="m-0 text-[17px] font-semibold tracking-[1px] uppercase mb-2.5"
-            style={{ color: activeVerticalTextColor }}
+            style={{ color: verticalTextColor }}
           >
             START HERE, GO ANYWHERE
           </p>
           <p 
-            className="m-0 text-[12px] font-medium mb-2"
-            style={{ color: "#94A3B8" }}
+            className="m-0 text-[12px] font-medium mb-2 opacity-80"
+            style={{ color: verticalTextColor }}
           >
             Co-organized by:
           </p>
           <div className="flex items-center justify-center gap-5 max-w-[500px]">
             <SponsorStripRow
               sponsors={getCombinedLogos(data)}
-              logoHeightPx={32}
-              maxStripWidthPx={480}
+              logoHeightPx={38}
+              maxStripWidthPx={490}
             />
           </div>
         </div>
@@ -479,15 +440,15 @@ export function CardPreview({
     );
   }
 
+  const horizontalTextColor = data.horizontalTextColor?.trim() || "#FFFFFF";
+
   // Common styles for horizontal card
   const posterStyle: React.CSSProperties = {
     width: "1200px",
     height: "628px",
-    background: theme.start === theme.end && theme.start.startsWith("#")
-      ? `linear-gradient(135deg, ${theme.start} 0%, #06080F 100%)`
-      : `linear-gradient(135deg, ${theme.start} 0%, ${theme.end} 100%)`,
+    background: cardGradient,
     fontFamily: selectedFont,
-    color: activeHorizontalTextColor,
+    color: horizontalTextColor,
   };
 
   // Horizontal Card — Universal Modern Social Post Layout
@@ -514,7 +475,7 @@ export function CardPreview({
       <div className="absolute left-[58px] top-[48px] z-20">
         <h2 
           className="m-0 text-[38px] font-black tracking-[-0.02em] leading-none uppercase"
-          style={{ color: activeHorizontalTextColor }}
+          style={{ color: horizontalTextColor }}
         >
           MEET YOU AT<br />{venueHeader}
         </h2>
@@ -535,9 +496,9 @@ export function CardPreview({
         </div>
         <h1 
           className="m-0 text-[34px] font-extrabold tracking-[-0.02em] leading-none uppercase"
-          style={{ color: activeHorizontalTextColor }}
+          style={{ color: horizontalTextColor }}
         >
-          {data.eventName || "DEVTECH"}
+          {data.eventName || "SAFAR-E-KARAKORAM"}
         </h1>
         {data.cardRole === "guest" && data.guestCategory && (
           <span 
@@ -553,15 +514,15 @@ export function CardPreview({
       <div className="absolute left-[58px] top-[260px] z-20 flex flex-col gap-1">
         <p 
           className="m-0 text-[23px] font-bold tracking-tight leading-tight"
-          style={{ color: activeHorizontalTextColor }}
+          style={{ color: horizontalTextColor }}
         >
-          {data.sessionDate || "2026-09-17"}
+          {data.sessionDate || "10th September 2026"}
         </p>
         <p 
-          className="m-0 text-[18px] font-medium leading-tight"
-          style={{ color: "#CBD5E1" }}
+          className="m-0 text-[18px] font-medium leading-tight opacity-85"
+          style={{ color: horizontalTextColor }}
         >
-          {sessionTimeLabel ? `(${sessionTimeLabel})` : "(10:00 AM (GMT+5))"}
+          {sessionTimeLabel ? `(${sessionTimeLabel})` : "(1:00pm - 2:00 pm)"}
         </p>
       </div>
 
@@ -569,7 +530,7 @@ export function CardPreview({
       <div className="absolute left-[58px] top-[365px] z-20">
         <p 
           className="m-0 text-[21px] font-semibold tracking-[0.5px] uppercase"
-          style={{ color: activeHorizontalTextColor }}
+          style={{ color: horizontalTextColor }}
         >
           START HERE, GO ANYWHERE
         </p>
@@ -578,16 +539,16 @@ export function CardPreview({
       {/* Co-organized by & Logos (Single line containing company + sponsor logos) */}
       <div className="absolute left-[58px] bottom-[38px] z-20 flex flex-col gap-2">
         <p 
-          className="m-0 text-[14px] font-medium"
-          style={{ color: "#94A3B8" }}
+          className="m-0 text-[14px] font-medium opacity-80"
+          style={{ color: horizontalTextColor }}
         >
           Co-organized by:
         </p>
-        <div className="flex items-center gap-6 max-w-[550px]">
+        <div className="flex items-center gap-6 max-w-[580px]">
           <SponsorStripRow
             sponsors={getCombinedLogos(data)}
-            logoHeightPx={38}
-            maxStripWidthPx={540}
+            logoHeightPx={46}
+            maxStripWidthPx={580}
           />
         </div>
       </div>
@@ -615,19 +576,19 @@ export function CardPreview({
         </div>
         <h2 
           className="m-0 font-extrabold text-[27px] leading-tight"
-          style={{ color: activeHorizontalTextColor }}
+          style={{ color: horizontalTextColor }}
         >
           {data.name || "Attendee Name"}
         </h2>
         <p 
-          className="m-0 font-bold text-[18px] mt-1 uppercase tracking-wider"
-          style={{ color: "#E2E8F0" }}
+          className="m-0 font-bold text-[18px] mt-1 uppercase tracking-wider opacity-90"
+          style={{ color: horizontalTextColor }}
         >
-          {data.role || "ROLE/TITLE"}
+          {data.role || "CEO"}
         </p>
         <p 
-          className="m-0 font-medium text-[16px] mt-0.5 opacity-90"
-          style={{ color: "#CBD5E1" }}
+          className="m-0 font-medium text-[16px] mt-0.5 opacity-85"
+          style={{ color: horizontalTextColor }}
         >
           {data.company || "Organization"}
         </p>

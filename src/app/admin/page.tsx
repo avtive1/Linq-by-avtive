@@ -41,8 +41,38 @@ type OrganizationRow = {
 };
 
 export default async function AdminDashboardPage() {
-  // 1. Fetch All Organizations (Users)
-  const userData = await listAdminUsers();
+  // Fetch All Admin Data in Parallel for maximum speed
+  const [userData, rawEvents, rawAttendees, profiles, officialOrgs, requestsData] = await Promise.all([
+    listAdminUsers(),
+    queryNeon<{
+      id: string;
+      user_id: string;
+      name: string;
+      created_at: string;
+      date: string;
+      location: string;
+      logo_url: string | null;
+    }>(
+      `SELECT id, user_id, name, created_at, date, location, logo_url
+       FROM public.events
+       ORDER BY created_at DESC`,
+    ),
+    queryNeon<{ id: string; event_id: string; created_at: string }>(
+      `SELECT id, event_id, created_at FROM public.attendees`,
+    ),
+    queryNeon<{
+      id: string;
+      username: string | null;
+      organization_name: string | null;
+      organization_logo_url: string | null;
+    }>(`SELECT id, username, organization_name, organization_logo_url FROM public.profiles`),
+    queryNeon<{
+      organization_name_key: string;
+      organization_logo_url: string | null;
+    }>(`SELECT organization_name_key, organization_logo_url FROM public.organizations`),
+    listOrganizationRegistrationRequests({ limit: 10 }),
+  ]);
+
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
     .map((e) => e.toLowerCase().trim())
@@ -52,48 +82,14 @@ export default async function AdminDashboardPage() {
     return !email || !adminEmails.includes(email);
   });
 
-  // 2. Fetch All Events
-  const rawEvents = await queryNeon<{
-    id: string;
-    user_id: string;
-    name: string;
-    created_at: string;
-    date: string;
-    location: string;
-    logo_url: string | null;
-  }>(
-    `SELECT id, user_id, name, created_at, date, location, logo_url
-     FROM public.events
-     ORDER BY created_at DESC`,
-  );
-
-  // 3. Fetch All Attendees
-  const rawAttendees = await queryNeon<{ id: string; event_id: string; created_at: string }>(
-    `SELECT id, event_id, created_at FROM public.attendees`,
-  );
-
-  // 4. Fetch All Profiles (for usernames and branding)
-  const profiles = await queryNeon<{
-    id: string;
-    username: string | null;
-    organization_name: string | null;
-    organization_logo_url: string | null;
-  }>(`SELECT id, username, organization_name, organization_logo_url FROM public.profiles`);
   const profileLookup = new Map();
   (profiles || []).forEach((p) => profileLookup.set(p.id, p));
 
-  // 5. Fetch Official Organizations Data (for master logos)
-  const officialOrgs = await queryNeon<{
-    organization_name_key: string;
-    organization_logo_url: string | null;
-  }>(`SELECT organization_name_key, organization_logo_url FROM public.organizations`);
   const orgLogoLookup = new Map();
   (officialOrgs || []).forEach((o) => {
     if (o.organization_logo_url) orgLogoLookup.set(o.organization_name_key, o.organization_logo_url);
   });
 
-  // 6. Fetch Organization Creation Requests Data
-  const requestsData = await listOrganizationRegistrationRequests({ limit: 10 });
   const pendingRequestsCount = requestsData.counts.pending + requestsData.counts.under_review;
 
   // Aggregate Data
