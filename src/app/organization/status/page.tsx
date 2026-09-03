@@ -65,6 +65,7 @@ function StatusTrackerForm() {
   useEffect(() => {
     if (!initialRef) return;
     let isCancelled = false;
+    setIsLoading(true);
 
     fetch(`/api/organization-registration?ref=${encodeURIComponent(initialRef.trim())}`)
       .then((res) => res.json())

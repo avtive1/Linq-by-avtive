@@ -299,9 +299,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   }, [brandingDraft, brandingRedoStack]);
   const [showBrandCustomColorPicker, setShowBrandCustomColorPicker] = useState(false);
   const [draftBrandCustomColor, setDraftBrandCustomColor] = useState("#2563EB");
+  const [brandColorBeforePicker, setBrandColorBeforePicker] = useState("#2563EB");
   const [brandCustomColorAnchorRect, setBrandCustomColorAnchorRect] = useState<DOMRect | null>(null);
   const [showBrandTextColorPicker, setShowBrandTextColorPicker] = useState(false);
   const [draftBrandTextColor, setDraftBrandTextColor] = useState("#FFFFFF");
+  const [brandTextColorBeforePicker, setBrandTextColorBeforePicker] = useState("#FFFFFF");
   const [brandTextColorAnchorRect, setBrandTextColorAnchorRect] = useState<DOMRect | null>(null);
   const [activeBrandTextTarget, setActiveBrandTextTarget] = useState<"horizontal" | "vertical">("horizontal");
   const [newFieldLabel, setNewFieldLabel] = useState("");
@@ -343,7 +345,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   useEffect(() => {
     let isMounted = true;
-    if (isSessionPending || isInternalUserLoading) return;
+    if (isInternalUserLoading) return;
+
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) setIsLoading(false);
+    }, 6000);
 
     const resolveAuthedUserIdWithRetry = async (): Promise<string> => {
       if (userId) return userId;
@@ -587,6 +593,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           toast.error("Failed to load event data.");
         }
       } finally {
+        clearTimeout(safetyTimer);
         if (isMounted && !silentPoll) {
           setIsLoading(false);
         }
@@ -594,8 +601,11 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
     };
 
     checkUser();
-    return () => { isMounted = false; };
-  }, [id, router, impersonateId, isPreviewMode, sessionUserId, userId, refreshTick, isSessionPending, isInternalUserLoading]);
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimer);
+    };
+  }, [id, router, impersonateId, isPreviewMode, sessionUserId, userId, refreshTick, isInternalUserLoading]);
 
   const status = useMemo(() => getEventStatus(eventData?.date), [eventData?.date]);
   const minCampaignDate = useMemo(() => {
@@ -2969,7 +2979,9 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                           onClick={(e) => {
                             setShowBrandTextColorPicker(false);
                             setBrandCustomColorAnchorRect(e.currentTarget.getBoundingClientRect());
-                            setDraftBrandCustomColor(isBrandCustomThemeSelected ? brandingDraft.card_color : "#2563EB");
+                            const initial = isBrandCustomThemeSelected ? brandingDraft.card_color : "#2563EB";
+                            setDraftBrandCustomColor(initial);
+                            setBrandColorBeforePicker(brandingDraft.card_color);
                             setShowBrandCustomColorPicker(true);
                           }}
                           className={`w-8 h-8 rounded-full transition-all duration-150 relative overflow-hidden flex items-center justify-center p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-95 ${
@@ -3000,8 +3012,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <CustomColorPicker
                           value={draftBrandCustomColor}
                           anchorRect={brandCustomColorAnchorRect}
-                          onChange={(next) => setDraftBrandCustomColor(next)}
-                          onCancel={() => setShowBrandCustomColorPicker(false)}
+                          onChange={(next) => {
+                            setDraftBrandCustomColor(next);
+                            setBrandingDraft((prev) => ({ ...prev, card_color: next }));
+                          }}
+                          onCancel={() => {
+                            setBrandingDraft((prev) => ({ ...prev, card_color: brandColorBeforePicker }));
+                            setShowBrandCustomColorPicker(false);
+                          }}
                           onConfirm={() => {
                             editBrandingDraft((prev) => ({ ...prev, card_color: draftBrandCustomColor }));
                             setShowBrandCustomColorPicker(false);
@@ -3023,15 +3041,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             setActiveBrandTextTarget("horizontal");
                             setShowBrandCustomColorPicker(false);
                             setBrandTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
-                            setDraftBrandTextColor(brandingDraft.horizontal_text_color || "#FFFFFF");
+                            const initial = brandingDraft.horizontal_text_color || "#FFFFFF";
+                            setDraftBrandTextColor(initial);
+                            setBrandTextColorBeforePicker(brandingDraft.horizontal_text_color);
                             setShowBrandTextColorPicker(true);
                           }}
-                          className={`h-9 px-3 text-[12px] font-semibold rounded-sm transition-all ${
-                            activeBrandTextTarget === "horizontal"
+                          className={`h-9 px-3 text-[12px] font-semibold rounded-sm transition-all flex items-center gap-1.5 ${
+                            activeBrandTextTarget === "horizontal" && showBrandTextColorPicker
                               ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
                               : "text-heading/75 hover:bg-slate-100/80"
                           }`}
                         >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-2xs shrink-0"
+                            style={{ background: brandingDraft.horizontal_text_color || "#FFFFFF" }}
+                          />
                           T1 - Horizontal
                         </ShadButton>
                         <Separator orientation="vertical" className="mx-1 h-5 bg-border/70" />
@@ -3043,15 +3067,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                             setActiveBrandTextTarget("vertical");
                             setShowBrandCustomColorPicker(false);
                             setBrandTextColorAnchorRect(e.currentTarget.getBoundingClientRect());
-                            setDraftBrandTextColor(brandingDraft.vertical_text_color || "#000000");
+                            const initial = brandingDraft.vertical_text_color || "#FFFFFF";
+                            setDraftBrandTextColor(initial);
+                            setBrandTextColorBeforePicker(brandingDraft.vertical_text_color);
                             setShowBrandTextColorPicker(true);
                           }}
-                          className={`h-9 px-3 text-[12px] font-semibold rounded-sm transition-all ${
-                            activeBrandTextTarget === "vertical"
+                          className={`h-9 px-3 text-[12px] font-semibold rounded-sm transition-all flex items-center gap-1.5 ${
+                            activeBrandTextTarget === "vertical" && showBrandTextColorPicker
                               ? "bg-primary/12 text-primary-strong ring-1 ring-primary/30 shadow-sm"
                               : "text-heading/75 hover:bg-slate-100/80"
                           }`}
                         >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20 shadow-2xs shrink-0"
+                            style={{ background: brandingDraft.vertical_text_color || "#FFFFFF" }}
+                          />
                           T2 - Vertical
                         </ShadButton>
                       </Card>
@@ -3059,8 +3089,22 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                         <CustomColorPicker
                           value={draftBrandTextColor}
                           anchorRect={brandTextColorAnchorRect}
-                          onChange={(next) => setDraftBrandTextColor(next)}
-                          onCancel={() => setShowBrandTextColorPicker(false)}
+                          onChange={(next) => {
+                            setDraftBrandTextColor(next);
+                            if (activeBrandTextTarget === "horizontal") {
+                              setBrandingDraft((prev) => ({ ...prev, horizontal_text_color: next }));
+                            } else {
+                              setBrandingDraft((prev) => ({ ...prev, vertical_text_color: next }));
+                            }
+                          }}
+                          onCancel={() => {
+                            if (activeBrandTextTarget === "horizontal") {
+                              setBrandingDraft((prev) => ({ ...prev, horizontal_text_color: brandTextColorBeforePicker }));
+                            } else {
+                              setBrandingDraft((prev) => ({ ...prev, vertical_text_color: brandTextColorBeforePicker }));
+                            }
+                            setShowBrandTextColorPicker(false);
+                          }}
                           onConfirm={() => {
                             if (activeBrandTextTarget === "horizontal") {
                               editBrandingDraft((prev) => ({ ...prev, horizontal_text_color: draftBrandTextColor }));
