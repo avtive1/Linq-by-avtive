@@ -3,6 +3,7 @@ import { neonAuth } from "@/auth";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { resetPasswordBodySchema } from "@/lib/validators/auth.validator";
+import { resetPasswordWithToken } from "@/lib/auth-db";
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +14,11 @@ export async function POST(req: Request) {
     const issues = validatePasswordPolicy(password);
     if (issues.length > 0) {
       return NextResponse.json({ error: issues[0] }, { status: 400 });
+    }
+
+    const resetSuccess = await resetPasswordWithToken(token, password);
+    if (resetSuccess) {
+      return NextResponse.json({ data: { ok: true } }, { status: 200 });
     }
 
     const result = await neonAuth.resetPassword({
@@ -31,3 +37,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
