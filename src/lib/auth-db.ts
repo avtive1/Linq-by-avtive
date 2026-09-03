@@ -575,3 +575,61 @@ export async function resetPasswordWithToken(token: string, newPassword: string)
   );
   return true;
 }
+
+export async function changeUserPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  await ensureAuthSchema();
+  await ensureBootstrapSuperAdmin();
+
+  const user = await queryNeonOneAsSystem<{ user_id: string; password_hash: string | null }>(
+    `SELECT user_id, password_hash
+     FROM public.auth_users
+     WHERE user_id = $1
+     LIMIT 1`,
+    [userId],
+  );
+
+  if (!user) {
+    return { success: false, error: "User account not found." };
+  }
+
+  const argon2 = await getArgon2();
+  const pepper = process.env.PASSWORD_PEPPER || "";
+
+  if (user.password_hash) {
+    let isValid = false;
+    try {
+      isValid = await argon2.verify(user.password_hash, currentPassword);
+    } catch {
+      // Hash format mismatch
+    }
+
+    if (!isValid && pepper) {
+      try {
+        isValid = await argon2.verify(user.password_hash, `${currentPassword}${pepper}`);
+      } catch {
+        // Hash format mismatch
+      }
+    }
+
+    if (!isValid) {
+      return { success: false, error: "Current password is incorrect." };
+    }
+  }
+
+  const newHash = await argon2.hash(newPassword, ARGON2_OPTIONS);
+
+  await queryNeonAsSystem(
+    `UPDATE public.auth_users
+     SET password_hash = $1,
+         updated_at = now()
+     WHERE user_id = $2`,
+    [newHash, userId],
+  );
+
+  return { success: true };
+}
+
