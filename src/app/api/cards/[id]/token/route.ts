@@ -6,6 +6,9 @@ import { queryNeonOne } from "@/lib/neon-db";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { isValidUuid } from "@/lib/validation/uuid";
 
+import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
+import { getServerAuthSession } from "@/auth";
+
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -14,21 +17,28 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     const userId = await getServerUserIdFromCookies(cookieStore);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const attendee = await queryNeonOne<{ id: string; event_id: string | null; user_id: string | null }>(
-      `SELECT id, event_id, user_id FROM public.attendees WHERE id = $1`,
+    const attendee = await queryNeonOne<Record<string, unknown>>(
+      `SELECT * FROM public.attendees WHERE id = $1`,
       [id],
     );
     if (!attendee) return NextResponse.json({ error: "Card not found" }, { status: 404 });
 
-    let canIssue = false;
-    if (attendee.event_id) {
+    const { row: secureAttendee } = decryptAttendeeSensitiveFields(attendee);
+    const session = await getServerAuthSession();
+    const sessionEmail = String(session?.user?.email || "").trim().toLowerCase();
+    const attendeeEmail = String(secureAttendee.card_email || "").trim().toLowerCase();
+
+    let canIssue = Boolean(
+      (attendee.user_id && String(attendee.user_id).trim() === userId) ||
+      (sessionEmail && attendeeEmail && attendeeEmail === sessionEmail)
+    );
+
+    if (!canIssue && attendee.event_id) {
       const event = await queryNeonOne<{ user_id: string | null }>(
         `SELECT user_id FROM public.events WHERE id = $1`,
         [attendee.event_id],
       );
       if (event?.user_id === userId) canIssue = true;
-    } else if (attendee.user_id === userId) {
-      canIssue = true;
     }
 
     if (!canIssue) return NextResponse.json({ error: "Forbidden" }, { status: 403 });

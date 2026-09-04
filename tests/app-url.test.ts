@@ -12,7 +12,10 @@ describe("app-url utilities", () => {
     process.env = originalEnv;
   });
 
-  it("normalizes .com domain variants to .app", () => {
+  it("normalizes .com and .app.com domain variants to .app", () => {
+    expect(normalizeAppUrl("https://linq.avtive.app.com")).toBe("https://linq.avtive.app");
+    expect(normalizeAppUrl("http://linq.avtive.app.com/")).toBe("http://linq.avtive.app");
+    expect(normalizeAppUrl("avtive.app.com")).toBe("https://avtive.app");
     expect(normalizeAppUrl("https://linq.avtive.com")).toBe("https://linq.avtive.app");
     expect(normalizeAppUrl("https://avtive.com")).toBe("https://avtive.app");
     expect(normalizeAppUrl("http://linq.avtive.com/")).toBe("http://linq.avtive.app");
@@ -28,8 +31,11 @@ describe("app-url utilities", () => {
     expect(getPublicAppUrl()).toBe(CANONICAL_APP_URL);
   });
 
-  it("auto-corrects NEXT_PUBLIC_APP_URL if it has .com", () => {
+  it("auto-corrects NEXT_PUBLIC_APP_URL if it has .com or .app.com", () => {
     process.env.NEXT_PUBLIC_APP_URL = "https://linq.avtive.com";
+    expect(getPublicAppUrl()).toBe("https://linq.avtive.app");
+
+    process.env.NEXT_PUBLIC_APP_URL = "https://linq.avtive.app.com";
     expect(getPublicAppUrl()).toBe("https://linq.avtive.app");
   });
 
@@ -43,13 +49,19 @@ describe("app-url utilities", () => {
     expect(getPublicAppUrl(req)).toBe("https://linq.avtive.app");
   });
 
-  it("corrects .com in request headers if client passed old domain", () => {
-    const req = new Request("https://linq.avtive.com/api/organization-members", {
+  it("corrects .com and .app.com in request headers if client passed old domain", () => {
+    const req1 = new Request("https://linq.avtive.com/api/organization-members", {
       headers: {
         origin: "https://linq.avtive.com",
       },
     });
+    expect(getPublicAppUrl(req1)).toBe("https://linq.avtive.app");
 
-    expect(getPublicAppUrl(req)).toBe("https://linq.avtive.app");
+    const req2 = new Request("https://linq.avtive.app.com/api/organization-members", {
+      headers: {
+        origin: "https://linq.avtive.app.com",
+      },
+    });
+    expect(getPublicAppUrl(req2)).toBe("https://linq.avtive.app");
   });
 });

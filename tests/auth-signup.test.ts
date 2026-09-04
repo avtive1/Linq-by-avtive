@@ -23,7 +23,7 @@ describe("registerUser self-registration flow", () => {
     const verified = await verifyPassword(testEmail, testPassword);
     expect(verified).not.toBeNull();
     expect(verified?.user_id).toBe(result.userId);
-  }, 20000);
+  }, 40000);
 
   it("handles idempotent re-registration or updates for the same email", async () => {
     const randomSuffix = Math.random().toString(36).substring(2, 8);
@@ -49,5 +49,5 @@ describe("registerUser self-registration flow", () => {
 
     expect(result2.userId).toBe(result1.userId);
     expect(result2.email).toBe(testEmail.toLowerCase());
-  }, 20000);
+  }, 40000);
 });

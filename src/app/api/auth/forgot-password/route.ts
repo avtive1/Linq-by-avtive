@@ -3,16 +3,18 @@ import { neonAuth } from "@/auth";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { forgotPasswordBodySchema } from "@/lib/validators/auth.validator";
 
+import { getPublicAppUrl } from "@/lib/app-url";
+
 export async function POST(req: Request) {
   try {
     const parsed = await parseJsonBody(req, forgotPasswordBodySchema);
     if (!parsed.ok) return parsed.response;
     const { email } = parsed.data;
 
-    const url = new URL(req.url);
+    const base = getPublicAppUrl(req);
     const result = await neonAuth.requestPasswordReset({
       email,
-      redirectTo: `${url.origin}/reset-password`,
+      redirectTo: `${base}/reset-password`,
     } as Parameters<typeof neonAuth.requestPasswordReset>[0]);
     if (result.error) {
       return NextResponse.json({ error: result.error.message }, { status: result.error.status || 400 });
