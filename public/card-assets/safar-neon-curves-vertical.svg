@@ -51,7 +51,7 @@
       <stop offset="0%" stop-color="#FF2E93" stop-opacity="0.9" />
       <stop offset="45%" stop-color="#E024C3" stop-opacity="0.95" />
       <stop offset="80%" stop-color="#9333EA" stop-opacity="0.85" />
-      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0" />
+      <stop offset="100%" stop-color="#4F46E5" stop-opacity="0.85" />
     </linearGradient>
 
     <linearGradient id="amberRibbonGradV" x1="576" y1="350" x2="300" y2="650" gradientUnits="userSpaceOnUse">
@@ -60,6 +60,9 @@
       <stop offset="100%" stop-color="#FF0055" stop-opacity="0" />
     </linearGradient>
   </defs>
+
+  <!-- Background base fill -->
+  <rect width="576" height="1024" fill="#04060A" />
 
   <!-- Radial atmospheric spotlights -->
   <circle cx="450" cy="620" r="260" fill="#00F0FF" opacity="0.13" filter="url(#glowCyanV)" />
@@ -94,4 +97,17 @@
   <circle cx="370" cy="620" r="2.5" fill="#00F0FF" opacity="0.9" filter="url(#glowCyanV)"/>
   <circle cx="210" cy="850" r="3" fill="#FFB8FF" opacity="0.9" filter="url(#glowMagentaV)"/>
   <circle cx="490" cy="420" r="2" fill="#FFD000" opacity="0.8"/>
+
+  <!-- Subtle Green Matrix Dots (Vertical) -->
+  <g fill="#00E676">
+    <circle cx="380" cy="740" r="1.5" opacity="0.25" />
+    <circle cx="380" cy="755" r="1.5" opacity="0.30" />
+    <circle cx="380" cy="770" r="1.5" opacity="0.35" />
+    <circle cx="395" cy="740" r="1.5" opacity="0.30" />
+    <circle cx="395" cy="755" r="1.5" opacity="0.40" />
+    <circle cx="395" cy="770" r="1.5" opacity="0.45" />
+    <circle cx="410" cy="740" r="1.5" opacity="0.35" />
+    <circle cx="410" cy="755" r="1.5" opacity="0.45" />
+    <circle cx="410" cy="770" r="1.5" opacity="0.50" />
+  </g>
 </svg>

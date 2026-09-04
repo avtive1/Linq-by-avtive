@@ -4,7 +4,7 @@ import { issueAttendeeCardToken, verifyAttendeeCardToken } from "@/lib/security/
 import { insertRow, queryNeonOne } from "@/lib/neon-db";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 
-function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
+export function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
   const sanitized = { ...payload };
   delete sanitized.card_color;
   delete sanitized.design_type;
@@ -23,7 +23,7 @@ function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
   return sanitized;
 }
 
-async function applyEventBrandingToAttendeePayload(
+export async function applyEventBrandingToAttendeePayload(
   payload: Record<string, unknown>,
 ): Promise<Record<string, unknown>> {
   const eventId = String(payload.event_id || "").trim();

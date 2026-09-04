@@ -83,7 +83,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const { id } = use(params);
   const shareToken = String(searchParams.get("token") || "").trim();
   const isShareEditMode = searchParams.get("share") === "true";
-  const canCustomizeBranding = true;
+  const [canCustomizeBranding, setCanCustomizeBranding] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const verticalFrontRef = useRef<HTMLDivElement>(null);
   const verticalBackRef = useRef<HTMLDivElement>(null);
@@ -172,9 +172,11 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         const payload = await resp.json();
         const record = payload.data;
         const locked = Boolean(payload.identityLocked);
+        const canBranding = Boolean(payload.canCustomizeBranding);
 
         if (!isMounted) return;
         setIdentityLocked(locked);
+        setCanCustomizeBranding(canBranding);
         setEventId(record.event_id || null);
         setOriginalPhotoPath(record.photo_url || null);
 
@@ -754,8 +756,15 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                   <CustomColorPicker
                     value={draftCustomColor}
                     anchorRect={customColorAnchorRect}
-                    onChange={(next) => setDraftCustomColor(next)}
-                    onCancel={() => setShowCustomColorPicker(false)}
+                    onChange={(next) => {
+                      setDraftCustomColor(next);
+                      setCustomColorText(next);
+                      setForm((f) => ({ ...f, color: next }));
+                    }}
+                    onCancel={() => {
+                      setShowCustomColorPicker(false);
+                      setForm((f) => ({ ...f, color: customColorText }));
+                    }}
                     onConfirm={() => {
                       setCustomColorText(draftCustomColor);
                       update("color")(draftCustomColor);
@@ -903,7 +912,16 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               <CustomColorPicker
                 value={draftTextColor}
                 anchorRect={textColorAnchorRect}
-                onChange={(next) => setDraftTextColor(next)}
+                onChange={(next) => {
+                  setDraftTextColor(next);
+                  if (activeTextTarget === "horizontal") {
+                    setHorizontalTextColor(next);
+                    setForm((f) => ({ ...f, horizontalTextColor: next }));
+                  } else {
+                    setVerticalTextColor(next);
+                    setForm((f) => ({ ...f, verticalTextColor: next }));
+                  }
+                }}
                 onCancel={() => setShowTextColorPicker(false)}
                 onConfirm={() => {
                   if (activeTextTarget === "horizontal") {

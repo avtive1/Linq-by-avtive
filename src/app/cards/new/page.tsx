@@ -142,7 +142,6 @@ function NewCardForm() {
   const [horizontalTextColor, setHorizontalTextColor] = useState("");
   const [verticalTextColor, setVerticalTextColor] = useState("");
 
-
   // Fetch event details for the locked header / preview.
   const [eventLoading, setEventLoading] = useState(!!eventId);
   const [eventPast, setEventPast] = useState(false);

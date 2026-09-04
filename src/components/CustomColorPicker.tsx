@@ -15,7 +15,7 @@ type Props = {
 type Rgb = { r: number; g: number; b: number };
 type Hsv = { h: number; s: number; v: number };
 
-const DEFAULT_SWATCHES = ["#C71B1B", "#F3F4F6", "#D1D5DB", "#9CA3AF", "#4B5563"];
+const DEFAULT_SWATCHES = ["#C71B1B", "#2563EB", "#10B981", "#8B5CF6", "#F59E0B"];
 const SWATCHES_STORAGE_KEY = "customColorPickerSlotsV1";
 
 const subscribeNoop: (onStoreChange: () => void) => () => void = () => () => {};
@@ -84,21 +84,38 @@ function hsvToRgb({ h, s, v }: Hsv): Rgb {
 export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchorRect }: Props) {
   const initialHsv = rgbToHsv(hexToRgb(value || "#2563EB"));
   const [hsv, setHsv] = useState<Hsv>(initialHsv);
+  const [mode, setMode] = useState<"wheel" | "square">("wheel");
   const [swatches, setSwatches] = useState<string[]>(DEFAULT_SWATCHES);
   const [selectedSlot, setSelectedSlot] = useState(0);
   const isClient = useIsClient();
   const fieldUid = useId().replace(/:/g, "");
   const panelRef = useRef<HTMLDivElement>(null);
+  const wheelRef = useRef<HTMLDivElement>(null);
+  const wheelValRef = useRef<HTMLDivElement>(null);
   const svRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
 
   const currentRgb = useMemo(() => hsvToRgb(hsv), [hsv]);
   const currentHex = useMemo(() => rgbToHex(currentRgb), [currentRgb]);
   const pureHue = useMemo(() => rgbToHex(hsvToRgb({ h: hsv.h, s: 1, v: 1 })), [hsv.h]);
+  const pureHueSatHex = useMemo(() => rgbToHex(hsvToRgb({ h: hsv.h, s: hsv.s, v: 1 })), [hsv.h, hsv.s]);
   const hueIndicatorTop = useMemo(() => (clamp(hsv.h, 0, 359) / 359) * 100, [hsv.h]);
+
+  // Color wheel indicator coordinate calculation
+  const wheelIndicatorPos = useMemo(() => {
+    // 0 deg is Top in conic-gradient(from 0deg, ...)
+    const rad = (hsv.h - 90) * (Math.PI / 180);
+    const radius = 96; // 192px / 2
+    const cx = 96;
+    const cy = 96;
+    const x = cx + Math.cos(rad) * (hsv.s * radius);
+    const y = cy + Math.sin(rad) * (hsv.s * radius);
+    return { x, y };
+  }, [hsv.h, hsv.s]);
+
   const panelPosition = useMemo(() => {
-    const panelW = 420;
-    const panelH = 360;
+    const panelW = 430;
+    const panelH = 390;
     const gap = 6;
     const verticalNudge = 10;
     if (!anchorRect || typeof window === "undefined") {
@@ -110,7 +127,6 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     let left = anchorRect.right + gap;
     let top = anchorRect.bottom + gap + verticalNudge;
 
-    // Prefer side placement, then fall back to above.
     if (left + panelW > vw - 12) left = anchorRect.left - panelW - gap;
     if (left < 12) left = Math.max(12, Math.min(vw - panelW - 12, anchorRect.left));
 
@@ -133,6 +149,38 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     });
   };
 
+  // 1. Color Wheel Interaction (Hue & Saturation)
+  const pickWheel = (clientX: number, clientY: number) => {
+    const el = wheelRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const cx = rect.width / 2;
+    const cy = rect.height / 2;
+    const dx = clientX - (rect.left + cx);
+    const dy = clientY - (rect.top + cy);
+
+    let angle = Math.atan2(dx, -dy) * (180 / Math.PI);
+    if (angle < 0) angle += 360;
+
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const radius = rect.width / 2;
+    const s = clamp(dist / radius, 0, 1);
+    const h = clamp(Math.round(angle), 0, 359);
+
+    commitColor({ ...hsv, h, s });
+  };
+
+  // 2. Wheel Brightness Slider Interaction
+  const pickWheelValue = (clientX: number) => {
+    const el = wheelValRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = clamp(clientX - rect.left, 0, rect.width);
+    const v = clamp(x / rect.width, 0, 1);
+    commitColor({ ...hsv, v });
+  };
+
+  // 3. Square (SV Box) Interaction
   const pickSV = (clientX: number, clientY: number) => {
     const el = svRef.current;
     if (!el) return;
@@ -142,6 +190,7 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
     commitColor({ h: hsv.h, s: x / rect.width, v: 1 - y / rect.height });
   };
 
+  // 4. Hue Bar Interaction
   const pickHue = (clientY: number) => {
     const el = hueRef.current;
     if (!el) return;
@@ -204,137 +253,314 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
   return createPortal(
     <div
       ref={panelRef}
-      className="fixed z-[120] rounded-[6px] border border-white/15 bg-[#101217] p-3 text-white shadow-2xl"
+      className="fixed z-[120] rounded-[10px] border border-white/15 bg-[#101217] p-3.5 text-white shadow-2xl backdrop-blur-xl animate-scale-in"
       style={{ top: panelPosition.top, left: panelPosition.left }}
     >
+      {/* Mode Switch Tabs (Wheel vs Square) */}
+      <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+        <div className="flex items-center gap-1 rounded-md bg-white/5 p-0.5 border border-white/10">
+          <button
+            type="button"
+            onClick={() => setMode("wheel")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold rounded-sm transition-all ${
+              mode === "wheel"
+                ? "bg-primary text-white shadow-sm"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+            </svg>
+            Color Wheel
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("square")}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-[12px] font-semibold rounded-sm transition-all ${
+              mode === "square"
+                ? "bg-primary text-white shadow-sm"
+                : "text-white/70 hover:text-white hover:bg-white/10"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+            </svg>
+            Grid / Box
+          </button>
+        </div>
+        <span className="text-[11px] font-medium text-white/50 uppercase tracking-wider">
+          {mode === "wheel" ? "Hue & Saturation Wheel" : "Classic SV Box"}
+        </span>
+      </div>
+
+      {/* Main Interactive Visual Canvas */}
       <div className="flex gap-3">
-        <div
-          ref={svRef}
-          className="relative h-48 w-48 cursor-crosshair overflow-hidden rounded-[6px]"
-          style={{
-            backgroundColor: pureHue,
-            backgroundImage: "linear-gradient(to right, #ffffff, rgba(255,255,255,0)), linear-gradient(to top, #000000, rgba(0,0,0,0))",
-          }}
-          onMouseDown={(e) => {
-            pickSV(e.clientX, e.clientY);
-            const onMove = (ev: MouseEvent) => pickSV(ev.clientX, ev.clientY);
-            const onUp = () => {
-              window.removeEventListener("mousemove", onMove);
-              window.removeEventListener("mouseup", onUp);
-            };
-            window.addEventListener("mousemove", onMove);
-            window.addEventListener("mouseup", onUp);
-          }}
-          onTouchStart={(e) => {
-            const touch = e.touches[0];
-            if (!touch) return;
-            pickSV(touch.clientX, touch.clientY);
-            const onMove = (ev: TouchEvent) => {
-              const t = ev.touches[0];
-              if (!t) return;
-              pickSV(t.clientX, t.clientY);
-            };
-            const onEnd = () => {
-              window.removeEventListener("touchmove", onMove);
-              window.removeEventListener("touchend", onEnd);
-            };
-            window.addEventListener("touchmove", onMove, { passive: true });
-            window.addEventListener("touchend", onEnd, { passive: true });
-          }}
-        >
-          <span
-            className="pointer-events-none absolute h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
-            style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%` }}
-          />
-        </div>
-        <div
-          ref={hueRef}
-          className="relative h-48 w-4 cursor-ns-resize rounded-none"
-          style={{
-            background:
-              "linear-gradient(to bottom, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
-          }}
-          onMouseDown={(e) => {
-            pickHue(e.clientY);
-            const onMove = (ev: MouseEvent) => pickHue(ev.clientY);
-            const onUp = () => {
-              window.removeEventListener("mousemove", onMove);
-              window.removeEventListener("mouseup", onUp);
-            };
-            window.addEventListener("mousemove", onMove);
-            window.addEventListener("mouseup", onUp);
-          }}
-          onTouchStart={(e) => {
-            const touch = e.touches[0];
-            if (!touch) return;
-            pickHue(touch.clientY);
-            const onMove = (ev: TouchEvent) => {
-              const t = ev.touches[0];
-              if (!t) return;
-              pickHue(t.clientY);
-            };
-            const onEnd = () => {
-              window.removeEventListener("touchmove", onMove);
-              window.removeEventListener("touchend", onEnd);
-            };
-            window.addEventListener("touchmove", onMove, { passive: true });
-            window.addEventListener("touchend", onEnd, { passive: true });
-          }}
-        >
-          <span
-            className="pointer-events-none absolute left-0 right-0 h-1 rounded-none bg-white shadow"
-            style={{ top: `calc(${hueIndicatorTop}% - 2px)` }}
-          />
-          <span
-            className="pointer-events-none absolute h-0 w-0 border-y-[4px] border-y-transparent border-r-[6px] border-r-[#aab3c2] drop-shadow-[0_0_1px_rgba(0,0,0,0.35)]"
-            style={{ left: -6, top: `calc(${hueIndicatorTop}% - 4px)` }}
-          />
-          <span
-            className="pointer-events-none absolute h-0 w-0 border-y-[4px] border-y-transparent border-l-[6px] border-l-[#aab3c2] drop-shadow-[0_0_1px_rgba(0,0,0,0.35)]"
-            style={{ right: -6, top: `calc(${hueIndicatorTop}% - 4px)` }}
-          />
-        </div>
-        <div className="flex w-[104px] min-w-[104px] flex-col gap-1.5">
-          <div className="h-10 w-full rounded-[4px] border border-white/15" style={{ background: currentHex }} />
-          <div className="mt-1 flex flex-col gap-1.5">
-            {(["r", "g", "b"] as const).map((key) => (
-              <div key={key} className="flex w-full items-center justify-end gap-1">
-                <span className="w-3 shrink-0 text-right text-[15px] font-medium uppercase text-white/75">{key}</span>
-                <input
-                  id={`${fieldUid}-rgb-${key}`}
-                  name={`colorRgb${key}`}
-                  type="number"
-                  min={0}
-                  max={255}
-                  value={currentRgb[key]}
-                  onChange={(e) => {
-                    const val = clamp(Number(e.target.value || 0), 0, 255);
-                    const nextRgb = { ...currentRgb, [key]: val };
-                    commitColor(rgbToHsv(nextRgb));
-                  }}
-                  className="h-6 w-[72px] rounded-[5px] border border-white/20 bg-white px-1.5 text-[13px] text-black"
+        {mode === "wheel" ? (
+          /* ================= COLOR WHEEL MODE ================= */
+          <div className="flex flex-col gap-2.5 items-center">
+            {/* 360-Degree Circular Color Wheel */}
+            <div
+              ref={wheelRef}
+              className="relative h-48 w-48 cursor-crosshair rounded-full overflow-hidden shadow-inner border border-white/20 select-none"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, #ff0000 0deg, #ffff00 60deg, #00ff00 120deg, #00ffff 180deg, #0000ff 240deg, #ff00ff 300deg, #ff0000 360deg)",
+              }}
+              onMouseDown={(e) => {
+                pickWheel(e.clientX, e.clientY);
+                const onMove = (ev: MouseEvent) => pickWheel(ev.clientX, ev.clientY);
+                const onUp = () => {
+                  window.removeEventListener("mousemove", onMove);
+                  window.removeEventListener("mouseup", onUp);
+                };
+                window.addEventListener("mousemove", onMove);
+                window.addEventListener("mouseup", onUp);
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                if (!touch) return;
+                pickWheel(touch.clientX, touch.clientY);
+                const onMove = (ev: TouchEvent) => {
+                  const t = ev.touches[0];
+                  if (!t) return;
+                  pickWheel(t.clientX, t.clientY);
+                };
+                const onEnd = () => {
+                  window.removeEventListener("touchmove", onMove);
+                  window.removeEventListener("touchend", onEnd);
+                };
+                window.addEventListener("touchmove", onMove, { passive: true });
+                window.addEventListener("touchend", onEnd, { passive: true });
+              }}
+            >
+              {/* Radial Saturation Overlay (Center white fading to transparent edge) */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none"
+                style={{
+                  background: "radial-gradient(circle at center, #ffffff 0%, rgba(255,255,255,0.7) 35%, rgba(255,255,255,0) 100%)",
+                }}
+              />
+
+              {/* Dynamic Value/Brightness Dark Overlay */}
+              <div
+                className="absolute inset-0 rounded-full pointer-events-none transition-opacity duration-75"
+                style={{
+                  backgroundColor: "#000000",
+                  opacity: (1 - hsv.v) * 0.92,
+                }}
+              />
+
+              {/* Interactive Wheel Handle Indicator */}
+              <span
+                className="pointer-events-none absolute h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-white shadow-[0_0_4px_rgba(0,0,0,0.8),inset_0_0_2px_rgba(0,0,0,0.6)]"
+                style={{
+                  left: `${wheelIndicatorPos.x}px`,
+                  top: `${wheelIndicatorPos.y}px`,
+                  backgroundColor: currentHex,
+                }}
+              />
+            </div>
+
+            {/* Brightness / Value Slider Bar */}
+            <div className="w-48 flex flex-col gap-1">
+              <div className="flex justify-between text-[11px] font-medium text-white/70">
+                <span>Brightness</span>
+                <span>{Math.round(hsv.v * 100)}%</span>
+              </div>
+              <div
+                ref={wheelValRef}
+                className="relative h-4 w-full cursor-ew-resize rounded-full border border-white/20 select-none overflow-hidden shadow-inner"
+                style={{
+                  background: `linear-gradient(to right, #000000 0%, ${pureHueSatHex} 100%)`,
+                }}
+                onMouseDown={(e) => {
+                  pickWheelValue(e.clientX);
+                  const onMove = (ev: MouseEvent) => pickWheelValue(ev.clientX);
+                  const onUp = () => {
+                    window.removeEventListener("mousemove", onMove);
+                    window.removeEventListener("mouseup", onUp);
+                  };
+                  window.addEventListener("mousemove", onMove);
+                  window.addEventListener("mouseup", onUp);
+                }}
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  if (!touch) return;
+                  pickWheelValue(touch.clientX);
+                  const onMove = (ev: TouchEvent) => {
+                    const t = ev.touches[0];
+                    if (!t) return;
+                    pickWheelValue(t.clientX);
+                  };
+                  const onEnd = () => {
+                    window.removeEventListener("touchmove", onMove);
+                    window.removeEventListener("touchend", onEnd);
+                  };
+                  window.addEventListener("touchmove", onMove, { passive: true });
+                  window.addEventListener("touchend", onEnd, { passive: true });
+                }}
+              >
+                <span
+                  className="pointer-events-none absolute top-0 bottom-0 w-2.5 -translate-x-1/2 rounded-full border border-black/50 bg-white shadow-md"
+                  style={{ left: `${hsv.v * 100}%` }}
                 />
               </div>
-            ))}
-            <div className="flex w-full items-center justify-end gap-1">
-              <span className="w-3 shrink-0 text-right text-[15px] font-medium text-white/75">#</span>
-              <input
-                id={`${fieldUid}-hex`}
-                name="colorHex"
-                type="text"
-                value={currentHex.replace("#", "")}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
-                  if (raw.length === 6) commitColor(rgbToHsv(hexToRgb(`#${raw}`)));
-                }}
-                className="h-6 w-[72px] rounded-[5px] border border-white/20 bg-white px-1.5 text-[13px] uppercase tracking-tight text-black"
+            </div>
+          </div>
+        ) : (
+          /* ================= CLASSIC SQUARE MODE ================= */
+          <div className="flex gap-3">
+            <div
+              ref={svRef}
+              className="relative h-48 w-48 cursor-crosshair overflow-hidden rounded-[6px] border border-white/20"
+              style={{
+                backgroundColor: pureHue,
+                backgroundImage:
+                  "linear-gradient(to right, #ffffff, rgba(255,255,255,0)), linear-gradient(to top, #000000, rgba(0,0,0,0))",
+              }}
+              onMouseDown={(e) => {
+                pickSV(e.clientX, e.clientY);
+                const onMove = (ev: MouseEvent) => pickSV(ev.clientX, ev.clientY);
+                const onUp = () => {
+                  window.removeEventListener("mousemove", onMove);
+                  window.removeEventListener("mouseup", onUp);
+                };
+                window.addEventListener("mousemove", onMove);
+                window.addEventListener("mouseup", onUp);
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                if (!touch) return;
+                pickSV(touch.clientX, touch.clientY);
+                const onMove = (ev: TouchEvent) => {
+                  const t = ev.touches[0];
+                  if (!t) return;
+                  pickSV(t.clientX, t.clientY);
+                };
+                const onEnd = () => {
+                  window.removeEventListener("touchmove", onMove);
+                  window.removeEventListener("touchend", onEnd);
+                };
+                window.addEventListener("touchmove", onMove, { passive: true });
+                window.addEventListener("touchend", onEnd, { passive: true });
+              }}
+            >
+              <span
+                className="pointer-events-none absolute h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow"
+                style={{ left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%` }}
               />
+            </div>
+            <div
+              ref={hueRef}
+              className="relative h-48 w-4 cursor-ns-resize rounded-sm border border-white/20"
+              style={{
+                background:
+                  "linear-gradient(to bottom, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
+              }}
+              onMouseDown={(e) => {
+                pickHue(e.clientY);
+                const onMove = (ev: MouseEvent) => pickHue(ev.clientY);
+                const onUp = () => {
+                  window.removeEventListener("mousemove", onMove);
+                  window.removeEventListener("mouseup", onUp);
+                };
+                window.addEventListener("mousemove", onMove);
+                window.addEventListener("mouseup", onUp);
+              }}
+              onTouchStart={(e) => {
+                const touch = e.touches[0];
+                if (!touch) return;
+                pickHue(touch.clientY);
+                const onMove = (ev: TouchEvent) => {
+                  const t = ev.touches[0];
+                  if (!t) return;
+                  pickHue(t.clientY);
+                };
+                const onEnd = () => {
+                  window.removeEventListener("touchmove", onMove);
+                  window.removeEventListener("touchend", onEnd);
+                };
+                window.addEventListener("touchmove", onMove, { passive: true });
+                window.addEventListener("touchend", onEnd, { passive: true });
+              }}
+            >
+              <span
+                className="pointer-events-none absolute left-0 right-0 h-1 bg-white shadow"
+                style={{ top: `calc(${hueIndicatorTop}% - 2px)` }}
+              />
+              <span
+                className="pointer-events-none absolute h-0 w-0 border-y-[4px] border-y-transparent border-r-[6px] border-r-[#aab3c2]"
+                style={{ left: -6, top: `calc(${hueIndicatorTop}% - 4px)` }}
+              />
+              <span
+                className="pointer-events-none absolute h-0 w-0 border-y-[4px] border-y-transparent border-l-[6px] border-l-[#aab3c2]"
+                style={{ right: -6, top: `calc(${hueIndicatorTop}% - 4px)` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Right Info Column: Color Preview Swatch + RGB + HEX Inputs */}
+        <div className="flex w-[112px] min-w-[112px] flex-col justify-between py-0.5">
+          <div className="flex flex-col gap-2">
+            {/* Active Color Preview Block */}
+            <div
+              className="h-11 w-full rounded-[6px] border border-white/20 shadow-md flex items-center justify-center transition-colors"
+              style={{ background: currentHex }}
+            >
+              <span className="text-[11px] font-mono font-bold tracking-tight bg-black/40 text-white px-1.5 py-0.5 rounded">
+                {currentHex}
+              </span>
+            </div>
+
+            {/* RGB Inputs */}
+            <div className="flex flex-col gap-1.5">
+              {(["r", "g", "b"] as const).map((key) => (
+                <div key={key} className="flex w-full items-center justify-end gap-1.5">
+                  <span className="w-3 shrink-0 text-right text-[13px] font-bold uppercase text-white/70">
+                    {key}
+                  </span>
+                  <input
+                    id={`${fieldUid}-rgb-${key}`}
+                    name={`colorRgb${key}`}
+                    type="number"
+                    min={0}
+                    max={255}
+                    value={currentRgb[key]}
+                    onChange={(e) => {
+                      const val = clamp(Number(e.target.value || 0), 0, 255);
+                      const nextRgb = { ...currentRgb, [key]: val };
+                      commitColor(rgbToHsv(nextRgb));
+                    }}
+                    className="h-6 w-[74px] rounded-[4px] border border-white/20 bg-white/95 px-1.5 text-[12px] font-medium text-black focus:outline-none focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+              ))}
+
+              {/* Hex Input */}
+              <div className="flex w-full items-center justify-end gap-1.5 mt-0.5">
+                <span className="w-3 shrink-0 text-right text-[13px] font-bold text-white/70">#</span>
+                <input
+                  id={`${fieldUid}-hex`}
+                  name="colorHex"
+                  type="text"
+                  value={currentHex.replace("#", "")}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/[^0-9a-fA-F]/g, "").slice(0, 6);
+                    if (raw.length === 6) commitColor(rgbToHsv(hexToRgb(`#${raw}`)));
+                  }}
+                  className="h-6 w-[74px] rounded-[4px] border border-white/20 bg-white/95 px-1.5 text-[12px] font-mono font-bold uppercase tracking-tight text-black focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-3 flex gap-3">
+      {/* Swatches Row */}
+      <div className="mt-3.5 flex gap-2.5 items-center border-t border-white/10 pt-2.5">
+        <span className="text-[11px] text-white/60 font-medium mr-1">Presets:</span>
         {swatches.map((sw, idx) => (
           <button
             key={`${sw}-${idx}`}
@@ -343,27 +569,31 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
               setSelectedSlot(idx);
               commitColor(rgbToHsv(hexToRgb(sw)));
             }}
-            className={`h-7 w-7 rounded-[3px] border ${selectedSlot === idx ? "border-white shadow-[0_0_0_2px_rgba(255,255,255,0.45)]" : "border-white/20"}`}
+            className={`h-6 w-6 rounded-[4px] border transition-transform hover:scale-110 ${
+              selectedSlot === idx
+                ? "border-white ring-2 ring-primary ring-offset-1 ring-offset-black scale-105"
+                : "border-white/25"
+            }`}
             style={{ background: sw }}
             aria-label={`Select ${sw}`}
           />
         ))}
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5">
+      {/* Bottom Actions (Confirm, Cancel, Save Swatch) */}
+      <div className="mt-3 flex items-center justify-between gap-2 border-t border-white/10 pt-2.5">
+        <div className="flex items-center gap-2">
           <Button
             type="button"
-            variant="secondary"
-            className="!h-7 min-h-0 px-2.5 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
+            className="!h-7 min-h-0 px-3 text-[12px] font-semibold bg-primary hover:bg-primary/90 text-white rounded-[6px] shadow-sm"
             onClick={onConfirm}
           >
-            Confirm
+            Apply Color
           </Button>
           <Button
             type="button"
             variant="secondary"
-            className="!h-7 min-h-0 px-2.5 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/70 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
+            className="!h-7 min-h-0 px-2.5 text-[12px] font-medium bg-white/15 text-white hover:bg-white/25 border-0 rounded-[6px]"
             onClick={onCancel}
           >
             Cancel
@@ -372,14 +602,14 @@ export function CustomColorPicker({ value, onChange, onConfirm, onCancel, anchor
         <Button
           type="button"
           variant="secondary"
-          className="!h-7 w-[112px] min-h-0 px-2.5 text-[13px] font-normal leading-none bg-white text-[#1f2937] border border-white/80 hover:bg-brand-yellow hover:text-ink rounded-[6px] shadow-none"
+          className="!h-7 min-h-0 px-2.5 text-[11px] font-medium bg-white/10 text-white/90 hover:bg-white/20 border border-white/15 rounded-[6px]"
           onClick={() => updateSwatchSlot(selectedSlot, currentHex)}
+          title="Save current color into selected preset slot"
         >
-          Replace
+          Save Slot
         </Button>
       </div>
     </div>,
     document.body
   );
 }
-

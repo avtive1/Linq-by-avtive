@@ -32,8 +32,22 @@ function preserveApprovedGuestIdentityFields(
 }
 
 function stripBrandingMutations(payload: Record<string, unknown>) {
-  // Allow attendees to customize their card color and aesthetics
-  return { ...payload };
+  const sanitized = { ...payload };
+  delete sanitized.card_color;
+  delete sanitized.card_font;
+  delete sanitized.design_type;
+  const customFieldsRaw = sanitized.custom_fields;
+  if (
+    customFieldsRaw &&
+    typeof customFieldsRaw === "object" &&
+    !Array.isArray(customFieldsRaw)
+  ) {
+    const nextCustomFields = { ...(customFieldsRaw as Record<string, unknown>) };
+    delete nextCustomFields.__horizontal_text_color;
+    delete nextCustomFields.__vertical_text_color;
+    sanitized.custom_fields = nextCustomFields;
+  }
+  return sanitized;
 }
 
 async function getAuthedSessionAndPermission(
@@ -199,7 +213,11 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       }
 
       const identityLocked = await isApprovedGuestCard(id);
-      return NextResponse.json({ data: secureRecord, identityLocked });
+      return NextResponse.json({
+        data: secureRecord,
+        identityLocked,
+        canCustomizeBranding: Boolean(auth.isEventOrganizerOrStaff),
+      });
     };
 
     if (auth.tokenAccess || (auth.isCardOwner && !auth.isEventOrganizerOrStaff)) {
@@ -236,7 +254,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
       const { row: existingSecure } = decryptAttendeeSensitiveFields(existingAttendee);
 
-      let permittedPayload = auth.tokenAccess
+      let permittedPayload = !auth.isEventOrganizerOrStaff
         ? stripBrandingMutations(validation.payload as Record<string, unknown>)
         : (validation.payload as Record<string, unknown>);
 
