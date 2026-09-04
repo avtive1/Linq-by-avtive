@@ -10,6 +10,8 @@ import { cssFontStackForGoogleFamily, parseGoogleFamilyFromStored } from "@/lib/
 import { preloadGoogleCardFontCss } from "@/lib/card-font-runtime";
 import { optimizeCdnImageUrl } from "@/lib/utils/cdn-image";
 import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
+import { getPublicAppUrl } from "@/lib/app-url";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 /** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
 const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
@@ -510,8 +512,15 @@ export function CardPreview({
     (!photoUrl.startsWith("data:") || isValidImageDataUrl(photoUrl));
 
   const rawQrInput = data.linkedin?.trim() || "";
+  const cardId = data.id ? String(data.id).trim() : "";
   let finalQrUrl = "";
-  if (rawQrInput) {
+  if (cardId && isValidUuid(cardId)) {
+    const origin =
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : getPublicAppUrl();
+    finalQrUrl = `${origin.replace(/\/$/, "")}/cards/${encodeURIComponent(cardId)}/scan`;
+  } else if (rawQrInput) {
     if (rawQrInput.startsWith("http://") || rawQrInput.startsWith("https://")) {
       finalQrUrl = rawQrInput;
     } else if (rawQrInput.includes(".")) {
