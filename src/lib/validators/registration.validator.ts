@@ -35,6 +35,7 @@ export const attendeeRegistrationBodySchema = z
     linkedin: z.string().trim().max(2048).optional(),
     photo_url: z.string().trim().max(2048).optional(),
     card_preview_url: z.string().trim().max(2048).optional(),
+    card_color: z.string().trim().max(100).optional(),
     custom_fields: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();

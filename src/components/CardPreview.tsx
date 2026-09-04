@@ -13,11 +13,11 @@ import { isValidImageDataUrl } from "@/lib/utils/image-data-url";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { isValidUuid } from "@/lib/validation/uuid";
 
-/** Custom sponsors: larger row so marks read like the reference artwork (most of the 123px footer) */
-const SPONSOR_LOGO_HEIGHT_H1_PX = 84;
-const SPONSOR_STRIP_MAX_W_H1_PX = 1120;
-const SPONSOR_LOGO_HEIGHT_V_PX = 56;
-const SPONSOR_STRIP_MAX_W_V_PX = 528;
+/** Custom sponsors */
+const SPONSOR_LOGO_HEIGHT_H1_PX = 42;
+const SPONSOR_STRIP_MAX_W_H1_PX = 560;
+const SPONSOR_LOGO_HEIGHT_V_PX = 36;
+const SPONSOR_STRIP_MAX_W_V_PX = 480;
 
 /**
  * Safely parse CSS color string and determine perceived luminance (0 to 1).
@@ -122,11 +122,641 @@ export function isValidCssColor(color?: string): boolean {
   return parseColorLuminance(s) !== null;
 }
 
-/**
- * Sponsor row: intrinsic logo widths + uniform flex gap (not equal-width columns).
- * After each image loads, adds optical horizontal padding when a mark renders narrower than its fair
- * share so dense / “heavy” logos don’t feel cramped against airy wordmarks.
- */
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return {
+    h: Math.round(h * 360),
+    s: Math.round(s * 100),
+    l: Math.round(l * 100),
+  };
+}
+
+function parseColorToHsl(colorStr?: string): { h: number; s: number; l: number } {
+  if (!colorStr || typeof colorStr !== "string") return { h: 275, s: 65, l: 30 };
+  const raw = colorStr.trim().toLowerCase();
+
+  const PRESET_HSL: Record<string, { h: number; s: number; l: number }> = {
+    purple: { h: 275, s: 65, l: 30 },
+    default: { h: 275, s: 65, l: 30 },
+    blue: { h: 215, s: 85, l: 35 },
+    navy: { h: 220, s: 75, l: 20 },
+    cyan: { h: 185, s: 95, l: 45 },
+    teal: { h: 175, s: 80, l: 35 },
+    green: { h: 155, s: 80, l: 30 },
+    emerald: { h: 155, s: 80, l: 30 },
+    lime: { h: 85, s: 85, l: 40 },
+    red: { h: 350, s: 85, l: 35 },
+    maroon: { h: 350, s: 70, l: 20 },
+    pink: { h: 320, s: 85, l: 40 },
+    magenta: { h: 310, s: 90, l: 45 },
+    orange: { h: 25, s: 90, l: 45 },
+    amber: { h: 38, s: 95, l: 45 },
+    yellow: { h: 48, s: 95, l: 50 },
+    gold: { h: 42, s: 90, l: 45 },
+  };
+
+  if (PRESET_HSL[raw]) {
+    return PRESET_HSL[raw];
+  }
+
+  // Hex format
+  if (raw.startsWith("#")) {
+    const hex = raw.slice(1);
+    let r = 0, g = 0, b = 0;
+    if (hex.length === 3 || hex.length === 4) {
+      r = parseInt(hex[0] + hex[0], 16);
+      g = parseInt(hex[1] + hex[1], 16);
+      b = parseInt(hex[2] + hex[2], 16);
+    } else if (hex.length === 6 || hex.length === 8) {
+      r = parseInt(hex.slice(0, 2), 16);
+      g = parseInt(hex.slice(2, 4), 16);
+      b = parseInt(hex.slice(4, 6), 16);
+    } else {
+      return { h: 275, s: 65, l: 30 };
+    }
+    if (isNaN(r) || isNaN(g) || isNaN(b)) return { h: 275, s: 65, l: 30 };
+    return rgbToHsl(r, g, b);
+  }
+
+  // rgb format
+  const rgbMatch = raw.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/);
+  if (rgbMatch) {
+    const r = parseInt(rgbMatch[1], 10);
+    const g = parseInt(rgbMatch[2], 10);
+    const b = parseInt(rgbMatch[3], 10);
+    if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+      return rgbToHsl(r, g, b);
+    }
+  }
+
+  // hsl format
+  const hslMatch = raw.match(/^hsla?\(\s*(\d{1,3}(?:\.\d+)?)\s*,\s*(\d{1,3}(?:\.\d+)?)%\s*,\s*(\d{1,3}(?:\.\d+)?)%/);
+  if (hslMatch) {
+    const h = parseFloat(hslMatch[1]) % 360;
+    const s = Math.min(100, Math.max(0, parseFloat(hslMatch[2])));
+    const l = Math.min(100, Math.max(0, parseFloat(hslMatch[3])));
+    return { h, s, l };
+  }
+
+  return { h: 275, s: 65, l: 30 };
+}
+
+export interface NeonPalette {
+  primary: string;
+  primaryEnd: string;
+  secondary: string;
+  secondaryEnd: string;
+  accentArc: string;
+  accentArcEnd: string;
+  spotlight1: string;
+  spotlight2: string;
+  spotlight3: string;
+  pillBg: string;
+  pillBorder: string;
+  dotGrid: string;
+  filament1: string;
+  filament2: string;
+  filament3: string;
+  filament4: string;
+  filament5: string;
+  filament6: string;
+  filament7: string;
+  flare: string;
+  primaryCore: string;
+  secondaryCore: string;
+}
+
+function getNeonPalette(colorStr?: string): NeonPalette {
+  const raw = String(colorStr || "").trim().toLowerCase();
+
+  // 1. Exact default Safar-e-Karakoram / Purple Theme
+  if (!raw || raw === "purple" || raw === "default" || raw === "#2d1b54" || raw === "#41295a") {
+    return {
+      primary: "#00F0FF",
+      primaryEnd: "#00E676",
+      secondary: "#FF2E93",
+      secondaryEnd: "#9333EA",
+      accentArc: "#FFB800",
+      accentArcEnd: "#FF7A00",
+      spotlight1: "#00F0FF",
+      spotlight2: "#E024C3",
+      spotlight3: "#FF9A00",
+      pillBg: "#2D1B54",
+      pillBorder: "rgba(255, 255, 255, 0.15)",
+      dotGrid: "#00E676",
+      filament1: "#FF9A00",
+      filament2: "#00F0FF",
+      filament3: "#00F0FF",
+      filament4: "#00E676",
+      filament5: "#E024C3",
+      filament6: "#9333EA",
+      filament7: "#00F0FF",
+      flare: "#FF0080",
+      primaryCore: "#FFFFFF",
+      secondaryCore: "#FFAEEB",
+    };
+  }
+
+  // 2. Preset: Blue
+  if (raw === "blue" || raw === "navy") {
+    return {
+      primary: "#00F0FF",
+      primaryEnd: "#38BDF8",
+      secondary: "#3B82F6",
+      secondaryEnd: "#6366F1",
+      accentArc: "#7DD3FC",
+      accentArcEnd: "#0284C7",
+      spotlight1: "#00F0FF",
+      spotlight2: "#2563EB",
+      spotlight3: "#38BDF8",
+      pillBg: "#0F2952",
+      pillBorder: "rgba(56, 189, 248, 0.3)",
+      dotGrid: "#38BDF8",
+      filament1: "#7DD3FC",
+      filament2: "#38BDF8",
+      filament3: "#00F0FF",
+      filament4: "#60A5FA",
+      filament5: "#3B82F6",
+      filament6: "#2563EB",
+      filament7: "#00F0FF",
+      flare: "#0284C7",
+      primaryCore: "#FFFFFF",
+      secondaryCore: "#BAE6FD",
+    };
+  }
+
+  // 3. Preset: Red
+  if (raw === "red" || raw === "maroon") {
+    return {
+      primary: "#FF3B30",
+      primaryEnd: "#EF4444",
+      secondary: "#F97316",
+      secondaryEnd: "#EA580C",
+      accentArc: "#FFB800",
+      accentArcEnd: "#FF9500",
+      spotlight1: "#FF3B30",
+      spotlight2: "#F97316",
+      spotlight3: "#FFB800",
+      pillBg: "#68132A",
+      pillBorder: "rgba(239, 68, 68, 0.3)",
+      dotGrid: "#FF9500",
+      filament1: "#FFB800",
+      filament2: "#FF3B30",
+      filament3: "#EF4444",
+      filament4: "#F97316",
+      filament5: "#EA580C",
+      filament6: "#B91C1C",
+      filament7: "#FF3B30",
+      flare: "#DC2626",
+      primaryCore: "#FFFFFF",
+      secondaryCore: "#FED7AA",
+    };
+  }
+
+  // 4. Preset: Green / Emerald
+  if (raw === "green" || raw === "emerald" || raw === "teal") {
+    return {
+      primary: "#00E676",
+      primaryEnd: "#10B981",
+      secondary: "#00F0FF",
+      secondaryEnd: "#0D9488",
+      accentArc: "#A3E635",
+      accentArcEnd: "#84CC16",
+      spotlight1: "#00E676",
+      spotlight2: "#14B8A6",
+      spotlight3: "#84CC16",
+      pillBg: "#0D3829",
+      pillBorder: "rgba(16, 185, 129, 0.3)",
+      dotGrid: "#00E676",
+      filament1: "#A3E635",
+      filament2: "#00E676",
+      filament3: "#10B981",
+      filament4: "#00F0FF",
+      filament5: "#14B8A6",
+      filament6: "#0D9488",
+      filament7: "#00E676",
+      flare: "#10B981",
+      primaryCore: "#FFFFFF",
+      secondaryCore: "#A7F3D0",
+    };
+  }
+
+  // 5. Preset: Pink
+  if (raw === "pink" || raw === "magenta") {
+    return {
+      primary: "#FF2E93",
+      primaryEnd: "#EC4899",
+      secondary: "#C084FC",
+      secondaryEnd: "#9333EA",
+      accentArc: "#FB7185",
+      accentArcEnd: "#F43F5E",
+      spotlight1: "#FF2E93",
+      spotlight2: "#A855F7",
+      spotlight3: "#FB7185",
+      pillBg: "#5B1245",
+      pillBorder: "rgba(236, 72, 153, 0.3)",
+      dotGrid: "#FF2E93",
+      filament1: "#FB7185",
+      filament2: "#FF2E93",
+      filament3: "#EC4899",
+      filament4: "#C084FC",
+      filament5: "#A855F7",
+      filament6: "#9333EA",
+      filament7: "#FF2E93",
+      flare: "#DB2777",
+      primaryCore: "#FFFFFF",
+      secondaryCore: "#FBCFE8",
+    };
+  }
+
+  // 6. Preset: Amber / Orange / Gold
+  if (raw === "orange" || raw === "amber" || raw === "yellow" || raw === "gold") {
+    return {
+      primary: "#FFB800",
+      primaryEnd: "#F59E0B",
+      secondary: "#FF7A00",
+      secondaryEnd: "#EA580C",
+      accentArc: "#FDE047",
+      accentArcEnd: "#FACC15",
+      spotlight1: "#FFB800",
+      spotlight2: "#EA580C",
+      spotlight3: "#FACC15",
+      pillBg: "#542805",
+      pillBorder: "rgba(245, 158, 11, 0.3)",
+      dotGrid: "#FFB800",
+      filament1: "#FDE047",
+      filament2: "#FFB800",
+      filament3: "#F59E0B",
+      filament4: "#FF7A00",
+      filament5: "#EA580C",
+      filament6: "#DC2626",
+      filament7: "#FFB800",
+      flare: "#D97706",
+      primaryCore: "#FFFFFF",
+      secondaryCore: "#FEF08A",
+    };
+  }
+
+  // 7. Dynamic Custom Hex / RGB / HSL Color
+  const { h, s } = parseColorToHsl(raw);
+  const primary = `hsl(${h}, 95%, 55%)`;
+  const primaryEnd = `hsl(${(h + 20) % 360}, 95%, 50%)`;
+  const secondary = `hsl(${(h + 40) % 360}, 95%, 55%)`;
+  const secondaryEnd = `hsl(${(h + 70) % 360}, 90%, 48%)`;
+  const accentArc = `hsl(${(h - 30 + 360) % 360}, 95%, 60%)`;
+  const accentArcEnd = `hsl(${(h - 15 + 360) % 360}, 95%, 50%)`;
+
+  return {
+    primary,
+    primaryEnd,
+    secondary,
+    secondaryEnd,
+    accentArc,
+    accentArcEnd,
+    spotlight1: primary,
+    spotlight2: secondary,
+    spotlight3: accentArc,
+    pillBg: raw.startsWith("#") ? raw : `hsl(${h}, ${Math.max(50, s)}%, 22%)`,
+    pillBorder: `hsla(${h}, 85%, 65%, 0.35)`,
+    dotGrid: `hsl(${(h + 25) % 360}, 90%, 50%)`,
+    filament1: accentArc,
+    filament2: primary,
+    filament3: primaryEnd,
+    filament4: secondary,
+    filament5: secondaryEnd,
+    filament6: `hsl(${(h + 90) % 360}, 85%, 45%)`,
+    filament7: primary,
+    flare: `hsl(${h}, 95%, 50%)`,
+    primaryCore: "#FFFFFF",
+    secondaryCore: `hsla(${h}, 100%, 90%, 0.9)`,
+  };
+}
+
+function DynamicNeonCurvesHorizontal({ palette }: { palette: NeonPalette }) {
+  return (
+    <svg
+      width="1200"
+      height="628"
+      viewBox="0 0 1200 628"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="absolute inset-0 w-[1200px] h-[628px] pointer-events-none z-0"
+    >
+      <defs>
+        <filter id="glowPrimaryH" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="12" result="blur1" />
+          <feGaussianBlur stdDeviation="4" result="blur2" />
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <filter id="glowSecondaryH" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="14" result="blur1" />
+          <feGaussianBlur stdDeviation="5" result="blur2" />
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <filter id="glowArcH" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="10" result="blur1" />
+          <feGaussianBlur stdDeviation="3" result="blur2" />
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <linearGradient id="gradPrimaryH" x1="1200" y1="50" x2="400" y2="600" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.primary} stopOpacity="0.95" />
+          <stop offset="50%" stopColor={palette.primary} stopOpacity="0.9" />
+          <stop offset="85%" stopColor={palette.primaryEnd} stopOpacity="0.75" />
+          <stop offset="100%" stopColor={palette.primary} stopOpacity="0" />
+        </linearGradient>
+
+        <linearGradient id="gradSecondaryH" x1="1200" y1="180" x2="350" y2="630" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.secondary} stopOpacity="0.9" />
+          <stop offset="40%" stopColor={palette.secondary} stopOpacity="0.95" />
+          <stop offset="70%" stopColor={palette.secondaryEnd} stopOpacity="0.85" />
+          <stop offset="100%" stopColor={palette.secondaryEnd} stopOpacity="0" />
+        </linearGradient>
+
+        <linearGradient id="gradArcH" x1="1200" y1="0" x2="850" y2="280" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.accentArc} stopOpacity="0.85" />
+          <stop offset="60%" stopColor={palette.accentArcEnd} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={palette.flare} stopOpacity="0" />
+        </linearGradient>
+
+        <linearGradient id="gradWaveH" x1="1100" y1="350" x2="250" y2="580" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.primary} stopOpacity="0.4" />
+          <stop offset="50%" stopColor={palette.primaryEnd} stopOpacity="0.5" />
+          <stop offset="100%" stopColor={palette.primaryEnd} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Base background fill */}
+      <rect width="1200" height="628" fill="#04060A" />
+
+      {/* Atmospheric spotlights */}
+      <circle cx="1020" cy="220" r="320" fill={palette.spotlight1} opacity="0.12" filter="url(#glowPrimaryH)" />
+      <circle cx="560" cy="580" r="280" fill={palette.spotlight2} opacity="0.14" filter="url(#glowSecondaryH)" />
+      <circle cx="1150" cy="80" r="200" fill={palette.spotlight3} opacity="0.10" filter="url(#glowArcH)" />
+
+      {/* Filament Background Lines */}
+      <g opacity="0.25" strokeWidth="1.2">
+        <path d="M 1200,40 C 1040,70 920,180 820,320 C 720,460 580,560 380,628" stroke={palette.filament1} fill="none" />
+        <path d="M 1200,60 C 1030,95 910,200 810,335 C 710,470 560,570 350,628" stroke={palette.filament2} fill="none" />
+        <path d="M 1200,80 C 1020,120 890,225 790,355 C 690,485 540,580 320,628" stroke={palette.filament3} fill="none" />
+        <path d="M 1200,105 C 1000,150 870,250 770,375 C 670,500 520,590 290,628" stroke={palette.filament4} fill="none" />
+        <path d="M 1200,130 C 980,180 850,280 750,400 C 650,520 490,600 250,628" stroke={palette.filament5} fill="none" />
+        <path d="M 1200,160 C 950,210 820,310 720,430 C 620,550 450,610 200,628" stroke={palette.filament6} fill="none" />
+        <path d="M 1200,190 C 920,245 790,350 680,465 C 570,580 390,620 150,628" stroke={palette.filament7} fill="none" />
+      </g>
+
+      {/* High Arc Ribbon */}
+      <path d="M 1200,15 C 1070,40 980,110 930,190 C 880,270 850,330 810,380" 
+            stroke="url(#gradArcH)" strokeWidth="4.5" fill="none" filter="url(#glowArcH)" />
+      <path d="M 1200,22 C 1065,50 975,120 925,200 C 875,280 845,340 805,390" 
+            stroke="#FFE6A0" strokeWidth="1.5" fill="none" opacity="0.8" />
+
+      {/* Ambient Sweeping Ribbon */}
+      <path d="M 1200,240 C 1000,320 840,430 700,510 C 580,580 430,620 280,628" 
+            stroke="url(#gradWaveH)" strokeWidth="8" fill="none" opacity="0.45" filter="url(#glowPrimaryH)" />
+
+      {/* Primary Laser Ribbon */}
+      <path d="M 1200,110 C 1010,165 870,275 770,405 C 670,535 520,615 300,628" 
+            stroke="url(#gradPrimaryH)" strokeWidth="6" fill="none" filter="url(#glowPrimaryH)" />
+      <path d="M 1200,112 C 1008,167 868,276 768,406 C 668,536 518,616 298,628" 
+            stroke={palette.primaryCore} strokeWidth="2" fill="none" opacity="0.9" />
+
+      {/* Secondary Ribbon */}
+      <path d="M 1200,210 C 970,275 830,375 730,485 C 630,595 490,625 360,628" 
+            stroke="url(#gradSecondaryH)" strokeWidth="7" fill="none" filter="url(#glowSecondaryH)" />
+      <path d="M 1200,212 C 968,277 828,376 728,486 C 628,596 488,626 358,628" 
+            stroke={palette.secondaryCore} strokeWidth="2" fill="none" opacity="0.85" />
+
+      {/* Bottom Flare */}
+      <path d="M 680,530 C 590,590 480,625 380,628" 
+            stroke={palette.flare} strokeWidth="12" fill="none" opacity="0.6" filter="url(#glowSecondaryH)" />
+      <path d="M 670,535 C 585,593 478,626 385,628" 
+            stroke="#FFFFFF" strokeWidth="2.5" fill="none" opacity="0.9" />
+
+      {/* Sparkles */}
+      <circle cx="890" cy="180" r="2" fill="#FFFFFF" opacity="0.9" />
+      <circle cx="750" cy="380" r="2.5" fill={palette.primary} opacity="0.95" filter="url(#glowPrimaryH)" />
+      <circle cx="530" cy="560" r="3" fill={palette.secondary} opacity="0.9" filter="url(#glowSecondaryH)" />
+      <circle cx="1060" cy="90" r="1.8" fill={palette.accentArc} opacity="0.8" />
+      <circle cx="980" cy="280" r="1.5" fill="#FFFFFF" opacity="0.7" />
+      <circle cx="640" cy="490" r="2" fill={palette.dotGrid} opacity="0.8" />
+
+      {/* Digital Matrix Dot Grid (Lower-Right) */}
+      <g fill={palette.dotGrid}>
+        <circle cx="755" cy="455" r="1.5" opacity="0.18" />
+        <circle cx="755" cy="470" r="1.5" opacity="0.22" />
+        <circle cx="755" cy="485" r="1.5" opacity="0.28" />
+        <circle cx="755" cy="500" r="1.5" opacity="0.32" />
+        <circle cx="755" cy="515" r="1.5" opacity="0.35" />
+        <circle cx="755" cy="530" r="1.5" opacity="0.38" />
+        <circle cx="755" cy="545" r="1.5" opacity="0.35" />
+        <circle cx="755" cy="560" r="1.5" opacity="0.28" />
+
+        <circle cx="770" cy="455" r="1.5" opacity="0.22" />
+        <circle cx="770" cy="470" r="1.5" opacity="0.28" />
+        <circle cx="770" cy="485" r="1.5" opacity="0.35" />
+        <circle cx="770" cy="500" r="1.5" opacity="0.40" />
+        <circle cx="770" cy="515" r="1.5" opacity="0.42" />
+        <circle cx="770" cy="530" r="1.5" opacity="0.45" />
+        <circle cx="770" cy="545" r="1.5" opacity="0.40" />
+        <circle cx="770" cy="560" r="1.5" opacity="0.32" />
+
+        <circle cx="785" cy="455" r="1.5" opacity="0.25" />
+        <circle cx="785" cy="470" r="1.5" opacity="0.32" />
+        <circle cx="785" cy="485" r="1.5" opacity="0.40" />
+        <circle cx="785" cy="500" r="1.5" opacity="0.48" />
+        <circle cx="785" cy="515" r="1.5" opacity="0.50" />
+        <circle cx="785" cy="530" r="1.5" opacity="0.48" />
+        <circle cx="785" cy="545" r="1.5" opacity="0.42" />
+        <circle cx="785" cy="560" r="1.5" opacity="0.35" />
+
+        <circle cx="800" cy="455" r="1.5" opacity="0.28" />
+        <circle cx="800" cy="470" r="1.5" opacity="0.35" />
+        <circle cx="800" cy="485" r="1.5" opacity="0.45" />
+        <circle cx="800" cy="500" r="1.5" opacity="0.52" />
+        <circle cx="800" cy="515" r="1.5" opacity="0.55" />
+        <circle cx="800" cy="530" r="1.5" opacity="0.50" />
+        <circle cx="800" cy="545" r="1.5" opacity="0.45" />
+        <circle cx="800" cy="560" r="1.5" opacity="0.38" />
+
+        <circle cx="815" cy="455" r="1.5" opacity="0.22" />
+        <circle cx="815" cy="470" r="1.5" opacity="0.30" />
+        <circle cx="815" cy="485" r="1.5" opacity="0.40" />
+        <circle cx="815" cy="500" r="1.5" opacity="0.48" />
+        <circle cx="815" cy="515" r="1.5" opacity="0.50" />
+        <circle cx="815" cy="530" r="1.5" opacity="0.46" />
+        <circle cx="815" cy="545" r="1.5" opacity="0.40" />
+        <circle cx="815" cy="560" r="1.5" opacity="0.30" />
+
+        <circle cx="830" cy="470" r="1.5" opacity="0.25" />
+        <circle cx="830" cy="485" r="1.5" opacity="0.35" />
+        <circle cx="830" cy="500" r="1.5" opacity="0.42" />
+        <circle cx="830" cy="515" r="1.5" opacity="0.45" />
+        <circle cx="830" cy="530" r="1.5" opacity="0.40" />
+        <circle cx="830" cy="545" r="1.5" opacity="0.32" />
+
+        <circle cx="845" cy="485" r="1.5" opacity="0.28" />
+        <circle cx="845" cy="500" r="1.5" opacity="0.35" />
+        <circle cx="845" cy="515" r="1.5" opacity="0.38" />
+        <circle cx="845" cy="530" r="1.5" opacity="0.32" />
+      </g>
+    </svg>
+  );
+}
+
+function DynamicNeonCurvesVertical({ palette }: { palette: NeonPalette }) {
+  return (
+    <svg
+      width="576"
+      height="1024"
+      viewBox="0 0 576 1024"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="absolute inset-0 w-[576px] h-[1024px] pointer-events-none z-0"
+    >
+      <defs>
+        <filter id="glowPrimaryV" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="12" result="blur1" />
+          <feGaussianBlur stdDeviation="4" result="blur2" />
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <filter id="glowSecondaryV" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="14" result="blur1" />
+          <feGaussianBlur stdDeviation="5" result="blur2" />
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <filter id="glowArcV" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="10" result="blur1" />
+          <feGaussianBlur stdDeviation="3" result="blur2" />
+          <feMerge>
+            <feMergeNode in="blur1" />
+            <feMergeNode in="blur2" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <linearGradient id="gradPrimaryV" x1="576" y1="400" x2="0" y2="950" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.primary} stopOpacity="0.95" />
+          <stop offset="50%" stopColor={palette.primary} stopOpacity="0.9" />
+          <stop offset="85%" stopColor={palette.primaryEnd} stopOpacity="0.8" />
+          <stop offset="100%" stopColor={palette.primary} stopOpacity="0" />
+        </linearGradient>
+
+        <linearGradient id="gradSecondaryV" x1="576" y1="520" x2="50" y2="1000" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.secondary} stopOpacity="0.9" />
+          <stop offset="45%" stopColor={palette.secondary} stopOpacity="0.95" />
+          <stop offset="80%" stopColor={palette.secondaryEnd} stopOpacity="0.85" />
+          <stop offset="100%" stopColor={palette.secondaryEnd} stopOpacity="0.85" />
+        </linearGradient>
+
+        <linearGradient id="gradArcV" x1="576" y1="350" x2="300" y2="650" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={palette.accentArc} stopOpacity="0.85" />
+          <stop offset="70%" stopColor={palette.accentArcEnd} stopOpacity="0.9" />
+          <stop offset="100%" stopColor={palette.flare} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <rect width="576" height="1024" fill="#04060A" />
+
+      {/* Radial atmospheric spotlights */}
+      <circle cx="450" cy="620" r="260" fill={palette.spotlight1} opacity="0.13" filter="url(#glowPrimaryV)" />
+      <circle cx="200" cy="880" r="220" fill={palette.spotlight2} opacity="0.15" filter="url(#glowSecondaryV)" />
+
+      {/* Filament Background Lines */}
+      <g opacity="0.25" strokeWidth="1.2">
+        <path d="M 576,380 C 480,450 380,620 280,780 C 200,900 120,980 0,1024" stroke={palette.filament1} fill="none" />
+        <path d="M 576,410 C 470,480 360,650 260,800 C 180,910 100,990 0,1024" stroke={palette.filament2} fill="none" />
+        <path d="M 576,440 C 450,510 340,680 240,820 C 160,920 80,1000 0,1024" stroke={palette.filament3} fill="none" />
+        <path d="M 576,480 C 430,550 320,710 220,850 C 140,940 50,1010 0,1024" stroke={palette.filament5} fill="none" />
+        <path d="M 576,520 C 410,590 300,740 200,880 C 120,960 30,1020 0,1024" stroke={palette.filament6} fill="none" />
+      </g>
+
+      {/* Arc Ribbon */}
+      <path d="M 576,360 C 490,410 400,530 330,680" 
+            stroke="url(#gradArcV)" strokeWidth="4.5" fill="none" filter="url(#glowArcV)" />
+
+      {/* Primary Laser Ribbon */}
+      <path d="M 576,430 C 440,510 320,690 220,850 C 150,950 80,1000 0,1024" 
+            stroke="url(#gradPrimaryV)" strokeWidth="6.5" fill="none" filter="url(#glowPrimaryV)" />
+      <path d="M 576,432 C 438,512 318,692 218,852 C 148,952 78,1002 0,1024" 
+            stroke={palette.primaryCore} strokeWidth="2" fill="none" opacity="0.9" />
+
+      {/* Secondary Ribbon */}
+      <path d="M 576,530 C 420,620 280,780 180,920 C 120,990 60,1020 0,1024" 
+            stroke="url(#gradSecondaryV)" strokeWidth="7" fill="none" filter="url(#glowSecondaryV)" />
+      <path d="M 576,532 C 418,622 278,782 178,922 C 118,992 58,1022 0,1024" 
+            stroke={palette.secondaryCore} strokeWidth="2" fill="none" opacity="0.85" />
+
+      {/* Sparkles */}
+      <circle cx="370" cy="620" r="2.5" fill={palette.primary} opacity="0.9" filter="url(#glowPrimaryV)" />
+      <circle cx="210" cy="850" r="3" fill={palette.secondary} opacity="0.9" filter="url(#glowSecondaryV)" />
+      <circle cx="490" cy="420" r="2" fill={palette.accentArc} opacity="0.8" />
+
+      {/* Dots */}
+      <g fill={palette.dotGrid}>
+        <circle cx="380" cy="740" r="1.5" opacity="0.25" />
+        <circle cx="380" cy="755" r="1.5" opacity="0.30" />
+        <circle cx="380" cy="770" r="1.5" opacity="0.35" />
+        <circle cx="395" cy="740" r="1.5" opacity="0.30" />
+        <circle cx="395" cy="755" r="1.5" opacity="0.40" />
+        <circle cx="395" cy="770" r="1.5" opacity="0.45" />
+        <circle cx="410" cy="740" r="1.5" opacity="0.35" />
+        <circle cx="410" cy="755" r="1.5" opacity="0.45" />
+        <circle cx="410" cy="770" r="1.5" opacity="0.50" />
+      </g>
+    </svg>
+  );
+}
+
 function SponsorStripRow({
   sponsors,
   logoHeightPx,
@@ -142,7 +772,6 @@ function SponsorStripRow({
 
   const innerBudget = maxStripWidthPx * 0.94;
   const fairShareW = innerBudget / Math.max(count, 1);
-  /** Cap near fair share so N logos + optical padding rarely overflow the strip */
   const imgCapPx = Math.max(40, Math.floor(fairShareW * 0.92));
 
   const onLogoLoad = useCallback(
@@ -162,14 +791,11 @@ function SponsorStripRow({
 
   return (
     <div
-      className={`flex h-full w-full max-w-full flex-nowrap items-center px-1 sm:px-2 ${
-        count === 1 ? "justify-center" : "justify-between"
+      className={`flex h-full w-full max-w-full flex-nowrap items-center ${
+        count === 1 ? "justify-start" : "justify-start gap-[28px]"
       }`}
       style={{
         maxWidth: maxStripWidthPx,
-        ...(count > 1
-          ? {}
-          : { gap: "clamp(10px, 1.9vmin, 26px)" }),
       }}
     >
       {items.map((s, i) => {
@@ -208,7 +834,6 @@ function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
     .filter((x) => x.logo_url?.trim())
     .filter((x) => {
       const url = String(x.logo_url || "").toLowerCase();
-      // Ignore legacy placeholder assets so the strip stays empty unless real logos were uploaded.
       if (!url) return false;
       if (url.includes("figma.com/api/mcp/asset")) return false;
       return true;
@@ -216,90 +841,17 @@ function filterSponsors(s?: SponsorEntry[] | null): SponsorEntry[] {
     .slice(0, 5);
 }
 
-function HorizontalSponsorsDesign1({ sponsors }: { sponsors?: SponsorEntry[] }) {
-  const list = filterSponsors(sponsors);
-  if (!list.length) return null;
-  return (
-    <div className="flex h-full w-full max-w-[1120px] items-center justify-center">
-      <SponsorStripRow
-        sponsors={list}
-        logoHeightPx={SPONSOR_LOGO_HEIGHT_H1_PX}
-        maxStripWidthPx={SPONSOR_STRIP_MAX_W_H1_PX}
-      />
-    </div>
-  );
-}
-
-function VerticalSponsorsStrip({ sponsors }: { sponsors?: SponsorEntry[] }) {
-  const list = filterSponsors(sponsors);
-  /** Pin to card bottom — avoids `top:auto` static-position bug when all siblings are `absolute` */
-  const stripStyle: React.CSSProperties = {
-    position: "absolute",
-    left: 24,
-    bottom: 24,
-    width: SPONSOR_STRIP_MAX_W_V_PX,
-    height: SPONSOR_LOGO_HEIGHT_V_PX + 10,
-    zIndex: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-
-  if (!list.length) return null;
-  return (
-    <div style={stripStyle}>
-      <SponsorStripRow
-        sponsors={list}
-        logoHeightPx={SPONSOR_LOGO_HEIGHT_V_PX}
-        maxStripWidthPx={SPONSOR_STRIP_MAX_W_V_PX}
-      />
-    </div>
-  );
-}
-
 function DefaultAvatarPlaceholder({ className = "w-20 h-20" }: { className?: string }) {
   return (
-    <img src="/default-avatar-placeholder.svg" className={`${className} object-cover bg-white`} alt="Default profile" />
+    <img src="/card-assets/safar-default-avatar.svg" className={`${className} object-cover bg-slate-900`} alt="Default profile" />
   );
-}
-
-function getLocalTimeZoneLabel() {
-  try {
-    const offsetParts = new Intl.DateTimeFormat(undefined, { timeZoneName: "shortOffset" }).formatToParts(new Date());
-    const gmtOffset = offsetParts.find((part) => part.type === "timeZoneName")?.value?.trim();
-    if (gmtOffset) return gmtOffset;
-
-    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(new Date());
-    const fallbackTz = parts.find((part) => part.type === "timeZoneName")?.value?.trim();
-    return fallbackTz || "";
-  } catch {
-    return "";
-  }
 }
 
 function formatSessionTimeWithZone(rawTime?: string) {
-  const fallback = "05:00 PM";
+  const fallback = "1: 00pm - 2: 00 pm";
   const input = String(rawTime || "").trim();
-  const timeValue = input || fallback;
-  const tz = getLocalTimeZoneLabel();
-
-  const hasAmPm = /\b(am|pm)\b/i.test(timeValue);
-  const hasTzToken = /\b(?:gmt|utc|[a-z]{2,5})[+\-]?\d*:?\d*\b/i.test(timeValue);
-  const hhmmMatch = timeValue.match(/^([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/);
-
-  let display = timeValue;
-  if (!hasAmPm && hhmmMatch) {
-    const hour24 = Number(hhmmMatch[1]);
-    const minute = hhmmMatch[2];
-    const meridiem = hour24 >= 12 ? "PM" : "AM";
-    const hour12 = hour24 % 12 || 12;
-    display = `${String(hour12).padStart(2, "0")}:${minute} ${meridiem}`;
-  }
-
-  if (tz && !hasTzToken) {
-    return `${display} (${tz})`;
-  }
-  return display;
+  if (!input) return fallback;
+  return input;
 }
 
 function OrganizationBrand({
@@ -349,92 +901,51 @@ type ColorTheme = {
   accent: string;
   textColor?: string;
   titleColor?: string;
-  /** Event title on vertical card white panel (horizontal posters still use `titleColor` on the gradient). */
   verticalEventTitleColor?: string;
 };
 
 const COLOR_THEMES: Record<string, ColorTheme> = {
   purple: {
-    start: "#41295a",
-    end: "#2f0743",
-    accent: "#FFD400",
+    start: "#2D1B54",
+    end: "#150B2E",
+    accent: "#00F0FF",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
+    verticalEventTitleColor: "#FFFFFF",
   },
   red: {
-    start: "#c94b4b",
-    end: "#4b134f",
-    accent: "#FFFFFF",
+    start: "#68132A",
+    end: "#2A050E",
+    accent: "#FF2E93",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
+    verticalEventTitleColor: "#FFFFFF",
   },
   pink: {
-    start: "#EE0979",
-    end: "#FF6A00",
-    accent: "#FFFFFF",
+    start: "#5B1245",
+    end: "#23041A",
+    accent: "#FFAEEB",
     textColor: "#FFFFFF",
     titleColor: "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
+    verticalEventTitleColor: "#FFFFFF",
   },
   blue: {
-    start: "#D3CCE3",
-    end: "#E9E4F0",
-    accent: "#000000",
-    textColor: "#000000",
-    titleColor: "#5A2ED3",
-    verticalEventTitleColor: "#05060A",
+    start: "#0F2952",
+    end: "#051124",
+    accent: "#00F0FF",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#FFFFFF",
+  },
+  green: {
+    start: "#0D3829",
+    end: "#031710",
+    accent: "#00E676",
+    textColor: "#FFFFFF",
+    titleColor: "#FFFFFF",
+    verticalEventTitleColor: "#FFFFFF",
   },
 };
-
-function longestEventNameLineLength(eventName?: string): number {
-  const raw = String(eventName || "").trim();
-  if (!raw) return 0;
-  const lines = raw
-    .split(/<br\s*\/?>/i)
-    .map((line) => line.trim())
-    .filter(Boolean);
-  if (!lines.length) return 0;
-  return Math.max(...lines.map((line) => line.length));
-}
-
-function getHorizontalEventTitleStyle(baseStyle: React.CSSProperties, eventName?: string): React.CSSProperties {
-  const len = longestEventNameLineLength(eventName);
-  if (len <= 12) {
-    return { ...baseStyle, fontSize: "100px", lineHeight: "0.91", letterSpacing: "-0.04em", maxWidth: "750px" };
-  }
-  if (len <= 16) {
-    return { ...baseStyle, fontSize: "82px", lineHeight: "0.92", letterSpacing: "-0.035em", maxWidth: "720px" };
-  }
-  if (len <= 20) {
-    return { ...baseStyle, fontSize: "68px", lineHeight: "0.93", letterSpacing: "-0.03em", maxWidth: "680px" };
-  }
-  if (len <= 24) {
-    return { ...baseStyle, fontSize: "56px", lineHeight: "0.94", letterSpacing: "-0.025em", maxWidth: "640px" };
-  }
-  return { ...baseStyle, fontSize: "46px", lineHeight: "0.95", letterSpacing: "-0.02em", maxWidth: "600px" };
-}
-
-function getVerticalEventTitleStyle(
-  baseStyle: React.CSSProperties,
-  eventName?: string,
-): React.CSSProperties {
-  const len = longestEventNameLineLength(eventName);
-  if (len <= 12) {
-    return { ...baseStyle, fontSize: "74.67px", lineHeight: "69.33px", letterSpacing: "-2.99px" };
-  }
-  if (len <= 16) {
-    return { ...baseStyle, fontSize: "58px", lineHeight: "1.02", letterSpacing: "-2px" };
-  }
-  if (len <= 20) {
-    return { ...baseStyle, fontSize: "48px", lineHeight: "1.04", letterSpacing: "-1.5px" };
-  }
-  if (len <= 24) {
-    return { ...baseStyle, fontSize: "40px", lineHeight: "1.06", letterSpacing: "-1px" };
-  }
-  return { ...baseStyle, fontSize: "34px", lineHeight: "1.08", letterSpacing: "-0.5px" };
-}
 
 function resolveTheme(color?: string): ColorTheme {
   const raw = String(color || "").trim();
@@ -443,18 +954,17 @@ function resolveTheme(color?: string): ColorTheme {
 
   const luminance = parseColorLuminance(raw);
   if (luminance === null) {
-    // Graceful fallback for invalid/unrecognized color strings
     return COLOR_THEMES.purple;
   }
 
   const isLight = luminance >= 0.55;
   return {
     start: raw,
-    end: raw,
-    accent: isLight ? "#0B0B0B" : "#FFD400",
+    end: "#04060A",
+    accent: isLight ? "#04060A" : "#00F0FF",
     textColor: isLight ? "#0B0B0B" : "#FFFFFF",
     titleColor: isLight ? "#0B0B0B" : "#FFFFFF",
-    verticalEventTitleColor: "#05060A",
+    verticalEventTitleColor: isLight ? "#0B0B0B" : "#FFFFFF",
   };
 }
 
@@ -472,21 +982,21 @@ export function CardPreview({
   verticalSide?: 1 | 2;
 }) {
   const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const isWebinarLocation = (data.location || "").trim().toLowerCase() === "webinar";
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
   const sessionTimeLabel = formatSessionTimeWithZone(data.sessionTime);
-  const isCustomTheme = !COLOR_THEMES[String(data.color || "").trim().toLowerCase()];
   const surfaceMotionClass = preview
     ? ""
     : "animate-fade-in will-change-transform transition-all duration-500 group";
 
   const theme = resolveTheme(data.color);
+  const palette = getNeonPalette(data.color);
+
   const horizontalTextColorOverride = String(data.horizontalTextColor || "").trim();
   const verticalTextColorOverride = String(data.verticalTextColor || "").trim();
-  const hasHorizontalTextOverride = Boolean(horizontalTextColorOverride);
-  const hasVerticalTextOverride = Boolean(verticalTextColorOverride);
   const horizontalTextColor = horizontalTextColorOverride || (theme.textColor || "#FFFFFF");
   const verticalTextColor = verticalTextColorOverride || (theme.textColor || "#FFFFFF");
+  const hasHorizontalTextOverride = Boolean(horizontalTextColorOverride);
+  const hasVerticalTextOverride = Boolean(verticalTextColorOverride);
   
   const storedFontKey = String(data.fontFamily || "inter").trim() || "inter";
   const googleFamily = parseGoogleFamilyFromStored(storedFontKey);
@@ -509,6 +1019,8 @@ export function CardPreview({
     Boolean(photoUrl) &&
     !photoUrl.endsWith("/default-avatar-placeholder.svg") &&
     photoUrl !== "/default-avatar-placeholder.svg" &&
+    !photoUrl.endsWith("/safar-default-avatar.svg") &&
+    photoUrl !== "/card-assets/safar-default-avatar.svg" &&
     (!photoUrl.startsWith("data:") || isValidImageDataUrl(photoUrl));
 
   const rawQrInput = data.linkedin?.trim() || "";
@@ -554,313 +1066,363 @@ export function CardPreview({
     };
   }, [finalQrUrl]);
 
+  const customSponsorsList = filterSponsors(data.sponsors);
+
+  // ==========================================
+  // VERTICAL CARD LAYOUT (Badge - 576 x 1024)
+  // ==========================================
   if (isVertical) {
     return (
       <div 
-        className={`relative overflow-hidden shadow-2xl bg-[#141414] ${surfaceMotionClass}`}
+        id={id}
+        className={`relative overflow-hidden shadow-2xl bg-[#04060A] ${surfaceMotionClass}`}
         style={{ 
           width: "576px", 
           height: "1024px", 
           fontFamily: selectedFont,
-          background: `linear-gradient(180deg, ${theme.start} 42%, ${theme.end} 100%)`,
         }}
       >
-        {/* Premium Atmospheric Spotlights & Noise */}
-        <div 
-          className="absolute left-1/2 top-[580px] h-[700px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.22] blur-[90px] pointer-events-none mix-blend-screen z-0"
-          style={{ background: theme.accent === "#000000" ? "#FFFFFF" : theme.accent || "#FFFFFF" }}
-        />
-        <div 
-          className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none z-[1]" 
-          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} 
-        />
+        {/* Dynamic Neon Curves SVG Artwork with live color theme */}
+        <DynamicNeonCurvesVertical palette={palette} />
 
-        {/* Background Overlays - masked by z-index */}
-        <div className="absolute inset-0 z-0 pointer-events-none">
-          <img 
-            src="/card-assets/buildings-overlay-vertical.png" 
-            className="absolute left-[-151px] top-0 w-[878px] h-[1024px] object-cover opacity-[0.11] z-[1] max-w-none" 
-            alt=""
-            loading="lazy"
-            decoding="async"
-          />
-        </div>
-
-        {/* Top Panel (White portion) */}
+        {/* Dynamic Atmospheric Spotlight */}
         <div 
-          className="absolute left-0 top-0 w-[576px] bg-white pointer-events-none z-10"
-          style={{ 
-            height: "447px",
-            clipPath: "none",
-          }}
+          className="absolute left-1/2 top-[550px] h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.14] blur-[90px] pointer-events-none mix-blend-screen z-0"
+          style={{ background: palette.spotlight1 }}
         />
 
-        {/* Branding */}
-        {hasOrganizationBranding ? (
-          <div className="absolute left-[31px] top-[40px] z-20 flex items-center gap-3">
+        {/* Optional Organization Branding Top */}
+        {hasOrganizationBranding && (
+          <div className="absolute right-[36px] top-[42px] z-20 flex items-center gap-2">
             <OrganizationBrand
               name={data.organizationName || "Organization"}
               logoUrl={data.organizationLogoUrl}
-              iconClassName="h-[63px] w-[63px]"
-              nameBoxClassName="h-[66.81px] w-[236.56px]"
-              nameTextClassName="text-[44px] leading-none"
-              textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : "text-black"}
-              nameTextStyle={hasVerticalTextOverride ? { color: verticalTextColor } : { color: "#000000" }}
-            />
-          </div>
-        ) : (
-          <div className="z-20">
-            <img
-              src="https://www.figma.com/api/mcp/asset/7716a834-6d7b-4dbe-8553-370f4fddf5fc"
-              className="absolute left-[86px] top-[40px] h-[44px] w-[154px] object-contain"
-              alt="Avtive"
-            />
-            <img
-              src="https://www.figma.com/api/mcp/asset/be4bd848-b76e-4630-808c-cf77963ce6a7"
-              className="absolute left-[31px] top-[42px] z-20 h-[44px] w-[47px] object-contain"
-              alt=""
+              iconClassName="h-[48px] w-[48px]"
+              nameBoxClassName="h-[48px] max-w-[180px]"
+              nameTextClassName="text-[24px] leading-none"
+              textColorClassName="text-white"
             />
           </div>
         )}
 
-        <div
-          className="absolute left-[24px] top-[124px] z-20 max-w-[528px] rounded-md bg-white/95 px-3 py-2 shadow-sm"
-        >
-          <p className="m-0 text-[30px] font-medium tracking-[3px] uppercase leading-none" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
-            {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
-          </p>
-
-          <h1
-            className="m-0 mt-2 font-bold"
-            style={getVerticalEventTitleStyle(
-              {
-                color: hasVerticalTextOverride ? verticalTextColor : "#000000",
-                fontFamily: selectedFont,
-              },
-              data.eventName,
-            )}
+        {/* Top-Left: MEET YOU AT [LOCATION] */}
+        <div className="absolute left-[36px] top-[46px] z-10 flex flex-col">
+          <p 
+            className="m-0 text-[26px] font-extrabold tracking-[0.5px] uppercase leading-none"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
           >
-            {data.eventName?.split("<br />").map((t, i) => <span key={i} className="block">{t}</span>) ||
-              (<>
-                <span className="block">Pakistan Tech</span>
-                <span className="block">Summit</span>
-              </>)}
+            MEET YOU AT
+          </p>
+          <h2 
+            className="m-0 mt-[6px] text-[46px] font-black tracking-tight uppercase leading-none"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
+          >
+            {data.location || "NSTP"}
+          </h2>
+        </div>
+
+        {/* Badge Pill & Event Name Row */}
+        <div className="absolute left-[36px] top-[148px] z-10 flex flex-col gap-[12px] max-w-[504px]">
+          <div className="flex items-center gap-[12px] flex-wrap">
+            <div 
+              className="flex items-center justify-center px-[18px] py-[8px] rounded-[6px] shadow-sm shrink-0"
+              style={{ 
+                backgroundColor: palette.pillBg,
+                border: `1px solid ${palette.pillBorder}`,
+              }}
+            >
+              <span className="text-[17px] font-black text-white tracking-[1.5px] uppercase leading-none whitespace-nowrap">
+                {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
+              </span>
+            </div>
+          </div>
+          <h1 
+            className="m-0 text-[28px] font-black tracking-tight uppercase leading-tight text-white"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
+          >
+            {data.eventName || "SAFAR-E-KARAKORAM"}
             {data.cardRole === "guest" && data.guestCategory && (
-              <span className="block text-[35px] font-bold tracking-[1px] uppercase mt-[16px] leading-none" style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.accent === "#000000" ? "#000000" : theme.accent || "#000000") }}>
+              <span className="block text-[18px] font-bold text-cyan-300 uppercase tracking-wide mt-1">
                 AS {data.guestCategory}
               </span>
             )}
           </h1>
         </div>
 
-        {/* Meta Info - Precisely positioned per provided CSS */}
-        <p className="absolute left-[30px] top-[346px] m-0 flex items-center gap-[10px] text-[24px] font-medium leading-[34px] z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
-          <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z" />
-          </svg>
-          {data.sessionDate || "Friday, 11th April, 2026"}
-        </p>
-        <p className="absolute left-[261px] top-[346px] m-0 flex items-center gap-[10px] text-[24px] font-medium leading-[34px] z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
-          <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z" />
-          </svg>
-          {sessionTimeLabel}
-        </p>
-        <p className="absolute left-[30px] top-[392px] m-0 flex items-center gap-[10px] text-[24px] font-medium leading-[34px] z-20" style={{ color: hasVerticalTextOverride ? verticalTextColor : "#000000" }}>
-          {isWebinarLocation ? (
-            <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z" />
-            </svg>
-          ) : (
-            <svg className="w-[20px] h-[20px] fill-current" viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z" />
-            </svg>
-          )}
-          {data.location || "Expo Center, Islamabad, Pakistan"}
-        </p>
-
-        {/* Front (verticalSide 1): profile photo. Back (verticalSide 2): scannable QR from LinkedIn / URL field */}
-        {verticalSide === 1 ? (
-          <div className={`absolute left-[166px] top-[541px] z-40 isolate flex h-[244px] w-[244px] items-center justify-center overflow-hidden rounded-lg border border-white/25 shadow-md ${hasRealPhoto ? "bg-white/10" : "bg-white"}`}>
-            {hasRealPhoto ? (
-              <img src={photoUrl} alt="" className="h-full w-full object-cover" crossOrigin="anonymous" />
-            ) : (
-              <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
-            )}
-          </div>
-        ) : (
-          <div className="absolute left-[166px] top-[541px] z-4 h-[244px] w-[244px] overflow-hidden rounded-lg border border-white/25 bg-white shadow-md">
-            {qrUrl ? (
-              <img src={qrUrl} className="h-full w-full object-contain" alt="QR Code" crossOrigin="anonymous" />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-linear-to-br from-[#eceff3] to-[#dbe3ec] px-3 text-center">
-                <p className="m-0 text-[13px] font-semibold leading-snug text-slate-600">
-                  Add a LinkedIn URL or link in the card form to show a QR code on the badge back.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Attendee Info - Exactly matching speaker-name, role, company positioning */}
-        <div
-          className="absolute left-1/2 top-[808px] z-4 w-[92%] max-w-[520px] -translate-x-1/2 text-center"
-          style={{ background: "transparent", backdropFilter: "none", boxShadow: "none" }}
-        >
-          <p
-            className="m-0 text-[35px] font-bold leading-none"
-            style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
+        {/* Date, Time & Tagline */}
+        <div className="absolute left-[36px] top-[265px] z-10 flex flex-col">
+          <p 
+            className="m-0 text-[20px] font-bold leading-tight"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
           >
-            {data.name || "Full Name"}
+            {data.sessionDate || "10th September 2026"}
           </p>
-          <p
-            className="m-0 mt-2 text-[21px] font-medium leading-none"
-            style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
-          >
-            {data.role || "Role/Title"}
+          <p className="m-0 mt-[3px] text-[16px] font-normal text-slate-300 leading-tight">
+            ({sessionTimeLabel})
           </p>
-          <p
-            className="m-0 mt-2 text-[21px] font-medium leading-none"
-            style={{ color: hasVerticalTextOverride ? verticalTextColor : (theme.textColor || "#FFFFFF") }}
+          <p 
+            className="m-0 mt-[14px] text-[18px] font-medium tracking-[1.2px] uppercase leading-none text-white/90"
+            style={{ color: hasVerticalTextOverride ? verticalTextColor : undefined }}
           >
-            {data.company || "Organization"}
+            START HERE, GO ANYWHERE
           </p>
         </div>
 
-        {/* Partners / sponsors */}
-        <VerticalSponsorsStrip sponsors={data.sponsors} />
+        {/* Center: Side 1 (Front: Circular Avatar + Info) / Side 2 (Back: QR + Info) */}
+        {verticalSide === 1 ? (
+          <div className="absolute left-1/2 top-[430px] -translate-x-1/2 z-10 flex flex-col items-center w-[480px]">
+            {/* Circular Photo */}
+            <div className={`relative flex h-[210px] w-[210px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
+              {hasRealPhoto ? (
+                <img 
+                  src={photoUrl} 
+                  alt={data.name?.trim() ? `Photo of ${data.name.trim()}` : "Attendee photo"}
+                  className="h-full w-full object-cover" 
+                  crossOrigin="anonymous" 
+                />
+              ) : (
+                <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
+              )}
+            </div>
+
+            {/* Attendee Details */}
+            <div className="mt-[20px] flex flex-col items-center text-center w-full px-4">
+              <h2 
+                className="m-0 text-[32px] font-black leading-[1.15] tracking-tight"
+                style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
+              >
+                {data.name || "Zia-ur-Rehman"}
+              </h2>
+              <p 
+                className="m-0 mt-[6px] text-[18px] font-bold text-white/90 leading-tight uppercase tracking-wide"
+                style={{ color: hasVerticalTextOverride ? verticalTextColor : undefined }}
+              >
+                {data.role || "CEO"}
+              </p>
+              <p 
+                className="m-0 mt-[4px] text-[17px] font-normal text-white/75 leading-tight"
+                style={{ color: hasVerticalTextOverride ? verticalTextColor : undefined }}
+              >
+                {data.company || "The Leap Pakistan"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="absolute left-1/2 top-[430px] -translate-x-1/2 z-10 flex flex-col items-center w-[480px]">
+            {/* Scannable QR Container */}
+            <div className="flex h-[210px] w-[210px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[2px] border-white/20 bg-white p-3 shadow-2xl">
+              {qrUrl ? (
+                <img src={qrUrl} className="h-full w-full object-contain" alt="QR Code" crossOrigin="anonymous" />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-100 p-3 text-center">
+                  <p className="m-0 text-[12px] font-semibold leading-snug text-slate-600">
+                    Add LinkedIn or URL to generate QR
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Attendee Details & Scan Prompt */}
+            <div className="mt-[18px] flex flex-col items-center text-center w-full px-4">
+              <h2 
+                className="m-0 text-[28px] font-black leading-tight tracking-tight"
+                style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
+              >
+                {data.name || "Zia-ur-Rehman"}
+              </h2>
+              <p className="m-0 mt-[4px] text-[16px] font-bold text-white/90 uppercase tracking-wide">
+                {data.role || "CEO"}
+              </p>
+              <p className="m-0 mt-[8px] text-[14px] font-semibold text-cyan-300 tracking-wide uppercase">
+                Scan to Connect & Mark Attendance
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom: Co-organized by & Logos */}
+        <div className="absolute left-1/2 bottom-[32px] -translate-x-1/2 z-10 flex flex-col items-center text-center w-[520px]">
+          <p className="m-0 text-[14px] font-normal text-white/80 leading-none mb-[10px]">
+            Co-organized by:
+          </p>
+          {customSponsorsList.length > 0 ? (
+            <div className="flex justify-center w-full">
+              <SponsorStripRow sponsors={customSponsorsList} logoHeightPx={SPONSOR_LOGO_HEIGHT_V_PX} maxStripWidthPx={SPONSOR_STRIP_MAX_W_V_PX} />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-[24px]">
+              <img src="/card-assets/nstp-logo.svg" alt="NSTP Defining Innovation" className="h-[34px] w-auto object-contain" />
+              <img src="/card-assets/leap-pakistan-logo.svg" alt="LEAP Pakistan" className="h-[34px] w-auto object-contain" />
+              <img src="/card-assets/avtive-white-logo.svg" alt="avtive" className="h-[32px] w-auto object-contain" />
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
-  // Common styles for both designs
-  const posterStyle: React.CSSProperties = {
-    width: "1200px",
-    height: "628px",
-    background: `linear-gradient(180deg, ${theme.start} 0%, ${theme.end} 100%)`,
-    fontFamily: selectedFont,
-  };
-
-  const titleKickerStyle: React.CSSProperties = {
-    color: hasHorizontalTextOverride ? horizontalTextColor : theme.accent,
-  };
-
-  const titleStyle = getHorizontalEventTitleStyle(
-    {
-      color: hasHorizontalTextOverride ? horizontalTextColor : (theme.titleColor || theme.textColor || "white"),
-      fontWeight: "800",
-    },
-    data.eventName,
-  );
-
-  const metaTextColor = { color: hasHorizontalTextOverride ? horizontalTextColor : (theme.textColor || "white") };
-
-  // Horizontal Card (Design 1 - Default)
+  // ==========================================
+  // HORIZONTAL CARD LAYOUT (Standard - 1200 x 628)
+  // Dynamic color support preserving the exact custom design
+  // ==========================================
   return (
     <div
       id={id}
       key={data.designType}
-      className={`relative overflow-hidden shadow-2xl poster bg-[#141414] ${surfaceMotionClass}`}
-      style={posterStyle}
+      className={`relative overflow-hidden shadow-2xl poster bg-[#04060A] ${surfaceMotionClass}`}
+      style={{
+        width: "1200px",
+        height: "628px",
+        fontFamily: selectedFont,
+      }}
     >
-      {/* Premium Atmospheric Spotlights & Noise */}
+      {/* Dynamic Neon Curves SVG Artwork with live color theme */}
+      <DynamicNeonCurvesHorizontal palette={palette} />
+
+      {/* Dynamic Atmospheric Spotlight */}
       <div 
-        className="absolute left-1/2 top-1/2 h-[800px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.20] blur-[100px] pointer-events-none mix-blend-screen z-0"
-        style={{ background: theme.accent === "#000000" ? "#FFFFFF" : theme.accent || "#FFFFFF" }}
-      />
-      <div 
-        className="absolute inset-0 opacity-[0.05] mix-blend-overlay pointer-events-none z-[1]" 
-        style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")` }} 
+        className="absolute left-[700px] top-[300px] h-[750px] w-[750px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.14] blur-[100px] pointer-events-none mix-blend-screen z-0"
+        style={{ background: palette.spotlight1 }}
       />
 
-      {/* Background Overlays */}
-      <img className="absolute inset-[-292px_-6px_auto_-5px] w-[1212px] h-[808px] opacity-[0.11] object-cover pointer-events-none z-[1]" src="/card-assets/buildings-overlay-horizontal.png" alt="" loading="lazy" decoding="async" />
-      
-      <p className="absolute left-[58px] top-[81px] m-0 font-medium text-[25px] leading-none tracking-[3px] uppercase" style={titleKickerStyle}>
-        {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
-      </p>
-      
-      <h1 className="absolute left-[50px] top-[116px] m-0 flex flex-col" style={titleStyle}>
-        {data.eventName ? (
-          data.eventName.split("<br />").map((text, i) => <span key={i} className="block">{text}</span>)
-        ) : (
-          <>
-            <span className="block">Pakistan Tech</span>
-            <span className="block">Summit</span>
-          </>
-        )}
-        {data.cardRole === "guest" && data.guestCategory && (
-          <span className="block text-[30px] font-bold tracking-[1px] uppercase mt-[18px] leading-none" style={{ color: hasHorizontalTextOverride ? horizontalTextColor : theme.accent || "#FFFFFF" }}>
-            AS {data.guestCategory}
+      {/* Optional Organization Branding Top-Right */}
+      {hasOrganizationBranding && (
+        <div className="absolute right-[64px] top-[48px] z-20 flex items-center gap-3">
+          <OrganizationBrand
+            name={data.organizationName || "Organization"}
+            logoUrl={data.organizationLogoUrl}
+            iconClassName="h-[52px] w-[52px]"
+            nameBoxClassName="h-[52px] max-w-[200px]"
+            nameTextClassName="text-[26px] leading-none"
+            textColorClassName="text-white"
+          />
+        </div>
+      )}
+
+      {/* Top-Left: MEET YOU AT [LOCATION] */}
+      <div className="absolute left-[64px] top-[54px] z-10 flex flex-col">
+        <p 
+          className="m-0 text-[32px] font-extrabold tracking-[0.5px] uppercase leading-none"
+          style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+        >
+          MEET YOU AT
+        </p>
+        <h2 
+          className="m-0 mt-[6px] text-[54px] font-black tracking-tight uppercase leading-none"
+          style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+        >
+          {data.location || "NSTP"}
+        </h2>
+      </div>
+
+      {/* Mid-Left: Badge Pill & Event Name Row */}
+      <div className="absolute left-[64px] top-[216px] z-10 flex items-center gap-[20px] max-w-[720px]">
+        {/* Badge Pill */}
+        <div 
+          className="flex items-center justify-center px-[22px] py-[10px] rounded-[6px] shadow-sm shrink-0"
+          style={{ 
+            backgroundColor: palette.pillBg,
+            border: `1px solid ${palette.pillBorder}`,
+          }}
+        >
+          <span className="text-[20px] font-black text-white tracking-[2px] uppercase leading-none whitespace-nowrap">
+            {data.cardRole === "guest" ? "OUR GUEST AT" : "I'M ATTENDING"}
           </span>
-        )}
-      </h1>
-
-      <div className="absolute left-[58px] top-[360px] flex gap-[35px] items-center flex-wrap" style={metaTextColor}>
-        <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
-          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 15H5V10h14ZM7 12h5v5H7Z"/></svg>
-          <span>{data.sessionDate || "Friday, 11th April, 2026"}</span>
         </div>
-        <div className="flex items-center gap-2 text-[18px] font-medium whitespace-nowrap">
-          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 1.75A10.25 10.25 0 1 0 22.25 12 10.26 10.26 0 0 0 12 1.75Zm4.22 11h-4.97V7.78h1.5v3.47h3.47Z"/></svg>
-          <span>{sessionTimeLabel}</span>
-        </div>
+
+        {/* Event Name */}
+        <h1 
+          className="m-0 text-[34px] font-black tracking-[0.5px] uppercase leading-none truncate max-w-[480px]"
+          style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+          title={data.eventName || "SAFAR-E-KARAKORAM"}
+        >
+          {data.eventName || "SAFAR-E-KARAKORAM"}
+          {data.cardRole === "guest" && data.guestCategory && (
+            <span className="ml-3 text-[20px] font-bold text-cyan-300 uppercase tracking-wide">
+              (AS {data.guestCategory})
+            </span>
+          )}
+        </h1>
       </div>
 
-      <div className="absolute left-[58px] top-[402px] flex items-center gap-2 text-[18px] font-medium whitespace-nowrap" style={metaTextColor}>
-        {isWebinarLocation ? (
-          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2Zm7.94 9h-3.27A15.7 15.7 0 0 0 15.4 5.5 8.05 8.05 0 0 1 19.94 11ZM12 4.06c.86 1.08 1.95 3.43 2.42 6.94H9.58C10.05 7.49 11.14 5.14 12 4.06ZM4.06 13h3.27a15.7 15.7 0 0 0 1.27 5.5A8.05 8.05 0 0 1 4.06 13ZM4.06 11A8.05 8.05 0 0 1 8.6 5.5 15.7 15.7 0 0 0 7.33 11Zm7.94 8.94c-.86-1.08-1.95-3.43-2.42-6.94h4.84c-.47 3.51-1.56 5.86-2.42 6.94ZM15.4 18.5A15.7 15.7 0 0 0 16.67 13h3.27a8.05 8.05 0 0 1-4.54 5.5Z"/></svg>
+      {/* Date & Time Block */}
+      <div className="absolute left-[64px] top-[338px] z-10 flex flex-col">
+        <p 
+          className="m-0 text-[23px] font-bold leading-tight"
+          style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+        >
+          {data.sessionDate || "10th September 2026"}
+        </p>
+        <p className="m-0 mt-[4px] text-[18px] font-normal text-slate-300 leading-tight">
+          ({sessionTimeLabel})
+        </p>
+      </div>
+
+      {/* Tagline */}
+      <div className="absolute left-[64px] top-[426px] z-10">
+        <p 
+          className="m-0 text-[21px] font-medium tracking-[1.5px] uppercase leading-none text-white/95"
+          style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
+        >
+          START HERE, GO ANYWHERE
+        </p>
+      </div>
+
+      {/* Bottom-Left: Co-organized by & Logos */}
+      <div className="absolute left-[64px] top-[470px] z-10 flex flex-col">
+        <p className="m-0 text-[15px] font-normal text-white/80 leading-none mb-[12px]">
+          Co-organized by:
+        </p>
+        {customSponsorsList.length > 0 ? (
+          <SponsorStripRow sponsors={customSponsorsList} logoHeightPx={SPONSOR_LOGO_HEIGHT_H1_PX} maxStripWidthPx={SPONSOR_STRIP_MAX_W_H1_PX} />
         ) : (
-          <svg className="w-[25px] h-[25px] fill-current" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 4.86 7 13 7 13s7-8.14 7-13a7 7 0 0 0-7-7Zm0 9.5A2.5 2.5 0 1 1 14.5 9 2.5 2.5 0 0 1 12 11.5Z"/></svg>
-        )}
-        <span>{data.location || "Expo Center, Islamabad, Pakistan"}</span>
-      </div>
-
-      <div className="absolute right-[58px] top-[70px] z-20 max-w-[262px] overflow-hidden">
-        {hasOrganizationBranding ? (
-          <div className="flex items-center justify-end gap-2">
-            <OrganizationBrand
-              name={data.organizationName || "Organization"}
-              logoUrl={data.organizationLogoUrl}
-              iconClassName="h-[63px] w-[63px] shrink-0"
-              nameBoxClassName="h-[48px] min-w-0 max-w-[165px]"
-              nameTextClassName="text-[31px] leading-none"
-              textColorClassName={isCustomTheme ? "text-[#0B0B0B]" : undefined}
-              nameTextStyle={hasHorizontalTextOverride ? { color: horizontalTextColor } : undefined}
-            />
-          </div>
-        ) : (
-          <div className="flex items-center justify-end gap-2">
-            <img src="https://www.figma.com/api/mcp/asset/f933f73f-4602-4c5f-a7f1-8e9e24f19129" className="h-[59px] w-[59px] shrink-0 object-contain" alt="" />
-            <img src="https://www.figma.com/api/mcp/asset/a433a3fb-dace-43ff-ace4-ac1ff37cb838" className="h-[48px] w-[165px] shrink-0 object-contain" alt="" />
+          <div className="flex items-center gap-[28px]">
+            <img src="/card-assets/nstp-logo.svg" alt="NSTP Defining Innovation" className="h-[40px] w-auto object-contain" />
+            <img src="/card-assets/leap-pakistan-logo.svg" alt="LEAP Pakistan" className="h-[40px] w-auto object-contain" />
+            <img src="/card-assets/avtive-white-logo.svg" alt="avtive" className="h-[38px] w-auto object-contain" />
           </div>
         )}
       </div>
 
-      <section className="absolute right-[20px] top-[172px] w-[300px] text-left" style={metaTextColor}>
-        <div className={`relative z-40 isolate mb-5 flex h-[175px] w-[175px] items-center justify-center overflow-hidden rounded-lg border border-white/10 ${hasRealPhoto ? "bg-white/10" : "bg-white"}`}>
+      {/* Right Column: Circular Avatar & Centered Attendee Details */}
+      <div className="absolute right-[70px] top-[145px] z-10 flex flex-col items-center w-[300px]">
+        {/* Circular Avatar */}
+        <div className={`relative flex h-[230px] w-[230px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
           {hasRealPhoto ? (
             <img
               src={photoUrl}
-              className="w-full h-full object-cover"
               alt={data.name?.trim() ? `Photo of ${data.name.trim()}` : "Attendee photo"}
+              className="h-full w-full object-cover"
               crossOrigin="anonymous"
             />
           ) : (
-            <DefaultAvatarPlaceholder className="w-full h-full" />
+            <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
           )}
         </div>
-        <h2 className="m-0 font-bold text-[22px] leading-[1.2] whitespace-nowrap" style={metaTextColor}>
-          {data.name || "Full Name"}
-        </h2>
-        <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap">{data.role || "Role/Title"}</p>
-        <p className="m-0 font-normal text-[18px] leading-[1.35] whitespace-nowrap opacity-80">{data.company || "Organization"}</p>
-      </section>
 
-      {/* z-10+ so noise/buildings overlays (z-1) cannot paint on top of the white sponsor strip */}
-      <footer className="absolute bottom-0 left-0 right-0 z-10 grid h-[123px] place-items-center bg-white px-[40px]">
-        <HorizontalSponsorsDesign1 sponsors={data.sponsors} />
-      </footer>
+        {/* Attendee Details */}
+        <div className="mt-[20px] flex flex-col items-center text-center w-full px-2">
+          <h2 
+            className="m-0 text-[32px] font-black leading-[1.15] tracking-tight truncate max-w-[290px]"
+            style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+            title={data.name || "Zia-ur-Rehman"}
+          >
+            {data.name || "Zia-ur-Rehman"}
+          </h2>
+          <p 
+            className="m-0 mt-[6px] text-[18px] font-bold text-white/90 leading-tight uppercase tracking-wide truncate max-w-[290px]"
+            style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
+          >
+            {data.role || "CEO"}
+          </p>
+          <p 
+            className="m-0 mt-[4px] text-[17px] font-normal text-white/75 leading-tight truncate max-w-[290px]"
+            style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
+          >
+            {data.company || "The Leap Pakistan"}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
