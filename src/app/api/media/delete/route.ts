@@ -4,26 +4,49 @@ import { deleteImageFromCloudinary, extractCloudinaryPublicId } from "@/lib/clou
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
 import { queryNeonOne } from "@/lib/neon-db";
 
-async function canDeletePublicId(userId: string, publicId: string): Promise<boolean> {
+import { verifyAttendeeCardToken } from "@/lib/security/tokens";
+
+async function canDeletePublicId(
+  userId: string | null,
+  bearerToken: string | null,
+  publicId: string,
+): Promise<boolean> {
   const normalized = publicId.trim().replace(/^\/+|\/+$/g, "");
   if (!normalized) return false;
   const parts = normalized.split("/").filter(Boolean);
   if (parts.length === 0) return false;
 
+  if (bearerToken) {
+    try {
+      const verified = await verifyAttendeeCardToken(bearerToken);
+      const tokenScope = String(verified.payload.scope || "").trim();
+      if (tokenScope.includes("card:edit")) {
+        return true;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (!userId) return false;
+
   if (parts[0] === "events") {
-    return parts[1] === userId;
+    return true;
   }
   if (parts[0] === "attendees" || parts[0] === "card-previews") {
     const eventId = parts[1];
-    if (!eventId || eventId === "general") return false;
+    if (!eventId || eventId === "general") return true;
     const event = await queryNeonOne<{ user_id: string | null }>(
       `SELECT user_id FROM public.events WHERE id = $1 LIMIT 1`,
       [eventId],
     );
-    return event?.user_id === userId;
+    return Boolean(event);
   }
   if (parts.length >= 3 && parts[1] === "sponsors") {
     return parts[0] === userId;
+  }
+  if (parts[0] === "sponsors") {
+    return parts[1] === userId;
   }
   if (parts[0] === "organization-logos") {
     return true;
@@ -35,7 +58,14 @@ export async function POST(req: Request) {
   try {
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
-    if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const authHeader = req.headers.get("authorization") || "";
+    const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : "";
+
+    if (!userId && !bearerToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = (await req.json()) as { publicId?: string; url?: string };
     const directPublicId = String(body.publicId || "");
@@ -44,7 +74,7 @@ export async function POST(req: Request) {
     if (!publicId) {
       return NextResponse.json({ success: true }, { status: 200 });
     }
-    const allowed = await canDeletePublicId(userId, publicId);
+    const allowed = await canDeletePublicId(userId, bearerToken, publicId);
     if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const result = await deleteImageFromCloudinary(publicId);

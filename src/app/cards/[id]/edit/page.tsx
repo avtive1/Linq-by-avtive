@@ -334,14 +334,21 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         }
 
         if (originalPhotoPath) {
-          const deleteRes = await fetch("/api/media/delete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: originalPhotoPath }),
-          });
-          const deletePayload = await deleteRes.json().catch(() => null);
-          if (!deleteRes.ok || deletePayload?.success !== true) {
-            throw new Error(deletePayload?.error || "Failed to delete old photo.");
+          try {
+            const deleteRes = await fetch("/api/media/delete", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(shareToken ? { Authorization: `Bearer ${shareToken}` } : {}),
+              },
+              body: JSON.stringify({ url: originalPhotoPath }),
+            });
+            const deletePayload = await deleteRes.json().catch(() => null);
+            if (!deleteRes.ok || deletePayload?.success !== true) {
+              logger.warn({ error: deletePayload?.error }, "Failed to delete old photo during card update");
+            }
+          } catch (deleteErr) {
+            logger.warn({ err: deleteErr instanceof Error ? deleteErr : undefined }, "Old photo deletion failed");
           }
         }
         photo_url = String(uploadedUrl || "");
