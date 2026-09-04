@@ -7,6 +7,7 @@ import {
 import { parseAndVerifyAttendanceQrPayload } from "@/lib/security/attendance-qr";
 import { getEventStatus } from "@/lib/utils";
 import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
+import { isValidUuid } from "@/lib/validation/uuid";
 
 const MAX_ASSIGN_ATTEMPTS = 12;
 
@@ -17,6 +18,30 @@ function isUniqueViolation(error: unknown): boolean {
     "code" in error &&
     String((error as { code?: string }).code) === "23505"
   );
+}
+
+export function formatAttendeeLinkedInUrl(raw?: string | null): string {
+  const trimmed = String(raw || "").trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  if (trimmed.includes(".")) {
+    return `https://${trimmed}`;
+  }
+  return `https://linkedin.com/in/${trimmed}`;
+}
+
+export function extractCardIdFromQrPayload(payload: string): string | null {
+  const trimmed = String(payload || "").trim();
+  const urlMatch = trimmed.match(/\/cards\/([0-9a-fA-F-]{36})(?:\/scan)?/i);
+  if (urlMatch && isValidUuid(urlMatch[1])) {
+    return urlMatch[1];
+  }
+  if (isValidUuid(trimmed)) {
+    return trimmed;
+  }
+  return null;
 }
 
 async function readAttendanceCode(
@@ -125,6 +150,168 @@ export async function markAttendeeAttended(input: {
   return { attended: true, alreadyAttended: false };
 }
 
+export interface AttendeeAttendanceCheckinResult {
+  success: boolean;
+  message: string;
+  alreadyAttended: boolean;
+  attendedAt?: Date | string | null;
+  attendee?: {
+    id: string;
+    name: string;
+    role: string;
+    company: string;
+    track: string;
+    email?: string;
+    linkedin?: string;
+    linkedinUrl?: string;
+    photoUrl?: string;
+  };
+  event?: {
+    id: string;
+    name: string;
+    date?: string | null;
+    time?: string | null;
+    location?: string | null;
+    logoUrl?: string | null;
+  };
+}
+
+/**
+ * Marks attendance for an attendee directly from scanning their badge QR code.
+ * Identifies the attendee + event, validates registration, prevents duplicate attendance,
+ * saves the timestamp server-side, and preserves LinkedIn information.
+ */
+export async function markAttendeeAttendanceById(
+  cardId: string,
+): Promise<AttendeeAttendanceCheckinResult> {
+  const normalizedCardId = String(cardId || "").trim();
+  if (!isValidUuid(normalizedCardId)) {
+    return {
+      success: false,
+      message: "Invalid attendee badge identifier.",
+      alreadyAttended: false,
+    };
+  }
+
+  const rawAttendee = await queryNeonOne<Record<string, unknown>>(
+    `SELECT id, event_id, event_name, name, role, company, track, card_email, linkedin, photo_url, attendance_code, attended, updated_at, created_at
+     FROM public.attendees
+     WHERE id = $1
+     LIMIT 1`,
+    [normalizedCardId],
+  );
+
+  if (!rawAttendee) {
+    return {
+      success: false,
+      message: "Attendee badge not found or unrecognized QR code.",
+      alreadyAttended: false,
+    };
+  }
+
+  const { row: attendee } = decryptAttendeeSensitiveFields(rawAttendee);
+  const eventId = String(attendee.event_id || "").trim();
+
+  if (!eventId || !isValidUuid(eventId)) {
+    return {
+      success: false,
+      message: "Attendee is not registered for a valid event.",
+      alreadyAttended: false,
+    };
+  }
+
+  const event = await queryNeonOne<{
+    id: string;
+    name: string;
+    date: string | null;
+    time: string | null;
+    location: string | null;
+    logo_url: string | null;
+  }>(
+    `SELECT id, name, date, time, location, logo_url
+     FROM public.events
+     WHERE id = $1
+     LIMIT 1`,
+    [eventId],
+  );
+
+  if (!event) {
+    return {
+      success: false,
+      message: "Event associated with this badge could not be found.",
+      alreadyAttended: false,
+    };
+  }
+
+  const attendeeName = String(attendee.name || "Attendee").trim();
+  const rawLinkedin = String(attendee.linkedin || "").trim();
+  const linkedinUrl = formatAttendeeLinkedInUrl(rawLinkedin);
+
+  const attendeeInfo = {
+    id: String(attendee.id),
+    name: attendeeName,
+    role: String(attendee.role || "Attendee"),
+    company: String(attendee.company || ""),
+    track: String(attendee.track || ""),
+    email: String(attendee.card_email || ""),
+    linkedin: rawLinkedin,
+    linkedinUrl,
+    photoUrl: String(attendee.photo_url || ""),
+  };
+
+  const eventInfo = {
+    id: event.id,
+    name: event.name || String(attendee.event_name || "Exclusive Event"),
+    date: event.date,
+    time: event.time,
+    location: event.location,
+    logoUrl: event.logo_url,
+  };
+
+  if (Boolean(attendee.attended)) {
+    return {
+      success: true,
+      alreadyAttended: true,
+      message: `Attendance already marked for ${attendeeName}.`,
+      attendedAt: (attendee.updated_at as Date | string) || (attendee.created_at as Date | string),
+      attendee: attendeeInfo,
+      event: eventInfo,
+    };
+  }
+
+  // Atomic update to ensure single-use QR execution and save attendance timestamp
+  const updated = await queryNeon<{ id: string; updated_at: Date | string }>(
+    `UPDATE public.attendees
+     SET attended = true,
+         updated_at = NOW()
+     WHERE id = $1
+       AND event_id = $2
+       AND attended = false
+     RETURNING id, updated_at`,
+    [normalizedCardId, eventId],
+  );
+
+  if (!updated || updated.length === 0) {
+    return {
+      success: true,
+      alreadyAttended: true,
+      message: `Attendance already marked for ${attendeeName}.`,
+      attendedAt: (attendee.updated_at as Date | string) || new Date(),
+      attendee: attendeeInfo,
+      event: eventInfo,
+    };
+  }
+
+  return {
+    success: true,
+    alreadyAttended: false,
+    message: `Attendance marked successfully for ${attendeeName}!`,
+    attendedAt: updated[0].updated_at,
+    attendee: attendeeInfo,
+    event: eventInfo,
+  };
+}
+
 export interface MarkAttendanceScanResult {
   success: boolean;
   alreadyAttended?: boolean;
@@ -160,6 +347,87 @@ export async function markAttendanceByQrScan(input: {
     return {
       success: false,
       message: "Event is not live. Attendance can only be marked while the event is live.",
+    };
+  }
+
+  // Support both direct badge QR URL / UUID payloads and signed JSON payloads
+  const extractedCardId = extractCardIdFromQrPayload(input.qrPayload);
+
+  if (extractedCardId) {
+    const rawAttendee = await queryNeonOne<Record<string, unknown>>(
+      `SELECT id, event_id, name, role, company, track, card_email, attendance_code, attended
+       FROM public.attendees
+       WHERE id = $1
+         AND event_id = $2
+       LIMIT 1`,
+      [extractedCardId, input.eventId],
+    );
+
+    if (!rawAttendee) {
+      return {
+        success: false,
+        message: "Attendee does not belong to this event.",
+      };
+    }
+
+    const { row: attendee } = decryptAttendeeSensitiveFields(rawAttendee);
+    const attendeeName = String(attendee.name || "Attendee");
+
+    if (Boolean(attendee.attended)) {
+      return {
+        success: false,
+        alreadyAttended: true,
+        message: `Attendance has already been marked for ${attendeeName}.`,
+        attendee: {
+          id: String(attendee.id),
+          name: attendeeName,
+          role: String(attendee.role || ""),
+          company: String(attendee.company || ""),
+          track: String(attendee.track || ""),
+          email: String(attendee.card_email || ""),
+        },
+      };
+    }
+
+    const updated = await queryNeon<{ id: string }>(
+      `UPDATE public.attendees
+       SET attended = true,
+           updated_at = NOW()
+       WHERE id = $1
+         AND event_id = $2
+         AND attended = false
+       RETURNING id`,
+      [extractedCardId, input.eventId],
+    );
+
+    if (!updated || updated.length === 0) {
+      return {
+        success: false,
+        alreadyAttended: true,
+        message: `Attendance has already been marked for ${attendeeName}.`,
+        attendee: {
+          id: String(attendee.id),
+          name: attendeeName,
+          role: String(attendee.role || ""),
+          company: String(attendee.company || ""),
+          track: String(attendee.track || ""),
+          email: String(attendee.card_email || ""),
+        },
+      };
+    }
+
+    return {
+      success: true,
+      alreadyAttended: false,
+      message: `Attendance marked successfully for ${attendeeName}.`,
+      attendee: {
+        id: String(attendee.id),
+        name: attendeeName,
+        role: String(attendee.role || ""),
+        company: String(attendee.company || ""),
+        track: String(attendee.track || ""),
+        email: String(attendee.card_email || ""),
+      },
     };
   }
 
@@ -266,3 +534,4 @@ export async function markAttendanceByQrScan(input: {
     },
   };
 }
+
