@@ -109,7 +109,9 @@ export async function POST(req: Request) {
     }
 
     if (userId) {
-      const allowed = await canUploadToFolder(userId, folder);
+      const allowed =
+        (await canUploadToFolder(userId, folder)) ||
+        (await canPublicRegistrationUploadToFolder(folder));
       if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

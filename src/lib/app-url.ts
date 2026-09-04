@@ -11,7 +11,10 @@ export function normalizeAppUrl(url: string): string {
   let cleaned = String(url || "").trim();
   if (!cleaned) return CANONICAL_APP_URL;
 
-  // Replace any erroneous avtive.com domain references with avtive.app
+  // Replace any erroneous avtive.com or avtive.app.com domain references with avtive.app
+  cleaned = cleaned.replace(/\blinq\.avtive\.(?:app\.)?com\b/gi, "linq.avtive.app");
+  cleaned = cleaned.replace(/\bavtive\.(?:app\.)?com\b/gi, "avtive.app");
+  cleaned = cleaned.replace(/\bavtive\.app\.com\b/gi, "avtive.app");
   cleaned = cleaned.replace(/\blinq\.avtive\.com\b/gi, "linq.avtive.app");
   cleaned = cleaned.replace(/\bavtive\.com\b/gi, "avtive.app");
 

@@ -119,8 +119,9 @@ export default async function CardViewPage(props: {
     await ensureAuthSchema();
     const session = await getServerAuthSession();
     const authedUserId = String(session?.user?.id || "").trim();
+    const sessionEmail = String(session?.user?.email || "").trim().toLowerCase();
     let hasSignedAccess = false;
-    if (!authedUserId && token) {
+    if (token) {
       try {
         const verified = await verifyAttendeeCardToken(token);
         hasSignedAccess = tokenGrantsCardViewAccess(
@@ -159,6 +160,20 @@ export default async function CardViewPage(props: {
     
     if (record) {
       const { row: secureRecord } = decryptAttendeeSensitiveFields(record);
+      const attendeeEmail = String(secureRecord.card_email || "").trim().toLowerCase();
+      const isCardOwner = Boolean(
+        (record.user_id && String(record.user_id).trim() === authedUserId) ||
+        (sessionEmail && attendeeEmail && attendeeEmail === sessionEmail)
+      );
+
+      const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+        .split(",")
+        .map((e) => e.trim().toLowerCase())
+        .filter(Boolean);
+      const role = String(session?.user?.role || "").toLowerCase();
+      const isAdmin = role === "admin" || Boolean(sessionEmail && adminEmails.includes(sessionEmail));
+      let isEventOrganizerOrStaff = false;
+
       /** Cache-bust string for Cloudinary URLs; must stay in scope for entire `card` build. */
       let previewVersion = "";
       const customFields =
@@ -197,6 +212,22 @@ export default async function CardViewPage(props: {
           eventCardFont = readString(ev.card_font);
           sponsors = parseEventSponsors(ev.sponsors);
           const campaignLogoUrl = String(ev.logo_url || "").trim();
+
+          if (ev.user_id && authedUserId) {
+            if (String(ev.user_id).trim() === authedUserId) {
+              isEventOrganizerOrStaff = true;
+            } else {
+              const membership = await queryNeonOne<{ id: string }>(
+                `SELECT id FROM public.organization_members
+                 WHERE member_user_id = $1 AND org_owner_user_id = $2 AND status = 'active'
+                 LIMIT 1`,
+                [authedUserId, String(ev.user_id).trim()],
+              );
+              if (membership?.id) {
+                isEventOrganizerOrStaff = true;
+              }
+            }
+          }
           
           if (ev.user_id) {
             try {
@@ -235,6 +266,26 @@ export default async function CardViewPage(props: {
             }
           }
         }
+      }
+
+      if (!hasSignedAccess && !isCardOwner && !isEventOrganizerOrStaff && !isAdmin) {
+        return (
+          <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
+            <GradientBackground />
+            <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
+              <div className="w-12 h-12 rounded-md bg-surface flex items-center justify-center text-muted">
+                <Info size={24} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-heading font-semibold">Access denied</p>
+                <p className="text-sm text-muted">You do not have permission to view this card.</p>
+              </div>
+              <Link href="/dashboard" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
+                Back to Dashboard
+              </Link>
+            </Card>
+          </main>
+        );
       }
 
       const horizontalTextColor =

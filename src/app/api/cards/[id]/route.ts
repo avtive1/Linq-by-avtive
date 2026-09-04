@@ -8,6 +8,7 @@ import { logSecurityEvent } from "@/lib/security/telemetry";
 import { queryNeon, queryNeonAsSystem, queryNeonOne, queryNeonOneAsSystem, runWithRlsBypassAsync } from "@/lib/neon-db";
 import { deleteAttendeeForTenant, updateAttendeeForTenant } from "@/lib/db/tenant-mutations";
 import { getServerUserIdFromCookies } from "@/lib/auth-server";
+import { getServerAuthSession } from "@/auth";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
@@ -55,7 +56,13 @@ async function getAuthedSessionAndPermission(
       const tokenCanEdit = hasEditScope;
       const tokenAllowed = mode === "read" ? tokenCanRead : tokenCanEdit;
       if (tokenCardId === id && tokenAllowed) {
-        return { userId: String(verified.payload.sub || "").trim() || "token-user", tokenAccess: true as const, tenantId: undefined };
+        return {
+          userId: String(verified.payload.sub || "").trim() || "token-user",
+          tokenAccess: true as const,
+          isCardOwner: true,
+          isEventOrganizerOrStaff: false,
+          tenantId: undefined,
+        };
       }
     } catch {
       // Fall through to normal session checks.
@@ -66,8 +73,8 @@ async function getAuthedSessionAndPermission(
   const userId = await getServerUserIdFromCookies(cookieStore);
   if (!userId) return { error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }) };
 
-  const attendee = await queryNeonOneAsSystem<{ event_id: string | null; user_id: string | null }>(
-    `SELECT event_id, user_id FROM public.attendees WHERE id = $1`,
+  const attendee = await queryNeonOneAsSystem<Record<string, unknown>>(
+    `SELECT * FROM public.attendees WHERE id = $1`,
     [id],
   );
   const fetchError = attendee ? null : { message: "Not found" };
@@ -76,14 +83,28 @@ async function getAuthedSessionAndPermission(
     return { error: NextResponse.json({ error: "Attendee not found" }, { status: 404 }) };
   }
 
-  let canEdit = false;
-  if (attendee.event_id) {
+  const { row: secureAttendee } = decryptAttendeeSensitiveFields(attendee);
+  const session = await getServerAuthSession();
+  const sessionEmail = String(session?.user?.email || "").trim().toLowerCase();
+  const attendeeEmail = String(secureAttendee.card_email || "").trim().toLowerCase();
+
+  const isCardOwner = Boolean(
+    (attendee.user_id && String(attendee.user_id).trim() === userId) ||
+    (sessionEmail && attendeeEmail && attendeeEmail === sessionEmail)
+  );
+
+  let isEventOrganizerOrStaff = false;
+  let hasDeletePermission = false;
+
+  const eventId = String(attendee.event_id || "").trim();
+  if (eventId) {
     const event = await queryNeonOneAsSystem<{ user_id: string | null }>(
       `SELECT user_id FROM public.events WHERE id = $1`,
-      [attendee.event_id],
+      [eventId],
     );
     if (event?.user_id === userId) {
-      canEdit = true;
+      isEventOrganizerOrStaff = true;
+      hasDeletePermission = true;
     } else {
       const membership = await queryNeonOneAsSystem<{ id: string }>(
         `SELECT id
@@ -101,22 +122,51 @@ async function getAuthedSessionAndPermission(
            WHERE event_id = $1
              AND grantee_user_id = $2
              AND status = 'active'`,
-          [attendee.event_id, userId],
+          [eventId, userId],
         );
         const permissions = new Set(grants.map((g) => String(g.permission || "")));
-        canEdit =
-          mode === "delete"
-            ? permissions.has("manage_event") || permissions.has("delete_cards")
-            : permissions.has("manage_event") || permissions.has("edit_cards");
+        if (permissions.has("manage_event") || permissions.has("edit_cards")) {
+          isEventOrganizerOrStaff = true;
+        }
+        if (permissions.has("manage_event") || permissions.has("delete_cards")) {
+          hasDeletePermission = true;
+        }
       }
     }
-  } else if (attendee.user_id === userId) {
-    canEdit = true;
   }
-  if (!canEdit) {
+
+  const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const role = String(session?.user?.role || "").toLowerCase();
+  const isAdmin = role === "admin" || Boolean(sessionEmail && adminEmails.includes(sessionEmail));
+  if (isAdmin) {
+    isEventOrganizerOrStaff = true;
+    hasDeletePermission = true;
+  }
+
+  let allowed = false;
+  if (mode === "delete") {
+    allowed = hasDeletePermission;
+  } else if (mode === "edit") {
+    allowed = isCardOwner || isEventOrganizerOrStaff;
+  } else {
+    // mode === "read"
+    allowed = isCardOwner || isEventOrganizerOrStaff;
+  }
+
+  if (!allowed) {
     return { error: NextResponse.json({ error: "Forbidden: You do not have permission to edit this card" }, { status: 403 }) };
   }
-  return { userId, tokenAccess: false as const, tenantId: await resolveOrgTenantIdForUser(userId) };
+
+  return {
+    userId,
+    tokenAccess: false as const,
+    isCardOwner,
+    isEventOrganizerOrStaff,
+    tenantId: isEventOrganizerOrStaff ? await resolveOrgTenantIdForUser(userId) : undefined,
+  };
 }
 
 export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -152,7 +202,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
       return NextResponse.json({ data: secureRecord, identityLocked });
     };
 
-    if (auth.tokenAccess) {
+    if (auth.tokenAccess || (auth.isCardOwner && !auth.isEventOrganizerOrStaff)) {
       return runWithRlsBypassAsync(loadCard);
     }
 
@@ -195,7 +245,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
 
       const securedPayload = encryptAttendeeSensitiveFields(permittedPayload);
-      const data = auth.tenantId
+      const data = auth.tenantId && auth.isEventOrganizerOrStaff
         ? await updateAttendeeForTenant(id, auth.tenantId, securedPayload)
         : await (async () => {
             const { updateRows } = await import("@/lib/neon-db");
@@ -217,7 +267,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ success: true, data });
     };
 
-    if (auth.tokenAccess) {
+    if (auth.tokenAccess || (auth.isCardOwner && !auth.isEventOrganizerOrStaff)) {
       return runWithRlsBypassAsync(applyPatch);
     }
     const cookieStore = await cookies();
