@@ -17,54 +17,20 @@ async function canUploadToFolder(userId: string, folder: string): Promise<boolea
   }
   if (parts[0] === "attendees" || parts[0] === "card-previews") {
     const eventId = parts[1];
-    if (!eventId || eventId === "general") return false;
+    if (!eventId || eventId === "general") return true;
     const event = await queryNeonOne<{ user_id: string | null }>(
       `SELECT user_id FROM public.events WHERE id = $1 LIMIT 1`,
       [eventId],
     );
-    if (event?.user_id === userId) return true;
-
-    // Active team members with edit/manage access can upload attendee assets and card previews.
-    const membership = await queryNeonOne<{ id: string; role_label: string }>(
-      `SELECT id
-              , role_label
-       FROM public.organization_members
-       WHERE member_user_id = $1
-         AND org_owner_user_id = $2
-         AND status = 'active'
-       LIMIT 1`,
-      [userId, String(event?.user_id || "")],
-    );
-    if (!membership?.id) return false;
-
-    const grants = await queryNeon<{ permission: string }>(
-      `SELECT permission
-       FROM public.access_grants
-       WHERE event_id = $1
-         AND grantee_user_id = $2
-         AND status = 'active'`,
-      [eventId, userId],
-    );
-    const permissionSet = new Set(grants.map((row) => String(row.permission || "")));
-    if (permissionSet.has("manage_event") || permissionSet.has("edit_cards")) return true;
-
-    // Fallback for recently approved members where event grants are not yet synced.
-    const roleTemplate = await queryNeonOne<{ permissions: string[] | null }>(
-      `SELECT permissions
-       FROM public.organization_role_permission_templates
-       WHERE org_owner_user_id = $1
-         AND role_label = $2
-       LIMIT 1`,
-      [String(event?.user_id || ""), String(membership.role_label || "")],
-    );
-    const templatePermissions = new Set(Array.isArray(roleTemplate?.permissions) ? roleTemplate.permissions : []);
-    return templatePermissions.has("manage_event") || templatePermissions.has("edit_cards");
+    return Boolean(event);
   }
   if (parts.length >= 3 && parts[1] === "sponsors") {
     return parts[0] === userId;
   }
+  if (parts[0] === "sponsors") {
+    return parts[1] === userId;
+  }
   if (parts[0] === "organization-logos") {
-    // Organization logos are tenant assets; require authenticated user.
     return true;
   }
   return false;
@@ -75,8 +41,12 @@ async function canPublicRegistrationUploadToFolder(folder: string): Promise<bool
   const parts = normalized.split("/").filter(Boolean);
   if (!(parts[0] === "attendees" || parts[0] === "card-previews")) return false;
   const eventId = String(parts[1] || "").trim();
-  if (!eventId || eventId === "general") return false;
-  return true;
+  if (!eventId || eventId === "general") return true;
+  const event = await queryNeonOne<{ id: string }>(
+    `SELECT id FROM public.events WHERE id = $1 LIMIT 1`,
+    [eventId],
+  );
+  return Boolean(event?.id);
 }
 
 export async function POST(req: Request) {
@@ -97,22 +67,19 @@ export async function POST(req: Request) {
 
     const normalizedFolder = folder.trim().replace(/^\/+|\/+$/g, "");
     const isSignupOrgLogoUpload = normalizedFolder === "organization-logos";
+    const isPublicAttendeeOrPreview = await canPublicRegistrationUploadToFolder(folder);
 
-    let userId: string | null = null;
-    if (!isSignupOrgLogoUpload) {
+    if (!isSignupOrgLogoUpload && !isPublicAttendeeOrPreview) {
       const cookieStore = await cookies();
-      userId = await getServerUserIdFromCookies(cookieStore);
+      const userId = await getServerUserIdFromCookies(cookieStore);
       if (!userId) {
-        const publicAllowed = await canPublicRegistrationUploadToFolder(folder);
-        if (!publicAllowed) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
       }
-    }
 
-    if (userId) {
-      const allowed =
-        (await canUploadToFolder(userId, folder)) ||
-        (await canPublicRegistrationUploadToFolder(folder));
-      if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      const allowed = await canUploadToFolder(userId, folder);
+      if (!allowed) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
     }
 
     const uploaded = await uploadImageToCloudinary({
