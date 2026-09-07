@@ -74,4 +74,15 @@ describe("Promotions & Campaign Engine", () => {
     expect(result.messages[0]).toHaveProperty("sender");
     expect(result.messages[0].category).toBe("CATEGORY_PROMOTIONS");
   });
+
+  it("handles lead personalization with fallback values gracefully", () => {
+    const template = "Hi {{first_name}} from {{company}}!";
+    const leadWithoutName = {
+      email: "lead@test.com",
+      source: "attendee" as const,
+    };
+
+    const result = interpolateEmailContent(template, leadWithoutName, "Linq");
+    expect(result).toBe("Hi there from Linq!");
+  });
 });

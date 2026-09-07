@@ -103,7 +103,7 @@ export function interpolateEmailContent(
   content: string,
   lead: RecipientLead,
   orgName: string,
-  unsubscribeUrl: string,
+  unsubscribeUrl: string = "https://linq.avtive.app/unsubscribe",
 ): string {
   const firstName = lead.name ? lead.name.trim().split(" ")[0] : "there";
   const fullName = lead.name ? lead.name.trim() : "Valued Member";

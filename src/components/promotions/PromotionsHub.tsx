@@ -43,6 +43,7 @@ interface PromotionsHubProps {
   eventId?: string;
   campaignName?: string;
   campaignLeadsCount?: number;
+  directRecipients?: Array<{ email: string; name?: string; company?: string }>;
 }
 
 export default function PromotionsHub({
@@ -53,6 +54,7 @@ export default function PromotionsHub({
   eventId,
   campaignName,
   campaignLeadsCount,
+  directRecipients,
 }: PromotionsHubProps) {
   const [activeTab, setActiveTab] = useState<string>("studio");
 
@@ -78,8 +80,10 @@ export default function PromotionsHub({
     eventId ? "event" : "all_leads",
   );
   const [manualEmails, setManualEmails] = useState<string>("");
-  const [leadCount, setLeadCount] = useState<number>(campaignLeadsCount ?? 0);
+  const initialLeads = Math.max(campaignLeadsCount ?? 0, directRecipients?.length ?? 0);
+  const [leadCount, setLeadCount] = useState<number>(initialLeads);
   const [isLoadingLeads, setIsLoadingLeads] = useState<boolean>(false);
+  const [showRecipientList, setShowRecipientList] = useState<boolean>(false);
 
   // Sending State
   const [isSending, setIsSending] = useState<boolean>(false);
@@ -117,16 +121,18 @@ export default function PromotionsHub({
         const res = await fetch(url);
         const data = await res.json();
         if (data.count !== undefined) {
-          setLeadCount(data.count);
+          const directCount = directRecipients?.length ?? 0;
+          setLeadCount(Math.max(data.count, directCount, campaignLeadsCount ?? 0));
         }
       } catch {
-        setLeadCount(campaignLeadsCount ?? 15);
+        const fallback = Math.max(campaignLeadsCount ?? 0, directRecipients?.length ?? 0);
+        setLeadCount(fallback);
       } finally {
         setIsLoadingLeads(false);
       }
     }
     void loadLeads();
-  }, [eventId, campaignLeadsCount]);
+  }, [eventId, campaignLeadsCount, directRecipients]);
 
   // Fetch Inbound Gmail Promotions
   const loadGmailPromotions = async (query = "") => {
@@ -251,10 +257,16 @@ export default function PromotionsHub({
 
   // Broadcast Mass Promotional Campaign
   const handleBroadcastCampaign = async () => {
-    const targetCount = audienceType === "all_leads" ? (leadCount > 0 ? leadCount : 1) : manualEmails.split(",").length;
+    const effectiveTargetCount =
+      audienceType === "manual"
+        ? manualEmails.split(/[\n,;]+/).map((e) => e.trim()).filter((e) => e.includes("@")).length
+        : audienceType === "event"
+          ? Math.max(directRecipients?.length || 0, leadCount || 0)
+          : (leadCount > 0 ? leadCount : 1);
+
     if (
       !confirm(
-        `Are you sure you want to broadcast this promotional email to ${targetCount} recipients in your audience?`,
+        `Are you sure you want to broadcast this promotional email to ${effectiveTargetCount} leads in your audience?`,
       )
     ) {
       return;
@@ -278,6 +290,7 @@ export default function PromotionsHub({
           themeColor,
           audienceType,
           eventId: audienceType === "event" ? eventId : undefined,
+          directRecipients: audienceType === "event" ? directRecipients : undefined,
           manualEmails: audienceType === "manual" ? manualEmails : undefined,
           isTestSend: false,
           organizationName,
@@ -288,7 +301,7 @@ export default function PromotionsHub({
         throw new Error(data.error || "Failed to dispatch promotional campaign");
       }
 
-      const count = data.result?.sentCount || targetCount;
+      const count = data.result?.sentCount || effectiveTargetCount;
       toast.success(`Campaign successfully dispatched to ${count} leads!`);
       setSentCampaigns((prev) => [
         {
@@ -602,7 +615,7 @@ export default function PromotionsHub({
                           onChange={() => setAudienceType("event")}
                           className="text-purple-600"
                         />
-                        <span>🎯 This Campaign&apos;s Leads ({leadCount} leads in {campaignName || "this event"})</span>
+                        <span>🎯 This Campaign&apos;s Leads ({leadCount} registered in {campaignName || "this event"})</span>
                       </label>
                     )}
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
@@ -613,7 +626,7 @@ export default function PromotionsHub({
                         onChange={() => setAudienceType("all_leads")}
                         className="text-primary"
                       />
-                      <span>All Verified Leads across Organization</span>
+                      <span>All Verified Leads across Organization ({leadCount})</span>
                     </label>
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input
@@ -626,6 +639,34 @@ export default function PromotionsHub({
                       <span>Custom Email List</span>
                     </label>
                   </div>
+
+                  {audienceType === "event" && directRecipients && directRecipients.length > 0 && (
+                    <div className="rounded-xl border border-purple-100 bg-purple-50/40 p-3 flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-purple-900 flex items-center gap-1.5">
+                          <Users size={14} className="text-purple-600" />
+                          {directRecipients.length} Registered Campaign Lead(s) Ready:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowRecipientList(!showRecipientList)}
+                          className="text-xs font-semibold text-purple-700 hover:underline"
+                        >
+                          {showRecipientList ? "Hide List ▲" : "View Leads ▼"}
+                        </button>
+                      </div>
+                      {showRecipientList && (
+                        <div className="max-h-36 overflow-y-auto rounded-lg border border-purple-200/60 bg-white p-2 flex flex-col gap-1.5">
+                          {directRecipients.map((r, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs py-1 px-2 rounded bg-slate-50 border border-slate-100">
+                              <span className="font-semibold text-slate-800">{r.name || "Lead"} {r.company ? `(${r.company})` : ""}</span>
+                              <span className="font-mono text-purple-700 text-[11px]">{r.email}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {audienceType === "manual" && (
                     <div>

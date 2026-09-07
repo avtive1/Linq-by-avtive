@@ -367,25 +367,22 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
     const resolveAuthedUserIdWithRetry = async (): Promise<string> => {
       if (userId) return userId;
-      for (let attempt = 0; attempt < 6; attempt += 1) {
-        if (!isMounted) return "";
-        try {
-          const authRes = await fetch("/api/auth/me", { cache: "no-store" });
-          const authPayload = await readResponsePayload(authRes);
-          const resolvedUserId =
-            authPayload &&
-            typeof authPayload === "object" &&
-            "data" in authPayload &&
-            authPayload.data &&
-            typeof authPayload.data === "object" &&
-            "userId" in authPayload.data &&
-            typeof authPayload.data.userId === "string"
-              ? authPayload.data.userId
-              : "";
-          if (resolvedUserId) return resolvedUserId;
-        } catch {}
-        await new Promise((r) => setTimeout(r, 150));
-      }
+      if (sessionUserId) return sessionUserId;
+      try {
+        const authRes = await fetch("/api/auth/me", { cache: "no-store" });
+        const authPayload = await readResponsePayload(authRes);
+        const resolvedUserId =
+          authPayload &&
+          typeof authPayload === "object" &&
+          "data" in authPayload &&
+          authPayload.data &&
+          typeof authPayload.data === "object" &&
+          "userId" in authPayload.data &&
+          typeof authPayload.data.userId === "string"
+            ? authPayload.data.userId
+            : "";
+        if (resolvedUserId) return resolvedUserId;
+      } catch {}
       return "";
     };
 
@@ -529,13 +526,15 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             secure.custom_fields && typeof secure.custom_fields === "object" && !Array.isArray(secure.custom_fields)
               ? (secure.custom_fields as Record<string, unknown>)
               : {};
+          const customEmail = customFields.email || customFields.Email || customFields.card_email;
+          const resolvedEmail = String(secure.card_email || customEmail || "").trim();
 
           return {
             id: String(secure.id || ""),
             name: String(secure.name || ""),
             role: String(secure.role || "Lead"),
             company: String(secure.company || ""),
-            email: String(secure.card_email || ""),
+            email: resolvedEmail,
             eventName: String(secure.event_name || ""),
             sessionDate: String(secure.session_date || ""),
             sessionTime: String(secure.session_time || ""),
@@ -3913,7 +3912,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             organizationName={eventData?.name || "Campaign"}
             eventId={id}
             campaignName={eventData?.name}
-            campaignLeadsCount={cards.filter((c) => c.email && c.email.trim()).length}
+            campaignLeadsCount={cards.filter((c) => c.email && c.email.includes("@")).length}
+            directRecipients={cards
+              .map((c) => ({
+                email: (c.email || String(c.customFields?.email || c.customFields?.Email || "")).trim(),
+                name: c.name,
+                company: c.company,
+              }))
+              .filter((r) => r.email && r.email.includes("@"))}
             onClose={() => setIsPromotionsOpen(false)}
             isModal={true}
           />

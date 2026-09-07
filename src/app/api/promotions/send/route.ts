@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
 
     // Prepare recipients list
     let recipients: RecipientLead[] = [];
+    const leadMap = new Map<string, RecipientLead>();
 
     if (isTestSend) {
       const emailToSend = (testEmail || session.user.email || "").trim();
@@ -87,16 +88,39 @@ export async function POST(request: NextRequest) {
         source: "manual",
       }));
     } else {
-      // Query lead database (attendees / profiles)
-      recipients = await getLeadDatabaseAudience({
+      // 1. Ingest directRecipients if provided from the client
+      const directList = Array.isArray(body.directRecipients) ? body.directRecipients : [];
+      for (const item of directList) {
+        const rawEmail = typeof item === "string" ? item.trim().toLowerCase() : String(item?.email || "").trim().toLowerCase();
+        if (rawEmail && rawEmail.includes("@") && !leadMap.has(rawEmail)) {
+          leadMap.set(rawEmail, {
+            email: rawEmail,
+            name: typeof item === "object" && item?.name ? String(item.name) : undefined,
+            company: typeof item === "object" && item?.company ? String(item.company) : undefined,
+            source: "attendee",
+          });
+        }
+      }
+
+      // 2. Query lead database (attendees / registration_requests / profiles)
+      const dbLeads = await getLeadDatabaseAudience({
         eventId: audienceType === "event" ? eventId : undefined,
         limit: 1000,
       });
+
+      for (const lead of dbLeads) {
+        const key = lead.email.trim().toLowerCase();
+        if (!leadMap.has(key)) {
+          leadMap.set(key, lead);
+        }
+      }
+
+      recipients = Array.from(leadMap.values());
     }
 
     if (recipients.length === 0) {
       return NextResponse.json(
-        { error: "No valid lead recipients found for the selected audience." },
+        { error: "No valid lead recipients found for the selected audience. Please ensure at least one lead has a valid email address." },
         { status: 400 },
       );
     }

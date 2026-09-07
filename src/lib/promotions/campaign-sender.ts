@@ -34,8 +34,10 @@ export interface CampaignSendResult {
   durationMs: number;
 }
 
+import { decryptAttendeeSensitiveFields } from "@/lib/security/attendee-sensitive";
+
 /**
- * Queries real leads from Neon DB attendees & profiles.
+ * Queries real leads from Neon DB attendees, registration requests, & profiles.
  */
 export async function getLeadDatabaseAudience(filter?: {
   eventId?: string;
@@ -43,39 +45,84 @@ export async function getLeadDatabaseAudience(filter?: {
 }): Promise<RecipientLead[]> {
   try {
     const leadsMap = new Map<string, RecipientLead>();
+    const maxLimit = Math.min(Math.max(filter?.limit || 1000, 1), 5000);
 
     // 1. Fetch from attendees table (verified leads who registered or got cards)
     const attendeeQuery = filter?.eventId
-      ? `SELECT id, name, company, card_email, event_id FROM public.attendees WHERE event_id = $1 AND card_email IS NOT NULL AND TRIM(card_email) != '' LIMIT $2`
-      : `SELECT id, name, company, card_email, event_id FROM public.attendees WHERE card_email IS NOT NULL AND TRIM(card_email) != '' LIMIT $1`;
+      ? `SELECT id, name, company, card_email, custom_fields, event_id FROM public.attendees WHERE event_id = $1 LIMIT $2`
+      : `SELECT id, name, company, card_email, custom_fields, event_id FROM public.attendees LIMIT $1`;
 
     const attendeeParams = filter?.eventId
-      ? [filter.eventId, filter.limit || 1000]
-      : [filter?.limit || 1000];
+      ? [filter.eventId, maxLimit]
+      : [maxLimit];
 
-    const attendees = await runWithRlsBypassAsync(() =>
-      queryNeon<{
-        id: string;
-        name: string | null;
-        company: string | null;
-        card_email: string | null;
-        event_id: string | null;
-      }>(attendeeQuery, attendeeParams),
+    const rawAttendees = await runWithRlsBypassAsync(() =>
+      queryNeon<Record<string, unknown>>(attendeeQuery, attendeeParams),
     );
 
-    (attendees || []).forEach((att) => {
-      const email = att.card_email?.trim().toLowerCase();
-      if (email && email.includes("@") && !leadsMap.has(email)) {
-        leadsMap.set(email, {
-          email,
-          name: att.name || undefined,
-          company: att.company || undefined,
+    for (const raw of rawAttendees || []) {
+      const { row: decrypted } = decryptAttendeeSensitiveFields(raw);
+      const customFields =
+        decrypted.custom_fields && typeof decrypted.custom_fields === "object" && !Array.isArray(decrypted.custom_fields)
+          ? (decrypted.custom_fields as Record<string, unknown>)
+          : {};
+
+      const rawEmail = String(
+        decrypted.card_email ||
+        customFields.email ||
+        customFields.Email ||
+        customFields.card_email ||
+        ""
+      ).trim().toLowerCase();
+
+      if (rawEmail && rawEmail.includes("@") && !leadsMap.has(rawEmail)) {
+        leadsMap.set(rawEmail, {
+          email: rawEmail,
+          name: typeof decrypted.name === "string" && decrypted.name ? decrypted.name : undefined,
+          company: typeof decrypted.company === "string" && decrypted.company ? decrypted.company : undefined,
           source: "attendee",
         });
       }
-    });
+    }
 
-    // 2. Fetch from auth_users / profiles if not specifically event filtered
+    // 2. Fetch from registration_requests table
+    const regQuery = filter?.eventId
+      ? `SELECT id, event_id, status, attendee_payload FROM public.registration_requests WHERE event_id = $1 AND status != 'REJECTED' LIMIT $2`
+      : `SELECT id, event_id, status, attendee_payload FROM public.registration_requests WHERE status != 'REJECTED' LIMIT $1`;
+
+    const regParams = filter?.eventId
+      ? [filter.eventId, maxLimit]
+      : [maxLimit];
+
+    const regRows = await runWithRlsBypassAsync(() =>
+      queryNeon<{
+        id: string;
+        event_id: string;
+        status: string;
+        attendee_payload?: Record<string, unknown>;
+      }>(regQuery, regParams),
+    ).catch(() => []);
+
+    for (const row of regRows || []) {
+      const payload = row.attendee_payload || {};
+      const regEmail = String(
+        payload.email ||
+        payload.card_email ||
+        payload.Email ||
+        ""
+      ).trim().toLowerCase();
+
+      if (regEmail && regEmail.includes("@") && !leadsMap.has(regEmail)) {
+        leadsMap.set(regEmail, {
+          email: regEmail,
+          name: typeof payload.name === "string" && payload.name ? payload.name : undefined,
+          company: typeof payload.company === "string" && payload.company ? payload.company : undefined,
+          source: "attendee",
+        });
+      }
+    }
+
+    // 3. Fetch from auth_users / profiles if not specifically event filtered
     if (!filter?.eventId) {
       const userRows = await runWithRlsBypassAsync(() =>
         queryNeon<{
@@ -88,9 +135,9 @@ export async function getLeadDatabaseAudience(filter?: {
            LEFT JOIN public.profiles p ON p.id = u.user_id
            WHERE u.email IS NOT NULL
            LIMIT $1`,
-          [filter?.limit || 500],
+          [maxLimit],
         ),
-      );
+      ).catch(() => []);
 
       (userRows || []).forEach((row) => {
         const email = row.email.trim().toLowerCase();

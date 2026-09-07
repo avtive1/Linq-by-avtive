@@ -84,9 +84,14 @@ export function useDashboardMotion() {
 
 export function useAutoRefresh(enabled: boolean, intervalMs = DASHBOARD_REFRESH_INTERVAL_MS) {
   const [refreshTick, setRefreshTick] = useState(0);
+  const lastRefreshTimeRef = useState<{ current: number }>({ current: Date.now() })[0];
+
   const triggerRefresh = useCallback(() => {
+    const now = Date.now();
+    if (now - lastRefreshTimeRef.current < 4000) return; // Prevent request thrashing
+    lastRefreshTimeRef.current = now;
     setRefreshTick((prev) => prev + 1);
-  }, []);
+  }, [lastRefreshTimeRef]);
 
   useEffect(() => {
     if (!enabled) return;
