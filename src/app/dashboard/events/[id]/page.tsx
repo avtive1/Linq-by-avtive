@@ -1858,12 +1858,12 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   Card Branding
                 </ShadButton>
                 <ShadButton
-                  variant="secondary"
+                  variant="default"
                   onClick={() => setIsPromotionsOpen(true)}
-                  className="border-purple-300 bg-purple-50 text-purple-950 hover:bg-purple-100 hover:text-purple-950 font-bold shadow-xs gap-1.5"
+                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-4 py-2 text-sm shadow-md transition-all gap-2"
                 >
-                  <Send size={16} className="text-purple-600" />
-                  <span>Promotions</span>
+                  <Send size={16} className="text-white" />
+                  <span>Send Campaign Email ({cards.filter((c) => c.email && c.email.trim()).length} Leads)</span>
                 </ShadButton>
                 {status.label === "Past" ? (
                   <ShadButton 
@@ -3905,7 +3905,10 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
       )}
 
       <Dialog open={isPromotionsOpen} onOpenChange={setIsPromotionsOpen}>
-        <DialogContent showCloseButton={false} className="w-full max-w-[1240px] max-h-[94dvh] flex flex-col glass-panel bg-white/98 border border-border/70 rounded-2xl p-5 sm:p-7 shadow-2xl overflow-y-auto">
+        <DialogContent
+          showCloseButton={false}
+          className="!w-[96vw] !max-w-[96vw] sm:!max-w-[96vw] md:!max-w-[95vw] lg:!max-w-7xl max-h-[95vh] flex flex-col bg-white border border-border/80 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl overflow-y-auto z-50"
+        >
           <PromotionsHub
             organizationName={eventData?.name || "Campaign"}
             eventId={id}

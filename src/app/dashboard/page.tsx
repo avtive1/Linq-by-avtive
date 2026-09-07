@@ -1358,13 +1358,13 @@ function DashboardContent() {
             {!isPreviewMode && !hasPendingOrgJoin && (!isOrgTeamMember || grantedPermissions.includes("send_promotions")) && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <ShadButton
-                  variant="secondary"
+                  variant="default"
                   onClick={() => {
                     setIsPromotionsModalOpen(true);
                   }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-purple-300 bg-purple-50 text-purple-950 hover:bg-purple-100 hover:text-purple-950 font-bold shadow-xs"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[175px] bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-md gap-2"
                 >
-                  <Send size={18} className="text-purple-600" />
+                  <Send size={18} className="text-white" />
                   <span>Promotions</span>
                 </ShadButton>
               </div>
@@ -2697,7 +2697,10 @@ function DashboardContent() {
       </Dialog>
 
       <Dialog open={isPromotionsModalOpen} onOpenChange={setIsPromotionsModalOpen}>
-        <DialogContent showCloseButton={false} className="w-full max-w-[1240px] max-h-[94dvh] flex flex-col glass-panel bg-white/98 border border-border/70 rounded-2xl p-5 sm:p-7 shadow-2xl overflow-y-auto">
+        <DialogContent
+          showCloseButton={false}
+          className="!w-[96vw] !max-w-[96vw] sm:!max-w-[96vw] md:!max-w-[95vw] lg:!max-w-7xl max-h-[95vh] flex flex-col bg-white border border-border/80 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl overflow-y-auto z-50"
+        >
           <PromotionsHub
             organizationName={organizationName || "Linq"}
             userEmail={session?.user?.email || userEmail}

@@ -640,40 +640,58 @@ export default function PromotionsHub({
                     </div>
                   )}
 
-                  {/* Send Test vs Send Broadcast */}
-                  <div className="pt-3 border-t border-hairline-soft flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* High Visibility Action Callout & Send Bar */}
+                  <div className="p-4 sm:p-5 rounded-xl bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-md border border-purple-800">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <Sparkles size={16} className="text-yellow-400" />
+                        <span className="text-xs font-extrabold uppercase tracking-wider text-purple-200">Ready to Broadcast</span>
+                        <Badge className="bg-yellow-400 text-yellow-950 font-extrabold text-xs px-2 py-0.5">
+                          {audienceType === "event" ? `${leadCount} Campaign Leads` : audienceType === "all_leads" ? `${leadCount} Organization Leads` : "Custom List"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-purple-200/80">
+                        Click below to deliver this promotional email to all selected leads immediately.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={handleBroadcastCampaign}
+                      disabled={isSending}
+                      size="lg"
+                      className="py-3 px-6 text-sm font-extrabold gap-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-lg rounded-xl border border-purple-400/30 whitespace-nowrap"
+                    >
+                      {isSending ? (
+                        <RefreshCw size={16} className="animate-spin" />
+                      ) : (
+                        <Send size={16} />
+                      )}
+                      SEND EMAIL TO ALL LEADS NOW
+                    </Button>
+                  </div>
+
+                  {/* Send Test Email Quick Bar */}
+                  <div className="pt-3 border-t border-hairline-soft flex flex-col sm:flex-row items-center justify-between gap-3 bg-surface/40 p-3 rounded-xl">
                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <span className="text-xs font-semibold text-muted whitespace-nowrap">Test Send:</span>
                       <Input
                         type="email"
                         value={testRecipientEmail}
                         onChange={(e) => setTestRecipientEmail(e.target.value)}
                         placeholder="test@yourdomain.com"
-                        className="text-xs h-9 w-full sm:w-56"
+                        className="text-xs h-9 w-full sm:w-64 bg-white"
                       />
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={handleSendTestEmail}
                         disabled={isSendingTest}
-                        className="h-9 text-xs whitespace-nowrap gap-1.5"
+                        className="h-9 text-xs font-semibold whitespace-nowrap gap-1.5 bg-white"
                       >
-                        {isSendingTest ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} />}
-                        Send Test Email
+                        {isSendingTest ? <RefreshCw size={13} className="animate-spin" /> : <Zap size={13} className="text-amber-500" />}
+                        Send Test Preview
                       </Button>
                     </div>
-
-                    <Button
-                      onClick={handleBroadcastCampaign}
-                      disabled={isSending}
-                      className="h-9 w-full sm:w-auto text-xs font-bold gap-2 bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
-                    >
-                      {isSending ? (
-                        <RefreshCw size={14} className="animate-spin" />
-                      ) : (
-                        <Send size={14} />
-                      )}
-                      Launch Promotional Campaign
-                    </Button>
                   </div>
                 </div>
               </Card>
