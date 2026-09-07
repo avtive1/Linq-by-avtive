@@ -40,6 +40,9 @@ interface PromotionsHubProps {
   userEmail?: string;
   onClose?: () => void;
   isModal?: boolean;
+  eventId?: string;
+  campaignName?: string;
+  campaignLeadsCount?: number;
 }
 
 export default function PromotionsHub({
@@ -47,13 +50,20 @@ export default function PromotionsHub({
   userEmail = "",
   onClose,
   isModal = false,
+  eventId,
+  campaignName,
+  campaignLeadsCount,
 }: PromotionsHubProps) {
   const [activeTab, setActiveTab] = useState<string>("studio");
 
   // Campaign Studio State
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("product_launch");
-  const [subject, setSubject] = useState<string>(EMAIL_TEMPLATES[0].defaultSubject);
-  const [headline, setHeadline] = useState<string>(EMAIL_TEMPLATES[0].defaultHeadline);
+  const [subject, setSubject] = useState<string>(
+    campaignName ? `🚀 Exclusive Update: ${campaignName}` : EMAIL_TEMPLATES[0].defaultSubject,
+  );
+  const [headline, setHeadline] = useState<string>(
+    campaignName ? `Important Announcement for ${campaignName}` : EMAIL_TEMPLATES[0].defaultHeadline,
+  );
   const [subheadline, setSubheadline] = useState<string>("");
   const [bodyText, setBodyText] = useState<string>(EMAIL_TEMPLATES[0].defaultBody);
   const [ctaText, setCtaText] = useState<string>(EMAIL_TEMPLATES[0].defaultCtaText);
@@ -63,10 +73,12 @@ export default function PromotionsHub({
   const [themeColor, setThemeColor] = useState<string>("#7c3aed");
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
-  // Audience State
-  const [audienceType, setAudienceType] = useState<"all_leads" | "manual">("all_leads");
+  // Audience State (defaults to 'event' if eventId is provided, otherwise 'all_leads')
+  const [audienceType, setAudienceType] = useState<"all_leads" | "event" | "manual">(
+    eventId ? "event" : "all_leads",
+  );
   const [manualEmails, setManualEmails] = useState<string>("");
-  const [leadCount, setLeadCount] = useState<number>(0);
+  const [leadCount, setLeadCount] = useState<number>(campaignLeadsCount ?? 0);
   const [isLoadingLeads, setIsLoadingLeads] = useState<boolean>(false);
 
   // Sending State
@@ -99,19 +111,22 @@ export default function PromotionsHub({
     async function loadLeads() {
       setIsLoadingLeads(true);
       try {
-        const res = await fetch("/api/promotions/leads?limit=1000");
+        const url = eventId
+          ? `/api/promotions/leads?eventId=${encodeURIComponent(eventId)}&limit=1000`
+          : `/api/promotions/leads?limit=1000`;
+        const res = await fetch(url);
         const data = await res.json();
         if (data.count !== undefined) {
           setLeadCount(data.count);
         }
       } catch {
-        setLeadCount(15);
+        setLeadCount(campaignLeadsCount ?? 15);
       } finally {
         setIsLoadingLeads(false);
       }
     }
     void loadLeads();
-  }, []);
+  }, [eventId, campaignLeadsCount]);
 
   // Fetch Inbound Gmail Promotions
   const loadGmailPromotions = async (query = "") => {
@@ -262,6 +277,7 @@ export default function PromotionsHub({
           discountBadge,
           themeColor,
           audienceType,
+          eventId: audienceType === "event" ? eventId : undefined,
           manualEmails: audienceType === "manual" ? manualEmails : undefined,
           isTestSend: false,
           organizationName,
@@ -576,7 +592,19 @@ export default function PromotionsHub({
                 </div>
 
                 <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
+                    {eventId && (
+                      <label className="flex items-center gap-2 text-xs font-bold text-purple-900 cursor-pointer bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200">
+                        <input
+                          type="radio"
+                          name="audience"
+                          checked={audienceType === "event"}
+                          onChange={() => setAudienceType("event")}
+                          className="text-purple-600"
+                        />
+                        <span>🎯 This Campaign&apos;s Leads ({leadCount} leads in {campaignName || "this event"})</span>
+                      </label>
+                    )}
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input
                         type="radio"
@@ -585,7 +613,7 @@ export default function PromotionsHub({
                         onChange={() => setAudienceType("all_leads")}
                         className="text-primary"
                       />
-                      <span>All Verified Leads ({leadCount} contacts in Neon DB)</span>
+                      <span>All Verified Leads across Organization</span>
                     </label>
                     <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
                       <input

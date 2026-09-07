@@ -60,7 +60,9 @@ import {
   MoreVertical,
   AlertCircle,
   QrCode,
+  Send,
 } from "lucide-react";
+import PromotionsHub from "@/components/promotions/PromotionsHub";
 import { QrAttendanceScannerModal } from "@/components/QrAttendanceScannerModal";
 
 import { CardData, EventData } from "@/types/card";
@@ -240,6 +242,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isEditingCampaignDescription, setIsEditingCampaignDescription] = useState(false);
@@ -1853,6 +1856,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   <Layers3 size={16} />
                   Card Branding
+                </ShadButton>
+                <ShadButton
+                  variant="secondary"
+                  onClick={() => setIsPromotionsOpen(true)}
+                  className="border-purple-300 bg-purple-50 text-purple-950 hover:bg-purple-100 hover:text-purple-950 font-bold shadow-xs gap-1.5"
+                >
+                  <Send size={16} className="text-purple-600" />
+                  <span>Promotions</span>
                 </ShadButton>
                 {status.label === "Past" ? (
                   <ShadButton 
@@ -3892,6 +3903,19 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       )}
+
+      <Dialog open={isPromotionsOpen} onOpenChange={setIsPromotionsOpen}>
+        <DialogContent showCloseButton={false} className="w-full max-w-[1240px] max-h-[94dvh] flex flex-col glass-panel bg-white/98 border border-border/70 rounded-2xl p-5 sm:p-7 shadow-2xl overflow-y-auto">
+          <PromotionsHub
+            organizationName={eventData?.name || "Campaign"}
+            eventId={id}
+            campaignName={eventData?.name}
+            campaignLeadsCount={cards.filter((c) => c.email && c.email.trim()).length}
+            onClose={() => setIsPromotionsOpen(false)}
+            isModal={true}
+          />
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
