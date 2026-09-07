@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ClipboardList, PlusCircle } from "lucide-react";
+import { Building2, ClipboardList, PlusCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AdminNavTabsProps {
@@ -15,6 +15,7 @@ export function AdminNavTabs({ pendingRequestsCount }: AdminNavTabsProps) {
   const isDirectory = pathname === "/admin" || pathname.startsWith("/admin/organizations/");
   const isRequests = pathname.startsWith("/admin/organization-requests");
   const isNewOrg = pathname === "/admin/organizations/new";
+  const isPromotions = pathname.startsWith("/admin/promotions");
 
   const navItems = [
     {
@@ -29,6 +30,12 @@ export function AdminNavTabs({ pendingRequestsCount }: AdminNavTabsProps) {
       icon: ClipboardList,
       active: isRequests,
       badge: pendingRequestsCount && pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
+    },
+    {
+      href: "/admin/promotions",
+      label: "Promotions & Mass Emails",
+      icon: Send,
+      active: isPromotions,
     },
     {
       href: "/admin/organizations/new",

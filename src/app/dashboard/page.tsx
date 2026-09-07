@@ -21,7 +21,8 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea as ShadTextarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Send } from "lucide-react";
+import PromotionsHub from "@/components/promotions/PromotionsHub";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -134,6 +135,7 @@ function DashboardContent() {
   const [orgOwnerUserId, setOrgOwnerUserId] = useState("");
   const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [isPromotionsModalOpen, setIsPromotionsModalOpen] = useState(false);
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
   const [teamInviteRoleLabel, setTeamInviteRoleLabel] = useState("");
   const [teamMembers, setTeamMembers] = useState<OrgMemberRow[]>([]);
@@ -1350,6 +1352,20 @@ function DashboardContent() {
                 >
                   <Users size={18} />
                   Team Access
+                </ShadButton>
+              </div>
+            )}
+            {!isPreviewMode && !hasPendingOrgJoin && (!isOrgTeamMember || grantedPermissions.includes("send_promotions")) && (
+              <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
+                <ShadButton
+                  variant="secondary"
+                  onClick={() => {
+                    setIsPromotionsModalOpen(true);
+                  }}
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-purple-300 bg-purple-50 text-purple-950 hover:bg-purple-100 hover:text-purple-950 font-bold shadow-xs"
+                >
+                  <Send size={18} className="text-purple-600" />
+                  <span>Promotions</span>
                 </ShadButton>
               </div>
             )}
@@ -2571,6 +2587,7 @@ function DashboardContent() {
                         {[
                           { id: "create_event", label: "Create Campaigns", desc: "Allow creating new events and campaigns" },
                           { id: "manage_event", label: "Manage Events", desc: "Full access to edit and manage existing events" },
+                          { id: "send_promotions", label: "Promotions & Mass Emails", desc: "Allow sending mass promotional email blasts to leads" },
                           { id: "edit_cards", label: "Edit Cards", desc: "Can edit attendee card details" },
                           { id: "delete_cards", label: "Delete Cards", desc: "Can remove attendee cards" },
                         ].map((perm) => (
@@ -2677,6 +2694,17 @@ function DashboardContent() {
               </form>
             </div>
           </DialogContent>
+      </Dialog>
+
+      <Dialog open={isPromotionsModalOpen} onOpenChange={setIsPromotionsModalOpen}>
+        <DialogContent showCloseButton={false} className="w-full max-w-[1240px] max-h-[94dvh] flex flex-col glass-panel bg-white/98 border border-border/70 rounded-2xl p-5 sm:p-7 shadow-2xl overflow-y-auto">
+          <PromotionsHub
+            organizationName={organizationName || "Linq"}
+            userEmail={session?.user?.email || userEmail}
+            onClose={() => setIsPromotionsModalOpen(false)}
+            isModal={true}
+          />
+        </DialogContent>
       </Dialog>
     </main>
   );
