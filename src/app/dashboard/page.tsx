@@ -21,8 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea as ShadTextarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Send } from "lucide-react";
-import PromotionsHub from "@/components/promotions/PromotionsHub";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Megaphone } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -39,6 +38,7 @@ import {
 } from "@/lib/ui/dashboard-shell";
 
 import { useSearchParams } from "next/navigation";
+import { PromotionChannelSelect } from "@/components/admin/promotion/PromotionChannelSelect";
 
 type DashboardEventData = EventData & { attendeeCount: number };
 type OrgMemberRow = {
@@ -123,6 +123,18 @@ function DashboardContent() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [adminConsoleTab, setAdminConsoleTab] = useState<"overview" | "promotion">(
+    searchParams.get("tab") === "promotion" ? "promotion" : "overview"
+  );
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab === "promotion") {
+      setAdminConsoleTab("promotion");
+    } else if (tab === "overview") {
+      setAdminConsoleTab("overview");
+    }
+  }, [searchParams]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState("");
@@ -135,7 +147,6 @@ function DashboardContent() {
   const [orgOwnerUserId, setOrgOwnerUserId] = useState("");
   const [grantedPermissions, setGrantedPermissions] = useState<string[]>([]);
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
-  const [isPromotionsModalOpen, setIsPromotionsModalOpen] = useState(false);
   const [teamInviteEmail, setTeamInviteEmail] = useState("");
   const [teamInviteRoleLabel, setTeamInviteRoleLabel] = useState("");
   const [teamMembers, setTeamMembers] = useState<OrgMemberRow[]>([]);
@@ -1355,17 +1366,23 @@ function DashboardContent() {
                 </ShadButton>
               </div>
             )}
-            {!isPreviewMode && !hasPendingOrgJoin && (!isOrgTeamMember || grantedPermissions.includes("send_promotions")) && (
+            {!isPreviewMode && !hasPendingOrgJoin && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <ShadButton
-                  variant="default"
+                  variant="secondary"
                   onClick={() => {
-                    setIsPromotionsModalOpen(true);
+                    if (isOrgAdminMode) {
+                      setAdminConsoleTab("promotion");
+                      const el = document.getElementById("admin-console-section");
+                      if (el) el.scrollIntoView({ behavior: "smooth" });
+                    } else {
+                      router.push("/dashboard/promotions");
+                    }
                   }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[175px] bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold shadow-md gap-2"
+                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface cursor-pointer"
                 >
-                  <Send size={18} className="text-white" />
-                  <span>Promotions</span>
+                  <Megaphone size={18} />
+                  <span>Promotion</span>
                 </ShadButton>
               </div>
             )}
@@ -1406,6 +1423,7 @@ function DashboardContent() {
         </motion.div>
         {isOrgAdminMode && (
           <motion.div
+            id="admin-console-section"
             className="mb-8 min-w-0"
             viewport={presets.viewport}
             {...fadeUp(0.04)}
@@ -1424,11 +1442,43 @@ function DashboardContent() {
                     <p className="text-sm text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm font-medium text-heading/75">
-                  <Activity size={14} className="text-primary-strong" />
-                  Analytics
+                {/* Admin Console Tabs: Overview & Promotion */}
+                <div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-white/95 p-1 shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAdminConsoleTab("overview")}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all cursor-pointer",
+                      adminConsoleTab === "overview"
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-muted hover:text-heading hover:bg-surface"
+                    )}
+                  >
+                    <Activity size={14} />
+                    <span>Overview</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAdminConsoleTab("promotion")}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all cursor-pointer",
+                      adminConsoleTab === "promotion"
+                        ? "bg-primary text-white shadow-xs"
+                        : "text-muted hover:text-heading hover:bg-surface"
+                    )}
+                  >
+                    <Megaphone size={14} />
+                    <span>Promotion</span>
+                  </button>
                 </div>
               </div>
+
+              {adminConsoleTab === "promotion" ? (
+                <div className="pt-2">
+                  <PromotionChannelSelect />
+                </div>
+              ) : (
+                <>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 {[
@@ -1572,6 +1622,8 @@ function DashboardContent() {
                   </Card>
                 </motion.div>
               </div>
+                </>
+              )}
             </CardContent>
             </Card>
           </motion.div>
@@ -2587,7 +2639,6 @@ function DashboardContent() {
                         {[
                           { id: "create_event", label: "Create Campaigns", desc: "Allow creating new events and campaigns" },
                           { id: "manage_event", label: "Manage Events", desc: "Full access to edit and manage existing events" },
-                          { id: "send_promotions", label: "Promotions & Mass Emails", desc: "Allow sending mass promotional email blasts to leads" },
                           { id: "edit_cards", label: "Edit Cards", desc: "Can edit attendee card details" },
                           { id: "delete_cards", label: "Delete Cards", desc: "Can remove attendee cards" },
                         ].map((perm) => (
@@ -2694,20 +2745,6 @@ function DashboardContent() {
               </form>
             </div>
           </DialogContent>
-      </Dialog>
-
-      <Dialog open={isPromotionsModalOpen} onOpenChange={setIsPromotionsModalOpen}>
-        <DialogContent
-          showCloseButton={false}
-          className="!w-[96vw] !max-w-[96vw] sm:!max-w-[96vw] md:!max-w-[95vw] lg:!max-w-7xl max-h-[95vh] flex flex-col bg-white border border-border/80 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl overflow-y-auto z-50"
-        >
-          <PromotionsHub
-            organizationName={organizationName || "Linq"}
-            userEmail={session?.user?.email || userEmail}
-            onClose={() => setIsPromotionsModalOpen(false)}
-            isModal={true}
-          />
-        </DialogContent>
       </Dialog>
     </main>
   );

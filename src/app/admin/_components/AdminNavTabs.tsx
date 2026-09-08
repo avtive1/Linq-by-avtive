@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Building2, ClipboardList, PlusCircle, Send } from "lucide-react";
+import { Building2, ClipboardList, PlusCircle, Megaphone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AdminNavTabsProps {
@@ -33,8 +33,8 @@ export function AdminNavTabs({ pendingRequestsCount }: AdminNavTabsProps) {
     },
     {
       href: "/admin/promotions",
-      label: "Promotions & Mass Emails",
-      icon: Send,
+      label: "Promotion",
+      icon: Megaphone,
       active: isPromotions,
     },
     {

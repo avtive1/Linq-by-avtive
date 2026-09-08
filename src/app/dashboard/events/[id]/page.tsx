@@ -60,9 +60,7 @@ import {
   MoreVertical,
   AlertCircle,
   QrCode,
-  Send,
 } from "lucide-react";
-import PromotionsHub from "@/components/promotions/PromotionsHub";
 import { QrAttendanceScannerModal } from "@/components/QrAttendanceScannerModal";
 
 import { CardData, EventData } from "@/types/card";
@@ -242,7 +240,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
 
   // Edit event modal
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [isPromotionsOpen, setIsPromotionsOpen] = useState(false);
   const [editForm, setEditForm] = useState({ name: "", description: "", location: "", location_type: "onsite", date: "", time: "", logo: "" });
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isEditingCampaignDescription, setIsEditingCampaignDescription] = useState(false);
@@ -1855,14 +1852,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 >
                   <Layers3 size={16} />
                   Card Branding
-                </ShadButton>
-                <ShadButton
-                  variant="default"
-                  onClick={() => setIsPromotionsOpen(true)}
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold px-4 py-2 text-sm shadow-md transition-all gap-2"
-                >
-                  <Send size={16} className="text-white" />
-                  <span>Send Campaign Email ({cards.filter((c) => c.email && c.email.trim()).length} Leads)</span>
                 </ShadButton>
                 {status.label === "Past" ? (
                   <ShadButton 
@@ -3902,29 +3891,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       )}
-
-      <Dialog open={isPromotionsOpen} onOpenChange={setIsPromotionsOpen}>
-        <DialogContent
-          showCloseButton={false}
-          className="!w-[96vw] !max-w-[96vw] sm:!max-w-[96vw] md:!max-w-[95vw] lg:!max-w-7xl max-h-[95vh] flex flex-col bg-white border border-border/80 rounded-2xl p-4 sm:p-6 lg:p-8 shadow-2xl overflow-y-auto z-50"
-        >
-          <PromotionsHub
-            organizationName={eventData?.name || "Campaign"}
-            eventId={id}
-            campaignName={eventData?.name}
-            campaignLeadsCount={cards.filter((c) => c.email && c.email.includes("@")).length}
-            directRecipients={cards
-              .map((c) => ({
-                email: (c.email || String(c.customFields?.email || c.customFields?.Email || "")).trim(),
-                name: c.name,
-                company: c.company,
-              }))
-              .filter((r) => r.email && r.email.includes("@"))}
-            onClose={() => setIsPromotionsOpen(false)}
-            isModal={true}
-          />
-        </DialogContent>
-      </Dialog>
     </main>
   );
 }

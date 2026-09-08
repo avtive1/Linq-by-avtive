@@ -25,7 +25,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   const role = String(session?.user?.role || "");
   const isAdminByRole = typeof role === "string" && role.toLowerCase() === "admin";
   const isAdminByEmail = Boolean(sessionEmail && adminEmails.includes(sessionEmail));
-  if (!isAdminByRole && !isAdminByEmail) {
+
+  let isOrgAdmin = false;
+  if (userId) {
+    try {
+      const eventRow = await queryNeonOneAsSystem<{ count: string | number }>(
+        `SELECT COUNT(*)::int AS count FROM public.events WHERE user_id = $1`,
+        [userId],
+      );
+      if (Number(eventRow?.count || 0) > 0) {
+        isOrgAdmin = true;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  if (!isAdminByRole && !isAdminByEmail && !isOrgAdmin) {
     redirect("/dashboard");
   }
 
