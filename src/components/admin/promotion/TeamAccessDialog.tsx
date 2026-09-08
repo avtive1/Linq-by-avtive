@@ -41,6 +41,7 @@ export function TeamAccessDialog({ open, onOpenChange }: TeamAccessDialogProps) 
   }, [open]);
 
   const toggleRole = (roleId: string) => {
+    if (roleId === "admin") return;
     setRoles((prev) =>
       prev.map((r) => (r.id === roleId ? { ...r, enabled: !r.enabled } : r)),
     );
@@ -74,19 +75,32 @@ export function TeamAccessDialog({ open, onOpenChange }: TeamAccessDialogProps) 
         </DialogHeader>
 
         <div className="flex flex-col gap-3 mb-6">
-          {roles.map((role) => (
-            <label
-              key={role.id}
-              className="flex items-center justify-between py-2 px-3 rounded-lg border border-border/50 hover:bg-surface/50 cursor-pointer transition-colors"
-            >
-              <span className="text-sm font-medium text-heading">{role.label}</span>
-              <Checkbox
-                checked={role.enabled}
-                onCheckedChange={() => toggleRole(role.id)}
-                className="w-4 h-4 rounded"
-              />
-            </label>
-          ))}
+          {roles.map((role) => {
+            const isAdmin = role.id === "admin";
+            return (
+              <label
+                key={role.id}
+                className={`flex items-center justify-between py-2.5 px-3 rounded-lg border border-border/50 transition-colors ${
+                  isAdmin ? "bg-surface/30 cursor-default" : "hover:bg-surface/50 cursor-pointer"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-heading">{role.label}</span>
+                  {isAdmin && (
+                    <span className="text-[10px] bg-primary/10 text-primary font-semibold px-1.5 py-0.5 rounded">
+                      Required
+                    </span>
+                  )}
+                </div>
+                <Checkbox
+                  checked={isAdmin ? true : role.enabled}
+                  disabled={isAdmin}
+                  onCheckedChange={() => toggleRole(role.id)}
+                  className="w-4 h-4 rounded"
+                />
+              </label>
+            );
+          })}
         </div>
 
         <div className="flex items-center justify-end gap-2">

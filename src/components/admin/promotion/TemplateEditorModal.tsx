@@ -119,6 +119,16 @@ export function TemplateEditorModal({
     }
   };
 
+  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+
+  const handlePreviewClick = () => {
+    setMobileTab("preview");
+    if (previewContainerRef.current) {
+      previewContainerRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   const channelLabel =
     channel === "newsletter" ? "Newsletter" : channel === "linkedin" ? "LinkedIn" : "WhatsApp";
 
@@ -139,9 +149,36 @@ export function TemplateEditorModal({
                 {template?.name || "Template Editor"}
               </DialogTitle>
             </div>
+
+            {/* Mobile Tab Switcher (Visible only on screens < lg) */}
+            <div className="flex lg:hidden items-center gap-1 rounded-lg border border-border/60 bg-white p-0.5">
+              <button
+                type="button"
+                onClick={() => setMobileTab("edit")}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                  mobileTab === "edit"
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-muted hover:text-heading"
+                }`}
+              >
+                Edit
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileTab("preview")}
+                className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+                  mobileTab === "preview"
+                    ? "bg-primary text-white shadow-xs"
+                    : "text-muted hover:text-heading"
+                }`}
+              >
+                Preview
+              </button>
+            </div>
+
             <button
               onClick={() => onOpenChange(false)}
-              className="text-muted hover:text-heading p-1 rounded-md transition-colors"
+              className="text-muted hover:text-heading p-1 rounded-md transition-colors cursor-pointer"
               aria-label="Close"
             >
               <X size={18} />
@@ -151,7 +188,11 @@ export function TemplateEditorModal({
           {/* Two-Column Editor Body */}
           <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-y-auto">
             {/* LEFT COLUMN: Editing Controls */}
-            <div className="lg:col-span-6 p-6 border-b lg:border-b-0 lg:border-r border-border/40 flex flex-col gap-4 overflow-y-auto">
+            <div
+              className={`lg:col-span-6 p-6 border-b lg:border-b-0 lg:border-r border-border/40 flex flex-col gap-4 overflow-y-auto ${
+                mobileTab === "preview" ? "hidden lg:flex" : "flex"
+              }`}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -160,6 +201,7 @@ export function TemplateEditorModal({
                 onChange={handleFileUpload}
               />
 
+              {/* 1. NEWSLETTER FIELDS: Subject, Heading, Message, Image */}
               {channel === "newsletter" && (
                 <>
                   <div className="flex flex-col gap-1.5">
@@ -187,94 +229,194 @@ export function TemplateEditorModal({
                       className="h-9 text-xs"
                     />
                   </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="nl-message" className="text-xs font-medium text-heading">
+                      Message
+                    </Label>
+                    <ShadTextarea
+                      id="nl-message"
+                      rows={6}
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      placeholder="Enter newsletter text..."
+                      className="text-xs leading-relaxed resize-y"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="nl-image" className="text-xs font-medium text-heading">
+                      Image
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="nl-image"
+                        value={form.imageUrl}
+                        onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                        placeholder="Image URL or upload"
+                        className="h-9 text-xs"
+                      />
+                      <ShadButton
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
+                      >
+                        <Upload size={13} />
+                        Upload
+                      </ShadButton>
+                    </div>
+                  </div>
                 </>
               )}
 
-              {/* Message Field (Used by all channels) */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="channel-message" className="text-xs font-medium text-heading">
-                    Message
-                  </Label>
-                  {(channel === "linkedin" || channel === "whatsapp") && (
-                    <span className="text-[10px] text-muted font-mono">Supports {"{{name}}"}</span>
-                  )}
-                </div>
-                <ShadTextarea
-                  id="channel-message"
-                  rows={channel === "newsletter" ? 6 : 8}
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  placeholder="Enter message text..."
-                  className="text-xs leading-relaxed resize-y"
-                />
-              </div>
+              {/* 2. LINKEDIN FIELDS: Message, Caption */}
+              {channel === "linkedin" && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="li-message" className="text-xs font-medium text-heading">
+                        Message
+                      </Label>
+                      <span className="text-[10px] text-muted font-mono">Supports {"{{name}}"}</span>
+                    </div>
+                    <ShadTextarea
+                      id="li-message"
+                      rows={8}
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      placeholder="Enter LinkedIn direct message..."
+                      className="text-xs leading-relaxed resize-y"
+                    />
+                  </div>
 
-              {/* Image Field (Newsletter & WhatsApp) */}
-              {(channel === "newsletter" || channel === "whatsapp") && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="channel-image" className="text-xs font-medium text-heading">
-                    Image URL
-                  </Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="li-caption" className="text-xs font-medium text-heading">
+                      Caption (Optional)
+                    </Label>
                     <Input
-                      id="channel-image"
-                      value={form.imageUrl}
-                      onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                      placeholder="https://... or upload"
+                      id="li-caption"
+                      value={form.caption}
+                      onChange={(e) => setForm({ ...form, caption: e.target.value })}
+                      placeholder="Follow-up note, community update..."
                       className="h-9 text-xs"
                     />
-                    <ShadButton
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="h-9 text-xs shrink-0 gap-1.5 px-3"
-                    >
-                      <Upload size={13} />
-                      Upload
-                    </ShadButton>
                   </div>
-                </div>
+                </>
               )}
 
-              {/* Attachment Field (WhatsApp) */}
+              {/* 3. WHATSAPP FIELDS: Image, Message, Attachment */}
               {channel === "whatsapp" && (
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="wa-attachment" className="text-xs font-medium text-heading">
-                    Attachment URL
-                  </Label>
-                  <Input
-                    id="wa-attachment"
-                    value={form.attachmentUrl}
-                    onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
-                    placeholder="https://example.com/file.pdf"
-                    className="h-9 text-xs"
-                  />
-                </div>
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="wa-image" className="text-xs font-medium text-heading">
+                      Image
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="wa-image"
+                        value={form.imageUrl}
+                        onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                        placeholder="Image URL or upload"
+                        className="h-9 text-xs"
+                      />
+                      <ShadButton
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
+                      >
+                        <Upload size={13} />
+                        Upload
+                      </ShadButton>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="wa-message" className="text-xs font-medium text-heading">
+                        Message
+                      </Label>
+                      <span className="text-[10px] text-muted font-mono">Supports {"{{name}}"}</span>
+                    </div>
+                    <ShadTextarea
+                      id="wa-message"
+                      rows={7}
+                      value={form.message}
+                      onChange={(e) => setForm({ ...form, message: e.target.value })}
+                      placeholder="Enter WhatsApp message..."
+                      className="text-xs leading-relaxed resize-y"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="wa-attachment" className="text-xs font-medium text-heading">
+                      Attachment
+                    </Label>
+                    <Input
+                      id="wa-attachment"
+                      value={form.attachmentUrl}
+                      onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
+                      placeholder="https://example.com/file.pdf"
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                </>
               )}
 
               {/* Action Buttons Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-border/30 mt-auto">
                 <div className="flex items-center gap-1.5">
+                  {/* Browse Button */}
                   <ShadButton
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs h-8 gap-1 text-muted hover:text-heading"
+                    className="text-xs h-8 gap-1 text-muted hover:text-heading cursor-pointer"
                     title="Browse local file"
                   >
                     <FolderOpen size={13} />
                     Browse
                   </ShadButton>
 
+                  {/* Upload Button (Newsletter & WhatsApp) */}
+                  {(channel === "newsletter" || channel === "whatsapp") && (
+                    <ShadButton
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-xs h-8 gap-1 text-muted hover:text-heading cursor-pointer"
+                      title="Upload image"
+                    >
+                      <Upload size={13} />
+                      Upload
+                    </ShadButton>
+                  )}
+
+                  {/* Preview Button */}
+                  <ShadButton
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePreviewClick}
+                    className="text-xs h-8 gap-1 text-muted hover:text-heading cursor-pointer"
+                    title="Live preview"
+                  >
+                    <Eye size={13} />
+                    Preview
+                  </ShadButton>
+
+                  {/* Save Button */}
                   <ShadButton
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={handleSave}
-                    className="text-xs h-8 gap-1 text-muted hover:text-heading"
+                    className="text-xs h-8 gap-1 text-muted hover:text-heading cursor-pointer"
                     title="Save draft"
                   >
                     <Save size={13} />
@@ -283,11 +425,12 @@ export function TemplateEditorModal({
                 </div>
 
                 <div className="flex items-center gap-2">
+                  {/* Send Button */}
                   <ShadButton
                     type="button"
                     size="sm"
                     onClick={() => setIsConfirmOpen(true)}
-                    className="text-xs h-8 font-semibold px-4 gap-1.5"
+                    className="text-xs h-8 font-semibold px-4 gap-1.5 cursor-pointer"
                   >
                     <SendIcon size={12} />
                     Send
@@ -297,7 +440,12 @@ export function TemplateEditorModal({
             </div>
 
             {/* RIGHT COLUMN: Live Preview */}
-            <div className="lg:col-span-6 p-6 bg-slate-50/50 flex flex-col items-center justify-center overflow-y-auto">
+            <div
+              ref={previewContainerRef}
+              className={`lg:col-span-6 p-6 bg-slate-50/50 flex flex-col items-center justify-center overflow-y-auto ${
+                mobileTab === "edit" ? "hidden lg:flex" : "flex"
+              }`}
+            >
               <div className="w-full flex items-center justify-between mb-4 px-2">
                 <span className="text-xs font-semibold text-muted flex items-center gap-1.5">
                   <Eye size={13} />

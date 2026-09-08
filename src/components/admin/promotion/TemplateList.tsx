@@ -180,20 +180,18 @@ export function TemplateList({ channel, onBack }: TemplateListProps) {
               </div>
 
               <div className="flex items-center gap-1.5">
-                {(channel === "linkedin" || channel === "whatsapp") && (
-                  <ShadButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleUseTemplate(tpl)}
-                    className="text-xs h-8 px-2.5 text-muted hover:text-heading"
-                  >
-                    Preview
-                  </ShadButton>
-                )}
+                <ShadButton
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleUseTemplate(tpl)}
+                  className="text-xs h-8 px-2.5 text-muted hover:text-heading cursor-pointer"
+                >
+                  Preview
+                </ShadButton>
                 <ShadButton
                   size="sm"
                   onClick={() => handleUseTemplate(tpl)}
-                  className="text-xs h-8 font-semibold px-4"
+                  className="text-xs h-8 font-semibold px-4 cursor-pointer"
                 >
                   Use
                 </ShadButton>

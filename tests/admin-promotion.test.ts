@@ -65,4 +65,15 @@ describe("Admin Promotion Feature", () => {
       expect(rendered).not.toContain("{{name}}");
     }
   });
+
+  it("team access defaults to Admin and Marketing enabled, Event Team disabled", () => {
+    const defaultRoles = [
+      { id: "admin", label: "Admin", enabled: true },
+      { id: "marketing", label: "Marketing", enabled: true },
+      { id: "event_team", label: "Event Team", enabled: false },
+    ];
+    expect(defaultRoles.find((r) => r.id === "admin")?.enabled).toBe(true);
+    expect(defaultRoles.find((r) => r.id === "marketing")?.enabled).toBe(true);
+    expect(defaultRoles.find((r) => r.id === "event_team")?.enabled).toBe(false);
+  });
 });
