@@ -5,6 +5,18 @@ export type SponsorEntry = {
   logo_url: string;
 };
 
+export type SocialPlatform =
+  | "linkedin"
+  | "instagram"
+  | "twitter"
+  | "facebook"
+  | "github"
+  | "tiktok"
+  | "youtube"
+  | "website";
+
+export type AttendeeSocialLinks = Partial<Record<SocialPlatform, string>>;
+
 export type CardData = {
   id: string;
   name: string;
@@ -17,6 +29,7 @@ export type CardData = {
   sessionTime?: string;
   year: string;
   linkedin?: string;
+  social_links?: AttendeeSocialLinks;
   track?: string;
   guestCategory?: string;
   photo?: string;

@@ -322,6 +322,12 @@ export default async function CardViewPage(props: {
         track: readString(secureRecord.track),
         year: readString(secureRecord.year),
         linkedin: readString(secureRecord.linkedin),
+        social_links:
+          customFields.social_links &&
+          typeof customFields.social_links === "object" &&
+          !Array.isArray(customFields.social_links)
+            ? (customFields.social_links as import("@/types/card").AttendeeSocialLinks)
+            : undefined,
         photo: readString(secureRecord.photo_url) || undefined,
         designType: readString(secureRecord.design_type),
         color: readString(secureRecord.card_color) || eventCardColor || undefined,

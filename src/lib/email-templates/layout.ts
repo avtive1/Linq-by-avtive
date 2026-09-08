@@ -89,6 +89,83 @@ export function emailCodeDisplay(label: string, code: string): string {
 
 export const ATTENDANCE_QR_CID = "attendance-qr-code@avtive.app";
 
+export function emailAttendeeCardDisplay(params: {
+  eventName: string;
+  attendeeName?: string | null;
+  role?: string | null;
+  company?: string | null;
+  attendanceCode?: string | null;
+  qrDataUrlOrCid?: string | null;
+  cardLink?: string | null;
+}): string {
+  const eventName = escapeHtml(params.eventName || "Event");
+  const attendeeName = params.attendeeName ? escapeHtml(params.attendeeName.trim()) : "";
+  const role = params.role ? escapeHtml(params.role.trim()) : "";
+  const company = params.company ? escapeHtml(params.company.trim()) : "";
+  const roleCompany = [role, company].filter(Boolean).join(" &bull; ");
+  const attendanceCode = params.attendanceCode ? escapeHtml(params.attendanceCode.trim()) : "";
+
+  const src = params.qrDataUrlOrCid || `cid:${ATTENDANCE_QR_CID}`;
+
+  const hasQr = Boolean(params.qrDataUrlOrCid);
+
+  return `
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 28px;border:1px solid #dcdfe6;border-radius:14px;background:#ffffff;box-shadow:0 4px 16px rgba(0,0,0,0.06);overflow:hidden;">
+                <tr>
+                  <td style="padding:16px 20px;background:linear-gradient(135deg, #1c1c1e 0%, #2c2d30 100%);color:#ffffff;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#a1a1aa;">
+                          Official Attendee Card
+                        </td>
+                        <td align="right" style="font-size:12px;font-weight:600;color:#f4f4f5;text-align:right;">
+                          ${eventName}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:26px 20px ${params.cardLink ? "14px" : "24px"};">
+                    ${attendeeName ? `<h2 style="margin:0 0 6px;font-size:22px;line-height:1.3;font-weight:700;color:#1c1c1e;">${attendeeName}</h2>` : ""}
+                    ${roleCompany ? `<p style="margin:0 0 16px;font-size:14px;line-height:1.4;color:#6b6f7e;font-weight:500;">${roleCompany}</p>` : ""}
+
+                    ${
+                      hasQr
+                        ? `<div style="display:inline-block;padding:14px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;margin:6px 0 12px;">
+                            <img src="${src}" alt="Attendee Attendance QR Code" width="180" height="180" style="display:block;width:180px;height:180px;border:0;outline:none;text-decoration:none;" />
+                            <p style="margin:8px 0 0;font-size:11px;font-weight:600;color:#8e91a0;text-transform:uppercase;letter-spacing:0.05em;text-align:center;">
+                              Scan to Check In
+                            </p>
+                          </div>`
+                        : ""
+                    }
+
+                    ${
+                      attendanceCode
+                        ? `<div style="margin:${hasQr ? "4px" : "12px"} 0 0;">
+                            <p style="margin:0 0 4px;font-size:12px;line-height:1.4;color:#6b6f7e;text-transform:uppercase;letter-spacing:0.04em;">Check-in Code</p>
+                            <p style="margin:0;font-size:24px;line-height:1.2;font-weight:700;letter-spacing:0.15em;color:#1c1c1e;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;">
+                              ${attendanceCode}
+                            </p>
+                          </div>`
+                        : ""
+                    }
+                  </td>
+                </tr>
+                ${
+                  params.cardLink
+                    ? `<tr>
+                        <td align="center" style="padding:6px 20px 24px;">
+                          ${emailPrimaryButton("Open Digital Attendee Card", params.cardLink)}
+                          ${emailLinkFallback(params.cardLink)}
+                        </td>
+                      </tr>`
+                    : ""
+                }
+              </table>`;
+}
+
 export function emailQrCodeDisplay(label: string, qrDataUrlOrCid?: string | null): string {
   const src =
     qrDataUrlOrCid && (qrDataUrlOrCid.startsWith("cid:") || !qrDataUrlOrCid.startsWith("data:"))

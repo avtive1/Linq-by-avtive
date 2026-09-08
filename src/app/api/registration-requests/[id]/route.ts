@@ -75,7 +75,18 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: message }, { status });
       }
 
-      const { request, cardId, shareToken, attendeeEmail, eventName, eventShortId, attendanceCode } = result;
+      const {
+        request,
+        cardId,
+        shareToken,
+        attendeeEmail,
+        eventName,
+        eventShortId,
+        attendanceCode,
+        attendeeName,
+        role,
+        company,
+      } = result;
       let notifyError: string | null = null;
       if (attendeeEmail) {
         const emailResult = await sendRegistrationApprovedEmail({
@@ -86,6 +97,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           eventId: request.event_id,
           eventShortId,
           attendanceCode,
+          attendeeName,
+          role,
+          company,
         });
         if (emailResult.queued) {
           await updateTenantRows(

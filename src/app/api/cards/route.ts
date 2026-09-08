@@ -8,6 +8,7 @@ import { sendVisitorAttendanceCodeEmail } from "@/lib/services/email.service";
 import { isGuestRegistrationTrack } from "@/lib/services/registration.service";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
+import { validateAndNormalizeLinkedInUrl, validateAttendeeSocialLinks } from "@/lib/validation/social-urls";
 import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 import { logger } from "@/lib/logger-server";
 
@@ -17,6 +18,27 @@ export async function POST(req: Request) {
     const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
     if (!parsed.ok) return parsed.response;
     const payload = parsed.data as Record<string, unknown>;
+
+    const rawLinkedin = payload.linkedin;
+    const validatedLinkedin = validateAndNormalizeLinkedInUrl(rawLinkedin);
+    if (!validatedLinkedin.ok) {
+      return NextResponse.json({ error: validatedLinkedin.error }, { status: 400 });
+    }
+    payload.linkedin = validatedLinkedin.url;
+
+    if (payload.social_links) {
+      const validatedSocial = validateAttendeeSocialLinks(payload.social_links);
+      if (!validatedSocial.ok) {
+        return NextResponse.json({ error: validatedSocial.error }, { status: 400 });
+      }
+      const customFields =
+        payload.custom_fields && typeof payload.custom_fields === "object" && !Array.isArray(payload.custom_fields)
+          ? { ...(payload.custom_fields as Record<string, unknown>) }
+          : {};
+      customFields.social_links = validatedSocial.socialLinks;
+      payload.custom_fields = customFields;
+      delete payload.social_links;
+    }
     const cookieStore = await cookies();
     const authUserId = await getServerUserIdFromCookies(cookieStore);
     const authHeader = req.headers.get("authorization") || "";
@@ -50,7 +72,12 @@ export async function POST(req: Request) {
             eventName: String(eventRow?.name || "the event"),
             attendanceCode,
             attendeeId: createdCardId,
+            cardId: createdCardId,
+            shareToken,
             eventId,
+            attendeeName: typeof payload.name === "string" ? payload.name : undefined,
+            role: typeof payload.role === "string" ? payload.role : undefined,
+            company: typeof payload.company === "string" ? payload.company : undefined,
           });
           if (!emailResult.queued) {
             logger.warn(

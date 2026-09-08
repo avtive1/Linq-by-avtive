@@ -16,6 +16,7 @@ import { CardData } from "@/types/card";
 import { toast } from "sonner";
 import { openLinkedInCardShare } from "@/lib/share/linkedin-card-share";
 import { logger } from "@/lib/logger-client";
+import { AttendeeSocialLinksBar } from "@/components/AttendeeSocialLinks";
 
 export default function CardView({
   card,
@@ -115,7 +116,7 @@ export default function CardView({
       link.click();
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
-      toast.success("Card downloaded successfully!");
+      toast.success("Attendee card downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download card");
       toast.error("Failed to generate download. Please try again.");
@@ -151,12 +152,12 @@ export default function CardView({
       const x = (pageWidth - renderWidth) / 2;
       const y = (pageHeight - renderHeight) / 2;
       doc.addImage(dataUrl, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST");
-      const filename = `avtive-post-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
+      const filename = `avtive-card-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
       doc.save(filename);
-      toast.success("Post PDF downloaded successfully!");
+      toast.success("Attendee card PDF downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download post PDF");
-      toast.error("Failed to generate post PDF. Please try again.");
+      toast.error("Failed to generate attendee card PDF. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -228,7 +229,7 @@ export default function CardView({
       addCardPage(backDataUrl);
       const filename = `avtive-badge-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
       doc.save(filename);
-      toast.success("Badge PDF downloaded successfully!");
+      toast.success("Attendee card PDF downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download badge PDF");
       toast.error("Failed to generate badge PDF. Please try again.");
@@ -253,7 +254,7 @@ export default function CardView({
       link.download = `avtive-badge-${base}.zip`;
       link.click();
       URL.revokeObjectURL(link.href);
-      toast.success("Badge ZIP downloaded successfully!");
+      toast.success("Attendee card ZIP downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download badge ZIP");
       toast.error("Failed to generate badge ZIP. Please try again.");
@@ -352,20 +353,20 @@ export default function CardView({
                   onClick={() => setShowBadgeDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
                   variant="secondary"
-                  className="shadow-lg flex-1 md:flex-initial min-w-[132px]"
+                  className="shadow-lg flex-1 md:flex-initial min-w-[190px]"
                 >
                   <Download size={18} />
-                  {isDownloading ? "Preparing…" : "Download"}
+                  {isDownloading ? "Preparing…" : "Download Attendee Card"}
                 </Button>
                 {showBadgeDownloadMenu && (
-                  <Card className="absolute right-0 mt-2 w-52 rounded-md border-border/70 bg-white p-1 shadow-xl z-50 overflow-hidden">
+                  <Card className="absolute right-0 mt-2 w-64 rounded-md border-border/70 bg-white p-1 shadow-xl z-50 overflow-hidden">
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={handleDownloadBadgePdf}
                       className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
-                      Download as PDF
+                      Download Attendee Card (PDF)
                     </Button>
                     <Separator className="bg-border/60" />
                     <Button
@@ -374,7 +375,7 @@ export default function CardView({
                       onClick={handleDownloadBadgeZip}
                       className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
-                      Download as ZIP
+                      Download Attendee Card (ZIP)
                     </Button>
                   </Card>
                 )}
@@ -384,20 +385,20 @@ export default function CardView({
                 <Button
                   onClick={() => setShowPostDownloadMenu((prev) => !prev)}
                   disabled={isDownloading}
-                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial min-w-[132px]"
+                  className="shadow-lg shadow-black/10 flex-1 md:flex-initial min-w-[190px]"
                 >
                   <Download size={18} />
-                  {isDownloading ? "Preparing…" : "Download"}
+                  {isDownloading ? "Preparing…" : "Download Attendee Card"}
                 </Button>
                 {showPostDownloadMenu && (
-                  <Card className="absolute right-0 mt-2 w-52 rounded-md border-border/70 bg-white p-1 shadow-xl z-50 overflow-hidden">
+                  <Card className="absolute right-0 mt-2 w-64 rounded-md border-border/70 bg-white p-1 shadow-xl z-50 overflow-hidden">
                     <Button
                       type="button"
                       variant="ghost"
                       onClick={handleDownloadPostPdf}
                       className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
-                      Download as PDF
+                      Download Attendee Card (PDF)
                     </Button>
                     <Separator className="bg-border/60" />
                     <Button
@@ -409,7 +410,7 @@ export default function CardView({
                       }}
                       className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
-                      Download as Image
+                      Download Attendee Card (PNG)
                     </Button>
                   </Card>
                 )}
@@ -481,6 +482,16 @@ export default function CardView({
               </CardArtboardScaler>
             </>
           )}
+        </div>
+
+        {/* Social Links & Professional Profiles */}
+        <div className="w-full flex flex-col items-center">
+          <AttendeeSocialLinksBar
+            linkedin={card.linkedin}
+            socialLinks={card.social_links}
+            attendeeName={card.name}
+            variant="pills"
+          />
         </div>
 
         <div className="text-center flex flex-col gap-2">

@@ -15,6 +15,11 @@ import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
 import { isApprovedGuestCard } from "@/lib/services/registration.service";
 import { resolveOrgTenantIdForUser } from "@/lib/tenant/resolve";
 import { apiRouteErrorResponse, withApiTenantContext } from "@/lib/tenant/api-context";
+import {
+  validateAndNormalizeLinkedInUrl,
+  validateAndNormalizeSocialUrl,
+} from "@/lib/validation/social-urls";
+import type { SocialPlatform, AttendeeSocialLinks } from "@/types/card";
 
 const APPROVED_GUEST_LOCKED_FIELDS = ["name", "company", "card_email"] as const;
 
@@ -240,6 +245,39 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!validation.ok) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
+
+    if (typeof updatePayload.linkedin === "string" && updatePayload.linkedin.trim()) {
+      const liResult = validateAndNormalizeLinkedInUrl(updatePayload.linkedin);
+      if (!liResult.valid) {
+        return NextResponse.json({ error: liResult.error || "Invalid LinkedIn URL" }, { status: 400 });
+      }
+      (validation.payload as Record<string, unknown>).linkedin = liResult.normalizedUrl;
+    }
+
+    if (updatePayload.social_links && typeof updatePayload.social_links === "object") {
+      const rawSocials = updatePayload.social_links as Record<string, unknown>;
+      const validatedSocials: AttendeeSocialLinks = {};
+      for (const [platform, url] of Object.entries(rawSocials)) {
+        if (typeof url === "string" && url.trim()) {
+          const res = validateAndNormalizeSocialUrl(platform as SocialPlatform, url);
+          if (!res.valid) {
+            return NextResponse.json({ error: res.error || `Invalid ${platform} URL` }, { status: 400 });
+          }
+          if (res.normalizedUrl) {
+            validatedSocials[platform as SocialPlatform] = res.normalizedUrl;
+          }
+        }
+      }
+      const existingCustom = (validation.payload as Record<string, unknown>).custom_fields;
+      const customFields =
+        existingCustom && typeof existingCustom === "object" && !Array.isArray(existingCustom)
+          ? { ...(existingCustom as Record<string, unknown>) }
+          : {};
+      customFields.social_links = validatedSocials;
+      (validation.payload as Record<string, unknown>).custom_fields = customFields;
+      delete (validation.payload as Record<string, unknown>).social_links;
+    }
+
     const auth = await getAuthedSessionAndPermission(req, id, "edit");
     if (auth.error) return auth.error;
     const userId = auth.userId!;

@@ -9,6 +9,7 @@ import { isValidUuid } from "@/lib/validation/uuid";
 import { queryNeonOne } from "@/lib/neon-db";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
+import { validateAndNormalizeLinkedInUrl, validateAttendeeSocialLinks } from "@/lib/validation/social-urls";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -56,10 +57,33 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
     if (!parsed.ok) return parsed.response;
-    const payload = parsed.data as Record<string, unknown> & {
-    track?: unknown;
-    card_email?: unknown;
+    const rawPayload = parsed.data as Record<string, unknown>;
+
+    const rawLinkedin = rawPayload.linkedin;
+    const validatedLinkedin = validateAndNormalizeLinkedInUrl(rawLinkedin);
+    if (!validatedLinkedin.ok) {
+      return NextResponse.json({ error: validatedLinkedin.error }, { status: 400 });
+    }
+
+    const customFields =
+      rawPayload.custom_fields && typeof rawPayload.custom_fields === "object" && !Array.isArray(rawPayload.custom_fields)
+        ? { ...(rawPayload.custom_fields as Record<string, unknown>) }
+        : {};
+
+    if (rawPayload.social_links) {
+      const validatedSocial = validateAttendeeSocialLinks(rawPayload.social_links);
+      if (!validatedSocial.ok) {
+        return NextResponse.json({ error: validatedSocial.error }, { status: 400 });
+      }
+      customFields.social_links = validatedSocial.socialLinks;
+    }
+
+    const payload: Record<string, unknown> = {
+      ...rawPayload,
+      linkedin: validatedLinkedin.url,
+      custom_fields: customFields,
     };
+    delete payload.social_links;
     const cookieStore = await cookies();
     const userId = await getServerUserIdFromCookies(cookieStore);
 

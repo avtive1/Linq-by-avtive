@@ -33,6 +33,9 @@ export async function sendRegistrationApprovedEmail(input: {
   eventId: string;
   eventShortId?: string | null;
   attendanceCode?: string | null;
+  attendeeName?: string | null;
+  role?: string | null;
+  company?: string | null;
 }) {
   const [cardLink, eventLink] = await Promise.all([
     toPublicCompactUrl(buildCardTargetPath(input.cardId, input.shareToken)),
@@ -67,8 +70,10 @@ export async function sendRegistrationApprovedEmail(input: {
     }
   }
 
+  const attendeeGreeting = input.attendeeName?.trim() ? `Hi ${input.attendeeName.trim()}` : "Hi there";
+
   let text =
-    `Hi there,\n\n` +
+    `${attendeeGreeting},\n\n` +
     `Your event registration for "${input.eventName}" is approved!\n\n` +
     `View your attendee card:\n${cardLink}\n\n` +
     `Event page:\n${eventLink}\n\n` +
@@ -84,6 +89,9 @@ export async function sendRegistrationApprovedEmail(input: {
     eventLink,
     attendanceCode,
     qrDataUrl: qrDataUrl ? `cid:${ATTENDANCE_QR_CID}` : null,
+    attendeeName: input.attendeeName,
+    role: input.role,
+    company: input.company,
   });
 
   return enqueueBrandedTransactionalEmail({
@@ -101,14 +109,24 @@ export async function sendVisitorAttendanceCodeEmail(input: {
   attendanceCode: string;
   attendeeId?: string;
   eventId?: string;
+  cardId?: string;
+  shareToken?: string | null;
+  attendeeName?: string | null;
+  role?: string | null;
+  company?: string | null;
 }) {
+  const cardId = String(input.cardId || input.attendeeId || "").trim();
+  const cardLink = cardId
+    ? await toPublicCompactUrl(buildCardTargetPath(cardId, input.shareToken))
+    : null;
+
   let qrDataUrl: string | null = null;
   const attachments: EmailAttachmentPayload[] = [];
 
-  if (input.attendanceCode && input.attendeeId && input.eventId) {
+  if (input.attendanceCode && cardId && input.eventId) {
     try {
       qrDataUrl = await generateAttendanceQrDataUrl({
-        attendeeId: input.attendeeId,
+        attendeeId: cardId,
         eventId: input.eventId,
         code: input.attendanceCode,
       });
@@ -128,21 +146,34 @@ export async function sendVisitorAttendanceCodeEmail(input: {
     }
   }
 
-  const text =
-    `Hi there,\n\n` +
-    `Your attendance QR code for "${input.eventName}" is included in the HTML version of this email.\n\n` +
+  const attendeeGreeting = input.attendeeName?.trim() ? `Hi ${input.attendeeName.trim()}` : "Hi there";
+
+  let text =
+    `${attendeeGreeting},\n\n` +
+    `Your official Attendee Card for "${input.eventName}" is ready!\n\n`;
+
+  if (cardLink) {
+    text += `View your digital Attendee Card:\n${cardLink}\n\n`;
+  }
+
+  text +=
     `Attendance code: ${input.attendanceCode}\n\n` +
-    `Present this QR code at the event entrance.`;
+    `Your Attendee Card with scannable attendance QR code is included in the HTML version of this email.\n` +
+    `Present this card at the event entrance for seamless check-in.`;
 
   const html = generateVisitorAttendanceCodeEmailHtml({
     eventName: input.eventName,
     attendanceCode: input.attendanceCode,
     qrDataUrl: qrDataUrl ? `cid:${ATTENDANCE_QR_CID}` : null,
+    cardLink,
+    attendeeName: input.attendeeName,
+    role: input.role,
+    company: input.company,
   });
 
   return enqueueBrandedTransactionalEmail({
     to: input.to,
-    subject: `Your attendance QR code for ${input.eventName}`,
+    subject: `Your Attendee Card for ${input.eventName}`,
     text,
     html,
     attachments: attachments.length > 0 ? attachments : undefined,

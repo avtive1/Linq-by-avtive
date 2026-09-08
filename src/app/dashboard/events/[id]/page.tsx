@@ -1784,8 +1784,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                       }
                       setIsShareOpen(!isShareOpen);
                     }}
-                    disabled={status.label === "Past" || !isBrandingFinalized}
-                    className={`transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${status.label === "Past" || !isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
+                    disabled={!isBrandingFinalized}
+                    className={`transition-all duration-150 ${isShareOpen ? "border-primary/55 bg-primary/15 text-primary-strong" : ""} ${!isBrandingFinalized ? "opacity-50 cursor-not-allowed grayscale" : ""}`}
                   >
                     <LinkIcon size={18} />
                     Share Link
@@ -1908,8 +1908,8 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                 <ShadButton
                   variant="secondary"
                   onClick={() => (canManageEvent ? handleDuplicate() : undefined)}
-                  disabled={isDuplicating || status.label === "Past" || !canManageEvent}
-                  className={status.label === "Past" || !canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
+                  disabled={isDuplicating || !canManageEvent}
+                  className={!canManageEvent ? "opacity-50 cursor-not-allowed grayscale" : ""}
                 >
                   <Copy size={16} />
                   {isDuplicating ? "..." : "Duplicate"}

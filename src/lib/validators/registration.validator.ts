@@ -37,6 +37,7 @@ export const attendeeRegistrationBodySchema = z
     card_preview_url: z.string().trim().max(2048).optional(),
     card_color: z.string().trim().max(100).optional(),
     custom_fields: z.record(z.string(), z.unknown()).optional(),
+    social_links: z.record(z.string(), z.unknown()).optional(),
   })
   .passthrough();
 

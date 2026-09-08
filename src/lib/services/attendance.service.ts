@@ -20,17 +20,8 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
-export function formatAttendeeLinkedInUrl(raw?: string | null): string {
-  const trimmed = String(raw || "").trim();
-  if (!trimmed) return "";
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return trimmed;
-  }
-  if (trimmed.includes(".")) {
-    return `https://${trimmed}`;
-  }
-  return `https://linkedin.com/in/${trimmed}`;
-}
+import { formatAttendeeLinkedInUrl } from "@/lib/validation/social-urls";
+export { formatAttendeeLinkedInUrl };
 
 export function extractCardIdFromQrPayload(payload: string): string | null {
   const trimmed = String(payload || "").trim();
@@ -164,6 +155,7 @@ export interface AttendeeAttendanceCheckinResult {
     email?: string;
     linkedin?: string;
     linkedinUrl?: string;
+    socialLinks?: import("@/types/card").AttendeeSocialLinks;
     photoUrl?: string;
   };
   event?: {
@@ -194,7 +186,7 @@ export async function markAttendeeAttendanceById(
   }
 
   const rawAttendee = await queryNeonOne<Record<string, unknown>>(
-    `SELECT id, event_id, event_name, name, role, company, track, card_email, linkedin, photo_url, attendance_code, attended, updated_at, created_at
+    `SELECT id, event_id, event_name, name, role, company, track, card_email, linkedin, photo_url, attendance_code, attended, updated_at, created_at, custom_fields
      FROM public.attendees
      WHERE id = $1
      LIMIT 1`,
@@ -246,6 +238,14 @@ export async function markAttendeeAttendanceById(
   const attendeeName = String(attendee.name || "Attendee").trim();
   const rawLinkedin = String(attendee.linkedin || "").trim();
   const linkedinUrl = formatAttendeeLinkedInUrl(rawLinkedin);
+  const customFields =
+    attendee.custom_fields && typeof attendee.custom_fields === "object" && !Array.isArray(attendee.custom_fields)
+      ? (attendee.custom_fields as Record<string, unknown>)
+      : {};
+  const socialLinks =
+    customFields.social_links && typeof customFields.social_links === "object" && !Array.isArray(customFields.social_links)
+      ? (customFields.social_links as import("@/types/card").AttendeeSocialLinks)
+      : undefined;
 
   const attendeeInfo = {
     id: String(attendee.id),
@@ -256,6 +256,7 @@ export async function markAttendeeAttendanceById(
     email: String(attendee.card_email || ""),
     linkedin: rawLinkedin,
     linkedinUrl,
+    socialLinks,
     photoUrl: String(attendee.photo_url || ""),
   };
 

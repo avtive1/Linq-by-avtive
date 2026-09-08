@@ -20,13 +20,21 @@ import { CardPreview } from "@/components/CardPreview";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
 import { parseEventSponsors } from "@/lib/sponsors";
-import type { SponsorEntry } from "@/types/card";
+import type { SponsorEntry, AttendeeSocialLinks, SocialPlatform } from "@/types/card";
 import {
   type RegistrationFormConfig,
   getDefaultRegistrationFormConfig,
   getEnabledFieldsForRole,
   normalizeRegistrationFormConfig,
 } from "@/lib/registration-form";
+import {
+  validateAndNormalizeLinkedInUrl,
+  validateAndNormalizeSocialUrl,
+} from "@/lib/validation/social-urls";
+import {
+  SocialProfilesDialog,
+  SocialProfilesSummary,
+} from "@/components/SocialProfilesDialog";
 import { ATTENDEE_FIELD_LIMITS } from "@/lib/validation/attendee-fields";
 import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 import { logger } from "@/lib/logger-client";
@@ -136,7 +144,42 @@ function NewCardForm() {
     getDefaultRegistrationFormConfig(),
   );
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
+  const [socialLinks, setSocialLinks] = useState<AttendeeSocialLinks>({});
+  const [isSocialDialogOpen, setIsSocialDialogOpen] = useState(false);
 
+  // Pre-populate LinkedIn and social links from URL query parameters if provided
+  useEffect(() => {
+    const qLi = searchParams.get("linkedin") || searchParams.get("linkedinUrl") || searchParams.get("li");
+    if (qLi) {
+      const res = validateAndNormalizeLinkedInUrl(qLi);
+      if (res.valid && res.normalizedUrl) {
+        setForm((f) => ({ ...f, linkedin: res.normalizedUrl! }));
+      }
+    }
+
+    const qSocials: AttendeeSocialLinks = {};
+    const platforms: SocialPlatform[] = [
+      "instagram",
+      "twitter",
+      "facebook",
+      "github",
+      "tiktok",
+      "youtube",
+      "website",
+    ];
+    platforms.forEach((p) => {
+      const val = searchParams.get(p) || (p === "twitter" ? searchParams.get("x") : null);
+      if (val) {
+        const res = validateAndNormalizeSocialUrl(p, val);
+        if (res.valid && res.normalizedUrl) {
+          qSocials[p] = res.normalizedUrl;
+        }
+      }
+    });
+    if (Object.keys(qSocials).length > 0) {
+      setSocialLinks((prev) => ({ ...prev, ...qSocials }));
+    }
+  }, [searchParams]);
 
   const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [horizontalTextColor, setHorizontalTextColor] = useState("");
@@ -257,6 +300,7 @@ function NewCardForm() {
   const validate = () => {
     const newErrors: Record<string, string> = {};
     enabledFields.forEach((field) => {
+      if (field.id === "linkedin") return; // Handled explicitly below
       const value = knownFieldIds.has(field.id)
         ? String(form[field.id as keyof typeof form] || "")
         : String(customFieldValues[field.id] || "");
@@ -264,6 +308,12 @@ function NewCardForm() {
         newErrors[field.id] = `${field.label} is required`;
       }
     });
+
+    // Explicit mandatory check for LinkedIn (Platform Rule: LinkedIn is mandatory for attendees)
+    const liValidation = validateAndNormalizeLinkedInUrl(form.linkedin);
+    if (!liValidation.valid) {
+      newErrors.linkedin = liValidation.error || "A valid LinkedIn profile is required.";
+    }
     
     // Explicit mandatory checks for Email and Organization
     if (enabledFields.some(f => f.id === "email") && !form.email.trim()) {
@@ -304,6 +354,7 @@ function NewCardForm() {
       }
     }
     enabledFields.forEach((field) => {
+      if (field.id === "linkedin") return;
       const value = knownFieldIds.has(field.id)
         ? String(form[field.id as keyof typeof form] || "")
         : String(customFieldValues[field.id] || "");
@@ -335,7 +386,13 @@ function NewCardForm() {
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
 
-    if (!validate()) return;
+    if (!validate()) {
+      if (!form.linkedin.trim() || !validateAndNormalizeLinkedInUrl(form.linkedin).valid) {
+        toast.error("Please connect a valid LinkedIn profile to continue.");
+        setIsSocialDialogOpen(true);
+      }
+      return;
+    }
     setLoading(true);
 
     try {
@@ -395,6 +452,16 @@ function NewCardForm() {
           .filter((field) => !knownFieldIds.has(field.id))
           .map((field) => [field.id, customFieldValues[field.id] || ""]),
       );
+
+      const normalizedLinkedIn =
+        validateAndNormalizeLinkedInUrl(form.linkedin).normalizedUrl || form.linkedin.trim();
+      const cleanSocialLinks: AttendeeSocialLinks = {};
+      for (const [k, v] of Object.entries(socialLinks)) {
+        if (v && typeof v === "string" && v.trim()) {
+          cleanSocialLinks[k as SocialPlatform] = v.trim();
+        }
+      }
+
       const attendeeData = {
         user_id: null,
         name: form.name.trim(),
@@ -405,7 +472,8 @@ function NewCardForm() {
         session_date: form.sessionDate,
         session_time: form.sessionTime,
         location: form.location,
-        linkedin: fieldEnabled("linkedin") ? formatQrLink(form.linkedin) : "",
+        linkedin: normalizedLinkedIn,
+        social_links: cleanSocialLinks,
         year: form.year,
         photo_url: fieldEnabled("photo") ? photo_url : "",
         card_preview_url: card_preview_url,
@@ -628,7 +696,7 @@ function NewCardForm() {
     );
   }
 
-  const previewData = { ...form, horizontalTextColor, verticalTextColor };
+  const previewData = { ...form, horizontalTextColor, verticalTextColor, social_links: socialLinks };
 
   return (
     <main className="relative min-h-screen w-full bg-transparent flex flex-col lg:flex-row overflow-x-hidden">
@@ -736,19 +804,8 @@ function NewCardForm() {
                 );
               }
               if (field.id === "linkedin") {
-                return (
-                  <RegistrationInputField
-                    key={field.id}
-                    id="registration-linkedin"
-                    label={field.label}
-                    required={field.required}
-                    type="text"
-                    placeholder={field.placeholder || "linkedin.com/in/username or https://yoursite.com"}
-                    value={form.linkedin}
-                    error={errors.linkedin}
-                    onChange={update("linkedin")}
-                  />
-                );
+                // LinkedIn must NOT be visibly displayed as a form field on the event registration UI
+                return null;
               }
               if (field.id === "photo") {
                 return (
@@ -783,6 +840,14 @@ function NewCardForm() {
               );
             })}
 
+            {/* Professional & Social Profiles */}
+            <SocialProfilesSummary
+              linkedin={form.linkedin}
+              socialLinks={socialLinks}
+              error={errors.linkedin}
+              onOpenDialog={() => setIsSocialDialogOpen(true)}
+              isMandatory={true}
+            />
               </div>
             </div>
           </div>
@@ -925,10 +990,30 @@ function NewCardForm() {
              padding: 0 !important;
              inset: auto !important;
            }
-           @page { margin: 1cm; size: auto; }
+            @page { margin: 1cm; size: auto; }
         }
       `}</style>
 
+      {/* Professional & Social Profiles Modal */}
+      <SocialProfilesDialog
+        open={isSocialDialogOpen}
+        onOpenChange={setIsSocialDialogOpen}
+        linkedin={form.linkedin}
+        socialLinks={socialLinks}
+        onSave={(li, socials) => {
+          setForm((f) => ({ ...f, linkedin: li }));
+          setSocialLinks(socials);
+          if (errors.linkedin) {
+            setErrors((prev) => {
+              const next = { ...prev };
+              delete next.linkedin;
+              return next;
+            });
+          }
+          toast.success("Profiles updated!");
+        }}
+        isLinkedInMandatory={true}
+      />
     </main>
   );
 }

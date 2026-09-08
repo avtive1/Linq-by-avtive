@@ -18,6 +18,7 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AttendeeAttendanceCheckinResult } from "@/lib/services/attendance.service";
+import { AttendeeSocialLinksBar } from "@/components/AttendeeSocialLinks";
 
 function LinkedInIcon({ className = "h-4 w-4" }: { className?: string }) {
   return (
@@ -243,6 +244,20 @@ export function ScanViewClient({ cardId, result }: ScanViewClientProps) {
                   </Button>
                 )}
               </div>
+            </div>
+          ) : null}
+
+          {/* Additional Social Links */}
+          {attendee.socialLinks && Object.values(attendee.socialLinks).some(Boolean) ? (
+            <div className="rounded-xl bg-neutral-950/60 border border-neutral-800/80 p-4 sm:p-5 text-left space-y-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                Connected Profiles
+              </span>
+              <AttendeeSocialLinksBar
+                socialLinks={attendee.socialLinks}
+                attendeeName={attendee.name}
+                variant="compact"
+              />
             </div>
           ) : null}
 

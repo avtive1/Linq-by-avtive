@@ -6,6 +6,7 @@ import { deterministicLookupTag } from "@/lib/security/crypto-envelope";
 import { insertRow, queryNeon, queryNeonOne } from "@/lib/neon-db";
 import { updateTenantRows } from "@/lib/db/tenant-mutations";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
+import { validateAndNormalizeLinkedInUrl, validateAttendeeSocialLinks } from "@/lib/validation/social-urls";
 import { createAttendeeCardFromPayload } from "@/lib/services/event.service";
 import { assignAttendanceCodeIfMissing } from "@/lib/services/attendance.service";
 import { ensureRegistrationRequestsSchema } from "@/lib/services/registration-schema";
@@ -246,7 +247,41 @@ export async function createRegistrationRequest(input: {
     throw new Error("Event not found.");
   }
 
-  const payload: Record<string, unknown> = { ...validation.payload, event_id: input.eventId };
+  const rawLinkedin = input.attendeeData.linkedin;
+  const validatedLi = validateAndNormalizeLinkedInUrl(rawLinkedin);
+  if (!validatedLi.ok) {
+    throw new Error(validatedLi.error);
+  }
+
+  const rawSocialLinks =
+    input.attendeeData.social_links ||
+    (input.attendeeData.custom_fields &&
+      typeof input.attendeeData.custom_fields === "object" &&
+      !Array.isArray(input.attendeeData.custom_fields) &&
+      (input.attendeeData.custom_fields as Record<string, unknown>).social_links);
+
+  const customFieldsObj: Record<string, unknown> =
+    input.attendeeData.custom_fields &&
+    typeof input.attendeeData.custom_fields === "object" &&
+    !Array.isArray(input.attendeeData.custom_fields)
+      ? { ...(input.attendeeData.custom_fields as Record<string, unknown>) }
+      : {};
+
+  if (rawSocialLinks && typeof rawSocialLinks === "object") {
+    const validatedSocial = validateAttendeeSocialLinks(rawSocialLinks);
+    if (!validatedSocial.ok) {
+      throw new Error(validatedSocial.error);
+    }
+    customFieldsObj.social_links = validatedSocial.socialLinks;
+  }
+
+  const payload: Record<string, unknown> = {
+    ...validation.payload,
+    event_id: input.eventId,
+    linkedin: validatedLi.url,
+    custom_fields: customFieldsObj,
+  };
+  delete payload.social_links;
   const securePayload = encryptAttendeeSensitiveFields(payload) as Record<string, unknown>;
 
   let cardEmailLookupTag: string | null = null;
@@ -304,6 +339,9 @@ export async function approveRegistrationRequest(input: {
   eventName: string;
   eventShortId: string | null;
   attendanceCode: string | null;
+  attendeeName?: string;
+  role?: string;
+  company?: string;
 }> {
   await ensureRegistrationRequestsSchema();
 
@@ -339,6 +377,9 @@ export async function approveRegistrationRequest(input: {
       eventName: event.name,
       eventShortId: event.short_id,
       attendanceCode,
+      attendeeName: summary.attendee_name,
+      role: typeof existing.attendee_payload?.role === "string" ? existing.attendee_payload.role : undefined,
+      company: typeof existing.attendee_payload?.company === "string" ? existing.attendee_payload.company : undefined,
     };
   }
 
@@ -375,6 +416,9 @@ export async function approveRegistrationRequest(input: {
         eventName: event.name,
         eventShortId: event.short_id,
         attendanceCode,
+        attendeeName: summary.attendee_name,
+        role: typeof latest.attendee_payload?.role === "string" ? latest.attendee_payload.role : undefined,
+        company: typeof latest.attendee_payload?.company === "string" ? latest.attendee_payload.company : undefined,
       };
     }
     throw new Error("Registration request already reviewed.");
@@ -423,6 +467,9 @@ export async function approveRegistrationRequest(input: {
       eventName: event.name,
       eventShortId: event.short_id,
       attendanceCode,
+      attendeeName: typeof attendeePayload.name === "string" ? attendeePayload.name : undefined,
+      role: typeof attendeePayload.role === "string" ? attendeePayload.role : undefined,
+      company: typeof attendeePayload.company === "string" ? attendeePayload.company : undefined,
     };
   } catch (cardError) {
     await updateTenantRows(

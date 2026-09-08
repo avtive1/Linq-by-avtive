@@ -1,6 +1,5 @@
 import {
-  emailCodeDisplay,
-  emailQrCodeDisplay,
+  emailAttendeeCardDisplay,
   emailHighlightBox,
   emailLinkFallback,
   emailParagraph,
@@ -16,26 +15,32 @@ export function generateRegistrationApprovedEmailHtml(params: {
   eventLink: string;
   attendanceCode?: string | null;
   qrDataUrl?: string | null;
+  attendeeName?: string | null;
+  role?: string | null;
+  company?: string | null;
 }): string {
   const eventName = escapeHtml(params.eventName);
   const attendanceCode = String(params.attendanceCode || "").trim();
 
-  const attendanceHtml = params.qrDataUrl
-    ? emailQrCodeDisplay("Your attendance QR code", params.qrDataUrl)
-    : attendanceCode
-      ? emailCodeDisplay("Your attendance code", attendanceCode)
-      : "";
+  const cardHtml = emailAttendeeCardDisplay({
+    eventName: params.eventName,
+    attendeeName: params.attendeeName,
+    role: params.role,
+    company: params.company,
+    attendanceCode,
+    qrDataUrlOrCid: params.qrDataUrl,
+    cardLink: params.cardLink,
+  });
 
   return wrapAvtiveEmailLayout({
     pageTitle: "Registration Approved",
     headline: "Registration approved",
+    greeting: params.attendeeName ? `Hi ${params.attendeeName.trim()},` : "Hi there,",
     bodyHtml: `
               ${emailHighlightBox(`<strong>Great news!</strong> Your registration for <strong>${eventName}</strong> has been approved.`, "success")}
-              ${emailParagraph("You're all set for the event. Use the links below to view your attendee card and event page.")}
-              ${attendanceHtml}
-              ${emailPrimaryButton("View Attendee Card", params.cardLink)}
-              ${emailSecondaryButton("View Event Page", params.eventLink)}
-              ${emailLinkFallback(params.cardLink)}`,
+              ${emailParagraph("You're all set for the event. Here is your official Attendee Card with scannable check-in QR code:")}
+              ${cardHtml}
+              ${emailSecondaryButton("View Event Page", params.eventLink)}`,
   });
 }
 

@@ -8,6 +8,7 @@ import { sendVisitorAttendanceCodeEmail } from "@/lib/services/email.service";
 import { createRegistrationRequest, isGuestRegistrationTrack } from "@/lib/services/registration.service";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { attendeeRegistrationBodySchema } from "@/lib/validators/registration.validator";
+import { validateAndNormalizeLinkedInUrl, validateAttendeeSocialLinks } from "@/lib/validation/social-urls";
 import { enterApiLogContextFromRequest } from "@/lib/request-log-context";
 import { logger } from "@/lib/logger-server";
 
@@ -36,7 +37,33 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
     const parsed = await parseJsonBody(req, attendeeRegistrationBodySchema);
     if (!parsed.ok) return parsed.response;
-    const payload = { ...parsed.data, event_id: event.id };
+    const rawPayload = parsed.data as Record<string, unknown>;
+    const rawLinkedin = rawPayload.linkedin;
+    const validatedLinkedin = validateAndNormalizeLinkedInUrl(rawLinkedin);
+    if (!validatedLinkedin.ok) {
+      return NextResponse.json({ error: validatedLinkedin.error }, { status: 400 });
+    }
+
+    const customFields =
+      rawPayload.custom_fields && typeof rawPayload.custom_fields === "object" && !Array.isArray(rawPayload.custom_fields)
+        ? { ...(rawPayload.custom_fields as Record<string, unknown>) }
+        : {};
+
+    if (rawPayload.social_links) {
+      const validatedSocial = validateAttendeeSocialLinks(rawPayload.social_links);
+      if (!validatedSocial.ok) {
+        return NextResponse.json({ error: validatedSocial.error }, { status: 400 });
+      }
+      customFields.social_links = validatedSocial.socialLinks;
+    }
+
+    const payload: Record<string, unknown> = {
+      ...rawPayload,
+      event_id: event.id,
+      linkedin: validatedLinkedin.url,
+      custom_fields: customFields,
+    };
+    delete payload.social_links;
 
     const cookieStore = await cookies();
     const authUserId = await getServerUserIdFromCookies(cookieStore);
@@ -89,7 +116,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
             eventName: String(event.name || "the event"),
             attendanceCode,
             attendeeId: createdCardId,
+            cardId: createdCardId,
+            shareToken,
             eventId: event.id,
+            attendeeName: typeof payload.name === "string" ? payload.name : undefined,
+            role: typeof payload.role === "string" ? payload.role : undefined,
+            company: typeof payload.company === "string" ? payload.company : undefined,
           });
           if (!emailResult.queued) {
             logger.warn(

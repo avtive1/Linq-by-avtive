@@ -3,6 +3,7 @@ import { logSecurityEvent } from "@/lib/security/telemetry";
 import { issueAttendeeCardToken, verifyAttendeeCardToken } from "@/lib/security/tokens";
 import { insertRow, queryNeonOne } from "@/lib/neon-db";
 import { validateAttendeeCoreFields } from "@/lib/validation/attendee-fields";
+import { validateAndNormalizeLinkedInUrl, validateAttendeeSocialLinks } from "@/lib/validation/social-urls";
 
 export function stripAttendeeBrandingFields(payload: Record<string, unknown>) {
   const sanitized = { ...payload };
@@ -94,6 +95,38 @@ export async function createAttendeeCardFromPayload(
     throw new Error("custom_fields must be an object.");
   }
 
+  const rawSocialLinks =
+    sanitizedPayload.social_links ||
+    (sanitizedPayload.custom_fields &&
+      typeof sanitizedPayload.custom_fields === "object" &&
+      !Array.isArray(sanitizedPayload.custom_fields) &&
+      (sanitizedPayload.custom_fields as Record<string, unknown>).social_links);
+
+  const customFieldsObj: Record<string, unknown> =
+    sanitizedPayload.custom_fields &&
+    typeof sanitizedPayload.custom_fields === "object" &&
+    !Array.isArray(sanitizedPayload.custom_fields)
+      ? { ...(sanitizedPayload.custom_fields as Record<string, unknown>) }
+      : {};
+
+  if (rawSocialLinks && typeof rawSocialLinks === "object") {
+    const validatedSocial = validateAttendeeSocialLinks(rawSocialLinks);
+    if (!validatedSocial.ok) {
+      throw new Error(validatedSocial.error);
+    }
+    customFieldsObj.social_links = validatedSocial.socialLinks;
+  }
+  sanitizedPayload.custom_fields = customFieldsObj;
+  delete sanitizedPayload.social_links;
+
+  if (sanitizedPayload.linkedin) {
+    const validatedLi = validateAndNormalizeLinkedInUrl(sanitizedPayload.linkedin);
+    if (!validatedLi.ok) {
+      throw new Error(validatedLi.error);
+    }
+    sanitizedPayload.linkedin = validatedLi.url;
+  }
+
   let tokenUserId: string | null = null;
   const bearerToken = String(input.bearerToken || "").trim();
   if (bearerToken) {
@@ -113,6 +146,10 @@ export async function createAttendeeCardFromPayload(
       throw new Error("Unauthorized");
     }
     isPublicEventRegistration = true;
+  }
+
+  if (isPublicEventRegistration && !sanitizedPayload.linkedin) {
+    throw new Error("LinkedIn profile is required.");
   }
 
   const shouldRestrictBranding = isPublicEventRegistration || (!!tokenUserId && !authUserId);

@@ -11,7 +11,14 @@ import { CardPreview, isValidCssColor } from "@/components/CardPreview";
 import { CustomColorPicker } from "@/components/CustomColorPicker";
 import { toast } from "sonner";
 import { parseEventSponsors } from "@/lib/sponsors";
-import type { SponsorEntry } from "@/types/card";
+import type { SponsorEntry, AttendeeSocialLinks, SocialPlatform } from "@/types/card";
+import {
+  validateAndNormalizeLinkedInUrl,
+} from "@/lib/validation/social-urls";
+import {
+  SocialProfilesDialog,
+  SocialProfilesSummary,
+} from "@/components/SocialProfilesDialog";
 import { logSecurityEvent } from "@/lib/security/telemetry-client";
 import { isValidUuid } from "@/lib/validation/uuid";
 import { logger } from "@/lib/logger-client";
@@ -132,10 +139,12 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
   const [horizontalTextColor, setHorizontalTextColor] = useState("");
   const [verticalTextColor, setVerticalTextColor] = useState("");
   const [existingCustomFields, setExistingCustomFields] = useState<Record<string, unknown>>({});
+  const [socialLinks, setSocialLinks] = useState<AttendeeSocialLinks>({});
+  const [isSocialDialogOpen, setIsSocialDialogOpen] = useState(false);
   const [identityLocked, setIdentityLocked] = useState(false);
   const isCustomColorSelected = !presetColorNames.has(form.color);
   const isCustomPickerActive = showCustomColorPicker || isCustomColorSelected;
-  const previewData = { ...form, horizontalTextColor, verticalTextColor };
+  const previewData = { ...form, horizontalTextColor, verticalTextColor, social_links: socialLinks };
 
   useEffect(() => {
     let isMounted = true;
@@ -240,6 +249,13 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
           ? (record.custom_fields as Record<string, unknown>)
           : {};
         setExistingCustomFields(customFieldsRaw);
+        const savedSocials =
+          customFieldsRaw.social_links &&
+          typeof customFieldsRaw.social_links === "object" &&
+          !Array.isArray(customFieldsRaw.social_links)
+            ? (customFieldsRaw.social_links as AttendeeSocialLinks)
+            : {};
+        setSocialLinks(savedSocials);
         const savedHorizontalTextColor = String(customFieldsRaw.__horizontal_text_color || "").trim();
         const savedVerticalTextColor = String(customFieldsRaw.__vertical_text_color || "").trim();
         setHorizontalTextColor(savedHorizontalTextColor);
@@ -356,13 +372,24 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
         photo_url = String(uploadedUrl || "");
       }
 
+      const normalizedLinkedIn = form.linkedin.trim()
+        ? validateAndNormalizeLinkedInUrl(form.linkedin).normalizedUrl || form.linkedin.trim()
+        : "";
+      const cleanSocialLinks: AttendeeSocialLinks = {};
+      for (const [k, v] of Object.entries(socialLinks)) {
+        if (v && typeof v === "string" && v.trim()) {
+          cleanSocialLinks[k as SocialPlatform] = v.trim();
+        }
+      }
+
       const updatePayload: Record<string, unknown> = {
         name: form.name.trim(),
         role: form.role.trim(),
         company: form.company.trim(),
         card_email: form.email,
         track: form.track || "",
-        linkedin: formatQrLink(form.linkedin),
+        linkedin: normalizedLinkedIn,
+        social_links: cleanSocialLinks,
         photo_url,
       };
       updatePayload.design_type = "design1";
@@ -373,6 +400,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
       else delete nextCustomFields.__horizontal_text_color;
       if (verticalTextColor.trim()) nextCustomFields.__vertical_text_color = verticalTextColor.trim();
       else delete nextCustomFields.__vertical_text_color;
+      nextCustomFields.social_links = cleanSocialLinks;
       updatePayload.custom_fields = nextCustomFields;
 
       const res = await fetch(`/api/cards/${id}`, {
@@ -606,11 +634,12 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
               onChange={update("email")}
               readOnly={identityLocked}
             />
-            <TextInput
-              label="QR Code Link (Optional)"
-              placeholder="e.g. yourwebsite.com or social link"
-              value={form.linkedin}
-              onChange={update("linkedin")}
+            <SocialProfilesSummary
+              linkedin={form.linkedin}
+              socialLinks={socialLinks}
+              error={errors.linkedin}
+              onOpenDialog={() => setIsSocialDialogOpen(true)}
+              isMandatory={false}
             />
             <FilePicker
               label="Photo (Optional)"
@@ -626,6 +655,26 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
             />
           </div>
         </form>
+
+        <SocialProfilesDialog
+          open={isSocialDialogOpen}
+          onOpenChange={setIsSocialDialogOpen}
+          linkedin={form.linkedin}
+          socialLinks={socialLinks}
+          onSave={(li, socials) => {
+            setForm((f) => ({ ...f, linkedin: li }));
+            setSocialLinks(socials);
+            if (errors.linkedin) {
+              setErrors((prev) => {
+                const next = { ...prev };
+                delete next.linkedin;
+                return next;
+              });
+            }
+            toast.success("Profiles updated!");
+          }}
+          isLinkedInMandatory={false}
+        />
       </div>
 
       {/* Hidden container for high-resolution capture (Always 1:1 scale) */}
