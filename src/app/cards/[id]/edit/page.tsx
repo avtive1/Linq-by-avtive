@@ -718,7 +718,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                 <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-muted/55">Event badge layout</h3>
                 <VerticalPreviewScaler className="w-full max-w-[304px] mx-auto mt-1">
                   <div className="preview-card-capture">
-                    <CardPreview data={previewData} preview isVertical verticalSide={2} />
+                    <CardPreview data={previewData} preview isVertical verticalSide={1} />
                   </div>
                 </VerticalPreviewScaler>
               </div>

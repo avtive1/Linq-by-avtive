@@ -222,16 +222,23 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
         return NextResponse.json({ error: "Forbidden." }, { status: 403 });
       }
 
-      const attendeeCount = await queryNeonOne<{ count: string }>(
-        `SELECT COUNT(*)::text AS count FROM public.attendees WHERE event_id = $1`,
+      // Cascade delete associated event dependencies
+      await queryNeonAsSystem(
+        `DELETE FROM public.access_requests WHERE event_id = $1`,
         [id],
       );
-      if (Number(attendeeCount?.count || 0) > 0) {
-        return NextResponse.json(
-          { error: "You cannot delete an event with registered attendees." },
-          { status: 409 },
-        );
-      }
+      await queryNeonAsSystem(
+        `DELETE FROM public.access_grants WHERE event_id = $1`,
+        [id],
+      );
+      await queryNeonAsSystem(
+        `DELETE FROM public.registration_requests WHERE event_id = $1`,
+        [id],
+      );
+      await queryNeonAsSystem(
+        `DELETE FROM public.attendees WHERE event_id = $1`,
+        [id],
+      );
 
       const deleted = await deleteTenantRows("events", { id }, eventRow.user_id);
       if (!deleted.length) return NextResponse.json({ error: "Failed to delete event." }, { status: 400 });

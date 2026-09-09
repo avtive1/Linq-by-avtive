@@ -1125,10 +1125,6 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
   };
 
   const handleDeleteEvent = async () => {
-    if (cards.length > 0) {
-      toast.error("You cannot delete an event with registered leads.");
-      return;
-    }
     if (!isDeleteConfirmMatch(deleteConfirm, deleteConfirmTarget)) {
       toast.error("Event name does not match.");
       return;
@@ -1927,29 +1923,24 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                   <Copy size={16} />
                   {isDuplicating ? "..." : "Duplicate"}
                 </ShadButton>
-                <div 
-                  title={cards.length > 0 ? "Events with registered leads cannot be deleted." : ""}
-                  className={cards.length > 0 ? "cursor-help" : ""}
+                <ShadButton
+                  variant="secondary"
+                  onClick={() => {
+                    if (!canDeleteEvent) return;
+                    setDeleteConfirm("");
+                    setDeleteConfirmTarget(normalizeDeleteConfirmText(eventData?.name ?? ""));
+                    setIsDeleteOpen(true);
+                  }}
+                  disabled={!canDeleteEvent}
+                  className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${
+                    !canDeleteEvent
+                      ? "cursor-not-allowed disabled:opacity-70 disabled:text-red-400 disabled:border-red-200/55 disabled:hover:bg-transparent disabled:hover:text-red-400 disabled:hover:border-red-200/55"
+                      : ""
+                  }`}
                 >
-                  <ShadButton
-                    variant="secondary"
-                    onClick={() => {
-                      if (!canDeleteEvent) return;
-                      setDeleteConfirm("");
-                      setDeleteConfirmTarget(normalizeDeleteConfirmText(eventData?.name ?? ""));
-                      setIsDeleteOpen(true);
-                    }}
-                    disabled={cards.length > 0 || !canDeleteEvent}
-                    className={`text-red-500 hover:text-red-600 hover:border-red-200 hover:bg-red-50/50 ${
-                      cards.length > 0 || !canDeleteEvent
-                        ? "cursor-not-allowed disabled:opacity-70 disabled:text-red-400 disabled:border-red-200/55 disabled:hover:bg-transparent disabled:hover:text-red-400 disabled:hover:border-red-200/55"
-                        : ""
-                    }`}
-                  >
-                    <Trash2 size={16} />
-                    Delete
-                  </ShadButton>
-                </div>
+                  <Trash2 size={16} />
+                  Delete
+                </ShadButton>
                 {!canManageEvent && !canDeleteEvent && (
                   <ShadButton
                     variant="secondary"

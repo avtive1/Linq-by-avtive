@@ -35,12 +35,15 @@ export default function CardView({
   const [isDownloading, setIsDownloading] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
   const [badgeSide, setBadgeSide] = useState<1 | 2>(1);
+  const [postSide, setPostSide] = useState<1 | 2>(1);
   const [horizontalPreviewFailed, setHorizontalPreviewFailed] = useState(false);
   const [verticalFrontPreviewFailed, setVerticalFrontPreviewFailed] = useState(false);
   const [verticalBackPreviewFailed, setVerticalBackPreviewFailed] = useState(false);
   const [showBadgeDownloadMenu, setShowBadgeDownloadMenu] = useState(false);
   const [showPostDownloadMenu, setShowPostDownloadMenu] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
+  const horizontalFrontExportRef = useRef<HTMLDivElement>(null);
+  const horizontalBackExportRef = useRef<HTMLDivElement>(null);
   const verticalFrontExportRef = useRef<HTMLDivElement>(null);
   const verticalBackExportRef = useRef<HTMLDivElement>(null);
   const horizontalPreviewUrl = useMemo(
@@ -78,6 +81,8 @@ export default function CardView({
     setViewMode(mode);
     if (mode === "vertical") {
       setBadgeSide(1);
+    } else {
+      setPostSide(1);
     }
     try {
       window.localStorage.setItem("cardViewMode", mode);
@@ -92,12 +97,47 @@ export default function CardView({
     setVerticalBackPreviewFailed(false);
   }, [card.id, horizontalPreviewUrl, verticalFrontPreviewUrl, verticalBackPreviewUrl]);
 
-  const handleDownload = async () => {
-    if (!cardRef.current) return;
+  const getHorizontalExports = async () => {
+    const blobToDataUrl = (blob: Blob) =>
+      new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Failed to read card image blob."));
+        reader.readAsDataURL(blob);
+      });
+    const getBlobFromRef = async (ref: HTMLDivElement | null) => {
+      if (!ref) throw new Error("Card previews are not ready yet.");
+      await waitForCardFontsReadyForCapture(String(card.fontFamily || "inter"));
+      const dataUrl = await toPng(ref, {
+        quality: 1,
+        pixelRatio: 2,
+        backgroundColor: "#ffffff",
+        skipFonts: false,
+      });
+      const res = await fetch(dataUrl);
+      if (!res.ok) throw new Error("Failed to render card export image.");
+      return res.blob();
+    };
+
+    const [frontBlob, backBlob] = await Promise.all([
+      getBlobFromRef(horizontalFrontExportRef.current),
+      getBlobFromRef(horizontalBackExportRef.current),
+    ]);
+    const [frontDataUrl, backDataUrl] = await Promise.all([blobToDataUrl(frontBlob), blobToDataUrl(backBlob)]);
+    return { frontDataUrl, backDataUrl, frontBlob, backBlob };
+  };
+
+  const handleDownload = async (side?: 1 | 2) => {
+    const targetRef = side === 2 
+      ? horizontalBackExportRef.current 
+      : side === 1 
+        ? horizontalFrontExportRef.current 
+        : cardRef.current;
+    if (!targetRef) return;
     setIsDownloading(true);
     try {
       await waitForCardFontsReadyForCapture(String(card.fontFamily || "inter"));
-      const dataUrl = await toPng(cardRef.current, {
+      const dataUrl = await toPng(targetRef, {
         quality: 1,
         pixelRatio: 2,
         backgroundColor: "#ffffff",
@@ -108,9 +148,10 @@ export default function CardView({
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
+      const sideSuffix = side ? (side === 1 ? "-front" : "-back") : (postSide === 1 ? "-front" : "-back");
       link.download = `avtive-${viewMode}-${
         card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"
-      }.png`;
+      }${viewMode === "horizontal" ? sideSuffix : ""}.png`;
       link.href = blobUrl;
       document.body.appendChild(link);
       link.click();
@@ -126,17 +167,10 @@ export default function CardView({
   };
 
   const handleDownloadPostPdf = async () => {
-    if (!cardRef.current) return;
     setIsDownloading(true);
     setShowPostDownloadMenu(false);
     try {
-      await waitForCardFontsReadyForCapture(String(card.fontFamily || "inter"));
-      const dataUrl = await toPng(cardRef.current, {
-        quality: 1,
-        pixelRatio: 2,
-        backgroundColor: "#ffffff",
-        skipFonts: false,
-      });
+      const { frontDataUrl, backDataUrl } = await getHorizontalExports();
       const [{ jsPDF }] = await Promise.all([import("jspdf")]);
       const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
@@ -151,13 +185,40 @@ export default function CardView({
       }
       const x = (pageWidth - renderWidth) / 2;
       const y = (pageHeight - renderHeight) / 2;
-      doc.addImage(dataUrl, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST");
+      doc.addImage(frontDataUrl, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST");
+      doc.addPage("a4", "landscape");
+      doc.addImage(backDataUrl, "PNG", x, y, renderWidth, renderHeight, undefined, "FAST");
       const filename = `avtive-card-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
       doc.save(filename);
-      toast.success("Attendee card PDF downloaded successfully!");
+      toast.success("Attendee card PDF (Front & Back) downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download post PDF");
       toast.error("Failed to generate attendee card PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadPostZip = async () => {
+    setIsDownloading(true);
+    setShowPostDownloadMenu(false);
+    try {
+      const { frontBlob, backBlob } = await getHorizontalExports();
+      const [{ default: JSZip }] = await Promise.all([import("jszip")]);
+      const zip = new JSZip();
+      const base = card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee";
+      zip.file(`${base}-card-front.png`, frontBlob);
+      zip.file(`${base}-card-back.png`, backBlob);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(zipBlob);
+      link.download = `avtive-card-${base}.zip`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      toast.success("Attendee card ZIP (Front & Back) downloaded successfully!");
+    } catch (err) {
+      logger.error({ err }, "Failed to download card ZIP");
+      toast.error("Failed to generate card ZIP. Please try again.");
     } finally {
       setIsDownloading(false);
     }
@@ -229,7 +290,7 @@ export default function CardView({
       addCardPage(backDataUrl);
       const filename = `avtive-badge-${card?.name?.replace(/\s+/g, "-").toLowerCase() || "attendee"}.pdf`;
       doc.save(filename);
-      toast.success("Attendee card PDF downloaded successfully!");
+      toast.success("Attendee badge PDF downloaded successfully!");
     } catch (err) {
       logger.error({ err }, "Failed to download badge PDF");
       toast.error("Failed to generate badge PDF. Please try again.");
@@ -404,13 +465,22 @@ export default function CardView({
                     <Button
                       type="button"
                       variant="ghost"
+                      onClick={handleDownloadPostZip}
+                      className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
+                    >
+                      Download Attendee Card (ZIP)
+                    </Button>
+                    <Separator className="bg-border/60" />
+                    <Button
+                      type="button"
+                      variant="ghost"
                       onClick={() => {
                         setShowPostDownloadMenu(false);
-                        void handleDownload();
+                        void handleDownload(postSide);
                       }}
                       className="h-auto w-full justify-start px-3 py-2.5 text-left text-sm text-heading hover:bg-slate-50"
                     >
-                      Download Attendee Card (PNG)
+                      Download Current Side (PNG)
                     </Button>
                   </Card>
                 )}
@@ -431,8 +501,15 @@ export default function CardView({
             <CardPreview 
                data={card} 
                isVertical={viewMode === "vertical"} 
-               verticalSide={1} 
+               verticalSide={badgeSide}
+               horizontalSide={postSide}
             />
+          </div>
+          <div ref={horizontalFrontExportRef} style={{ width: "1200px", height: "628px" }}>
+            <CardPreview data={card} isVertical={false} horizontalSide={1} />
+          </div>
+          <div ref={horizontalBackExportRef} style={{ width: "1200px", height: "628px" }}>
+            <CardPreview data={card} isVertical={false} horizontalSide={2} />
           </div>
           <div ref={verticalFrontExportRef} style={{ width: "576px", height: "1024px" }}>
             <CardPreview data={card} isVertical verticalSide={1} />
@@ -444,14 +521,34 @@ export default function CardView({
 
         <div className="w-full flex flex-col items-center gap-6">
           {viewMode === "horizontal" ? (
-            <CardArtboardScaler
-              artboardWidth={CARD_ARTBOARD_HORIZONTAL.width}
-              artboardHeight={CARD_ARTBOARD_HORIZONTAL.height}
-              className="w-full max-w-[860px]"
-              maxScale={0.82}
-            >
-              <CardPreview data={card} isVertical={false} />
-            </CardArtboardScaler>
+            <>
+              <Card className="flex flex-row bg-white/10 p-1 rounded-md w-fit border-white/20 gap-1 shadow-none">
+                <Button
+                  type="button"
+                  variant={postSide === 1 ? "default" : "ghost"}
+                  onClick={() => setPostSide(1)}
+                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] ${postSide === 1 ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                >
+                  Front (Post)
+                </Button>
+                <Button
+                  type="button"
+                  variant={postSide === 2 ? "default" : "ghost"}
+                  onClick={() => setPostSide(2)}
+                  className={`h-9 min-w-[108px] px-4 rounded-md text-sm font-semibold tracking-[0.01em] ${postSide === 2 ? "shadow-lg" : "text-muted hover:text-heading hover:bg-white/20"}`}
+                >
+                  Back (QR)
+                </Button>
+              </Card>
+              <CardArtboardScaler
+                artboardWidth={CARD_ARTBOARD_HORIZONTAL.width}
+                artboardHeight={CARD_ARTBOARD_HORIZONTAL.height}
+                className="w-full max-w-[860px]"
+                maxScale={0.82}
+              >
+                <CardPreview data={card} isVertical={false} horizontalSide={postSide} />
+              </CardArtboardScaler>
+            </>
           ) : (
             <>
               <Card className="flex flex-row bg-white/10 p-1 rounded-md w-fit border-white/20 gap-1 shadow-none">

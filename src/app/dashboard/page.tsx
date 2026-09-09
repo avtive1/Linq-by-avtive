@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea as ShadTextarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Megaphone, Eye } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Megaphone, Eye, Trash2 } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -181,6 +181,10 @@ function DashboardContent() {
   const [isRequestPermissionModalOpen, setIsRequestPermissionModalOpen] = useState(false);
   const [permissionRequestReason, setPermissionRequestReason] = useState("");
   const [isSubmittingPermissionRequest, setIsSubmittingPermissionRequest] = useState(false);
+  const [deleteCampaignModalOpen, setDeleteCampaignModalOpen] = useState(false);
+  const [campaignToDelete, setCampaignToDelete] = useState<DashboardEventData | null>(null);
+  const [deleteCampaignConfirm, setDeleteCampaignConfirm] = useState("");
+  const [isDeletingCampaign, setIsDeletingCampaign] = useState(false);
   const { data: session, isPending: isSessionPending } = authClient.useSession();
   const sessionUserId = session?.user?.id;
   const { userId, isLoading: isInternalUserLoading } = useInternalUserId(Boolean(sessionUserId), isSessionPending);
@@ -867,6 +871,44 @@ function DashboardContent() {
       setUsernameError("Could not update username.");
     } finally {
       setIsSavingUsername(false);
+    }
+  };
+
+  const handleDeleteCampaign = async () => {
+    if (!campaignToDelete) return;
+    setIsDeletingCampaign(true);
+    try {
+      if (campaignToDelete.logo_url) {
+        try {
+          await fetch("/api/media/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: campaignToDelete.logo_url }),
+          });
+        } catch {
+          // ignore
+        }
+      }
+      const res = await fetch(`/api/events/${campaignToDelete.id}`, { method: "DELETE" });
+      const payload = await readResponsePayload(res);
+      if (!res.ok) {
+        throw new Error(getPayloadError(payload, "Failed to delete campaign."));
+      }
+      setEvents((prev) => prev.filter((e) => e.id !== campaignToDelete.id));
+      setStats((prev) => ({
+        totalEvents: Math.max(0, prev.totalEvents - 1),
+        totalAttendees: Math.max(0, prev.totalAttendees - (campaignToDelete.attendeeCount || 0)),
+      }));
+      toast.success("Campaign deleted permanently.");
+      setDeleteCampaignModalOpen(false);
+      setCampaignToDelete(null);
+      setDeleteCampaignConfirm("");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to delete campaign.";
+      logger.error({ err }, "Error deleting campaign from dashboard");
+      toast.error(message);
+    } finally {
+      setIsDeletingCampaign(false);
     }
   };
 
@@ -2055,6 +2097,24 @@ function DashboardContent() {
                         <Megaphone size={12} className="mr-1 text-primary" />
                         Promotion
                       </ShadButton>
+
+                      {!isOrgTeamMember && (
+                        <ShadButton
+                          type="button"
+                          variant="secondary"
+                          size="xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCampaignToDelete(evt);
+                            setDeleteCampaignConfirm("");
+                            setDeleteCampaignModalOpen(true);
+                          }}
+                          className="text-xs h-7 px-2.5 font-medium border border-red-200 bg-red-50/40 text-red-500 hover:bg-red-100 hover:text-red-600 transition-colors cursor-pointer"
+                        >
+                          <Trash2 size={12} className="mr-1 text-red-500" />
+                          Delete
+                        </ShadButton>
+                      )}
                     </div>
 
                     <motion.span {...hoverIconNudge(3)} className="inline-flex text-muted group-hover:text-ink transition-colors">
@@ -2716,6 +2776,65 @@ function DashboardContent() {
               </form>
             </div>
           </DialogContent>
+      </Dialog>
+ 
+      {/* Delete Campaign Confirmation Modal */}
+      <Dialog open={deleteCampaignModalOpen} onOpenChange={(open) => !open && !isDeletingCampaign && setDeleteCampaignModalOpen(false)}>
+        <DialogContent showCloseButton={false} className="w-full max-w-[460px] glass-panel bg-white border border-border/70 rounded-xl p-0 shadow-2xl overflow-hidden">
+          <DialogHeader className="px-8 pt-8 pb-3 flex-row items-start justify-between border-b border-border/50 shrink-0">
+            <div className="flex flex-col gap-1">
+              <DialogTitle className="text-2xl font-semibold text-red-500 tracking-[-0.03em] leading-[1.15]">Delete Campaign?</DialogTitle>
+              <DialogDescription className="text-sm text-muted">
+                This will permanently remove <span className="font-semibold text-heading">{campaignToDelete?.name}</span>, all {campaignToDelete?.attendeeCount || 0} registered lead cards, and associated media. This action cannot be undone.
+              </DialogDescription>
+            </div>
+            <ShadButton
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              disabled={isDeletingCampaign}
+              onClick={() => setDeleteCampaignModalOpen(false)}
+              className="h-9 w-9 text-muted hover:text-heading"
+            >
+              <X size={16} />
+            </ShadButton>
+          </DialogHeader>
+
+          <div className="p-8 pt-4 flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
+              <Label className="text-sm font-medium text-heading">
+                Type <span className="font-bold text-red-500">&quot;{campaignToDelete?.name}&quot;</span> to confirm:
+              </Label>
+              <Input
+                value={deleteCampaignConfirm}
+                onChange={(e) => setDeleteCampaignConfirm(e.target.value)}
+                placeholder="Campaign name"
+                autoComplete="off"
+                disabled={isDeletingCampaign}
+              />
+            </div>
+
+            <DialogFooter className="flex-row gap-3 sm:justify-end">
+              <ShadButton
+                type="button"
+                variant="secondary"
+                onClick={() => setDeleteCampaignModalOpen(false)}
+                disabled={isDeletingCampaign}
+              >
+                Cancel
+              </ShadButton>
+              <ShadButton
+                type="button"
+                variant="destructive"
+                disabled={isDeletingCampaign || deleteCampaignConfirm.trim().toLowerCase() !== (campaignToDelete?.name || "").trim().toLowerCase()}
+                onClick={handleDeleteCampaign}
+                className="bg-red-500 hover:bg-red-600 text-white font-medium"
+              >
+                {isDeletingCampaign ? "Deleting..." : "Delete Permanently"}
+              </ShadButton>
+            </DialogFooter>
+          </div>
+        </DialogContent>
       </Dialog>
 
     </main>

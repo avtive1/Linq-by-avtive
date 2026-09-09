@@ -911,7 +911,7 @@ function NewCardForm() {
                   <h3 className="w-full text-center text-[13px] font-medium tracking-[0.01em] leading-tight text-heading/75">Event badge layout</h3>
                   <VerticalPreviewScaler className="mx-auto w-full max-w-[420px] xl:max-w-[480px]" maxScale={1}>
                     <div className="preview-card-capture">
-                      <CardPreview data={previewData} preview isVertical verticalSide={2} />
+                      <CardPreview data={previewData} preview isVertical verticalSide={1} />
                     </div>
                   </VerticalPreviewScaler>
                 </div>

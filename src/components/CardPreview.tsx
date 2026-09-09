@@ -976,12 +976,14 @@ export function CardPreview({
   id,
   isVertical = false,
   verticalSide = 1,
+  horizontalSide = 1,
 }: {
   data: Partial<CardData>;
   preview?: boolean;
   id?: string;
   isVertical?: boolean;
   verticalSide?: 1 | 2;
+  horizontalSide?: 1 | 2;
 }) {
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const hasOrganizationBranding = Boolean((data.organizationName || "").trim() || (data.organizationLogoUrl || "").trim());
@@ -1038,13 +1040,7 @@ export function CardPreview({
         : getPublicAppUrl();
     finalQrUrl = `${origin.replace(/\/$/, "")}/cards/${encodeURIComponent(cardId)}/scan`;
   } else if (rawQrInput) {
-    if (rawQrInput.startsWith("http://") || rawQrInput.startsWith("https://")) {
-      finalQrUrl = rawQrInput;
-    } else if (rawQrInput.includes(".")) {
-      finalQrUrl = `https://${rawQrInput}`;
-    } else {
-      finalQrUrl = `https://linkedin.com/in/${rawQrInput}`;
-    }
+    finalQrUrl = rawQrInput;
   }
 
   const attendeeName = String(data.name || "").trim();
@@ -1103,7 +1099,8 @@ export function CardPreview({
   const customSponsorsList = filterSponsors(data.sponsors);
 
   // ==========================================
-  // VERTICAL CARD LAYOUT (Badge - 576 x 1024)
+  // VERTICAL CARD LAYOUT (Badge / Batch - 576 x 1024)
+  // No QR code on batch
   // ==========================================
   if (isVertical) {
     return (
@@ -1202,11 +1199,11 @@ export function CardPreview({
           </p>
         </div>
 
-        {/* Center: Side 1 (Front: Unified Attendee Card with Photo, Info, Socials & QR) / Side 2 (Back: QR + Info) */}
+        {/* Center: Side 1 (Front: Attendee Photo, Info & Socials) / Side 2 (Back: Attendee Info & Pass) */}
         {verticalSide === 1 ? (
-          <div className="absolute left-1/2 top-[340px] -translate-x-1/2 z-10 flex flex-col items-center w-[480px]">
+          <div className="absolute left-1/2 top-[360px] -translate-x-1/2 z-10 flex flex-col items-center w-[480px]">
             {/* Circular Photo */}
-            <div className={`relative flex h-[145px] w-[145px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
+            <div className={`relative flex h-[175px] w-[175px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
               {hasRealPhoto ? (
                 <img 
                   src={photoUrl} 
@@ -1220,16 +1217,16 @@ export function CardPreview({
             </div>
 
             {/* Attendee Details */}
-            <div className="mt-[12px] flex flex-col items-center text-center w-full px-4">
+            <div className="mt-[20px] flex flex-col items-center text-center w-full px-4">
               <h2 
-                className="m-0 text-[28px] font-black leading-[1.15] tracking-tight"
+                className="m-0 text-[32px] font-black leading-[1.15] tracking-tight"
                 style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
               >
                 {attendeeName || "Attendee"}
               </h2>
               {attendeeRole && (
                 <p 
-                  className="m-0 mt-[4px] text-[16px] font-bold text-white/90 leading-tight uppercase tracking-wide"
+                  className="m-0 mt-[6px] text-[18px] font-bold text-white/90 leading-tight uppercase tracking-wide"
                   style={{ color: hasVerticalTextOverride ? verticalTextColor : undefined }}
                 >
                   {attendeeRole}
@@ -1237,7 +1234,7 @@ export function CardPreview({
               )}
               {attendeeCompany && (
                 <p 
-                  className="m-0 mt-[2px] text-[15px] font-normal text-white/75 leading-tight"
+                  className="m-0 mt-[4px] text-[16px] font-normal text-white/75 leading-tight"
                   style={{ color: hasVerticalTextOverride ? verticalTextColor : undefined }}
                 >
                   {attendeeCompany}
@@ -1246,68 +1243,61 @@ export function CardPreview({
 
               {/* Social Links */}
               {validSocials.length > 0 && (
-                <div className="mt-[8px] flex items-center justify-center gap-[8px] flex-wrap max-w-[320px]">
+                <div className="mt-[16px] flex items-center justify-center gap-[10px] flex-wrap max-w-[340px]">
                   {validSocials.map(({ platform, url }) => (
                     <a
                       key={platform}
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-white/10 border border-white/20 text-white/90 hover:bg-white/25 hover:text-white transition-colors"
+                      className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-white/10 border border-white/20 text-white/90 hover:bg-white/25 hover:text-white transition-colors"
                       title={platform}
                     >
-                      {getSocialPlatformIcon(platform, "h-[14px] w-[14px]")}
+                      {getSocialPlatformIcon(platform, "h-[16px] w-[16px]")}
                     </a>
                   ))}
                 </div>
               )}
-
-              {/* Scannable QR Container */}
-              <div className="mt-[12px] flex h-[155px] w-[155px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[2px] border-white/20 bg-white p-[6px] shadow-2xl">
-                {qrUrl ? (
-                  <img src={qrUrl} className="h-full w-full object-contain" alt="Attendance QR Code" crossOrigin="anonymous" />
-                ) : (
-                  <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-slate-100 p-2 text-center">
-                    <p className="m-0 text-[10px] font-semibold text-slate-600 leading-snug">
-                      Generating QR...
-                    </p>
-                  </div>
-                )}
-              </div>
-              <p className="m-0 mt-[6px] text-[13px] font-semibold text-cyan-300 tracking-wide uppercase">
-                Scan to Connect & Mark Attendance
-              </p>
             </div>
           </div>
         ) : (
-          <div className="absolute left-1/2 top-[430px] -translate-x-1/2 z-10 flex flex-col items-center w-[480px]">
-            {/* Scannable QR Container */}
-            <div className="flex h-[210px] w-[210px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[2px] border-white/20 bg-white p-3 shadow-2xl">
-              {qrUrl ? (
-                <img src={qrUrl} className="h-full w-full object-contain" alt="QR Code" crossOrigin="anonymous" />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-slate-100 p-3 text-center">
-                  <p className="m-0 text-[12px] font-semibold leading-snug text-slate-600">
-                    Add LinkedIn or URL to generate QR
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Attendee Details & Scan Prompt */}
-            <div className="mt-[18px] flex flex-col items-center text-center w-full px-4">
+          <div className="absolute left-1/2 top-[400px] -translate-x-1/2 z-10 flex flex-col items-center text-center w-[480px] px-6">
+            <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md shadow-2xl w-full max-w-[420px]">
+              <div 
+                className="flex items-center justify-center px-[20px] py-[8px] rounded-[6px] shadow-sm mb-4"
+                style={{ 
+                  backgroundColor: palette.pillBg,
+                  border: `1px solid ${palette.pillBorder}`,
+                }}
+              >
+                <span className="text-[15px] font-black text-white tracking-[2px] uppercase leading-none">
+                  OFFICIAL BADGE
+                </span>
+              </div>
               <h2 
-                className="m-0 text-[28px] font-black leading-tight tracking-tight"
+                className="m-0 text-[32px] font-black leading-tight tracking-tight"
                 style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
               >
-                {data.name || "Zia-ur-Rehman"}
+                {attendeeName || "Attendee"}
               </h2>
-              <p className="m-0 mt-[4px] text-[16px] font-bold text-white/90 uppercase tracking-wide">
-                {data.role || "CEO"}
-              </p>
-              <p className="m-0 mt-[8px] text-[14px] font-semibold text-cyan-300 tracking-wide uppercase">
-                Scan to Connect & Mark Attendance
-              </p>
+              {attendeeRole && (
+                <p className="m-0 mt-[6px] text-[18px] font-bold text-white/90 uppercase tracking-wide">
+                  {attendeeRole}
+                </p>
+              )}
+              {attendeeCompany && (
+                <p className="m-0 mt-[4px] text-[16px] font-normal text-white/75">
+                  {attendeeCompany}
+                </p>
+              )}
+              <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col items-center gap-1">
+                <span className="text-[13px] font-semibold text-cyan-300 uppercase tracking-wider">
+                  {data.eventName || "Event Pass"}
+                </span>
+                <span className="text-[12px] text-white/60">
+                  {data.sessionDate || "Event Date"} • {data.location || "Venue"}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -1334,13 +1324,14 @@ export function CardPreview({
   }
 
   // ==========================================
-  // HORIZONTAL CARD LAYOUT (Standard - 1200 x 628)
-  // Dynamic color support preserving the exact custom design
+  // HORIZONTAL CARD LAYOUT (Attendee Card - 1200 x 628)
+  // Front (Side 1): Full profile, photo & details (NO QR)
+  // Back (Side 2): QR code for connect & check-in
   // ==========================================
   return (
     <div
       id={id}
-      key={data.designType}
+      key={`${data.designType}-${horizontalSide}`}
       className={`relative overflow-hidden shadow-2xl poster bg-[#04060A] ${surfaceMotionClass}`}
       style={{
         width: "1200px",
@@ -1456,12 +1447,11 @@ export function CardPreview({
         )}
       </div>
 
-      {/* Right Section: Attendee Card Profile & Embedded Attendance QR Code */}
-      <div className="absolute right-[56px] top-[125px] z-10 flex items-center gap-[28px]">
-        {/* Profile Details Column */}
-        <div className="flex flex-col items-center text-center w-[250px]">
+      {/* Right Section: Side 1 (Front: Photo, Name, Role, Company, Socials - NO QR) / Side 2 (Back: QR Code) */}
+      {horizontalSide === 1 ? (
+        <div className="absolute right-[80px] top-[100px] z-10 flex flex-col items-center text-center w-[360px]">
           {/* Circular Avatar */}
-          <div className={`relative flex h-[175px] w-[175px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
+          <div className={`relative flex h-[200px] w-[200px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
             {hasRealPhoto ? (
               <img
                 src={photoUrl}
@@ -1475,9 +1465,9 @@ export function CardPreview({
           </div>
 
           {/* Attendee Details */}
-          <div className="mt-[14px] flex flex-col items-center text-center w-full px-2">
+          <div className="mt-[18px] flex flex-col items-center text-center w-full px-2">
             <h2 
-              className="m-0 text-[26px] font-black leading-[1.15] tracking-tight truncate max-w-[240px]"
+              className="m-0 text-[32px] font-black leading-[1.15] tracking-tight truncate max-w-[340px]"
               style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
               title={attendeeName || "Attendee"}
             >
@@ -1485,7 +1475,7 @@ export function CardPreview({
             </h2>
             {attendeeRole && (
               <p 
-                className="m-0 mt-[4px] text-[16px] font-bold text-white/90 leading-tight uppercase tracking-wide truncate max-w-[240px]"
+                className="m-0 mt-[6px] text-[19px] font-bold text-white/90 leading-tight uppercase tracking-wide truncate max-w-[340px]"
                 style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
               >
                 {attendeeRole}
@@ -1493,7 +1483,7 @@ export function CardPreview({
             )}
             {attendeeCompany && (
               <p 
-                className="m-0 mt-[3px] text-[15px] font-normal text-white/75 leading-tight truncate max-w-[240px]"
+                className="m-0 mt-[4px] text-[17px] font-normal text-white/75 leading-tight truncate max-w-[340px]"
                 style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
               >
                 {attendeeCompany}
@@ -1502,45 +1492,59 @@ export function CardPreview({
 
             {/* Social Icons Row */}
             {validSocials.length > 0 && (
-              <div className="mt-[10px] flex items-center justify-center gap-[8px] flex-wrap max-w-[240px]">
+              <div className="mt-[14px] flex items-center justify-center gap-[10px] flex-wrap max-w-[300px]">
                 {validSocials.map(({ platform, url }) => (
                   <a
                     key={platform}
                     href={url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-[28px] w-[28px] items-center justify-center rounded-full bg-white/10 border border-white/20 text-white/90 hover:bg-white/25 hover:text-white transition-colors"
+                    className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-white/10 border border-white/20 text-white/90 hover:bg-white/25 hover:text-white transition-colors"
                     title={platform}
                   >
-                    {getSocialPlatformIcon(platform, "h-[14px] w-[14px]")}
+                    {getSocialPlatformIcon(platform, "h-[16px] w-[16px]")}
                   </a>
                 ))}
               </div>
             )}
           </div>
         </div>
+      ) : (
+        <div className="absolute right-[80px] top-[100px] z-10 flex flex-col items-center text-center w-[360px]">
+          {/* Back: Scannable Attendance QR Card */}
+          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/15 rounded-3xl p-6 shadow-2xl backdrop-blur-md w-full max-w-[340px]">
+            <div className="flex h-[200px] w-[200px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-3 shadow-inner">
+              {qrUrl ? (
+                <img src={qrUrl} className="h-full w-full object-contain" alt="Attendance QR Code" crossOrigin="anonymous" />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-slate-50 p-2 text-center">
+                  <p className="m-0 text-[11px] font-semibold text-slate-500 leading-tight">
+                    Generating QR...
+                  </p>
+                </div>
+              )}
+            </div>
 
-        {/* Scannable Attendance QR Column */}
-        <div className="flex flex-col items-center justify-center bg-white/5 border border-white/15 rounded-2xl p-[14px] shadow-2xl backdrop-blur-sm">
-          <div className="flex h-[155px] w-[155px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-[6px] shadow-inner">
-            {qrUrl ? (
-              <img src={qrUrl} className="h-full w-full object-contain" alt="Attendance QR Code" crossOrigin="anonymous" />
-            ) : (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-slate-50 p-2 text-center">
-                <p className="m-0 text-[10px] font-semibold text-slate-500 leading-tight">
-                  Generating QR...
-                </p>
-              </div>
+            <p className="m-0 mt-[14px] text-[15px] font-bold text-cyan-300 tracking-wide uppercase text-center leading-tight">
+              Scan to Connect & Check In
+            </p>
+            <h3 
+              className="m-0 mt-[6px] text-[20px] font-black text-white truncate max-w-[300px]"
+              style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+            >
+              {attendeeName || "Attendee"}
+            </h3>
+            {attendeeRole && (
+              <p className="m-0 text-[13px] text-white/70 uppercase tracking-wide">
+                {attendeeRole}
+              </p>
             )}
+            <span className="m-0 text-[11px] text-white/50 font-medium leading-none mt-2">
+              Official Attendee Pass
+            </span>
           </div>
-          <p className="m-0 mt-[8px] text-[12px] font-bold text-cyan-300 tracking-wide uppercase text-center leading-tight">
-            Scan to Check In
-          </p>
-          <span className="m-0 text-[10px] text-white/60 font-medium leading-none mt-1">
-            Attendee Pass
-          </span>
         </div>
-      </div>
+      )}
     </div>
   );
 }
