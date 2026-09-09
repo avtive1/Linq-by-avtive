@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { getServerAuthSession } from "@/auth";
 import { redirect } from "next/navigation";
 import { queryNeon } from "@/lib/neon-db";
 import { PromotionChannelSelect } from "@/components/admin/promotion/PromotionChannelSelect";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -41,8 +43,21 @@ export default async function AdminPromotionsPage() {
   }
 
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-[1240px] mx-auto">
-      <PromotionChannelSelect />
+    <div className="py-8 px-4 sm:px-6 lg:px-8 max-w-[1280px] mx-auto">
+      <Suspense
+        fallback={
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-10 w-48 rounded-lg" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              <Skeleton className="h-64 rounded-xl" />
+              <Skeleton className="h-64 rounded-xl" />
+              <Skeleton className="h-64 rounded-xl" />
+            </div>
+          </div>
+        }
+      >
+        <PromotionChannelSelect />
+      </Suspense>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 export type PromotionChannel = "newsletter" | "linkedin" | "whatsapp";
 
+export type PromotionTheme = "default" | "minimal" | "dark" | "professional" | "event";
+
 export interface PromotionTemplate {
   id: string;
   channel: PromotionChannel;
@@ -8,8 +10,12 @@ export interface PromotionTemplate {
   heading?: string;
   message: string;
   imageUrl?: string;
+  buttonText?: string;
+  buttonUrl?: string;
   attachmentUrl?: string;
+  attachmentName?: string;
   caption?: string;
+  theme?: PromotionTheme;
 }
 
 export interface TeamAccessRole {
@@ -23,8 +29,12 @@ export interface ChannelEditorState {
   heading: string;
   message: string;
   imageUrl: string;
+  buttonText: string;
+  buttonUrl: string;
   attachmentUrl: string;
+  attachmentName: string;
   caption: string;
+  theme: PromotionTheme;
 }
 
 export interface SendResult {

@@ -52,7 +52,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const { channel, subject, heading, message, imageUrl } = body;
+    const {
+      channel,
+      subject,
+      heading,
+      message,
+      imageUrl,
+      buttonText,
+      buttonUrl,
+      attachmentUrl,
+      attachmentName,
+      theme,
+      eventId,
+    } = body;
 
     if (!channel || !message) {
       return NextResponse.json(
@@ -61,15 +73,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Fetch attendees from public.attendees
+    // Fetch attendees from public.attendees (isolated by eventId if specified)
     let rows: AttendeeRow[] = [];
     try {
-      rows = await queryNeon<AttendeeRow>(
-        `SELECT id, name, card_email, linkedin, custom_fields 
-         FROM public.attendees 
-         ORDER BY created_at DESC 
-         LIMIT 1000`,
-      );
+      if (eventId) {
+        rows = await queryNeon<AttendeeRow>(
+          `SELECT id, name, card_email, linkedin, custom_fields 
+           FROM public.attendees 
+           WHERE event_id = $1
+           ORDER BY created_at DESC 
+           LIMIT 1000`,
+          [eventId],
+        );
+      } else {
+        rows = await queryNeon<AttendeeRow>(
+          `SELECT id, name, card_email, linkedin, custom_fields 
+           FROM public.attendees 
+           ORDER BY created_at DESC 
+           LIMIT 1000`,
+        );
+      }
     } catch (dbErr) {
       logger.error({ dbErr }, "Failed to fetch attendees for promotion");
       return NextResponse.json(
@@ -119,11 +142,14 @@ export async function POST(request: NextRequest) {
       }
 
       let sentCount = 0;
+      const primaryColor = theme === "minimal" ? "#18181b" : theme === "dark" ? "#6366f1" : theme === "professional" ? "#1e40af" : theme === "event" ? "#ea580c" : "#5B4DFB";
       const htmlBody = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; padding: 24px;">
           ${imageUrl ? `<div style="margin-bottom: 20px; border-radius: 8px; overflow: hidden;"><img src="${imageUrl}" alt="" style="width: 100%; height: auto; display: block;" /></div>` : ""}
           <h2 style="color: #0f172a; font-size: 20px; font-weight: 700; margin-top: 0;">${heading || subject || "Linq Event Update"}</h2>
           <div style="color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${message}</div>
+          ${attachmentName ? `<div style="margin-top: 16px; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; color: #475569;">📎 Attachment: ${attachmentName}</div>` : ""}
+          ${buttonText ? `<div style="margin-top: 24px;"><a href="${buttonUrl || "https://linq.avtive.com"}" style="background: ${primaryColor}; color: #ffffff; text-decoration: none; padding: 10px 22px; border-radius: 6px; font-size: 13px; font-weight: 600; display: inline-block;">${buttonText}</a></div>` : ""}
           <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #f1f5f9; font-size: 11px; color: #94a3b8; text-align: center;">
             Sent by Linq Event Operations.
           </div>

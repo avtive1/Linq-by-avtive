@@ -6,27 +6,52 @@ import { Button as ShadButton } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea as ShadTextarea } from "@/components/ui/textarea";
-import { X, Send as SendIcon, Save, Eye, Upload, FolderOpen } from "lucide-react";
+import {
+  X,
+  Send as SendIcon,
+  Save,
+  Eye,
+  Upload,
+  FolderOpen,
+  Trash2,
+  RefreshCw,
+  Paperclip,
+  Palette,
+} from "lucide-react";
 import { toast } from "sonner";
-import { PromotionTemplate, ChannelEditorState, PromotionChannel } from "./types";
+import { PromotionTemplate, ChannelEditorState, PromotionChannel, PromotionTheme } from "./types";
 import { NewsletterLivePreview } from "./NewsletterLivePreview";
 import { LinkedInLivePreview } from "./LinkedInLivePreview";
 import { WhatsAppLivePreview } from "./WhatsAppLivePreview";
 import { SendConfirmDialog } from "./SendConfirmDialog";
+import { SpreadsheetImportModal } from "./SpreadsheetImportModal";
+import { parsePromotionImportFile, ImportResult } from "./importUtils";
 
 interface TemplateEditorModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template: PromotionTemplate | null;
   channel: PromotionChannel;
+  eventId?: string;
+  eventName?: string;
   onSendSuccess?: () => void;
 }
+
+const THEME_OPTIONS: { id: PromotionTheme; label: string; swatch: string }[] = [
+  { id: "default", label: "Default", swatch: "#5B4DFB" },
+  { id: "minimal", label: "Minimal", swatch: "#18181B" },
+  { id: "dark", label: "Dark", swatch: "#0F172A" },
+  { id: "professional", label: "Professional", swatch: "#1E40AF" },
+  { id: "event", label: "Event", swatch: "#EA580C" },
+];
 
 export function TemplateEditorModal({
   open,
   onOpenChange,
   template,
   channel,
+  eventId,
+  eventName,
   onSendSuccess,
 }: TemplateEditorModalProps) {
   const [form, setForm] = useState<ChannelEditorState>({
@@ -34,54 +59,129 @@ export function TemplateEditorModal({
     heading: "",
     message: "",
     imageUrl: "",
+    buttonText: "",
+    buttonUrl: "",
     attachmentUrl: "",
+    attachmentName: "",
     caption: "",
+    theme: "default",
   });
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
+
+  // Spreadsheet modal state
+  const [spreadsheetState, setSpreadsheetState] = useState<{
+    open: boolean;
+    fileName: string;
+    headers: string[];
+    sampleRows: Record<string, string>[];
+    totalRows: number;
+  }>({
+    open: false,
+    fileName: "",
+    headers: [],
+    sampleRows: [],
+    totalRows: 0,
+  });
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (template) {
-      setForm({
+      let initialData: ChannelEditorState = {
         subject: template.subject || "",
         heading: template.heading || "",
         message: template.message || "",
         imageUrl: template.imageUrl || "",
+        buttonText: template.buttonText || (channel === "newsletter" ? "Open Attendee Card" : ""),
+        buttonUrl: template.buttonUrl || "https://linq.avtive.com",
         attachmentUrl: template.attachmentUrl || "",
+        attachmentName: template.attachmentName || "",
         caption: template.caption || "",
-      });
+        theme: template.theme || "default",
+      };
+
+      try {
+        if (typeof window !== "undefined") {
+          const saved = localStorage.getItem(
+            `linq_tpl_draft_${eventId || "global"}_${template.id}`,
+          );
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            initialData = { ...initialData, ...parsed };
+          }
+        }
+      } catch {}
+
+      setForm(initialData);
     }
-  }, [template]);
+  }, [template, eventId, channel]);
 
   const handleSave = () => {
     try {
       if (typeof window !== "undefined" && template) {
-        localStorage.setItem(`linq_tpl_draft_${template.id}`, JSON.stringify(form));
+        localStorage.setItem(
+          `linq_tpl_draft_${eventId || "global"}_${template.id}`,
+          JSON.stringify(form),
+        );
       }
-      toast.success("Draft saved");
+      toast.success(eventName ? `Draft saved for ${eventName}` : "Draft saved");
     } catch {
       toast.error("Failed to save draft");
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 4 * 1024 * 1024) {
-      toast.error("File size must be under 4MB");
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error("File size must be under 15MB");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setForm((prev) => ({ ...prev, imageUrl: dataUrl }));
-      toast.success("Image uploaded");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const result: ImportResult = await parsePromotionImportFile(file);
+
+      if (result.type === "image") {
+        setForm((prev) => ({ ...prev, imageUrl: result.dataUrl }));
+        toast.success("Image imported into template");
+      } else if (result.type === "text") {
+        setForm((prev) => ({
+          ...prev,
+          heading: result.heading || prev.heading,
+          subject: result.subject || prev.subject,
+          message: result.message || prev.message,
+        }));
+        toast.success("Text extracted into editor");
+      } else if (result.type === "attachment") {
+        setForm((prev) => ({
+          ...prev,
+          attachmentUrl: result.dataUrl,
+          attachmentName: result.fileName,
+        }));
+        toast.success(result.fallbackReason || "File added as attachment");
+      } else if (result.type === "spreadsheet") {
+        setSpreadsheetState({
+          open: true,
+          fileName: result.fileName,
+          headers: result.headers,
+          sampleRows: result.sampleRows,
+          totalRows: result.totalRows,
+        });
+      } else if (result.type === "unsupported") {
+        toast.error(result.message);
+      }
+    } catch {
+      toast.error("Failed to parse imported file");
+    } finally {
+      // Reset input value to allow re-uploading same file
+      if (e.target) e.target.value = "";
+    }
   };
 
   const executeSend = async () => {
@@ -93,11 +193,17 @@ export function TemplateEditorModal({
         body: JSON.stringify({
           channel,
           templateId: template?.id,
+          eventId,
           subject: form.subject,
           heading: form.heading,
           message: form.message,
           imageUrl: form.imageUrl,
+          buttonText: form.buttonText,
+          buttonUrl: form.buttonUrl,
           attachmentUrl: form.attachmentUrl,
+          attachmentName: form.attachmentName,
+          caption: form.caption,
+          theme: form.theme,
         }),
       });
 
@@ -119,9 +225,6 @@ export function TemplateEditorModal({
     }
   };
 
-  const [mobileTab, setMobileTab] = useState<"edit" | "preview">("edit");
-  const previewContainerRef = useRef<HTMLDivElement>(null);
-
   const handlePreviewClick = () => {
     setMobileTab("preview");
     if (previewContainerRef.current) {
@@ -140,17 +243,22 @@ export function TemplateEditorModal({
           className="w-full max-w-5xl max-h-[92vh] bg-white border border-border/70 rounded-2xl p-0 shadow-2xl flex flex-col overflow-hidden"
         >
           {/* Header */}
-          <DialogHeader className="px-6 py-4 border-b border-border/40 flex flex-row items-center justify-between shrink-0 bg-surface/30">
+          <DialogHeader className="px-6 py-3.5 border-b border-border/40 flex flex-row items-center justify-between shrink-0 bg-slate-50/50">
             <div className="flex items-center gap-3">
               <span className="text-xs font-semibold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-0.5 rounded-md">
                 {channelLabel}
               </span>
-              <DialogTitle className="text-base font-semibold text-heading">
-                {template?.name || "Template Editor"}
+              <DialogTitle className="text-sm font-semibold text-heading flex items-center gap-2">
+                <span>{template?.name || "Template Editor"}</span>
+                {eventName && (
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {eventName}
+                  </span>
+                )}
               </DialogTitle>
             </div>
 
-            {/* Mobile Tab Switcher (Visible only on screens < lg) */}
+            {/* Mobile Tab Switcher */}
             <div className="flex lg:hidden items-center gap-1 rounded-lg border border-border/60 bg-white p-0.5">
               <button
                 type="button"
@@ -193,15 +301,56 @@ export function TemplateEditorModal({
                 mobileTab === "preview" ? "hidden lg:flex" : "flex"
               }`}
             >
+              {/* Hidden Global File Input for Import/Browse */}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.docx,.txt,.csv,.xlsx,.xls,.tsv,.json,.md"
                 className="hidden"
-                onChange={handleFileUpload}
+                onChange={handleFileImport}
               />
 
-              {/* 1. NEWSLETTER FIELDS: Subject, Heading, Message, Image */}
+              {/* Hidden Image-only upload input */}
+              <input
+                ref={attachmentInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt,.csv"
+                className="hidden"
+                onChange={handleFileImport}
+              />
+
+              {/* 1. SIMPLE THEME SELECTOR */}
+              <div className="flex flex-col gap-1.5 pb-2 border-b border-border/30">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium text-heading flex items-center gap-1.5">
+                    <Palette size={13} className="text-primary" />
+                    Theme
+                  </Label>
+                  <span className="text-[10px] text-muted">Applied to this template</span>
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {THEME_OPTIONS.map((th) => (
+                    <button
+                      key={th.id}
+                      type="button"
+                      onClick={() => setForm((prev) => ({ ...prev, theme: th.id }))}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-all cursor-pointer ${
+                        form.theme === th.id
+                          ? "border-primary bg-primary/10 text-primary shadow-2xs font-semibold ring-1 ring-primary/30"
+                          : "border-border/60 bg-white text-muted hover:text-heading hover:border-border"
+                      }`}
+                    >
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 border border-black/10"
+                        style={{ backgroundColor: th.swatch }}
+                      />
+                      {th.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 2. NEWSLETTER FIELDS */}
               {channel === "newsletter" && (
                 <>
                   <div className="flex flex-col gap-1.5">
@@ -236,42 +385,174 @@ export function TemplateEditorModal({
                     </Label>
                     <ShadTextarea
                       id="nl-message"
-                      rows={6}
+                      rows={5}
                       value={form.message}
                       onChange={(e) => setForm({ ...form, message: e.target.value })}
-                      placeholder="Enter newsletter text..."
+                      placeholder="Enter newsletter message..."
                       className="text-xs leading-relaxed resize-y"
                     />
                   </div>
 
+                  {/* Image Controls: Upload / Replace / Remove / Preview */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="nl-image" className="text-xs font-medium text-heading">
-                      Image
-                    </Label>
-                    <div className="flex gap-2">
+                    <Label className="text-xs font-medium text-heading">Image</Label>
+                    {form.imageUrl ? (
+                      <div className="flex items-center justify-between gap-3 p-2 border border-border/60 rounded-lg bg-slate-50/70">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-12 h-10 rounded overflow-hidden bg-white border border-border/50 shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={form.imageUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-[11px] text-muted truncate">
+                            Image attached to template
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-xs h-7 px-2 text-muted hover:text-heading cursor-pointer gap-1"
+                          >
+                            <RefreshCw size={11} />
+                            Replace
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setForm((prev) => ({ ...prev, imageUrl: "" }));
+                              toast.success("Image removed");
+                            }}
+                            className="text-xs h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer gap-1"
+                          >
+                            <Trash2 size={11} />
+                            Remove
+                          </ShadButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={form.imageUrl}
+                          onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                          placeholder="Image URL or upload"
+                          className="h-9 text-xs"
+                        />
+                        <ShadButton
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
+                        >
+                          <Upload size={13} />
+                          Upload
+                        </ShadButton>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Button & Link Fields */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="nl-button-text" className="text-xs font-medium text-heading">
+                        Button Text
+                      </Label>
                       <Input
-                        id="nl-image"
-                        value={form.imageUrl}
-                        onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                        placeholder="Image URL or upload"
+                        id="nl-button-text"
+                        value={form.buttonText}
+                        onChange={(e) => setForm({ ...form, buttonText: e.target.value })}
+                        placeholder="Open Attendee Card"
                         className="h-9 text-xs"
                       />
-                      <ShadButton
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
-                      >
-                        <Upload size={13} />
-                        Upload
-                      </ShadButton>
                     </div>
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="nl-button-url" className="text-xs font-medium text-heading">
+                        Button Link
+                      </Label>
+                      <Input
+                        id="nl-button-url"
+                        value={form.buttonUrl}
+                        onChange={(e) => setForm({ ...form, buttonUrl: e.target.value })}
+                        placeholder="https://..."
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Attachment Controls */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-xs font-medium text-heading">Attachment (Optional)</Label>
+                    {form.attachmentName ? (
+                      <div className="flex items-center justify-between gap-3 p-2 border border-border/60 rounded-lg bg-slate-50/70">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Paperclip size={14} className="text-primary shrink-0" />
+                          <span className="text-[11px] font-medium text-heading truncate">
+                            {form.attachmentName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => attachmentInputRef.current?.click()}
+                            className="text-xs h-7 px-2 text-muted hover:text-heading cursor-pointer gap-1"
+                          >
+                            <RefreshCw size={11} />
+                            Replace
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setForm((prev) => ({
+                                ...prev,
+                                attachmentUrl: "",
+                                attachmentName: "",
+                              }));
+                              toast.success("Attachment removed");
+                            }}
+                            className="text-xs h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer gap-1"
+                          >
+                            <Trash2 size={11} />
+                            Remove
+                          </ShadButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={form.attachmentUrl}
+                          onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
+                          placeholder="https://example.com/document.pdf"
+                          className="h-9 text-xs"
+                        />
+                        <ShadButton
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => attachmentInputRef.current?.click()}
+                          className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
+                        >
+                          <Paperclip size={13} />
+                          Attach
+                        </ShadButton>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
 
-              {/* 2. LINKEDIN FIELDS: Message, Caption */}
+              {/* 3. LINKEDIN FIELDS */}
               {channel === "linkedin" && (
                 <>
                   <div className="flex flex-col gap-1.5">
@@ -306,32 +587,71 @@ export function TemplateEditorModal({
                 </>
               )}
 
-              {/* 3. WHATSAPP FIELDS: Image, Message, Attachment */}
+              {/* 4. WHATSAPP FIELDS */}
               {channel === "whatsapp" && (
                 <>
+                  {/* Image Controls */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="wa-image" className="text-xs font-medium text-heading">
-                      Image
-                    </Label>
-                    <div className="flex gap-2">
-                      <Input
-                        id="wa-image"
-                        value={form.imageUrl}
-                        onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-                        placeholder="Image URL or upload"
-                        className="h-9 text-xs"
-                      />
-                      <ShadButton
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
-                      >
-                        <Upload size={13} />
-                        Upload
-                      </ShadButton>
-                    </div>
+                    <Label className="text-xs font-medium text-heading">Image (Optional)</Label>
+                    {form.imageUrl ? (
+                      <div className="flex items-center justify-between gap-3 p-2 border border-border/60 rounded-lg bg-slate-50/70">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-12 h-10 rounded overflow-hidden bg-white border border-border/50 shrink-0">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={form.imageUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-[11px] text-muted truncate">Image attached</span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="text-xs h-7 px-2 text-muted hover:text-heading cursor-pointer gap-1"
+                          >
+                            <RefreshCw size={11} />
+                            Replace
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setForm((prev) => ({ ...prev, imageUrl: "" }));
+                              toast.success("Image removed");
+                            }}
+                            className="text-xs h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer gap-1"
+                          >
+                            <Trash2 size={11} />
+                            Remove
+                          </ShadButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={form.imageUrl}
+                          onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+                          placeholder="Image URL or upload"
+                          className="h-9 text-xs"
+                        />
+                        <ShadButton
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
+                        >
+                          <Upload size={13} />
+                          Upload
+                        </ShadButton>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex flex-col gap-1.5">
@@ -351,17 +671,67 @@ export function TemplateEditorModal({
                     />
                   </div>
 
+                  {/* WhatsApp Attachment Controls */}
                   <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="wa-attachment" className="text-xs font-medium text-heading">
-                      Attachment
-                    </Label>
-                    <Input
-                      id="wa-attachment"
-                      value={form.attachmentUrl}
-                      onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
-                      placeholder="https://example.com/file.pdf"
-                      className="h-9 text-xs"
-                    />
+                    <Label className="text-xs font-medium text-heading">Attachment (Optional)</Label>
+                    {form.attachmentName ? (
+                      <div className="flex items-center justify-between gap-3 p-2 border border-border/60 rounded-lg bg-slate-50/70">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Paperclip size={14} className="text-primary shrink-0" />
+                          <span className="text-[11px] font-medium text-heading truncate">
+                            {form.attachmentName}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => attachmentInputRef.current?.click()}
+                            className="text-xs h-7 px-2 text-muted hover:text-heading cursor-pointer gap-1"
+                          >
+                            <RefreshCw size={11} />
+                            Replace
+                          </ShadButton>
+                          <ShadButton
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setForm((prev) => ({
+                                ...prev,
+                                attachmentUrl: "",
+                                attachmentName: "",
+                              }));
+                              toast.success("Attachment removed");
+                            }}
+                            className="text-xs h-7 px-2 text-rose-600 hover:text-rose-700 hover:bg-rose-50 cursor-pointer gap-1"
+                          >
+                            <Trash2 size={11} />
+                            Remove
+                          </ShadButton>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={form.attachmentUrl}
+                          onChange={(e) => setForm({ ...form, attachmentUrl: e.target.value })}
+                          placeholder="https://example.com/file.pdf"
+                          className="h-9 text-xs"
+                        />
+                        <ShadButton
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => attachmentInputRef.current?.click()}
+                          className="h-9 text-xs shrink-0 gap-1.5 px-3 cursor-pointer"
+                        >
+                          <Paperclip size={13} />
+                          Attach
+                        </ShadButton>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
@@ -369,33 +739,18 @@ export function TemplateEditorModal({
               {/* Action Buttons Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-border/30 mt-auto">
                 <div className="flex items-center gap-1.5">
-                  {/* Browse Button */}
+                  {/* Import / Browse Button */}
                   <ShadButton
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-xs h-8 gap-1 text-muted hover:text-heading cursor-pointer"
-                    title="Browse local file"
+                    className="text-xs h-8 gap-1 border-border/60 text-heading hover:bg-slate-50 cursor-pointer"
+                    title="Import or browse document, image, or spreadsheet"
                   >
                     <FolderOpen size={13} />
                     Browse
                   </ShadButton>
-
-                  {/* Upload Button (Newsletter & WhatsApp) */}
-                  {(channel === "newsletter" || channel === "whatsapp") && (
-                    <ShadButton
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-xs h-8 gap-1 text-muted hover:text-heading cursor-pointer"
-                      title="Upload image"
-                    >
-                      <Upload size={13} />
-                      Upload
-                    </ShadButton>
-                  )}
 
                   {/* Preview Button */}
                   <ShadButton
@@ -451,7 +806,9 @@ export function TemplateEditorModal({
                   <Eye size={13} />
                   Live Preview
                 </span>
-                <span className="text-[11px] text-muted">Updates in real time</span>
+                <span className="text-[11px] text-muted font-medium capitalize">
+                  Theme: {form.theme}
+                </span>
               </div>
 
               <div className="w-full flex items-center justify-center">
@@ -461,16 +818,26 @@ export function TemplateEditorModal({
                     message={form.message}
                     imageUrl={form.imageUrl}
                     subject={form.subject}
+                    buttonText={form.buttonText}
+                    buttonUrl={form.buttonUrl}
+                    attachmentName={form.attachmentName}
+                    theme={form.theme}
                   />
                 )}
                 {channel === "linkedin" && (
-                  <LinkedInLivePreview message={form.message} caption={form.caption} />
+                  <LinkedInLivePreview
+                    message={form.message}
+                    caption={form.caption}
+                    theme={form.theme}
+                  />
                 )}
                 {channel === "whatsapp" && (
                   <WhatsAppLivePreview
                     message={form.message}
                     imageUrl={form.imageUrl}
                     attachmentUrl={form.attachmentUrl}
+                    attachmentName={form.attachmentName}
+                    theme={form.theme}
                   />
                 )}
               </div>
@@ -485,6 +852,27 @@ export function TemplateEditorModal({
         onOpenChange={setIsConfirmOpen}
         onConfirm={executeSend}
         isSending={isSending}
+      />
+
+      {/* Spreadsheet Modal */}
+      <SpreadsheetImportModal
+        open={spreadsheetState.open}
+        onOpenChange={(isOpen) => setSpreadsheetState((prev) => ({ ...prev, open: isOpen }))}
+        fileName={spreadsheetState.fileName}
+        headers={spreadsheetState.headers}
+        sampleRows={spreadsheetState.sampleRows}
+        totalRows={spreadsheetState.totalRows}
+        eventId={eventId}
+        eventName={eventName}
+        onUseAsContent={(headers) => {
+          const tags = headers.slice(0, 3).map((h) => `{{${h}}}`).join(" ");
+          setForm((prev) => ({
+            ...prev,
+            message: prev.message
+              ? `${prev.message}\n\nAvailable variables: ${tags}`
+              : `Hi {{name}},\n\nHere are your event details:\n${tags}`,
+          }));
+        }}
       />
     </>
   );

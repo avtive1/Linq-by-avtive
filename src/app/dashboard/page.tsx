@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { authClient } from "@/lib/auth/client";
 import { useInternalUserId } from "@/lib/auth/use-internal-user-id";
 import GradientBackground from "@/components/GradientBackground";
@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea as ShadTextarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Megaphone } from "lucide-react";
+import { Plus, LogOut, Calendar, MapPin, User, Search, Users, ArrowLeft, X, ChevronRight, Sparkles, Globe, Pencil, RefreshCw, AlertCircle, ShieldCheck, UserCheck, Lock, Activity, TrendingUp, Layers3, SlidersHorizontal, Settings, Megaphone, Eye } from "lucide-react";
 import { EventData } from "@/types/card";
 import { toast } from "sonner";
 import { getEventStatus } from "@/lib/utils";
@@ -37,8 +37,6 @@ import {
   dashboardPreviewBannerInner,
 } from "@/lib/ui/dashboard-shell";
 
-import { useSearchParams } from "next/navigation";
-import { PromotionChannelSelect } from "@/components/admin/promotion/PromotionChannelSelect";
 
 type DashboardEventData = EventData & { attendeeCount: number };
 type OrgMemberRow = {
@@ -123,18 +121,6 @@ function DashboardContent() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [adminConsoleTab, setAdminConsoleTab] = useState<"overview" | "promotion">(
-    searchParams.get("tab") === "promotion" ? "promotion" : "overview"
-  );
-
-  useEffect(() => {
-    const tab = searchParams.get("tab");
-    if (tab === "promotion") {
-      setAdminConsoleTab("promotion");
-    } else if (tab === "overview") {
-      setAdminConsoleTab("overview");
-    }
-  }, [searchParams]);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isUsernameModalOpen, setIsUsernameModalOpen] = useState(false);
   const [usernameDraft, setUsernameDraft] = useState("");
@@ -444,12 +430,15 @@ function DashboardContent() {
             }
             if (profileRow?.organizationName?.trim() && !userIsOrgOwner) {
               try {
-                const joinRes = await fetch("/api/organization-join-requests", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
-                });
-                if (joinRes.ok) {
+                const [joinRes, myJoinRes] = await Promise.all([
+                  fetch("/api/organization-join-requests", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ organizationName: profileRow.organizationName.trim() }),
+                  }).catch(() => null),
+                  fetch("/api/organization-join-requests/mine").catch(() => null),
+                ]);
+                if (joinRes?.ok) {
                   const joinPayload = await readResponsePayload(joinRes);
                   const joinData = asPayloadRecord(joinPayload);
                   const status = String(joinData?.status || "").toLowerCase();
@@ -459,24 +448,21 @@ function DashboardContent() {
                     gateStatus = "awaiting_owner";
                   }
                 }
-              } catch {}
-            }
-            const myJoinRes = await fetch("/api/organization-join-requests/mine").catch(() => null);
-            try {
-              if (myJoinRes?.ok) {
-                const myJoinPayload = await readResponsePayload(myJoinRes);
-                if (Array.isArray(myJoinPayload?.data)) {
-                  setMyOrgJoinRequests(myJoinPayload.data);
-                  if (
-                    myJoinPayload.data.some(
-                      (req: { status?: string }) => String(req.status || "").toLowerCase() === "pending",
-                    )
-                  ) {
-                    gateStatus = "pending";
+                if (myJoinRes?.ok) {
+                  const myJoinPayload = await readResponsePayload(myJoinRes);
+                  if (Array.isArray(myJoinPayload?.data)) {
+                    setMyOrgJoinRequests(myJoinPayload.data);
+                    if (
+                      myJoinPayload.data.some(
+                        (req: { status?: string }) => String(req.status || "").toLowerCase() === "pending",
+                      )
+                    ) {
+                      gateStatus = "pending";
+                    }
                   }
                 }
-              }
-            } catch {}
+              } catch {}
+            }
             setJoinGateStatus(gateStatus);
             setJoinGateOrgName(profileRow?.organizationName?.trim() || "");
           }
@@ -1366,26 +1352,6 @@ function DashboardContent() {
                 </ShadButton>
               </div>
             )}
-            {!isPreviewMode && !hasPendingOrgJoin && (
-              <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
-                <ShadButton
-                  variant="secondary"
-                  onClick={() => {
-                    if (isOrgAdminMode) {
-                      setAdminConsoleTab("promotion");
-                      const el = document.getElementById("admin-console-section");
-                      if (el) el.scrollIntoView({ behavior: "smooth" });
-                    } else {
-                      router.push("/dashboard/promotions");
-                    }
-                  }}
-                  className="w-full justify-center whitespace-nowrap lg:w-auto lg:min-w-[168px] border-hairline-strong text-ink hover:bg-surface cursor-pointer"
-                >
-                  <Megaphone size={18} />
-                  <span>Promotion</span>
-                </ShadButton>
-              </div>
-            )}
             {!isPreviewMode && (
               <div className="w-full shrink-0 lg:w-auto lg:max-w-fit">
                 <ShadButton
@@ -1442,43 +1408,7 @@ function DashboardContent() {
                     <p className="text-sm text-muted">Operate campaigns, team access, and approvals from one command layer.</p>
                   </div>
                 </div>
-                {/* Admin Console Tabs: Overview & Promotion */}
-                <div className="flex items-center gap-1.5 rounded-lg border border-border/70 bg-white/95 p-1 shadow-xs">
-                  <button
-                    type="button"
-                    onClick={() => setAdminConsoleTab("overview")}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all cursor-pointer",
-                      adminConsoleTab === "overview"
-                        ? "bg-primary text-white shadow-xs"
-                        : "text-muted hover:text-heading hover:bg-surface"
-                    )}
-                  >
-                    <Activity size={14} />
-                    <span>Overview</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setAdminConsoleTab("promotion")}
-                    className={cn(
-                      "flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all cursor-pointer",
-                      adminConsoleTab === "promotion"
-                        ? "bg-primary text-white shadow-xs"
-                        : "text-muted hover:text-heading hover:bg-surface"
-                    )}
-                  >
-                    <Megaphone size={14} />
-                    <span>Promotion</span>
-                  </button>
-                </div>
               </div>
-
-              {adminConsoleTab === "promotion" ? (
-                <div className="pt-2">
-                  <PromotionChannelSelect />
-                </div>
-              ) : (
-                <>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
                 {[
@@ -1622,8 +1552,6 @@ function DashboardContent() {
                   </Card>
                 </motion.div>
               </div>
-                </>
-              )}
             </CardContent>
             </Card>
           </motion.div>
@@ -2084,10 +2012,53 @@ function DashboardContent() {
                   </div>
                   
                   <Separator className="mt-auto" />
-                  <div className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "mt-3 h-auto justify-between px-0 text-sm font-medium text-heading hover:text-ink hover:bg-white/20 rounded-inline cursor-pointer group-hover:text-ink")}>
-                    View Campaign
-                    <motion.span {...hoverIconNudge(3)} className="inline-flex">
-                      <ChevronRight size={20} className="transition-transform duration-200" />
+                  <div className="mt-3 flex items-center justify-between gap-2 pt-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <ShadButton
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(eventHref);
+                        }}
+                        className="text-xs h-7 px-2.5 font-medium border border-border/70 hover:border-primary/40 hover:bg-primary/5 text-heading cursor-pointer"
+                      >
+                        <Eye size={12} className="mr-1 text-muted" />
+                        View
+                      </ShadButton>
+
+                      <ShadButton
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`${eventHref}${eventHref.includes("?") ? "&" : "?"}edit=true`);
+                        }}
+                        className="text-xs h-7 px-2.5 font-medium border border-border/70 hover:border-primary/40 hover:bg-primary/5 text-heading cursor-pointer"
+                      >
+                        <Pencil size={12} className="mr-1 text-muted" />
+                        Edit
+                      </ShadButton>
+
+                      <ShadButton
+                        type="button"
+                        variant="secondary"
+                        size="xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          router.push(`/dashboard/promotions?eventId=${evt.id}&eventName=${encodeURIComponent(evt.name)}`);
+                        }}
+                        className="text-xs h-7 px-2.5 font-medium border border-primary/30 bg-primary/8 text-primary hover:bg-primary/15 transition-colors cursor-pointer"
+                      >
+                        <Megaphone size={12} className="mr-1 text-primary" />
+                        Promotion
+                      </ShadButton>
+                    </div>
+
+                    <motion.span {...hoverIconNudge(3)} className="inline-flex text-muted group-hover:text-ink transition-colors">
+                      <ChevronRight size={18} />
                     </motion.span>
                   </div>
                   </Card>
@@ -2746,6 +2717,7 @@ function DashboardContent() {
             </div>
           </DialogContent>
       </Dialog>
+
     </main>
   );
 }

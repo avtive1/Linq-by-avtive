@@ -34,6 +34,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   const reqHeaders = new Headers(request.headers);
   reqHeaders.set("x-request-id", requestId);
 
+  const withRequestId = (response: NextResponse) => {
+    response.headers.set("x-request-id", requestId);
+    return response;
+  };
+
   if (pathname.startsWith("/api/")) {
     // Neon Auth owns its callback protocol. All product API mutations are
     // browser-origin checked here so individual routes cannot forget CSRF protection.
@@ -83,6 +88,14 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return res;
   }
 
+  const isProtected = isProtectedRoute.test(pathname);
+  const isAuth = isAuthRoute(request);
+
+  // Fast path: bypass all auth parsing for public non-auth routes
+  if (!isProtected && !isAuth) {
+    return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
+  }
+
   const { AUTH_COOKIE_NAME, verifySessionToken } = await import("@/lib/auth/session-token");
   const jwtCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
   let jwtPayload: { userId: string; email: string } | null = null;
@@ -99,7 +112,16 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     }
   }
 
-  const { userId: clerkUserId } = await auth();
+  let clerkUserId: string | null = null;
+  if (!jwtPayload && !session?.user?.id && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+    try {
+      const clerkAuth = await auth();
+      clerkUserId = clerkAuth?.userId || null;
+    } catch {
+      clerkUserId = null;
+    }
+  }
+
   const neonUserId = String(session?.user?.id || "").trim();
   const userId = jwtPayload?.userId || neonUserId || clerkUserId || undefined;
 
@@ -111,18 +133,13 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     .filter(Boolean);
   const isAdminUser = tokenRole === "admin" || Boolean(tokenEmail && adminEmails.includes(tokenEmail));
 
-  const withRequestId = (response: NextResponse) => {
-    response.headers.set("x-request-id", requestId);
-    return response;
-  };
-
-  if (isProtectedRoute.test(pathname) && !userId) {
+  if (isProtected && !userId) {
     return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
   }
   if (pathname.startsWith("/dashboard") && userId && isAdminUser && !url.searchParams.get("impersonate")) {
     return withRequestId(NextResponse.redirect(new URL("/admin", request.url)));
   }
-  if (isAuthRoute(request) && userId) {
+  if (isAuth && userId) {
     return withRequestId(
       NextResponse.redirect(new URL(isAdminUser ? "/admin" : "/dashboard", request.url)),
     );

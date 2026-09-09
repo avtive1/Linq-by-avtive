@@ -516,7 +516,8 @@ export default function OrganizationRegisterPage() {
               alt="Linq logo"
               width={100}
               height={28}
-              className="h-7 w-auto object-contain"
+              style={{ width: "auto" }}
+              className="h-7 object-contain"
               priority
             />
           </Link>

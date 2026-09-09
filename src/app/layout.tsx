@@ -39,7 +39,18 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const hasClerkKey = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const content = (
+    <>
+      <Toaster position="top-center" richColors />
+      {children}
+      <Analytics />
+      <SpeedInsights />
+    </>
+  );
+
   return (
     <html
       lang="en"
@@ -47,12 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${dmSans.variable} ${dmMono.variable} font-sans`}
     >
       <body suppressHydrationWarning className={dmSans.className}>
-        <ClerkProvider>
-          <Toaster position="top-center" richColors />
-          {children}
-          <Analytics />
-          <SpeedInsights />
-        </ClerkProvider>
+        {hasClerkKey ? <ClerkProvider>{content}</ClerkProvider> : content}
       </body>
     </html>
   );

@@ -60,6 +60,7 @@ import {
   MoreVertical,
   AlertCircle,
   QrCode,
+  Megaphone,
 } from "lucide-react";
 import { QrAttendanceScannerModal } from "@/components/QrAttendanceScannerModal";
 
@@ -484,6 +485,21 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
             horizontal_text_color: String(eventRecord.horizontal_text_color || ""),
             vertical_text_color: String(eventRecord.vertical_text_color || ""),
           });
+        }
+
+        if (searchParams.get("edit") === "true") {
+          setEditForm({
+            name: String(eventRecord.name || ""),
+            description: String(eventRecord.description || ""),
+            location: eventRecord.location_type === "webinar" ? "" : String(eventRecord.location || ""),
+            location_type: (eventRecord.location_type as "onsite" | "webinar" | undefined) || "onsite",
+            date: String(eventRecord.date || ""),
+            time: String(eventRecord.time || ""),
+            logo: String(eventRecord.logo_url || ""),
+          });
+          setIsEditOpen(true);
+        } else if (searchParams.get("promotion") === "true" || searchParams.get("tab") === "promotion") {
+          router.push(`/dashboard/promotions?eventId=${id}&eventName=${encodeURIComponent(String(eventRecord.name || ""))}`);
         }
 
         const [memberResult, attendeeRes] = await Promise.all([
@@ -1885,6 +1901,14 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
                     Edit
                   </ShadButton>
                 )}
+                <ShadButton
+                  variant="secondary"
+                  onClick={() => router.push(`/dashboard/promotions?eventId=${eventData.id}&eventName=${encodeURIComponent(eventData.name)}`)}
+                  className="transition-shadow duration-200 hover:shadow-md hover:border-primary/50 hover:bg-primary/9 border-primary/30 text-primary hover:text-primary-strong cursor-pointer"
+                >
+                  <Megaphone size={16} />
+                  Promotion
+                </ShadButton>
                 <ShadButton
                   variant="secondary"
                   onClick={() => (canManageEvent ? openSponsorsModal() : undefined)}
@@ -3891,6 +3915,7 @@ function EventContent({ params }: { params: Promise<{ id: string }> }) {
           </div>
         </div>
       )}
+
     </main>
   );
 }

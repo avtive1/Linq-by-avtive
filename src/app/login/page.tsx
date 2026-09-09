@@ -13,7 +13,7 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { AlertCircle, ArrowLeft, Lock, Mail } from "lucide-react";
+import { AlertCircle, ArrowLeft, Eye, EyeOff, Lock, Mail, X } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -166,151 +166,184 @@ export default function LoginPage() {
     }
   };
 
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
-    <main className="relative flex min-h-dvh w-full items-center justify-center overflow-x-hidden overflow-y-auto bg-surface px-[max(0.75rem,env(safe-area-inset-left))] py-10 sm:px-[max(1.5rem,env(safe-area-inset-left))]">
-      <GradientBackground />
-      <div className="relative z-10 w-full max-w-[520px] min-w-0 animate-slide-up px-1 sm:px-0">
-        <Link
-          href="/"
-          className={cn(
-            buttonVariants({ variant: "ghost", size: "sm" }),
-            "mb-5 h-auto gap-2 px-0 text-[13px] font-normal text-text-muted hover:bg-transparent hover:text-text-primary hover:underline focus-visible:ring-royal-indigo/30 group",
-          )}
-        >
-          <span className={cn(buttonVariants({ variant: "outline", size: "icon-sm" }), "bg-canvas/80 backdrop-blur-sm")}>
-            <ArrowLeft size={16} className="text-text-primary transition-transform group-hover:-translate-x-0.5" />
-          </span>
-          <span>Back to Home</span>
-        </Link>
+    <main className="min-h-dvh w-full bg-white flex flex-col justify-center select-text">
+      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-dvh w-full">
+        {/* Left Column: Login Form */}
+        <div className="flex flex-col justify-center items-center px-6 sm:px-12 lg:px-16 xl:px-24 py-12">
+          <div className="w-full max-w-md flex flex-col">
+            {/* Logo */}
+            <div className="mb-8">
+              <Link href="/">
+                <Image
+                  src="/linq-logo.png"
+                  alt="Linq"
+                  width={110}
+                  height={32}
+                  style={{ width: "auto" }}
+                  className="h-8 object-contain cursor-pointer"
+                  priority
+                />
+              </Link>
+            </div>
 
-        <div className="mb-6 flex justify-center">
-          <Image
-            src="/linq-logo.png"
-            alt="Linq"
-            width={110}
-            height={32}
-            className="h-8 w-auto object-contain"
-            priority
-          />
-        </div>
+            {/* Title */}
+            <h1 className="text-2xl sm:text-3xl font-bold text-heading tracking-tight mb-6">
+              Log in to Linq
+            </h1>
 
-        <Card className="rounded-lg bg-canvas shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
-          <form onSubmit={handleSubmit}>
-            <CardHeader className="gap-4 px-6 pt-6 sm:px-8 sm:pt-8">
-              <CardTitle className="text-[32px] font-medium leading-[1.15] tracking-[-0.01em] text-text-primary">
-                Welcome back
-              </CardTitle>
-              <CardDescription className="text-[15px] leading-[1.65] text-text-muted">
-                Please enter your details to sign in.
-              </CardDescription>
-            </CardHeader>
-
-            <CardContent className="flex flex-col gap-8 px-6 pb-6 sm:px-8 sm:pb-8">
-              <Separator />
-
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <Mail aria-hidden="true" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id="email"
-                      required
-                      type="email"
-                      autoComplete="email"
-                      placeholder="you@example.com"
-                      value={email}
-                      aria-invalid={Boolean(error)}
-                      onChange={(event) => setEmail(event.target.value)}
-                    />
-                  </InputGroup>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {/* Email Address */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="email" className="text-xs font-semibold text-slate-700">
+                  Email address
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="info@avtive.app"
+                    className="w-full h-11 px-3.5 pr-9 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5B4DFB]/30 focus:border-[#5B4DFB] transition-all"
+                  />
+                  {email && (
+                    <button
+                      type="button"
+                      onClick={() => setEmail("")}
+                      className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
                 </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <Lock aria-hidden="true" />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      id="password"
-                      required
-                      type="password"
-                      autoComplete="current-password"
-                      placeholder="Password"
-                      value={password}
-                      aria-invalid={Boolean(error)}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </InputGroup>
-                </div>
-
-                {needsOtpStep ? (
-                  <div className="grid gap-2">
-                    <Label htmlFor="otp">Email verification code</Label>
-                    <InputGroup>
-                      <InputGroupAddon>
-                        <Lock aria-hidden="true" />
-                      </InputGroupAddon>
-                      <InputGroupInput
-                        id="otp"
-                        required
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        placeholder="6-digit code"
-                        value={otp}
-                        aria-invalid={Boolean(error)}
-                        onChange={(event) => setOtp(event.target.value)}
-                      />
-                    </InputGroup>
-                  </div>
-                ) : null}
               </div>
 
-              {needsOtpStep ? (
-                <Alert>
-                  <Mail aria-hidden="true" />
-                  <AlertDescription>
-                    We sent a code to your email. Enter it to finish signing in to your organization account.
-                  </AlertDescription>
-                </Alert>
-              ) : null}
+              {/* Password */}
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="password" className="text-xs font-semibold text-slate-700">
+                  Password
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full h-11 px-3.5 pr-9 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5B4DFB]/30 focus:border-[#5B4DFB] transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
 
-              {error ? (
-                <Alert variant="destructive">
-                  <AlertCircle aria-hidden="true" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              ) : null}
+              {/* Forgot Password Link */}
+              <div className="flex justify-start">
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-medium text-[#5B4DFB] hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
 
-              <Button
+              {/* OTP Field if needed */}
+              {needsOtpStep && (
+                <div className="flex flex-col gap-1.5 mt-2">
+                  <label htmlFor="otp" className="text-xs font-semibold text-slate-700">
+                    Email verification code
+                  </label>
+                  <input
+                    id="otp"
+                    type="text"
+                    required
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="6-digit code"
+                    className="w-full h-11 px-3.5 rounded-lg border border-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#5B4DFB]/30 focus:border-[#5B4DFB] transition-all"
+                  />
+                </div>
+              )}
+
+              {/* Error Alert */}
+              {error && (
+                <div className="rounded-lg bg-red-50 border border-red-200/80 p-3 text-xs font-medium text-red-700 flex items-start gap-2">
+                  <AlertCircle size={15} className="shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
                 type="submit"
-                className="w-full"
-                size="lg"
                 disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
+                className="mt-2 w-full rounded-lg bg-[#5B4DFB] hover:bg-[#4d3feb] text-white text-sm font-semibold py-2.5 px-4 shadow-xs transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and sign in" : "Sign in"}
-              </Button>
-              {needsOtpStep ? (
-                <Button
+                {isSubmitting ? "Signing in..." : needsOtpStep ? "Verify and login" : "Login"}
+              </button>
+
+              {/* Register Link */}
+              <div className="text-center mt-4 text-xs text-neutral-600">
+                Don&apos;t have an account?{" "}
+                <Link
+                  href="/organization/register"
+                  className="font-semibold text-[#5B4DFB] hover:underline"
+                >
+                  Register here
+                </Link>
+              </div>
+
+              {needsOtpStep && (
+                <button
                   type="button"
-                  variant="link"
-                  className="mx-auto h-auto text-[13px] text-text-muted hover:text-text-primary"
                   onClick={() => {
                     setNeedsOtpStep(false);
                     setOtp("");
                     setError("");
                   }}
+                  className="text-center text-xs text-neutral-500 hover:text-neutral-700 mt-1 cursor-pointer"
                 >
                   Use a different account
-                </Button>
-              ) : null}
-            </CardContent>
-          </form>
-        </Card>
+                </button>
+              )}
+            </form>
+          </div>
+        </div>
+
+        {/* Right Column: Hero Branding */}
+        <div className="hidden lg:flex flex-col justify-center items-start bg-white lg:bg-[#fafbff] border-l border-slate-100 px-10 xl:px-20 py-12">
+          <div className="max-w-xl text-left">
+            {/* Eyebrow / Category Tagline */}
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#818CF8] mb-4 sm:mb-5">
+              DIGITAL NETWORKING · EVENT CARDS · ORGANIZATION PORTALS
+            </p>
+
+            {/* Main Headline */}
+            <h2 className="text-4xl sm:text-5xl xl:text-[54px] font-extrabold tracking-tight text-[#111827] leading-[1.1] mb-6">
+              Every connection,
+              <span className="block text-[#5B4DFB] mt-1">creates opportunity</span>
+            </h2>
+
+            {/* Body Paragraph */}
+            <p className="text-base sm:text-[16px] font-normal leading-relaxed text-[#64748B] max-w-xl mb-8">
+              Linq turns event registration and organization onboarding into a single, elegant step. Share one link, let attendees generate beautiful, scannable cards, and manage every organization seamlessly.
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   );

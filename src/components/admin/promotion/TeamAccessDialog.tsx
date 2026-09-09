@@ -10,6 +10,7 @@ import { TeamAccessRole } from "./types";
 interface TeamAccessDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  eventId?: string;
 }
 
 const DEFAULT_ROLES: TeamAccessRole[] = [
@@ -18,16 +19,15 @@ const DEFAULT_ROLES: TeamAccessRole[] = [
   { id: "event_team", label: "Event Team", enabled: false },
 ];
 
-const STORAGE_KEY = "linq_promotion_team_access";
-
-export function TeamAccessDialog({ open, onOpenChange }: TeamAccessDialogProps) {
+export function TeamAccessDialog({ open, onOpenChange, eventId }: TeamAccessDialogProps) {
   const [roles, setRoles] = useState<TeamAccessRole[]>(DEFAULT_ROLES);
   const [isSaving, setIsSaving] = useState(false);
+  const storageKey = eventId ? `linq_promotion_team_access_${eventId}` : "linq_promotion_team_access";
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       try {
-        const stored = localStorage.getItem(STORAGE_KEY);
+        const stored = localStorage.getItem(storageKey);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
@@ -38,7 +38,7 @@ export function TeamAccessDialog({ open, onOpenChange }: TeamAccessDialogProps) 
         // Fallback to default
       }
     }
-  }, [open]);
+  }, [open, storageKey]);
 
   const toggleRole = (roleId: string) => {
     if (roleId === "admin") return;
@@ -51,7 +51,7 @@ export function TeamAccessDialog({ open, onOpenChange }: TeamAccessDialogProps) 
     setIsSaving(true);
     try {
       if (typeof window !== "undefined") {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(roles));
+        localStorage.setItem(storageKey, JSON.stringify(roles));
       }
       toast.success("Team access updated");
       onOpenChange(false);

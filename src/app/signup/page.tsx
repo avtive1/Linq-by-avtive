@@ -224,7 +224,8 @@ export default function SignupPage() {
             alt="Linq"
             width={110}
             height={32}
-            className="h-8 w-auto object-contain"
+            style={{ width: "auto" }}
+            className="h-8 object-contain"
             priority
           />
         </div>
