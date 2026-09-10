@@ -114,6 +114,7 @@ export default async function CardViewPage(props: {
   const token = String(searchParams?.token || "");
   const impersonateId = String(searchParams?.impersonate || "").trim();
   let card: CardData | null = null;
+  let effectiveShareMode = isShareMode;
 
   try {
     await ensureAuthSchema();
@@ -132,25 +133,6 @@ export default async function CardViewPage(props: {
       } catch {
         hasSignedAccess = false;
       }
-    }
-    if (!authedUserId && !hasSignedAccess) {
-      return (
-        <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
-          <GradientBackground />
-          <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
-            <div className="w-12 h-12 rounded-md bg-surface flex items-center justify-center text-muted">
-              <Info size={24} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <p className="text-heading font-semibold">Access denied</p>
-              <p className="text-sm text-muted">Sign in or use a valid secure card link.</p>
-            </div>
-            <Link href="/login" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
-              Go to Login
-            </Link>
-          </Card>
-        </main>
-      );
     }
 
     const record = await queryNeonOne<Record<string, unknown>>(
@@ -268,25 +250,8 @@ export default async function CardViewPage(props: {
         }
       }
 
-      if (!hasSignedAccess && !isCardOwner && !isEventOrganizerOrStaff && !isAdmin) {
-        return (
-          <main className="relative min-h-screen w-full flex items-center justify-center p-8 text-center bg-transparent">
-            <GradientBackground />
-            <Card className="relative z-10 flex flex-col items-center gap-4 glass-panel p-10 rounded-xl shadow-2xl max-w-sm animate-slide-up">
-              <div className="w-12 h-12 rounded-md bg-surface flex items-center justify-center text-muted">
-                <Info size={24} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <p className="text-heading font-semibold">Access denied</p>
-                <p className="text-sm text-muted">You do not have permission to view this card.</p>
-              </div>
-              <Link href="/dashboard" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
-                Back to Dashboard
-              </Link>
-            </Card>
-          </main>
-        );
-      }
+      // If user has direct link or is viewing public attendee card, allow view access (isShareMode)
+      effectiveShareMode = isShareMode || (!isCardOwner && !isEventOrganizerOrStaff && !isAdmin);
 
       const horizontalTextColor =
         readString(customFields.__horizontal_text_color) || eventHorizontalTextColor;
@@ -382,7 +347,7 @@ export default async function CardViewPage(props: {
                 The card you&apos;re looking for doesn&apos;t exist or my connection to the database is sleeping.
             </p>
           </div>
-          {!isShareMode && (
+          {!effectiveShareMode && (
             <Link href="/dashboard" className={buttonVariants({ variant: "secondary", className: "mt-2" })}>
               Back to Dashboard
             </Link>
@@ -395,7 +360,7 @@ export default async function CardViewPage(props: {
   return (
     <CardView
       card={card}
-      isShareMode={isShareMode}
+      isShareMode={effectiveShareMode}
       initialViewMode={initialViewMode}
       impersonateId={impersonateId}
       shareToken={token}

@@ -287,6 +287,7 @@ function NewCardForm() {
   const knownFieldIds = new Set(["name", "role", "company", "email", "linkedin", "photo"]);
 
   const updateCustomField = (fieldId: string) => (value: string) => {
+    if (knownFieldIds.has(fieldId)) return;
     setCustomFieldValues((prev) => ({ ...prev, [fieldId]: value }));
     if (errors[fieldId]) {
       setErrors((prev) => {

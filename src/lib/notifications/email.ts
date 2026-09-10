@@ -22,13 +22,20 @@ type SendEmailResult = {
 export async function sendTransactionalEmail(input: AccessRequestEmailInput): Promise<SendEmailResult> {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@avtive.app";
+  const rawFrom = process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@avtive.app";
+  const fromName = process.env.EMAIL_FROM_NAME || "AVTIVE";
+  const replyTo = process.env.EMAIL_REPLY_TO || rawFrom;
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = Number(process.env.SMTP_PORT || "587");
 
   if (!user || !pass) {
     return { sent: false, error: "Email provider not configured. Please set SMTP_USER and SMTP_PASS." };
   }
+
+  // Ensure from header is RFC 5322 formatted (e.g. "AVTIVE <hello@avtive.app>")
+  const formattedFrom = rawFrom.includes("<")
+    ? rawFrom
+    : `"${fromName}" <${rawFrom.trim()}>`;
 
   try {
     const transporter = nodemailer.createTransport({
@@ -56,13 +63,19 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
     });
 
     await transporter.sendMail({
-      from: from,
+      from: formattedFrom,
+      replyTo: replyTo,
       to: input.to,
       subject: input.subject,
       text: input.text,
       html: input.html,
       attachments: inlineAttachments,
       messageId: input.messageId,
+      headers: {
+        "X-Entity-Ref-ID": input.messageId || `${Date.now()}`,
+        "List-Unsubscribe": `<mailto:${rawFrom.replace(/.*<([^>]+)>.*/, "$1").trim()}?subject=unsubscribe>`,
+        "Auto-Submitted": "auto-generated",
+      },
     });
 
     return { sent: true };

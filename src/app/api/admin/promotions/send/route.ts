@@ -158,6 +158,25 @@ export async function POST(request: NextRequest) {
 
       // Dispatch to recipients (up to batch limit)
       const batch = emailRecipients.slice(0, 100);
+      const attachments = [];
+      if (attachmentUrl && attachmentName) {
+        if (attachmentUrl.startsWith("data:")) {
+          const match = attachmentUrl.match(/^data:([^;]+);base64,(.+)$/);
+          if (match) {
+            attachments.push({
+              filename: attachmentName,
+              content: Buffer.from(match[2], "base64"),
+              contentType: match[1],
+            });
+          }
+        } else if (attachmentUrl.startsWith("http://") || attachmentUrl.startsWith("https://")) {
+          attachments.push({
+            filename: attachmentName,
+            path: attachmentUrl,
+          });
+        }
+      }
+
       for (const recipient of batch) {
         try {
           const res = await sendTransactionalEmail({
@@ -165,6 +184,7 @@ export async function POST(request: NextRequest) {
             subject: subject || "Linq Event Newsletter",
             text: `${heading ? heading + "\n\n" : ""}${message}`,
             html: htmlBody,
+            attachments: attachments.length > 0 ? attachments : undefined,
           });
           if (res.sent) {
             sentCount += 1;

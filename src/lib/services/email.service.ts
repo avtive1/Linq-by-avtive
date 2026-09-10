@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import { enqueueBrandedTransactionalEmail, type EmailAttachmentPayload } from "@/lib/notifications/email-outbox";
 import { toPublicCompactUrl } from "@/lib/services/shortLink.service";
 import {
@@ -55,6 +56,31 @@ export async function sendRegistrationApprovedEmail(input: {
         code: attendanceCode,
       });
 
+      if (qrDataUrl) {
+        const base64Content = qrDataUrl.replace(/^data:image\/png;base64,/, "");
+        attachments.push({
+          filename: "attendance-qr.png",
+          content: base64Content,
+          cid: ATTENDANCE_QR_CID,
+          contentType: "image/png",
+          contentDisposition: "inline",
+        });
+      }
+    } catch {
+      qrDataUrl = null;
+    }
+  }
+
+  // Fallback to card link QR code if attendance code was not generated
+  if (!qrDataUrl && (input.cardId || cardLink)) {
+    try {
+      const targetUrl = cardLink || `${process.env.NEXT_PUBLIC_APP_URL || "https://linq.avtive.app"}/cards/${input.cardId}?share=true`;
+      qrDataUrl = await QRCode.toDataURL(targetUrl, {
+        margin: 1,
+        width: 280,
+        color: { dark: "#1c1c1e", light: "#ffffff" },
+        errorCorrectionLevel: "H",
+      });
       if (qrDataUrl) {
         const base64Content = qrDataUrl.replace(/^data:image\/png;base64,/, "");
         attachments.push({
@@ -131,6 +157,31 @@ export async function sendVisitorAttendanceCodeEmail(input: {
         code: input.attendanceCode,
       });
 
+      if (qrDataUrl) {
+        const base64Content = qrDataUrl.replace(/^data:image\/png;base64,/, "");
+        attachments.push({
+          filename: "attendance-qr.png",
+          content: base64Content,
+          cid: ATTENDANCE_QR_CID,
+          contentType: "image/png",
+          contentDisposition: "inline",
+        });
+      }
+    } catch {
+      qrDataUrl = null;
+    }
+  }
+
+  // Fallback to card link QR code if attendance code was not generated
+  if (!qrDataUrl && (cardId || cardLink)) {
+    try {
+      const targetUrl = cardLink || `${process.env.NEXT_PUBLIC_APP_URL || "https://linq.avtive.app"}/cards/${cardId}?share=true`;
+      qrDataUrl = await QRCode.toDataURL(targetUrl, {
+        margin: 1,
+        width: 280,
+        color: { dark: "#1c1c1e", light: "#ffffff" },
+        errorCorrectionLevel: "H",
+      });
       if (qrDataUrl) {
         const base64Content = qrDataUrl.replace(/^data:image\/png;base64,/, "");
         attachments.push({

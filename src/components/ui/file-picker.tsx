@@ -84,6 +84,15 @@ export function FilePicker({
       return;
     }
 
+    // Immediately update live preview on file selection
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string" && isValidImageDataUrl(reader.result)) {
+        onChange(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+
     // Blob URLs are lighter and more reliable for crop previews than huge data URLs.
     const objectUrl = URL.createObjectURL(file);
     setTempImage(objectUrl);

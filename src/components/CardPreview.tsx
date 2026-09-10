@@ -1261,43 +1261,52 @@ export function CardPreview({
             </div>
           </div>
         ) : (
-          <div className="absolute left-1/2 top-[400px] -translate-x-1/2 z-10 flex flex-col items-center text-center w-[480px] px-6">
-            <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-white/5 border border-white/15 backdrop-blur-md shadow-2xl w-full max-w-[420px]">
+          <div className="absolute left-1/2 top-[330px] -translate-x-1/2 z-10 flex flex-col items-center text-center w-[480px] px-6">
+            <div className="flex flex-col items-center justify-center p-7 rounded-3xl bg-white/5 border border-white/15 backdrop-blur-md shadow-2xl w-full max-w-[380px]">
               <div 
-                className="flex items-center justify-center px-[20px] py-[8px] rounded-[6px] shadow-sm mb-4"
+                className="flex items-center justify-center px-[20px] py-[8px] rounded-[6px] shadow-sm mb-3"
                 style={{ 
                   backgroundColor: palette.pillBg,
                   border: `1px solid ${palette.pillBorder}`,
                 }}
               >
-                <span className="text-[15px] font-black text-white tracking-[2px] uppercase leading-none">
-                  OFFICIAL BADGE
+                <span className="text-[14px] font-black text-white tracking-[2px] uppercase leading-none">
+                  OFFICIAL ATTENDEE BADGE
                 </span>
               </div>
+
+              {/* Scannable Attendance QR Code (Badge Back Side) */}
+              <div className="flex h-[210px] w-[210px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-3 shadow-inner my-2">
+                {qrUrl ? (
+                  <img src={qrUrl} className="h-full w-full object-contain" alt="Attendance QR Code" crossOrigin="anonymous" />
+                ) : (
+                  <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-slate-50 p-2 text-center">
+                    <p className="m-0 text-[11px] font-semibold text-slate-500 leading-tight">
+                      Generating QR...
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <p className="m-0 mt-[10px] text-[14px] font-bold text-cyan-300 tracking-wide uppercase text-center leading-tight">
+                Scan to Connect & Check In
+              </p>
               <h2 
-                className="m-0 text-[32px] font-black leading-tight tracking-tight"
+                className="m-0 mt-[6px] text-[26px] font-black leading-tight tracking-tight truncate max-w-[340px]"
                 style={{ color: hasVerticalTextOverride ? verticalTextColor : "#FFFFFF" }}
               >
                 {attendeeName || "Attendee"}
               </h2>
               {attendeeRole && (
-                <p className="m-0 mt-[6px] text-[18px] font-bold text-white/90 uppercase tracking-wide">
+                <p className="m-0 mt-[4px] text-[16px] font-bold text-white/90 uppercase tracking-wide truncate max-w-[340px]">
                   {attendeeRole}
                 </p>
               )}
               {attendeeCompany && (
-                <p className="m-0 mt-[4px] text-[16px] font-normal text-white/75">
+                <p className="m-0 mt-[2px] text-[14px] font-normal text-white/75 truncate max-w-[340px]">
                   {attendeeCompany}
                 </p>
               )}
-              <div className="mt-6 pt-6 border-t border-white/10 w-full flex flex-col items-center gap-1">
-                <span className="text-[13px] font-semibold text-cyan-300 uppercase tracking-wider">
-                  {data.eventName || "Event Pass"}
-                </span>
-                <span className="text-[12px] text-white/60">
-                  {data.sessionDate || "Event Date"} • {data.location || "Venue"}
-                </span>
-              </div>
             </div>
           </div>
         )}
@@ -1324,14 +1333,13 @@ export function CardPreview({
   }
 
   // ==========================================
-  // HORIZONTAL CARD LAYOUT (Attendee Card - 1200 x 628)
-  // Front (Side 1): Full profile, photo & details (NO QR)
-  // Back (Side 2): QR code for connect & check-in
+  // HORIZONTAL CARD LAYOUT (Post Card - 1200 x 628)
+  // Strictly Front layout (No Back side, No QR code)
   // ==========================================
   return (
     <div
       id={id}
-      key={`${data.designType}-${horizontalSide}`}
+      key={data.designType || "horizontal-post"}
       className={`relative overflow-hidden shadow-2xl poster bg-[#04060A] ${surfaceMotionClass}`}
       style={{
         width: "1200px",
@@ -1447,104 +1455,67 @@ export function CardPreview({
         )}
       </div>
 
-      {/* Right Section: Side 1 (Front: Photo, Name, Role, Company, Socials - NO QR) / Side 2 (Back: QR Code) */}
-      {horizontalSide === 1 ? (
-        <div className="absolute right-[80px] top-[100px] z-10 flex flex-col items-center text-center w-[360px]">
-          {/* Circular Avatar */}
-          <div className={`relative flex h-[200px] w-[200px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
-            {hasRealPhoto ? (
-              <img
-                src={photoUrl}
-                alt={attendeeName ? `Photo of ${attendeeName}` : "Attendee photo"}
-                className="h-full w-full object-cover"
-                crossOrigin="anonymous"
-              />
-            ) : (
-              <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
-            )}
-          </div>
-
-          {/* Attendee Details */}
-          <div className="mt-[18px] flex flex-col items-center text-center w-full px-2">
-            <h2 
-              className="m-0 text-[32px] font-black leading-[1.15] tracking-tight truncate max-w-[340px]"
-              style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
-              title={attendeeName || "Attendee"}
-            >
-              {attendeeName || "Attendee"}
-            </h2>
-            {attendeeRole && (
-              <p 
-                className="m-0 mt-[6px] text-[19px] font-bold text-white/90 leading-tight uppercase tracking-wide truncate max-w-[340px]"
-                style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
-              >
-                {attendeeRole}
-              </p>
-            )}
-            {attendeeCompany && (
-              <p 
-                className="m-0 mt-[4px] text-[17px] font-normal text-white/75 leading-tight truncate max-w-[340px]"
-                style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
-              >
-                {attendeeCompany}
-              </p>
-            )}
-
-            {/* Social Icons Row */}
-            {validSocials.length > 0 && (
-              <div className="mt-[14px] flex items-center justify-center gap-[10px] flex-wrap max-w-[300px]">
-                {validSocials.map(({ platform, url }) => (
-                  <a
-                    key={platform}
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-white/10 border border-white/20 text-white/90 hover:bg-white/25 hover:text-white transition-colors"
-                    title={platform}
-                  >
-                    {getSocialPlatformIcon(platform, "h-[16px] w-[16px]")}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
+      {/* Right Section: Attendee Photo, Name, Role, Company, Socials (Strictly Front - NO QR) */}
+      <div className="absolute right-[80px] top-[100px] z-10 flex flex-col items-center text-center w-[360px]">
+        {/* Circular Avatar */}
+        <div className={`relative flex h-[200px] w-[200px] shrink-0 items-center justify-center overflow-hidden rounded-full border-[3px] border-white/20 shadow-2xl ${hasRealPhoto ? "bg-white/10" : "bg-slate-900"}`}>
+          {hasRealPhoto ? (
+            <img
+              src={photoUrl}
+              alt={attendeeName ? `Photo of ${attendeeName}` : "Attendee photo"}
+              className="h-full w-full object-cover"
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <DefaultAvatarPlaceholder className="h-full w-full object-cover" />
+          )}
         </div>
-      ) : (
-        <div className="absolute right-[80px] top-[100px] z-10 flex flex-col items-center text-center w-[360px]">
-          {/* Back: Scannable Attendance QR Card */}
-          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/15 rounded-3xl p-6 shadow-2xl backdrop-blur-md w-full max-w-[340px]">
-            <div className="flex h-[200px] w-[200px] shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-3 shadow-inner">
-              {qrUrl ? (
-                <img src={qrUrl} className="h-full w-full object-contain" alt="Attendance QR Code" crossOrigin="anonymous" />
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-slate-50 p-2 text-center">
-                  <p className="m-0 text-[11px] font-semibold text-slate-500 leading-tight">
-                    Generating QR...
-                  </p>
-                </div>
-              )}
-            </div>
 
-            <p className="m-0 mt-[14px] text-[15px] font-bold text-cyan-300 tracking-wide uppercase text-center leading-tight">
-              Scan to Connect & Check In
+        {/* Attendee Details */}
+        <div className="mt-[18px] flex flex-col items-center text-center w-full px-2">
+          <h2 
+            className="m-0 text-[32px] font-black leading-[1.15] tracking-tight truncate max-w-[340px]"
+            style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+            title={attendeeName || "Attendee"}
+          >
+            {attendeeName || "Attendee"}
+          </h2>
+          {attendeeRole && (
+            <p 
+              className="m-0 mt-[6px] text-[19px] font-bold text-white/90 leading-tight uppercase tracking-wide truncate max-w-[340px]"
+              style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
+            >
+              {attendeeRole}
             </p>
-            <h3 
-              className="m-0 mt-[6px] text-[20px] font-black text-white truncate max-w-[300px]"
-              style={{ color: hasHorizontalTextOverride ? horizontalTextColor : "#FFFFFF" }}
+          )}
+          {attendeeCompany && (
+            <p 
+              className="m-0 mt-[4px] text-[17px] font-normal text-white/75 leading-tight truncate max-w-[340px]"
+              style={{ color: hasHorizontalTextOverride ? horizontalTextColor : undefined }}
             >
-              {attendeeName || "Attendee"}
-            </h3>
-            {attendeeRole && (
-              <p className="m-0 text-[13px] text-white/70 uppercase tracking-wide">
-                {attendeeRole}
-              </p>
-            )}
-            <span className="m-0 text-[11px] text-white/50 font-medium leading-none mt-2">
-              Official Attendee Pass
-            </span>
-          </div>
+              {attendeeCompany}
+            </p>
+          )}
+
+          {/* Social Icons Row */}
+          {validSocials.length > 0 && (
+            <div className="mt-[14px] flex items-center justify-center gap-[10px] flex-wrap max-w-[300px]">
+              {validSocials.map(({ platform, url }) => (
+                <a
+                  key={platform}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-white/10 border border-white/20 text-white/90 hover:bg-white/25 hover:text-white transition-colors"
+                  title={platform}
+                >
+                  {getSocialPlatformIcon(platform, "h-[16px] w-[16px]")}
+                </a>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
