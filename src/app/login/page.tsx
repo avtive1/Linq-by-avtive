@@ -175,7 +175,8 @@ export default function LoginPage() {
                   alt="linq"
                   width={120}
                   height={36}
-                  className="w-[115px] sm:w-[120px] h-auto object-contain cursor-pointer"
+                  style={{ height: "auto" }}
+                  className="w-[115px] sm:w-[120px] object-contain cursor-pointer"
                   priority
                 />
               </Link>
