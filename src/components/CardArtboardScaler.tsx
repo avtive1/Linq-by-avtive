@@ -22,7 +22,7 @@ type CardArtboardScalerProps = {
   minScale?: number;
   maxScale?: number;
   padding?: number;
-  /** Slight undershoot for box fit so subpixel rounding never clips edges */
+  /** Scale factor multiplier (defaults to 1 for exact fit) */
   safetyFactor?: number;
 };
 
@@ -38,12 +38,12 @@ export function CardArtboardScaler({
   fillParent = false,
   minScale = 0.1,
   maxScale = 1,
-  padding = 2,
+  padding = 0,
   safetyFactor,
 }: CardArtboardScalerProps) {
   const frameRef = useRef<HTMLDivElement>(null);
-  const resolvedSafety = safetyFactor ?? (fitMode === "box" ? 0.92 : 1);
-  const [scale, setScale] = useState(minScale);
+  const resolvedSafety = safetyFactor ?? 1;
+  const [scale, setScale] = useState(1);
 
   useLayoutEffect(() => {
     const el = frameRef.current;
@@ -51,7 +51,7 @@ export function CardArtboardScaler({
 
     const measure = () => {
       const { width, height } = el.getBoundingClientRect();
-      if (width < 8 || height < 8) return;
+      if (width < 8 || (fitMode === "box" && height < 8)) return;
 
       const raw =
         fitMode === "box"
@@ -59,7 +59,7 @@ export function CardArtboardScaler({
           : scaleCardToFitWidth(artboardWidth, width, padding, maxScale, minScale);
       const next = raw * resolvedSafety;
       const clamped = clampCardPreviewScale(next, minScale, maxScale);
-      setScale((prev) => (Math.abs(prev - clamped) > 0.002 ? clamped : prev));
+      setScale((prev) => (Math.abs(prev - clamped) > 0.001 ? clamped : prev));
     };
 
     measure();
@@ -86,12 +86,13 @@ export function CardArtboardScaler({
           style={{ width: scaledWidth, height: scaledHeight }}
         >
           <div
-            className="absolute left-0 top-0"
+            className="absolute left-0 top-0 origin-top-left"
             style={{
               width: artboardWidth,
               height: artboardHeight,
               transform: `scale(${scale})`,
-              transformOrigin: "top left",
+              transformOrigin: "0 0",
+              WebkitFontSmoothing: "antialiased",
             }}
           >
             {children}
@@ -121,7 +122,7 @@ export function CardArtboardScaler({
           marginLeft: -artboardWidth / 2,
           transform: `scale(${scale})`,
           transformOrigin: "top center",
-          willChange: "transform",
+          WebkitFontSmoothing: "antialiased",
         }}
       >
         {children}
