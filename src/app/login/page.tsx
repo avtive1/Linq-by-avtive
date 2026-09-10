@@ -160,15 +160,15 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="w-full min-h-screen lg:h-screen lg:overflow-hidden bg-[#FFFFFF] flex flex-col justify-center select-text">
-      <div className="flex flex-col lg:flex-row w-full h-full min-h-screen lg:min-h-0">
+    <main className="w-full min-h-screen bg-[#FFFFFF] flex flex-col justify-center select-text overflow-x-hidden">
+      <div className="flex flex-col lg:flex-row w-full min-h-screen">
         {/* =========================================================================
             LEFT COLUMN: Authentication Form (~48% width)
            ========================================================================= */}
-        <section className="w-full lg:w-[48%] h-full flex flex-col justify-center items-center px-6 sm:px-12 lg:px-12 xl:px-16 2xl:px-24 py-10 lg:py-6 bg-[#FFFFFF] z-10">
-          <div className="w-full max-w-[500px] flex flex-col">
+        <section className="w-full lg:w-[48%] min-h-screen lg:min-h-0 flex flex-col justify-center items-center px-6 sm:px-10 lg:px-8 xl:px-14 2xl:px-20 py-8 sm:py-10 lg:py-6 bg-[#FFFFFF] z-10">
+          <div className="w-full max-w-[420px] sm:max-w-[460px] xl:max-w-[480px] flex flex-col my-auto">
             {/* LINQ LOGO */}
-            <div className="mb-[65px] lg:mb-[70px]">
+            <div className="mb-6 sm:mb-8 xl:mb-10 2xl:mb-12">
               <Link href="/" className="inline-block transition-opacity hover:opacity-90">
                 <Image
                   src="/linq-logo.png"
@@ -176,24 +176,24 @@ export default function LoginPage() {
                   width={120}
                   height={36}
                   style={{ height: "auto" }}
-                  className="w-[115px] sm:w-[120px] object-contain cursor-pointer"
+                  className="w-[105px] sm:w-[115px] xl:w-[120px] object-contain cursor-pointer"
                   priority
                 />
               </Link>
             </div>
 
             {/* LOGIN HEADING */}
-            <h1 className="text-[24px] leading-[30px] font-semibold text-[#171717] tracking-tight mb-[30px] text-left">
+            <h1 className="text-[22px] sm:text-[24px] leading-tight font-semibold text-[#171717] tracking-tight mb-4 sm:mb-5 xl:mb-6 text-left">
               Log in to Linq
             </h1>
 
             {/* AUTH FORM */}
             <form onSubmit={handleSubmit} className="w-full flex flex-col">
               {/* EMAIL FIELD */}
-              <div className="flex flex-col mb-[22px]">
+              <div className="flex flex-col mb-3.5 sm:mb-4 xl:mb-5">
                 <label
                   htmlFor="email"
-                  className="text-[16px] font-medium text-[#171717] mb-[10px] text-left select-none"
+                  className="text-[14px] sm:text-[15px] xl:text-[16px] font-medium text-[#171717] mb-1.5 sm:mb-2 text-left select-none"
                 >
                   Email address
                 </label>
@@ -206,13 +206,13 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="linq.avtive.app"
-                    className="w-full h-[64px] px-[18px] pr-[52px] rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all"
+                    className="w-full h-[52px] sm:h-[56px] xl:h-[60px] px-4 sm:px-[18px] pr-12 rounded-[12px] xl:rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all [box-shadow:0_0_0_1000px_white_inset]"
                   />
                   {email ? (
                     <button
                       type="button"
                       onClick={() => setEmail("")}
-                      className="absolute right-[18px] w-6 h-6 rounded-full bg-[#EFEFEF] hover:bg-[#E2E2E2] text-[#8E8E93] hover:text-[#555555] flex items-center justify-center transition-colors cursor-pointer"
+                      className="absolute right-3.5 sm:right-[18px] w-6 h-6 rounded-full bg-[#EFEFEF] hover:bg-[#E2E2E2] text-[#8E8E93] hover:text-[#555555] flex items-center justify-center transition-colors cursor-pointer"
                       aria-label="Clear email input"
                     >
                       <X size={13} strokeWidth={2.5} />
@@ -222,10 +222,10 @@ export default function LoginPage() {
               </div>
 
               {/* PASSWORD FIELD */}
-              <div className="flex flex-col mb-[8px]">
+              <div className="flex flex-col mb-1.5 sm:mb-2">
                 <label
                   htmlFor="password"
-                  className="text-[16px] font-medium text-[#171717] mb-[10px] text-left select-none"
+                  className="text-[14px] sm:text-[15px] xl:text-[16px] font-medium text-[#171717] mb-1.5 sm:mb-2 text-left select-none"
                 >
                   Password
                 </label>
@@ -238,28 +238,28 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full h-[64px] px-[18px] pr-[52px] rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all"
+                    className="w-full h-[52px] sm:h-[56px] xl:h-[60px] px-4 sm:px-[18px] pr-12 rounded-[12px] xl:rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all [box-shadow:0_0_0_1000px_white_inset]"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-[18px] text-[#8E8E93] hover:text-[#4A4A4A] transition-colors cursor-pointer p-1"
+                    className="absolute right-3.5 sm:right-[18px] text-[#8E8E93] hover:text-[#4A4A4A] transition-colors cursor-pointer p-1"
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? (
-                      <EyeOff size={22} strokeWidth={1.8} />
+                      <EyeOff size={20} strokeWidth={1.8} />
                     ) : (
-                      <Eye size={22} strokeWidth={1.8} />
+                      <Eye size={20} strokeWidth={1.8} />
                     )}
                   </button>
                 </div>
               </div>
 
               {/* FORGOT PASSWORD */}
-              <div className="flex justify-start mb-[55px]">
+              <div className="flex justify-start mb-6 sm:mb-8 xl:mb-10">
                 <Link
                   href="/forgot-password"
-                  className="text-[15px] sm:text-[16px] font-normal text-[#76549C] hover:text-[#5A3880] transition-colors cursor-pointer"
+                  className="text-[14px] sm:text-[15px] font-normal text-[#76549C] hover:text-[#5A3880] transition-colors cursor-pointer"
                 >
                   Forgot password?
                 </Link>
@@ -267,10 +267,10 @@ export default function LoginPage() {
 
               {/* OTP STEP (If active) */}
               {needsOtpStep && (
-                <div className="flex flex-col mb-[22px]">
+                <div className="flex flex-col mb-4 sm:mb-5">
                   <label
                     htmlFor="otp"
-                    className="text-[16px] font-medium text-[#171717] mb-[10px] text-left"
+                    className="text-[14px] sm:text-[15px] xl:text-[16px] font-medium text-[#171717] mb-1.5 sm:mb-2 text-left"
                   >
                     Email verification code
                   </label>
@@ -283,15 +283,15 @@ export default function LoginPage() {
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
                     placeholder="Enter 6-digit code"
-                    className="w-full h-[64px] px-[18px] rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all"
+                    className="w-full h-[52px] sm:h-[56px] xl:h-[60px] px-4 sm:px-[18px] rounded-[12px] xl:rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all"
                   />
                 </div>
               )}
 
               {/* ERROR ALERT */}
               {error && (
-                <div className="mb-[20px] rounded-[12px] bg-[#FEF2F2] border border-[#FCA5A5]/70 p-3.5 text-[14px] font-medium text-[#B91C1C] flex items-start gap-2.5">
-                  <AlertCircle size={18} className="shrink-0 mt-0.5 text-[#DC2626]" />
+                <div className="mb-4 rounded-[12px] bg-[#FEF2F2] border border-[#FCA5A5]/70 p-3 text-[13px] sm:text-[14px] font-medium text-[#B91C1C] flex items-start gap-2.5">
+                  <AlertCircle size={17} className="shrink-0 mt-0.5 text-[#DC2626]" />
                   <span>{error}</span>
                 </div>
               )}
@@ -300,7 +300,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
-                className="w-full h-[60px] rounded-[13px] text-[#FFFFFF] text-[16px] font-medium flex items-center justify-center transition-all duration-200 cursor-pointer shadow-[0_4px_14px_rgba(116,59,232,0.22)] hover:shadow-[0_6px_20px_rgba(116,59,232,0.30)] hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed mb-[38px]"
+                className="w-full h-[52px] sm:h-[56px] xl:h-[58px] rounded-[12px] xl:rounded-[13px] text-[#FFFFFF] text-[15px] sm:text-[16px] font-medium flex items-center justify-center transition-all duration-200 cursor-pointer shadow-[0_4px_14px_rgba(116,59,232,0.22)] hover:shadow-[0_6px_20px_rgba(116,59,232,0.30)] hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed mb-5 sm:mb-6 xl:mb-8"
                 style={{
                   background: "linear-gradient(90deg, #743BE8 0%, #7139E8 50%, #7638E8 100%)",
                 }}
@@ -318,7 +318,7 @@ export default function LoginPage() {
               </button>
 
               {/* REGISTER PROMPT */}
-              <div className="text-center text-[15px] sm:text-[16px] text-[#8A8A8A]">
+              <div className="text-center text-[14px] sm:text-[15px] text-[#8A8A8A]">
                 Don&apos;t have an email account?{" "}
                 <Link
                   href="/organization/register"
@@ -337,7 +337,7 @@ export default function LoginPage() {
                     setOtp("");
                     setError("");
                   }}
-                  className="text-center text-[14px] text-[#8A8A8A] hover:text-[#4A4A4A] mt-3 cursor-pointer transition-colors"
+                  className="text-center text-[13px] sm:text-[14px] text-[#8A8A8A] hover:text-[#4A4A4A] mt-3 cursor-pointer transition-colors"
                 >
                   Use a different account
                 </button>
@@ -349,7 +349,7 @@ export default function LoginPage() {
         {/* =========================================================================
             RIGHT COLUMN: Hero / Marketing Section (~52% width)
            ========================================================================= */}
-        <section className="hidden lg:flex flex-col justify-center w-full lg:w-[52%] h-full relative overflow-hidden bg-[#FFFFFF] pl-10 xl:pl-16 2xl:pl-20 pr-8 xl:pr-14 2xl:pr-20 py-12 select-text">
+        <section className="hidden lg:flex flex-col justify-center w-full lg:w-[52%] min-h-screen lg:min-h-0 relative overflow-hidden bg-[#FFFFFF] pl-8 xl:pl-14 2xl:pl-20 pr-6 xl:pr-12 2xl:pr-16 py-8 sm:py-10 lg:py-6 select-text">
           {/* Subtle Ambient Radial Glows */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -365,34 +365,22 @@ export default function LoginPage() {
           />
 
           {/* Hero Content Container */}
-          <div className="relative z-10 max-w-[660px] text-left">
+          <div className="relative z-10 max-w-[540px] xl:max-w-[620px] text-left my-auto">
             {/* TOP CATEGORY TAGLINE */}
-            <p className="text-[12px] xl:text-[13px] font-medium uppercase tracking-[0.14em] text-[#9382C3] mb-[35px] select-none">
+            <p className="text-[11px] xl:text-[12px] 2xl:text-[13px] font-medium uppercase tracking-[0.14em] text-[#9382C3] mb-4 sm:mb-6 xl:mb-8 select-none">
               GLOBAL NETWORKING • EVENT CREATORS • ORGANIZATIONS • PORTALS
             </p>
 
-            {/* MAIN HERO HEADLINE WITH SUBTLE GHOST DISPLACEMENT EFFECT */}
-            <div className="relative mb-[50px] select-text">
-              {/* Subtle ghost typography shadow layer */}
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 select-none pointer-events-none opacity-25 filter blur-[2px] translate-x-[2.5px] -translate-y-[1px]"
-              >
-                <h2 className="text-[46px] xl:text-[58px] 2xl:text-[64px] font-extrabold tracking-[-0.03em] leading-[1.05]">
-                  <span className="block text-[#151515]">Every connection</span>
-                  <span className="block text-[#7040E5]">creates opportunity</span>
-                </h2>
-              </div>
-
-              {/* Crisp Primary Headline */}
-              <h2 className="relative text-[46px] xl:text-[58px] 2xl:text-[64px] font-extrabold tracking-[-0.03em] leading-[1.05]">
+            {/* MAIN HERO HEADLINE */}
+            <div className="mb-4 sm:mb-6 xl:mb-8 select-text">
+              <h2 className="text-[38px] lg:text-[44px] xl:text-[54px] 2xl:text-[62px] font-extrabold tracking-[-0.03em] leading-[1.06]">
                 <span className="block text-[#151515]">Every connection</span>
                 <span className="block text-[#7040E5]">creates opportunity</span>
               </h2>
             </div>
 
             {/* HERO DESCRIPTION PARAGRAPH */}
-            <p className="text-[18px] xl:text-[20px] font-normal leading-[1.62] text-[#858585] max-w-[640px]">
+            <p className="text-[15px] lg:text-[16px] xl:text-[18px] 2xl:text-[19px] font-normal leading-[1.6] text-[#858585] max-w-[560px]">
               Linq turns event registration and organization onboarding into a single, elegant step.
               Share one link, let attendees generate beautiful scannable cards, and manage every
               organization seamlessly.
@@ -403,12 +391,12 @@ export default function LoginPage() {
         {/* =========================================================================
             MOBILE/TABLET MARKETING FOOTER (<1024px)
            ========================================================================= */}
-        <section className="flex lg:hidden flex-col justify-center w-full px-6 sm:px-12 py-10 bg-[#FAFAFC] border-t border-slate-100">
-          <div className="w-full max-w-[500px] mx-auto text-left">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#9382C3] mb-3 select-none">
+        <section className="flex lg:hidden flex-col justify-center w-full px-6 sm:px-10 py-8 bg-[#FAFAFC] border-t border-slate-100">
+          <div className="w-full max-w-[460px] mx-auto text-left">
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[#9382C3] mb-2.5 select-none">
               GLOBAL NETWORKING • EVENT CREATORS • ORGANIZATIONS
             </p>
-            <h2 className="text-[28px] sm:text-[34px] font-extrabold tracking-tight leading-[1.1] mb-3">
+            <h2 className="text-[26px] sm:text-[32px] font-extrabold tracking-tight leading-[1.1] mb-2.5">
               <span className="block text-[#151515]">Every connection</span>
               <span className="block text-[#7040E5]">creates opportunity</span>
             </h2>
