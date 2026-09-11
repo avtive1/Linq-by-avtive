@@ -78,7 +78,12 @@ export function buildLinkedInShareOffsiteUrl(pageUrl: string): string {
   return `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(pageUrl)}`;
 }
 
-export function openLinkedInCardShare(input: {
+/**
+ * Secondary manual fallback for LinkedIn sharing (link only).
+ * Note: This does NOT attach the actual image file to the post.
+ * The primary sharing mechanism is the LinkedIn REST API flow (/api/share/linkedin).
+ */
+export function openManualLinkedInShareFallback(input: {
   name?: string;
   eventName?: string;
   role?: string;
@@ -101,38 +106,33 @@ export function openLinkedInCardShare(input: {
     organizationName: input.organizationName,
   });
 
-  // Open LinkedIn's share-offsite endpoint so the OG tags on our share landing page are used for preview.
-  // Also attempt to copy the caption to clipboard so the user can paste it into the composer.
-  // Try opening the feed composer with text first (so caption is present), then open the
-  // share-offsite URL which LinkedIn's crawler uses to render the OG preview. Opening both
-  // increases the chance the user sees the caption prefilled and the preview available.
   try {
-    const feedWin = window.open(buildLinkedInFeedShareUrl(postText), "_blank", "noopener,noreferrer");
-    // open preview URL shortly after; may be blocked by popup blockers in some browsers
-    setTimeout(() => {
-      try {
-        window.open(buildLinkedInShareOffsiteUrl(shareUrl), "_blank", "noopener,noreferrer");
-      } catch {}
-    }, 500);
-    if (!feedWin) {
-      // If opening feed composer was blocked, fallback to opening the preview URL alone
-      try {
-        window.open(buildLinkedInShareOffsiteUrl(shareUrl), "_blank", "noopener,noreferrer");
-      } catch {}
-    }
-  } catch {
-    // Final fallback: open preview only
-    try {
-      window.open(buildLinkedInShareOffsiteUrl(shareUrl), "_blank", "noopener,noreferrer");
-    } catch {}
-  }
-
-  try {
-    if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
-      // copy caption so user can paste while sharing
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
       void navigator.clipboard.writeText(postText).catch(() => {});
     }
   } catch {}
+
+  // Open single share-offsite or feed window as fallback
+  try {
+    window.open(buildLinkedInShareOffsiteUrl(shareUrl), "_blank", "noopener,noreferrer");
+  } catch {}
+}
+
+/**
+ * @deprecated Use the API image-posting flow via /api/share/linkedin as primary.
+ * For manual fallback, use openManualLinkedInShareFallback.
+ */
+export function openLinkedInCardShare(input: {
+  name?: string;
+  eventName?: string;
+  role?: string;
+  company?: string;
+  cardId: string;
+  origin?: string;
+  cardRole?: "guest" | "visitor" | "organization";
+  organizationName?: string;
+}): void {
+  openManualLinkedInShareFallback(input);
 }
 
 /** @deprecated Use buildCardLinkedInSharePost */

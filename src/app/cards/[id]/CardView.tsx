@@ -9,14 +9,23 @@ import { Separator } from "@/components/ui/separator";
 import { CardPreview } from "@/components/CardPreview";
 import { CardArtboardScaler } from "@/components/CardArtboardScaler";
 import { CARD_ARTBOARD_HORIZONTAL, CARD_ARTBOARD_VERTICAL } from "@/lib/card-preview-scale";
-import { ArrowLeft, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { toPng } from "html-to-image";
 import { waitForCardFontsReadyForCapture } from "@/lib/card-font-runtime";
 import { CardData } from "@/types/card";
 import { toast } from "sonner";
-import { openLinkedInCardShare } from "@/lib/share/linkedin-card-share";
+import { openManualLinkedInShareFallback } from "@/lib/share/linkedin-card-share";
+import { LinkedInShareDialog } from "@/components/share/LinkedInShareDialog";
 import { logger } from "@/lib/logger-client";
 import { AttendeeSocialLinksBar } from "@/components/AttendeeSocialLinks";
+
+function LinkedInIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.64a1.65 1.65 0 0 0-1.66 1.66 1.66 1.66 0 0 0 1.66 1.66 1.65 1.65 0 0 0 1.65-1.66 1.66 1.66 0 0 0-1.65-1.66" />
+    </svg>
+  );
+}
 
 export default function CardView({
   card,
@@ -33,6 +42,7 @@ export default function CardView({
 }) {
   const router = useRouter();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [showLinkedInDialog, setShowLinkedInDialog] = useState(false);
   const [viewMode, setViewMode] = useState<"horizontal" | "vertical">(initialViewMode);
   const [badgeSide, setBadgeSide] = useState<1 | 2>(1);
   const [horizontalPreviewFailed, setHorizontalPreviewFailed] = useState(false);
@@ -63,7 +73,7 @@ export default function CardView({
         : `/dashboard/events/${card.eventId}`;
     }
     return impersonateId ? `/dashboard?impersonate=${encodeURIComponent(impersonateId)}` : "/dashboard";
-  }, [card?.eventId, impersonateId]);
+  }, [card.eventId, impersonateId]);
 
   useEffect(() => {
     try {
@@ -289,7 +299,11 @@ export default function CardView({
   };
 
   const handleShareLinkedIn = () => {
-    openLinkedInCardShare({
+    setShowLinkedInDialog(true);
+  };
+
+  const handleManualShareLinkedIn = () => {
+    openManualLinkedInShareFallback({
       cardId: card.id,
       name: card.name,
       eventName: card.eventName,
@@ -298,7 +312,44 @@ export default function CardView({
       cardRole: card.cardRole,
       organizationName: card.organizationName,
     });
-    toast.success("Opening LinkedIn — caption copied to clipboard.");
+    toast.success("Opening LinkedIn fallback — link and caption copied.");
+  };
+
+  const handleEnsurePreviewUploaded = async (): Promise<string | undefined> => {
+    if (card.cardPreviewUrl && !horizontalPreviewFailed) {
+      return card.cardPreviewUrl;
+    }
+    if (!horizontalFrontExportRef.current) return undefined;
+    try {
+      const { frontDataUrl } = await getHorizontalExports();
+      const eventId = card.eventId || "general";
+      const uploadRes = await fetch("/api/media/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dataUrl: frontDataUrl,
+          folder: `card-previews/${eventId}`,
+          publicId: `${card.id}-horizontal`,
+        }),
+      });
+      const uploadPayload = await uploadRes.json();
+      if (uploadRes.ok && uploadPayload?.data?.url) {
+        const previewUrl = String(uploadPayload.data.url);
+        // Persist to attendee record
+        await fetch(`/api/cards/${card.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(shareToken ? { Authorization: `Bearer ${shareToken}` } : {}),
+          },
+          body: JSON.stringify({ card_preview_url: previewUrl }),
+        }).catch(() => {});
+        return previewUrl;
+      }
+    } catch (previewErr) {
+      logger.warn({ err: previewErr instanceof Error ? previewErr : undefined }, "Preview capture upload skipped");
+    }
+    return undefined;
   };
 
   return (
@@ -366,10 +417,10 @@ export default function CardView({
               <Button
                 onClick={handleShareLinkedIn}
                 disabled={isDownloading}
-                className="shadow-lg flex-1 md:flex-initial min-w-[116px]"
+                className="bg-[#0A66C2] hover:bg-[#004182] text-white shadow-lg shadow-[#0A66C2]/20 flex-1 md:flex-initial min-w-[170px] gap-2 font-medium"
               >
-                <Share2 size={16} />
-                Share
+                <LinkedInIcon className="w-4 h-4 shrink-0" />
+                Share on LinkedIn
               </Button>
             )}
             {viewMode === "vertical" ? (
@@ -586,6 +637,15 @@ export default function CardView({
            }
         }
       `}</style>
+
+      <LinkedInShareDialog
+        isOpen={showLinkedInDialog}
+        onClose={() => setShowLinkedInDialog(false)}
+        card={card}
+        shareToken={shareToken}
+        onManualShareFallback={handleManualShareLinkedIn}
+        onEnsurePreviewUploaded={handleEnsurePreviewUploaded}
+      />
     </main>
   );
 }
