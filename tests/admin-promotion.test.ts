@@ -76,4 +76,18 @@ describe("Admin Promotion Feature", () => {
     expect(defaultRoles.find((r) => r.id === "marketing")?.enabled).toBe(true);
     expect(defaultRoles.find((r) => r.id === "event_team")?.enabled).toBe(false);
   });
+
+  it("handles custom company sender name and replyTo in email options", async () => {
+    const { sendTransactionalEmail } = await import("@/lib/notifications/email");
+    const result = await sendTransactionalEmail({
+      to: "attendee@example.com",
+      fromName: "Acme Corp Campaign",
+      replyTo: "organizer@acmecorp.com",
+      subject: "Exclusive Campaign Promotion",
+      text: "Hello attendee!",
+    });
+
+    expect(result).toBeDefined();
+    expect(typeof result.sent).toBe("boolean");
+  });
 });

@@ -8,6 +8,9 @@ type AccessRequestEmailInput = {
   html?: string;
   attachments?: nodemailer.SendMailOptions["attachments"];
   messageId?: string;
+  fromName?: string;
+  from?: string;
+  replyTo?: string;
 };
 
 type SendEmailResult = {
@@ -22,9 +25,9 @@ type SendEmailResult = {
 export async function sendTransactionalEmail(input: AccessRequestEmailInput): Promise<SendEmailResult> {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const rawFrom = process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@avtive.app";
-  const fromName = process.env.EMAIL_FROM_NAME || "AVTIVE";
-  const replyTo = process.env.EMAIL_REPLY_TO || rawFrom;
+  const rawFrom = input.from || process.env.EMAIL_FROM || process.env.SMTP_USER || "no-reply@avtive.app";
+  const fromName = input.fromName || process.env.EMAIL_FROM_NAME || "AVTIVE";
+  const replyTo = input.replyTo || process.env.EMAIL_REPLY_TO || rawFrom;
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = Number(process.env.SMTP_PORT || "587");
 
@@ -32,10 +35,10 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
     return { sent: false, error: "Email provider not configured. Please set SMTP_USER and SMTP_PASS." };
   }
 
-  // Ensure from header is RFC 5322 formatted (e.g. "AVTIVE <hello@avtive.app>")
+  // Ensure from header is RFC 5322 formatted (e.g. "Acme Corp <hello@avtive.app>")
   const formattedFrom = rawFrom.includes("<")
     ? rawFrom
-    : `"${fromName}" <${rawFrom.trim()}>`;
+    : `"${fromName.replace(/"/g, "")}" <${rawFrom.trim()}>`;
 
   try {
     const transporter = nodemailer.createTransport({
