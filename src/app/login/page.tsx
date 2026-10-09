@@ -43,13 +43,33 @@ export default function LoginPage() {
     router.refresh();
   };
 
-  const tryLegacyMigrationLogin = async (trimmedEmail: string) => {
+  const handleEmailPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").trim();
+    const target = e.currentTarget;
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? email.length;
+    const nextValue = (email.slice(0, start) + pasted + email.slice(end)).trim();
+    setEmail(nextValue);
+  };
+
+  const handlePasswordPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").trim();
+    const target = e.currentTarget;
+    const start = target.selectionStart ?? 0;
+    const end = target.selectionEnd ?? password.length;
+    const nextValue = (password.slice(0, start) + pasted + password.slice(end)).trim();
+    setPassword(nextValue);
+  };
+
+  const tryLegacyMigrationLogin = async (trimmedEmail: string, trimmedPassword: string) => {
     let migrationRes: Response;
     try {
       migrationRes = await fetch("/api/auth/migrate-legacy-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: trimmedEmail, password }),
+        body: JSON.stringify({ email: trimmedEmail, password: trimmedPassword }),
       });
     } catch {
       setError("Could not check your previous password. Please try again.");
@@ -66,7 +86,7 @@ export default function LoginPage() {
 
     const signupResult = await authClient.signUp.email({
       email: trimmedEmail,
-      password,
+      password: trimmedPassword,
       name: String(migrationPayload.data.name || trimmedEmail),
     });
     if (signupResult.error) {
@@ -80,7 +100,7 @@ export default function LoginPage() {
     }
     const signInResult = await authClient.signIn.email({
       email: trimmedEmail,
-      password,
+      password: trimmedPassword,
     });
     if (signInResult.error) {
       setError(
@@ -93,11 +113,11 @@ export default function LoginPage() {
     return true;
   };
 
-  const signInWithNeon = async (trimmedEmail: string) => {
+  const signInWithNeon = async (trimmedEmail: string, trimmedPassword: string) => {
     try {
       return await authClient.signIn.email({
         email: trimmedEmail,
-        password,
+        password: trimmedPassword,
       });
     } catch (err: unknown) {
       return {
@@ -114,7 +134,8 @@ export default function LoginPage() {
     setError("");
 
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail || !password) {
+    const trimmedPassword = password.trim();
+    if (!trimmedEmail || !trimmedPassword) {
       setError("Please enter your email and password.");
       return;
     }
@@ -127,9 +148,9 @@ export default function LoginPage() {
           setError("Enter the verification code from your email.");
           return;
         }
-        const result = await signInWithNeon(trimmedEmail);
+        const result = await signInWithNeon(trimmedEmail, trimmedPassword);
         if (result?.error) {
-          const migrated = await tryLegacyMigrationLogin(trimmedEmail);
+          const migrated = await tryLegacyMigrationLogin(trimmedEmail, trimmedPassword);
           if (!migrated) setError("Incorrect email, password, or verification code.");
           return;
         }
@@ -141,9 +162,9 @@ export default function LoginPage() {
         return;
       }
 
-      const result = await signInWithNeon(trimmedEmail);
+      const result = await signInWithNeon(trimmedEmail, trimmedPassword);
       if (result?.error) {
-        const migrated = await tryLegacyMigrationLogin(trimmedEmail);
+        const migrated = await tryLegacyMigrationLogin(trimmedEmail, trimmedPassword);
         if (!migrated) setError(result.error.message || "Incorrect email or password.");
         return;
       }
@@ -204,7 +225,9 @@ export default function LoginPage() {
                     required
                     autoComplete="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.trim())}
+                    onPaste={handleEmailPaste}
+                    onBlur={() => setEmail((prev) => prev.trim())}
                     placeholder="linq.avtive.app"
                     className="w-full h-[52px] sm:h-[56px] xl:h-[60px] px-4 sm:px-[18px] pr-12 rounded-[12px] xl:rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all [box-shadow:0_0_0_1000px_white_inset]"
                   />
@@ -237,6 +260,8 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onPaste={handlePasswordPaste}
+                    onBlur={() => setPassword((prev) => prev.trim())}
                     placeholder="••••••••••••"
                     className="w-full h-[52px] sm:h-[56px] xl:h-[60px] px-4 sm:px-[18px] pr-12 rounded-[12px] xl:rounded-[14px] border border-[#D8D8D8] bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all [box-shadow:0_0_0_1000px_white_inset]"
                   />
@@ -299,7 +324,7 @@ export default function LoginPage() {
               {/* LOGIN BUTTON */}
               <button
                 type="submit"
-                disabled={!email || !password || isSubmitting || (needsOtpStep && !otp.trim())}
+                disabled={!email.trim() || !password.trim() || isSubmitting || (needsOtpStep && !otp.trim())}
                 className="w-full h-[52px] sm:h-[56px] xl:h-[58px] rounded-[12px] xl:rounded-[13px] text-[#FFFFFF] text-[15px] sm:text-[16px] font-medium flex items-center justify-center transition-all duration-200 cursor-pointer shadow-[0_4px_14px_rgba(116,59,232,0.22)] hover:shadow-[0_6px_20px_rgba(116,59,232,0.30)] hover:brightness-105 active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed mb-5 sm:mb-6 xl:mb-8"
                 style={{
                   background: "linear-gradient(90deg, #743BE8 0%, #7139E8 50%, #7638E8 100%)",
