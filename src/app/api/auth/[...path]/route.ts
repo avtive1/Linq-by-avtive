@@ -67,6 +67,29 @@ export async function GET(req: Request, props: { params: Promise<{ path?: string
     }
   }
 
+  if (endpoint === "sign-out" || endpoint === "signout") {
+    let rawResponse: Response;
+    try {
+      rawResponse = await neonHandler.GET(req, props);
+    } catch {
+      rawResponse = NextResponse.json({ data: { success: true } });
+    }
+    const response =
+      rawResponse instanceof NextResponse
+        ? rawResponse
+        : new NextResponse(rawResponse.body, {
+            status: rawResponse.status,
+            statusText: rawResponse.statusText,
+            headers: rawResponse.headers,
+          });
+    response.cookies.set(AUTH_COOKIE_NAME, "", {
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+    return response;
+  }
+
   try {
     return await neonHandler.GET(req, props);
   } catch {
@@ -222,8 +245,25 @@ export async function POST(req: Request, props: { params: Promise<{ path?: strin
   }
 
   if (endpoint === "sign-out" || endpoint === "signout") {
-    const response = NextResponse.json({ data: { success: true } });
-    response.cookies.delete(AUTH_COOKIE_NAME);
+    let rawResponse: Response;
+    try {
+      rawResponse = await neonHandler.POST(req, props);
+    } catch {
+      rawResponse = NextResponse.json({ data: { success: true } });
+    }
+    const response =
+      rawResponse instanceof NextResponse
+        ? rawResponse
+        : new NextResponse(rawResponse.body, {
+            status: rawResponse.status,
+            statusText: rawResponse.statusText,
+            headers: rawResponse.headers,
+          });
+    response.cookies.set(AUTH_COOKIE_NAME, "", {
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
     return response;
   }
 

@@ -4,8 +4,26 @@ import { neonAuth } from "@/lib/auth/neon";
 import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
 const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
-const isAuthRoute = createRouteMatcher(["/login(.*)", "/signup(.*)"]);
+const isAuthRoute = createRouteMatcher(["/", "/login(.*)", "/signup(.*)"]);
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+
+function clearAuthCookies(request: NextRequest, response: NextResponse, authCookieName = "linq_session_token") {
+  const cookieNamesToClear = new Set<string>([authCookieName]);
+  for (const cookie of request.cookies.getAll()) {
+    const name = cookie.name.toLowerCase();
+    if (name.includes("neon-auth") || name.includes("session") || name.includes("token")) {
+      cookieNamesToClear.add(cookie.name);
+    }
+  }
+  for (const name of cookieNamesToClear) {
+    response.cookies.set(name, "", {
+      path: "/",
+      maxAge: 0,
+      expires: new Date(0),
+    });
+  }
+  return response;
+}
 
 function isSameOriginMutation(request: NextRequest) {
   const expectedOrigin = new URL(request.url).origin;
@@ -88,8 +106,28 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return res;
   }
 
+  const isForgotPasswordOrReset =
+    pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password");
+
+  if (isForgotPasswordOrReset) {
+    const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
+    return clearAuthCookies(request, res);
+  }
+
+  const isPromptLogin =
+    url.searchParams.get("prompt") === "login" ||
+    url.searchParams.get("from") === "forgot-password" ||
+    url.searchParams.has("force") ||
+    request.headers.get("referer")?.includes("/forgot-password") ||
+    request.headers.get("referer")?.includes("/reset-password");
+
   const isProtected = isProtectedRoute.test(pathname);
   const isAuth = isAuthRoute(request);
+
+  if (isAuth && isPromptLogin) {
+    const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
+    return clearAuthCookies(request, res);
+  }
 
   // Fast path: bypass all auth parsing for public non-auth routes
   if (!isProtected && !isAuth) {

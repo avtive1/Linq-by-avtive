@@ -57,7 +57,7 @@ function ResetPasswordContent() {
       }
 
       toast.success("Password updated. Please sign in.");
-      router.push("/login");
+      router.push("/login?prompt=login");
     } catch (err) {
       setErrors({ password: err instanceof Error ? err.message : "Failed to update password." });
     } finally {
@@ -71,7 +71,7 @@ function ResetPasswordContent() {
 
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link
-          href="/login"
+          href="/login?prompt=login"
           className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
         >
           <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">

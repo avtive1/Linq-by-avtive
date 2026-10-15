@@ -1,16 +1,32 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import GradientBackground from "@/components/GradientBackground";
 import { TextInput, Button } from "@/components/ui";
 import { ArrowLeft, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth/client";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    // Clear residual session so returning to sign-in always presents credential inputs
+    try {
+      authClient.signOut().catch(() => {});
+      fetch("/api/auth/sign-out", { method: "POST" }).catch(() => {});
+    } catch {}
+  }, []);
+
+  const handleBackToSignIn = async () => {
+    try {
+      await authClient.signOut();
+      await fetch("/api/auth/sign-out", { method: "POST" });
+    } catch {}
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +68,8 @@ export default function ForgotPasswordPage() {
 
       <div className="relative z-10 w-full max-w-[520px] animate-slide-up">
         <Link
-          href="/login"
+          href="/login?prompt=login"
+          onClick={handleBackToSignIn}
           className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
         >
           <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
@@ -80,7 +97,8 @@ export default function ForgotPasswordPage() {
                 </p>
               </div>
               <Button
-                href="/login"
+                href="/login?prompt=login"
+                onClick={handleBackToSignIn}
                 variant="primary"
                 fullWidth
                 size="lg"
@@ -124,7 +142,8 @@ export default function ForgotPasswordPage() {
               <div className="flex items-center justify-center gap-1 text-[13px] text-text-muted">
                 <span>Remembered it?</span>
                 <Link
-                  href="/login"
+                  href="/login?prompt=login"
+                  onClick={handleBackToSignIn}
                   className="font-medium text-royal-indigo hover:underline underline-offset-4 transition-all"
                 >
                   Sign in
