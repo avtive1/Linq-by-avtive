@@ -528,9 +528,13 @@ function sha256(value: string) {
 
 export async function createPasswordResetToken(email: string): Promise<string | null> {
   await ensureAuthSchema();
+  await ensureBootstrapSuperAdmin();
+  const normalized = normalizeAuthEmail(email);
+  if (!normalized) return null;
+
   const user = await queryNeonOneAsSystem<{ user_id: string }>(
-    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 LIMIT 1`,
-    [normalizeAuthEmail(email)],
+    `SELECT user_id FROM public.auth_users WHERE email_normalized = $1 OR LOWER(email) = $1 LIMIT 1`,
+    [normalized],
   );
   if (!user?.user_id) return null;
 
