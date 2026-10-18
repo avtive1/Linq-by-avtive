@@ -26,6 +26,11 @@ export const forgotPasswordBodySchema = z.object({
   email: emailFieldSchema,
 });
 
+export const verifyResetCodeBodySchema = z.object({
+  email: emailFieldSchema,
+  code: z.string().trim().regex(/^\d{6}$/, "Verification code must be exactly 6 digits."),
+});
+
 export const resetPasswordBodySchema = z.object({
   token: z.string().trim().min(16, "Invalid reset token.").max(256),
   password: z.string().min(8, "Password must be at least 8 characters.").max(128),

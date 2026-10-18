@@ -55,19 +55,23 @@ export async function enqueueBrandedTransactionalEmail(
     );
     const id = rows[0]?.id;
     if (id) {
-      after(async () => {
-        try {
-          const result = await processEmailOutboxMessage(id);
-          if (result.failed > 0) {
-            logger.warn({ emailId: id, outbox: result }, "Immediate email delivery failed; message remains in the outbox");
+      try {
+        after(async () => {
+          try {
+            const result = await processEmailOutboxMessage(id);
+            if (result.failed > 0) {
+              logger.warn({ emailId: id, outbox: result }, "Immediate email delivery failed; message remains in the outbox");
+            }
+          } catch (error: unknown) {
+            logger.error(
+              { emailId: id, err: error instanceof Error ? error : undefined },
+              "Immediate email delivery crashed; message remains in the outbox",
+            );
           }
-        } catch (error: unknown) {
-          logger.error(
-            { emailId: id, err: error instanceof Error ? error : undefined },
-            "Immediate email delivery crashed; message remains in the outbox",
-          );
-        }
-      });
+        });
+      } catch {
+        // Outside Next.js request scope (e.g. tests or background scripts)
+      }
     }
     return { queued: Boolean(id), id };
   } catch (error: unknown) {

@@ -20,6 +20,21 @@ export function generatePasswordResetEmailHtml(params: {
   });
 }
 
+export function generatePasswordResetCodeEmailHtml(params: {
+  code: string;
+}): string {
+  return wrapAvtiveEmailLayout({
+    pageTitle: "Password Reset Code - Linq",
+    headline: "Password Reset Code",
+    greeting: "Hi there,",
+    bodyHtml: `
+              ${emailParagraph("We received a request to reset your password for your Linq account. Use the 6-digit verification code below to proceed with resetting your password.")}
+              ${emailCodeDisplay("Your 6-digit reset code", params.code)}
+              ${emailParagraph("This code will expire in 10 minutes. For security reasons, never share this verification code with anyone.", 20)}
+              ${emailParagraph("If you did not request a password reset, you can safely ignore this message. Your password will remain unchanged.", 16)}`,
+  });
+}
+
 export function generateLoginOtpEmailHtml(params: {
   code: string;
   loginUrl: string;

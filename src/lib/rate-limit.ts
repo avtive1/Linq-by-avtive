@@ -60,6 +60,7 @@ const SENSITIVE_AUTH_PATHS = new Set([
   "/api/auth/register-invited",
   "/api/auth/migrate-legacy-login",
   "/api/auth/forgot-password",
+  "/api/auth/verify-reset-code",
   "/api/auth/reset-password",
 ]);
 

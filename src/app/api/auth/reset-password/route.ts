@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { neonAuth } from "@/auth";
-import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { resetPasswordBodySchema } from "@/lib/validators/auth.validator";
-import { resetPasswordWithToken } from "@/lib/auth-db";
+import { completePasswordReset } from "@/lib/auth/password-reset";
+import { logger } from "@/lib/logger-server";
 
 export async function POST(req: Request) {
   try {
@@ -11,30 +10,19 @@ export async function POST(req: Request) {
     if (!parsed.ok) return parsed.response;
     const { token, password } = parsed.data;
 
-    const issues = validatePasswordPolicy(password);
-    if (issues.length > 0) {
-      return NextResponse.json({ error: issues[0] }, { status: 400 });
-    }
+    const result = await completePasswordReset(token, password);
 
-    const resetSuccess = await resetPasswordWithToken(token, password);
-    if (resetSuccess) {
-      return NextResponse.json({ data: { ok: true } }, { status: 200 });
-    }
-
-    const result = await neonAuth.resetPassword({
-      token,
-      newPassword: password,
-    } as Parameters<typeof neonAuth.resetPassword>[0]);
-    if (result.error) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: result.error.message || "Invalid or expired reset token." },
-        { status: result.error.status || 400 },
+        { error: result.error || "Failed to reset password." },
+        { status: 400 },
       );
     }
-    return NextResponse.json({ data: { ok: true } }, { status: 200 });
+
+    return NextResponse.json({ data: { ok: true, message: "Password updated successfully." } }, { status: 200 });
   } catch (error: unknown) {
+    logger.error({ err: error instanceof Error ? error : undefined }, "Reset password error");
     const message = error instanceof Error ? error.message : "Failed to reset password.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
