@@ -4,14 +4,18 @@ import { neonAuth } from "@/lib/auth/neon";
 import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
 const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
-const isAuthRoute = createRouteMatcher(["/", "/login(.*)", "/signup(.*)"]);
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function clearAuthCookies(request: NextRequest, response: NextResponse, authCookieName = "linq_session_token") {
   const cookieNamesToClear = new Set<string>([authCookieName]);
   for (const cookie of request.cookies.getAll()) {
     const name = cookie.name.toLowerCase();
-    if (name.includes("neon-auth") || name.includes("session") || name.includes("token")) {
+    if (
+      name.includes("neon-auth") ||
+      name.includes("session") ||
+      name.includes("token") ||
+      name.includes("clerk")
+    ) {
       cookieNamesToClear.add(cookie.name);
     }
   }
@@ -38,11 +42,6 @@ function isSameOriginMutation(request: NextRequest) {
   }
 
   return false;
-}
-
-function createRouteMatcher(patterns: string[]) {
-  const regexes = patterns.map((p) => new RegExp(`^${p.replace(/\(\.\*\)/g, ".*")}$`));
-  return (request: NextRequest) => regexes.some((re) => re.test(new URL(request.url).pathname));
 }
 
 export default clerkMiddleware(async (auth, request: NextRequest) => {
@@ -114,23 +113,30 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return clearAuthCookies(request, res);
   }
 
-  const isPromptLogin =
-    url.searchParams.get("prompt") === "login" ||
-    url.searchParams.get("from") === "forgot-password" ||
-    url.searchParams.has("force") ||
-    request.headers.get("referer")?.includes("/forgot-password") ||
-    request.headers.get("referer")?.includes("/reset-password");
-
-  const isProtected = isProtectedRoute.test(pathname);
-  const isAuth = isAuthRoute(request);
-
-  if (isAuth && isPromptLogin) {
-    const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
-    return clearAuthCookies(request, res);
+  // 1. Every user (logged in or not) accessing root "/" is redirected to "/login"
+  if (pathname === "/") {
+    return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
   }
 
-  // Fast path: bypass all auth parsing for public non-auth routes
-  if (!isProtected && !isAuth) {
+  const isPrefetch =
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("purpose") === "prefetch" ||
+    request.headers.get("x-middleware-prefetch") === "1";
+
+  // 2. Every user visiting "/login" must follow the login page and authenticate to view the dashboard.
+  // Stale/residual sessions are cleared on full navigation so that access strictly requires authentication.
+  if (pathname === "/login" || pathname === "/login/") {
+    const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
+    if (!isPrefetch) {
+      return clearAuthCookies(request, res);
+    }
+    return res;
+  }
+
+  const isProtected = isProtectedRoute.test(pathname);
+
+  // Fast path: bypass all auth parsing for public non-protected routes (e.g. /cards, /events, /signup, /organization)
+  if (!isProtected) {
     return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
   }
 
@@ -171,16 +177,12 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     .filter(Boolean);
   const isAdminUser = tokenRole === "admin" || Boolean(tokenEmail && adminEmails.includes(tokenEmail));
 
+  // 3. If user is not logged in, they cannot view the dashboard and must sign in first on Linq platform
   if (isProtected && !userId) {
     return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
   }
   if (pathname.startsWith("/dashboard") && userId && isAdminUser && !url.searchParams.get("impersonate")) {
     return withRequestId(NextResponse.redirect(new URL("/admin", request.url)));
-  }
-  if (isAuth && userId) {
-    return withRequestId(
-      NextResponse.redirect(new URL(isAdminUser ? "/admin" : "/dashboard", request.url)),
-    );
   }
 
   return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
