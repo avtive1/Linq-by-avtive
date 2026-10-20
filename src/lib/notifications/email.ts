@@ -40,6 +40,19 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
   const resendApiKey = process.env.RESEND_API_KEY;
   if (resendApiKey) {
     try {
+      const resendAttachments = input.attachments
+        ?.map((att: any) => {
+          if (!att) return null;
+          if (typeof att.content === "string") {
+            return { filename: att.filename, content: att.content };
+          }
+          if (Buffer.isBuffer(att.content)) {
+            return { filename: att.filename, content: att.content.toString("base64") };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -53,6 +66,7 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
           text: input.text,
           html: input.html,
           reply_to: replyTo,
+          attachments: resendAttachments?.length ? resendAttachments : undefined,
         }),
       });
 
