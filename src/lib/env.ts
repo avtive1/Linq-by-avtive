@@ -32,8 +32,6 @@ export function requireAppEnv(): void {
   const required = [
     "DATABASE_URL",
     "DATABASE_URL_DIRECT",
-    "NEON_AUTH_BASE_URL",
-    "NEON_AUTH_COOKIE_SECRET",
     "CLOUDINARY_CLOUD_NAME",
     "CLOUDINARY_API_KEY",
     "CLOUDINARY_API_SECRET",

@@ -89,12 +89,10 @@ export default function LoginPage() {
       password: trimmedPassword,
       name: String(migrationPayload.data.name || trimmedEmail),
     });
-    if (signupResult.error) {
+    if (signupResult.error && !signupResult.error.message?.toLowerCase().includes("already")) {
       setError(
-        signupResult.error.message?.toLowerCase().includes("already")
-          ? "Your old password was verified, but this email already exists in Neon Auth. Please use password reset once to sync it."
-          : signupResult.error.message ||
-              "Your old password was verified, but the Neon Auth account could not be created. Please reset your password.",
+        signupResult.error.message ||
+          "Your old password was verified, but the account could not be created. Please reset your password.",
       );
       return true;
     }
@@ -113,7 +111,7 @@ export default function LoginPage() {
     return true;
   };
 
-  const signInWithNeon = async (trimmedEmail: string, trimmedPassword: string) => {
+  const signInWithSupabase = async (trimmedEmail: string, trimmedPassword: string) => {
     try {
       return await authClient.signIn.email({
         email: trimmedEmail,
@@ -123,7 +121,7 @@ export default function LoginPage() {
       return {
         data: null,
         error: {
-          message: err instanceof Error ? err.message : "Neon Auth sign-in failed.",
+          message: err instanceof Error ? err.message : "Sign-in failed.",
         },
       };
     }
@@ -148,7 +146,7 @@ export default function LoginPage() {
           setError("Enter the verification code from your email.");
           return;
         }
-        const result = await signInWithNeon(trimmedEmail, trimmedPassword);
+        const result = await signInWithSupabase(trimmedEmail, trimmedPassword);
         if (result?.error) {
           const migrated = await tryLegacyMigrationLogin(trimmedEmail, trimmedPassword);
           if (!migrated) setError("Incorrect email, password, or verification code.");
@@ -162,7 +160,7 @@ export default function LoginPage() {
         return;
       }
 
-      const result = await signInWithNeon(trimmedEmail, trimmedPassword);
+      const result = await signInWithSupabase(trimmedEmail, trimmedPassword);
       if (result?.error) {
         const migrated = await tryLegacyMigrationLogin(trimmedEmail, trimmedPassword);
         if (!migrated) setError(result.error.message || "Incorrect email or password.");

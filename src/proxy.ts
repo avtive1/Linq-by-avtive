@@ -1,34 +1,10 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { neonAuth } from "@/lib/auth/neon";
+import { createClient as createSupabaseMiddlewareClient } from "@/utils/supabase/middleware";
 import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
 const isProtectedRoute =
   /^\/(dashboard|admin|events)(\/.*)?$|^\/cards(\/.*)?$|^\/organization(?!\/(register|status))(\/.*)?$|^\/invite(\/.*)?$/;
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
-
-function clearAuthCookies(request: NextRequest, response: NextResponse, authCookieName = "linq_session_token") {
-  const cookieNamesToClear = new Set<string>([authCookieName]);
-  for (const cookie of request.cookies.getAll()) {
-    const name = cookie.name.toLowerCase();
-    if (
-      name.includes("neon-auth") ||
-      name.includes("session") ||
-      name.includes("token") ||
-      name.includes("clerk")
-    ) {
-      cookieNamesToClear.add(cookie.name);
-    }
-  }
-  for (const name of cookieNamesToClear) {
-    response.cookies.set(name, "", {
-      path: "/",
-      maxAge: 0,
-      expires: new Date(0),
-    });
-  }
-  return response;
-}
 
 function isSameOriginMutation(request: NextRequest) {
   const expectedOrigin = new URL(request.url).origin;
@@ -45,7 +21,7 @@ function isSameOriginMutation(request: NextRequest) {
   return false;
 }
 
-export default clerkMiddleware(async (auth, request: NextRequest) => {
+export default async function middleware(request: NextRequest) {
   const url = new URL(request.url);
   const pathname = url.pathname;
   const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
@@ -58,8 +34,6 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
   };
 
   if (pathname.startsWith("/api/")) {
-    // Neon Auth owns its callback protocol. All product API mutations are
-    // browser-origin checked here so individual routes cannot forget CSRF protection.
     if (
       unsafeMethods.has(request.method) &&
       !pathname.startsWith("/api/auth/") &&
@@ -106,34 +80,22 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return res;
   }
 
-  const isForgotPasswordOrReset =
-    pathname.startsWith("/forgot-password") || pathname.startsWith("/reset-password");
-
-  if (isForgotPasswordOrReset) {
-    const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
-    return clearAuthCookies(request, res);
-  }
-
-  // 1. Every user (registered or non-registered) accessing root "/" lands on the login page first
-  // Residual/stale sessions are cleared on entry so they must enter credentials to move forward.
+  // 1. Every user (registered or unregistered) opening root "/" lands on the login page first
   if (pathname === "/") {
-    const res = withRequestId(NextResponse.redirect(new URL("/login", request.url)));
-    return clearAuthCookies(request, res);
+    return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
   }
 
-  const isPrefetch =
-    request.headers.get("next-router-prefetch") === "1" ||
-    request.headers.get("purpose") === "prefetch" ||
-    request.headers.get("x-middleware-prefetch") === "1";
-
-  // 2. Every user visiting "/login" must land on the login page and authenticate to move forward.
-  // Stale/residual sessions are cleared on full navigation so that access strictly requires credentials.
-  if (pathname === "/login" || pathname === "/login/") {
-    const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
-    if (!isPrefetch) {
-      return clearAuthCookies(request, res);
-    }
-    return res;
+  // 2. Allow everyone to access public authentication pages (login, signup, forgot password)
+  // Preserve valid Supabase sessions across navigation and refreshes — never clear valid cookies on /login.
+  if (
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/signup" ||
+    pathname.startsWith("/signup/") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password")
+  ) {
+    return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
   }
 
   // Allow public attendee shared badges (e.g. ?share=true or token-gated) to render
@@ -143,58 +105,54 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
 
   const isProtected = isProtectedRoute.test(pathname) && !isPublicSharedCard;
 
-  // Fast path: bypass auth parsing for public routes (e.g. /signup, /organization/register, /organization/status, public shared card)
+  // Fast path: bypass auth parsing for public routes (e.g. /organization/register, /organization/status, public shared card)
   if (!isProtected) {
     return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
   }
 
-  const { AUTH_COOKIE_NAME, verifySessionToken } = await import("@/lib/auth/session-token");
-  const jwtCookie = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  let jwtPayload: { userId: string; email: string } | null = null;
-  if (jwtCookie) {
-    jwtPayload = await verifySessionToken(jwtCookie);
-  }
+  // 3. Protect all dashboard and private routes using Supabase Auth exclusively
+  const response = NextResponse.next({ request: { headers: reqHeaders } });
+  let user: { id: string; email?: string; app_metadata?: Record<string, any>; user_metadata?: Record<string, any> } | null = null;
 
-  let session: Awaited<ReturnType<typeof neonAuth.getSession>>["data"] = null;
-  if (!jwtPayload) {
-    try {
-      session = (await neonAuth.getSession({ fetchOptions: { headers: request.headers } })).data;
-    } catch {
-      session = null;
+  try {
+    const supabase = createSupabaseMiddlewareClient(request, response);
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data?.user) {
+      user = data.user;
     }
+  } catch {
+    user = null;
   }
 
-  let clerkUserId: string | null = null;
-  if (!jwtPayload && !session?.user?.id && process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
-    try {
-      const clerkAuth = await auth();
-      clerkUserId = clerkAuth?.userId || null;
-    } catch {
-      clerkUserId = null;
-    }
+  // If user is not authenticated with Supabase Auth, redirect to /login
+  if (!user) {
+    const redirectRes = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.getAll().forEach((c) => {
+      redirectRes.cookies.set(c);
+    });
+    return withRequestId(redirectRes);
   }
 
-  const neonUserId = String(session?.user?.id || "").trim();
-  const userId = jwtPayload?.userId || neonUserId || clerkUserId || undefined;
-
-  const tokenRole = String(session?.user?.role || "").toLowerCase();
-  const tokenEmail = String(jwtPayload?.email || session?.user?.email || "").trim().toLowerCase();
+  // Role resolution: check admin status
+  const userEmail = String(user.email || "").toLowerCase().trim();
+  const userRole = String(user.app_metadata?.role || user.user_metadata?.role || "").toLowerCase();
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  const isAdminUser = tokenRole === "admin" || Boolean(tokenEmail && adminEmails.includes(tokenEmail));
+  const isAdminUser = userRole === "admin" || Boolean(userEmail && adminEmails.includes(userEmail));
 
-  // 3. If user is not logged in, they cannot view the dashboard and must sign in first on Linq platform
-  if (isProtected && !userId) {
-    return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
-  }
-  if (pathname.startsWith("/dashboard") && userId && isAdminUser && !url.searchParams.get("impersonate")) {
-    return withRequestId(NextResponse.redirect(new URL("/admin", request.url)));
+  // Redirect admin users visiting /dashboard to /admin unless impersonating
+  if (pathname.startsWith("/dashboard") && isAdminUser && !url.searchParams.get("impersonate")) {
+    const adminRedirect = NextResponse.redirect(new URL("/admin", request.url));
+    response.cookies.getAll().forEach((c) => {
+      adminRedirect.cookies.set(c);
+    });
+    return withRequestId(adminRedirect);
   }
 
-  return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
-});
+  return withRequestId(response);
+}
 
 export const config = {
   matcher: [

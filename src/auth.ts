@@ -1,10 +1,9 @@
-import { cookies } from "next/headers";
-import { neonAuth } from "@/lib/auth/neon";
+import { createClient as createSupabaseServerClient } from "@/utils/supabase/server";
 import {
   getAuthSessionPayloadByUserId,
-  linkAuthUserToNeonAuthUser,
+  getAuthUserByEmail,
+  registerUser,
 } from "@/lib/auth-db";
-import { verifySessionToken, AUTH_COOKIE_NAME } from "@/lib/auth/session-token";
 
 export type AppAuthSession = {
   expires: string;
@@ -17,12 +16,6 @@ export type AppAuthSession = {
   };
 };
 
-type NeonSessionUser = {
-  id?: string;
-  email?: string;
-  name?: string | null;
-};
-
 function isAdminEmail(email: string) {
   const adminEmails = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
     .split(",")
@@ -33,69 +26,80 @@ function isAdminEmail(email: string) {
 
 export async function getServerAuthSession(): Promise<AppAuthSession | null> {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
-    if (token) {
-      const verified = await verifySessionToken(token);
-      if (verified?.userId) {
-        const payload = await getAuthSessionPayloadByUserId(verified.userId);
-        if (payload) {
-          const role = isAdminEmail(payload.email) ? "admin" : payload.role || "user";
-          return {
-            expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-            user: {
-              id: payload.userId,
-              email: payload.email,
-              name: payload.username || payload.email,
-              role,
-              organizationName: payload.organizationName || "",
-            },
-          };
-        }
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
+      return null;
+    }
+
+    const email = String(user.email || "").trim().toLowerCase();
+    if (!email) return null;
+
+    let authUser = await getAuthUserByEmail(email);
+    let internalUserId = authUser?.user_id;
+
+    if (!internalUserId) {
+      // Just-in-time provisioning: ensure Supabase user exists in internal auth_users & profiles
+      const username = String(
+        user.user_metadata?.username ||
+          user.user_metadata?.name ||
+          email.split("@")[0] ||
+          "user",
+      )
+        .trim()
+        .toLowerCase();
+      const orgName = String(
+        user.user_metadata?.organizationName ||
+          user.user_metadata?.organization_name ||
+          "",
+      ).trim();
+
+      try {
+        const registered = await registerUser({
+          email,
+          password: crypto.randomUUID(),
+          username,
+          organizationName: orgName,
+        });
+        internalUserId = registered.userId;
+      } catch {
+        authUser = await getAuthUserByEmail(email);
+        internalUserId = authUser?.user_id;
       }
     }
+
+    if (!internalUserId) return null;
+
+    const payload = await getAuthSessionPayloadByUserId(internalUserId);
+    if (!payload) return null;
+
+    const role = isAdminEmail(payload.email) ? "admin" : (payload.role || "user");
+    return {
+      expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      user: {
+        id: payload.userId,
+        email: payload.email,
+        name: payload.username || payload.email,
+        role,
+        organizationName: payload.organizationName || "",
+      },
+    };
   } catch {
-    // Non-request context fallback
+    return null;
   }
-
-  try {
-    const { headers } = await import("next/headers");
-    const reqHeaders = await headers();
-    const { data: session } = await (neonAuth as any).getSession({ fetchOptions: { headers: reqHeaders } });
-    const neonUser = session?.user as NeonSessionUser | undefined;
-    const neonAuthUserId = String(neonUser?.id || "").trim();
-    const email = String(neonUser?.email || "").trim().toLowerCase();
-
-    if (neonAuthUserId && email) {
-      const internalUserId = await linkAuthUserToNeonAuthUser(neonAuthUserId, email);
-      if (internalUserId) {
-        const payload = await getAuthSessionPayloadByUserId(internalUserId);
-        if (payload) {
-          const role = isAdminEmail(payload.email) ? "admin" : payload.role || "user";
-          const expiresAt = session?.session?.expiresAt;
-          const expires =
-            expiresAt instanceof Date
-              ? expiresAt.toISOString()
-              : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
-          return {
-            expires,
-            user: {
-              id: payload.userId,
-              email: payload.email,
-              name: payload.username || neonUser?.name || payload.email,
-              role,
-              organizationName: payload.organizationName || "",
-            },
-          };
-        }
-      }
-    }
-  } catch {
-    // Neon Auth unavailable
-  }
-
-  return null;
 }
 
-export { neonAuth };
+// Backwards compatibility export for any legacy references
+export const neonAuth = {
+  handler: () => ({
+    GET: () => Response.json({ status: "disabled" }),
+    POST: () => Response.json({ status: "disabled" }),
+    PUT: () => Response.json({ status: "disabled" }),
+    DELETE: () => Response.json({ status: "disabled" }),
+    PATCH: () => Response.json({ status: "disabled" }),
+  }),
+};

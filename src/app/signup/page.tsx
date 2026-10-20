@@ -108,7 +108,6 @@ export default function SignupPage() {
         throw new Error(signUpResult.error.message || "Failed to create account.");
       }
 
-      const neonAuthUserId = String(signUpResult.data?.user?.id || (signUpResult as { user?: { id?: string } })?.user?.id || "");
       const registerRes = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -119,7 +118,6 @@ export default function SignupPage() {
           organizationName: normalizedOrganizationName,
           organizationLogoUrl,
           linkedin: cleanHandle,
-          neonAuthUserId,
         }),
       });
       const registerPayload = await registerRes.json().catch(() => ({}));

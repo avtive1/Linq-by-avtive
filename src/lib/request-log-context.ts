@@ -1,6 +1,5 @@
 import "server-only";
 
-import { auth } from "@clerk/nextjs/server";
 import { headers } from "next/headers";
 import { getServerAuthSession } from "@/auth";
 import { enterLogContext } from "@/lib/logger-context";
@@ -19,17 +18,10 @@ export function enterApiLogContext(req: Request, userId?: string): void {
 export async function resolveRequestUserId(): Promise<string | undefined> {
   try {
     const session = await getServerAuthSession();
-    const nextAuthId = String(session?.user?.id || "").trim();
-    if (nextAuthId) return nextAuthId;
+    const userId = String(session?.user?.id || "").trim();
+    if (userId) return userId;
   } catch {
     // session unavailable
-  }
-
-  try {
-    const { userId: clerkUserId } = await auth();
-    if (clerkUserId) return clerkUserId;
-  } catch {
-    // clerk unavailable
   }
 
   return undefined;

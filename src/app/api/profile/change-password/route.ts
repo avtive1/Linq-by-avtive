@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { headers } from "next/headers";
-import { getServerAuthSession, neonAuth } from "@/auth";
+import { getServerAuthSession } from "@/auth";
 import { validatePasswordPolicy } from "@/lib/security/password-policy";
 import { changeUserPassword } from "@/lib/auth-db";
+import { createClient as createSupabaseServerClient } from "@/utils/supabase/server";
 
 export async function POST(req: Request) {
   try {
@@ -32,15 +32,10 @@ export async function POST(req: Request) {
       );
     }
 
-    // Optional sync with Neon Auth if session exists
+    // Sync password change with Supabase Auth
     try {
-      const reqHeaders = await headers();
-      await (neonAuth as any).changePassword?.({
-        currentPassword,
-        newPassword,
-        revokeOtherSessions: false,
-        fetchOptions: { headers: reqHeaders },
-      });
+      const supabase = await createSupabaseServerClient();
+      await supabase.auth.updateUser({ password: newPassword });
     } catch {
       // Ignore external sync errors
     }
@@ -51,4 +46,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
