@@ -85,7 +85,7 @@ export default async function middleware(request: NextRequest) {
     return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
   }
 
-  // 2. Allow everyone to access public authentication pages (login, signup, forgot password)
+  // 2. Allow everyone to access public authentication pages (login, signup, forgot password, reset password, auth callbacks)
   // Preserve valid Supabase sessions across navigation and refreshes — never clear valid cookies on /login.
   if (
     pathname === "/login" ||
@@ -93,7 +93,8 @@ export default async function middleware(request: NextRequest) {
     pathname === "/signup" ||
     pathname.startsWith("/signup/") ||
     pathname.startsWith("/forgot-password") ||
-    pathname.startsWith("/reset-password")
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/auth/")
   ) {
     return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
   }

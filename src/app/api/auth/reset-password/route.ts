@@ -6,18 +6,52 @@ import { logger } from "@/lib/logger-server";
 
 export async function POST(req: Request) {
   try {
-    const parsed = await parseJsonBody(req, resetPasswordBodySchema);
-    if (!parsed.ok) return parsed.response;
-    const { token, password } = parsed.data;
+    const rawBody = await req.clone().json().catch(() => ({}));
+    const password = String(rawBody?.password || "");
+    const token = typeof rawBody?.token === "string" ? rawBody.token : undefined;
 
-    const result = await completePasswordReset(token, password);
+    // 1. If reset token provided (e.g. from code verification or API testing), use completePasswordReset
+    if (token) {
+      const parsed = await parseJsonBody(req, resetPasswordBodySchema);
+      if (!parsed.ok) return parsed.response;
 
-    if (!result.success) {
+      const result = await completePasswordReset(token, password);
+      if (!result.success) {
+        return NextResponse.json(
+          { error: result.error || "Failed to reset password." },
+          { status: 400 },
+        );
+      }
+      return NextResponse.json({ data: { ok: true, message: "Password updated successfully." } }, { status: 200 });
+    }
+
+    // 2. Otherwise, check for active Supabase recovery session
+    const { createClient } = await import("@/utils/supabase/server");
+    const supabase = await createClient();
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError || !user || !user.email) {
       return NextResponse.json(
-        { error: result.error || "Failed to reset password." },
-        { status: 400 },
+        { error: "Invalid or expired reset session. Please request a new reset link." },
+        { status: 401 },
       );
     }
+
+    const { validatePasswordPolicy } = await import("@/lib/security/password-policy");
+    const issues = validatePasswordPolicy(password);
+    if (issues.length > 0) {
+      return NextResponse.json({ error: issues[0] }, { status: 400 });
+    }
+
+    // Update password in Supabase Auth
+    const { error: updateError } = await supabase.auth.updateUser({ password });
+    if (updateError) {
+      return NextResponse.json({ error: updateError.message }, { status: 400 });
+    }
+
+    // Sync Argon2 hash in public.auth_users database table
+    const { updateUserPasswordDirectly } = await import("@/lib/auth-db");
+    await updateUserPasswordDirectly(user.email, password);
 
     return NextResponse.json({ data: { ok: true, message: "Password updated successfully." } }, { status: 200 });
   } catch (error: unknown) {

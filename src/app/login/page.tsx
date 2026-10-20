@@ -342,14 +342,7 @@ export default function LoginPage() {
 
               {/* REGISTER PROMPT */}
               <div className="text-center text-[14px] sm:text-[15px] text-[#8A8A8A] flex items-center justify-center gap-1.5 flex-wrap">
-                <span>Don&apos;t have an account?</span>
-                <Link
-                  href="/signup"
-                  className="text-[#743BE8] font-medium hover:text-[#5820CC] hover:underline transition-colors cursor-pointer"
-                >
-                  Sign up
-                </Link>
-                <span>or</span>
+                <span>Need to register an organization?</span>
                 <Link
                   href="/organization/register"
                   className="text-[#743BE8] font-medium hover:text-[#5820CC] hover:underline transition-colors cursor-pointer"

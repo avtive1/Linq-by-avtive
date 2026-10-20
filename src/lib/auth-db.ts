@@ -637,3 +637,27 @@ export async function changeUserPassword(
   return { success: true };
 }
 
+export async function updateUserPasswordDirectly(
+  identifier: string,
+  newPassword: string,
+): Promise<boolean> {
+  await ensureAuthSchema();
+  const normalized = normalizeAuthEmail(identifier);
+  const argon2 = await getArgon2();
+  const pepper = process.env.PASSWORD_PEPPER || "";
+  const hash = await argon2.hash(
+    pepper ? `${newPassword}${pepper}` : newPassword,
+    ARGON2_OPTIONS,
+  );
+  await queryNeonAsSystem(
+    `UPDATE public.auth_users
+     SET password_hash = $1,
+         reset_token_hash = NULL,
+         reset_token_expires_at = NULL,
+         updated_at = now()
+     WHERE user_id = $2 OR email_normalized = $3 OR LOWER(email) = $3`,
+    [hash, identifier, normalized],
+  );
+  return true;
+}
+

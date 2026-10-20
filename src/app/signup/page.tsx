@@ -1,394 +1,45 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { authClient } from "@/lib/auth/client";
 import GradientBackground from "@/components/GradientBackground";
-import { TextInput, Button, FilePicker } from "@/components/ui";
-import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
-import { validatePasswordPolicy } from "@/lib/security/password-policy";
-import { normalizeOrganizationName } from "@/lib/organization/normalize";
-import { logger } from "@/lib/logger-client";
+import { Loader2 } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
-  const [signupStep, setSignupStep] = useState<1 | 2>(1);
-  const [form, setForm] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    organization: "",
-    organizationLogo: "",
-    username: "",
-    linkedin: "",
-  });
-  const [usernameStatus, setUsernameStatus] = useState<"loading" | "available" | "taken" | "invalid" | null>(null);
-  const [usernameLocked, setUsernameLocked] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const usernameCheckSeq = useRef(0);
 
-  const extractLinkedInHandle = (val: string) => {
-    if (!val) return "";
-    // Remove protocol, domain, and common paths to get the handle
-    return val
-      .replace(/https?:\/\//, "")
-      .replace(/www\.linkedin\.com\/in\//, "")
-      .replace(/\/$/, "") // remove trailing slash
-      .split("/")[0]; // takeee first segment after /in/ if any
-  };
-
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    
-    // Email
-    if (!form.email) newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) newErrors.email = "Invalid email format";
-    
-    // Username
-    if (!form.username) newErrors.username = "Username is required";
-    else if (form.username.length < 3) newErrors.username = "Min 3 characters required";
-    else if (!/^[a-zA-Z0-9_.]+$/.test(form.username)) newErrors.username = "Alphanumeric, underscore, or dot only";
-    else if (usernameStatus === "taken") newErrors.username = "Username is already taken";
-    
-    // Password
-    if (!form.password) newErrors.password = "Password is required";
-    else {
-      const passwordIssues = validatePasswordPolicy(form.password);
-      if (passwordIssues.length > 0) newErrors.password = passwordIssues[0];
-    }
-    
-    // Confirm Password
-    if (!form.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
-    else if (form.confirmPassword !== form.password) newErrors.confirmPassword = "Passwords do not match";
-    
-    // Organization
-    if (!form.organization) newErrors.organization = "Organization Name is required";
-    
-    // LinkedIn (Optional)
-    // Removed strict "/" check to allow full URLs
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    
-    setIsSubmitting(true);
-    const cleanHandle = extractLinkedInHandle(form.linkedin);
-    const normalizedOrganizationName = normalizeOrganizationName(form.organization);
-    
-    try {
-      let organizationLogoUrl = form.organizationLogo;
-      // Never store large base64 payloads in auth metadata/JWT.
-      // Upload logo and store only a public URL.
-      if (organizationLogoUrl.startsWith("data:")) {
-        const uploadRes = await fetch("/api/media/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ dataUrl: organizationLogoUrl, folder: "organization-logos" }),
-        });
-        const uploadPayload = await uploadRes.json();
-        if (!uploadRes.ok || !uploadPayload?.data?.url) {
-          throw new Error(uploadPayload?.error || "Organization logo upload failed.");
-        }
-        organizationLogoUrl = String(uploadPayload.data.url);
-      }
-
-      const signUpResult = await authClient.signUp.email({
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-        name: form.username.toLowerCase(),
-      });
-      if (signUpResult.error) {
-        throw new Error(signUpResult.error.message || "Failed to create account.");
-      }
-
-      const registerRes = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: form.email,
-          password: form.password,
-          username: form.username.toLowerCase(),
-          organizationName: normalizedOrganizationName,
-          organizationLogoUrl,
-          linkedin: cleanHandle,
-        }),
-      });
-      const registerPayload = await registerRes.json().catch(() => ({}));
-      if (!registerRes.ok) {
-        throw new Error(registerPayload?.error || "Failed to create account.");
-      }
-
-      toast.success("Account created successfully!");
-      router.refresh();
-      router.push("/dashboard?onboarding=owner");
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to create account. Email may already exist.";
-      setErrors({ email: message });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const checkUsername = async (username: string, signal?: AbortSignal) => {
-    if (username.length < 3) {
-      setUsernameStatus(null);
-      return;
-    }
-    
-    if (!/^[a-zA-Z0-9_.]+$/.test(username)) {
-      setUsernameStatus("invalid");
-      return;
-    }
-
-    setUsernameStatus("loading");
-    try {
-      const res = await fetch(
-        `/api/profile/username/availability?username=${encodeURIComponent(username.toLowerCase())}`,
-        { signal },
-      );
-      if (!res.ok) throw new Error("Username availability check failed.");
-      const payload = await res.json();
-      if (signal?.aborted) return;
-      if (payload?.data?.available === false) {
-        setUsernameStatus("taken");
-      } else {
-        setUsernameStatus("available");
-      }
-    } catch (err) {
-      if ((err as { name?: string })?.name === "AbortError") return;
-      logger.error({ err }, "Username check error");
-      setUsernameStatus(null);
-    }
-  };
-
-  // Debounced effect for username check
   useEffect(() => {
-    // Clear status immediately while typing starts
-    if (!form.username) {
-      setUsernameStatus(null);
-      return;
-    }
-
-    const controller = new AbortController();
-    const seq = ++usernameCheckSeq.current;
-    const timeout = setTimeout(async () => {
-      await checkUsername(form.username, controller.signal);
-      if (seq !== usernameCheckSeq.current || controller.signal.aborted) return;
-    }, 500);
-
-    return () => {
-      controller.abort();
-      clearTimeout(timeout);
-    };
-  }, [form.username]);
-
-  const update = (key: keyof typeof form) => (val: string) => {
-    setForm(prev => ({ ...prev, [key]: val }));
-    if (errors[key]) {
-      setErrors(prev => ({ ...prev, [key]: "" }));
-    }
-  };
-
-  const handleContinueToLogoStep = () => {
-    if (!validate()) return;
-    setSignupStep(2);
-  };
+    // Public user signup is disabled; redirect to login
+    router.replace("/login");
+  }, [router]);
 
   return (
-    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-2 sm:px-4 lg:px-6 overflow-x-hidden overflow-y-auto bg-surface">
+    <main className="relative min-h-screen w-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden bg-surface">
       <GradientBackground />
 
-      <div className="relative z-10 w-full max-w-[420px] animate-slide-up">
-        <Link 
-          href="/" 
-          className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-royal-indigo/30 focus-visible:ring-offset-2 rounded-lg group"
-        >
-          <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
-          </div>
-          <span>Back to Home</span>
-        </Link>
-        {/* Card Header Label */}
+      <div className="relative z-10 w-full max-w-[420px] flex flex-col items-center text-center">
+        {/* Linq Logo */}
         <div className="mb-6 flex justify-center">
-          <Image
-            src="/linq-logo.png"
-            alt="Linq"
-            width={110}
-            height={32}
-            style={{ width: "auto" }}
-            className="h-8 object-contain"
-            priority
-          />
+          <Link href="/" className="inline-block transition-opacity hover:opacity-90">
+            <Image
+              src="/linq-logo.png"
+              alt="Linq"
+              width={120}
+              height={36}
+              style={{ width: "auto" }}
+              className="h-8 object-contain cursor-pointer"
+              priority
+            />
+          </Link>
         </div>
 
-        {/* Signup Card */}
-        <div className="rounded-lg border border-border bg-canvas p-6 sm:p-8 shadow-[0_12px_32px_rgba(90,79,207,0.10)]">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-[32px] font-medium tracking-[-0.01em] leading-[1.15] text-text-primary">
-                Create your profile
-              </h1>
-              <p className="text-[15px] leading-[1.65] text-text-muted">
-                {signupStep === 1
-                  ? "Step 1 of 2: Set up your account and organization."
-                  : "Step 2 of 2: Optionally upload your organization logo, then create your account."}
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {/* Autofill Trap: These hidden fields capture the browser's forced autofill so our real fields stay clean */}
-              <input 
-                id="signup-autofill-user-decoy"
-                type="text" 
-                name="fake_user_name" 
-                autoComplete="username" 
-                style={{ display: "none" }} 
-                tabIndex={-1} 
-              />
-              <input 
-                id="signup-autofill-pass-decoy"
-                type="password" 
-                name="fake_password" 
-                autoComplete="current-password" 
-                style={{ display: "none" }} 
-                tabIndex={-1} 
-              />
-
-              <TextInput
-                label="Email Address"
-                required
-                type="email"
-                name="email"
-                autoComplete="email"
-                placeholder="Enter your email"
-                icon="email"
-                value={form.email}
-                error={errors.email}
-                onChange={update("email")}
-              />
-              <TextInput
-                label="Password"
-                required
-                type="password"
-                placeholder="••••••••••••"
-                icon="lock"
-                value={form.password}
-                error={errors.password}
-                onChange={update("password")}
-              />
-              <TextInput
-                label="Confirm Password"
-                required
-                type="password"
-                placeholder="••••••••••••"
-                icon="lock"
-                value={form.confirmPassword}
-                error={errors.confirmPassword}
-                onChange={update("confirmPassword")}
-              />
-              <div className="flex flex-col gap-1">
-                <TextInput
-                  label="Username"
-                  required
-                  name="avtive_user_handle_v1"
-                  autoComplete="off"
-                  placeholder="choose_a_username"
-                  icon="user"
-                  value={form.username}
-                  error={errors.username}
-                  onChange={update("username")}
-                  readOnly={usernameLocked}
-                  onFocus={() => setUsernameLocked(false)}
-                />
-                {form.username.length >= 2 && (
-                  <div className="text-right">
-                    {usernameStatus === "loading" && <div className="text-[12px] leading-tight font-medium text-text-muted animate-pulse">Checking…</div>}
-                    {usernameStatus === "available" && <div className="text-[12px] leading-tight font-medium text-royal-indigo">Available</div>}
-                    {usernameStatus === "taken" && <div className="text-[12px] leading-tight font-medium text-error">Taken</div>}
-                    {usernameStatus === "invalid" && <div className="text-[12px] leading-tight font-medium text-error">Invalid chars</div>}
-                  </div>
-                )}
-              </div>
-              <TextInput
-                label="Organization Name"
-                required
-                placeholder="Enter your organization"
-                value={form.organization}
-                error={errors.organization}
-                onChange={update("organization")}
-              />
-              {signupStep === 1 ? (
-                <TextInput
-                  label="LinkedIn URL"
-                  placeholder="linkedin.com/in/yourhandle"
-                  prefix="https://"
-                  value={form.linkedin}
-                  error={errors.linkedin}
-                  onChange={update("linkedin")}
-                />
-              ) : (
-                <FilePicker
-                  label="Organization Logo"
-                  value={form.organizationLogo}
-                  onChange={update("organizationLogo")}
-                  onError={(msg) => toast.error(msg)}
-                  error={errors.organizationLogo}
-                  cropTitle="Crop organization logo"
-                  cropSubtitle="Drag the corners or edges to adjust the crop."
-                  cropApplyLabel="Apply logo"
-                />
-              )}
-            </div>
-            {signupStep === 1 ? (
-              <Button
-                type="button"
-                variant="primary"
-                fullWidth
-                size="lg"
-                onClick={handleContinueToLogoStep}
-              >
-                Continue
-              </Button>
-            ) : (
-              <div className="form-actions">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  fullWidth
-                  size="lg"
-                  onClick={() => setSignupStep(1)}
-                >
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  fullWidth
-                  size="lg"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Creating account..." : "Create account"}
-                </Button>
-              </div>
-            )}
-
-            <div className="flex items-center justify-center gap-1 text-sm text-muted">
-              <span>Already have an account?</span>
-              <Link
-                href="/login"
-                className="font-medium text-royal-indigo hover:underline underline-offset-4 transition-all"
-              >
-                Sign in
-              </Link>
-            </div>
-          </form>
+        <div className="rounded-[16px] border border-border bg-canvas p-8 shadow-sm flex flex-col items-center gap-4 w-full">
+          <Loader2 size={32} className="animate-spin text-[#743BE8]" />
+          <p className="text-[15px] font-medium text-[#555555]">
+            Redirecting to sign in...
+          </p>
         </div>
       </div>
     </main>
