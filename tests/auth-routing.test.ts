@@ -78,6 +78,17 @@ describe("Authentication & Dashboard Routing Rules", () => {
     expect(location).toBe("http://localhost:3000/login");
   });
 
+  it("blocks unauthenticated users from viewing nested dashboard routes (e.g. /dashboard/events) and redirects to '/login'", async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue(null);
+
+    const req = new NextRequest("http://localhost:3000/dashboard/events/evt_123");
+    const res = await (proxyMiddleware as any)(() => null, req);
+
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location");
+    expect(location).toBe("http://localhost:3000/login");
+  });
+
   it("blocks unauthenticated users from viewing protected admin routes and redirects to '/login'", async () => {
     vi.mocked(verifySessionToken).mockResolvedValue(null);
 
@@ -118,6 +129,24 @@ describe("Authentication & Dashboard Routing Rules", () => {
     });
 
     const req = new NextRequest("http://localhost:3000/dashboard", {
+      headers: {
+        cookie: "linq_session_token=valid_token_789",
+      },
+    });
+    const res = await (proxyMiddleware as any)(() => null, req);
+
+    expect(res.status).toBe(200);
+    const location = res.headers.get("location");
+    expect(location).toBeNull();
+  });
+
+  it("allows authenticated users to view nested dashboard routes after authentication", async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue({
+      userId: "user_active_789",
+      email: "user@example.com",
+    });
+
+    const req = new NextRequest("http://localhost:3000/dashboard/events/evt_123", {
       headers: {
         cookie: "linq_session_token=valid_token_789",
       },
