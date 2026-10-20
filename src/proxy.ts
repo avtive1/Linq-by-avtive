@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { neonAuth } from "@/lib/auth/neon";
 import { classifyApiRoute, clientIp, getRateLimiters, rateLimitKey } from "@/lib/rate-limit";
 
-const isProtectedRoute = /^\/(dashboard|admin)(\/.*)?$/;
+const isProtectedRoute =
+  /^\/(dashboard|admin|events)(\/.*)?$|^\/cards(\/.*)?$|^\/organization(?!\/(register|status))(\/.*)?$|^\/invite(\/.*)?$/;
 const unsafeMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 function clearAuthCookies(request: NextRequest, response: NextResponse, authCookieName = "linq_session_token") {
@@ -113,9 +114,11 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return clearAuthCookies(request, res);
   }
 
-  // 1. Every user (logged in or not) accessing root "/" is redirected to "/login"
+  // 1. Every user (registered or non-registered) accessing root "/" lands on the login page first
+  // Residual/stale sessions are cleared on entry so they must enter credentials to move forward.
   if (pathname === "/") {
-    return withRequestId(NextResponse.redirect(new URL("/login", request.url)));
+    const res = withRequestId(NextResponse.redirect(new URL("/login", request.url)));
+    return clearAuthCookies(request, res);
   }
 
   const isPrefetch =
@@ -123,8 +126,8 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     request.headers.get("purpose") === "prefetch" ||
     request.headers.get("x-middleware-prefetch") === "1";
 
-  // 2. Every user visiting "/login" must follow the login page and authenticate to view the dashboard.
-  // Stale/residual sessions are cleared on full navigation so that access strictly requires authentication.
+  // 2. Every user visiting "/login" must land on the login page and authenticate to move forward.
+  // Stale/residual sessions are cleared on full navigation so that access strictly requires credentials.
   if (pathname === "/login" || pathname === "/login/") {
     const res = withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
     if (!isPrefetch) {
@@ -133,9 +136,14 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     return res;
   }
 
-  const isProtected = isProtectedRoute.test(pathname);
+  // Allow public attendee shared badges (e.g. ?share=true or token-gated) to render
+  const isPublicSharedCard =
+    /^\/cards\/[0-9a-fA-F-]+$/.test(pathname) &&
+    (url.searchParams.has("share") || url.searchParams.has("token"));
 
-  // Fast path: bypass all auth parsing for public non-protected routes (e.g. /cards, /events, /signup, /organization)
+  const isProtected = isProtectedRoute.test(pathname) && !isPublicSharedCard;
+
+  // Fast path: bypass auth parsing for public routes (e.g. /signup, /organization/register, /organization/status, public shared card)
   if (!isProtected) {
     return withRequestId(NextResponse.next({ request: { headers: reqHeaders } }));
   }

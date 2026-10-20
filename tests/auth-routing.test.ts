@@ -31,13 +31,21 @@ describe("Authentication & Dashboard Routing Rules", () => {
     vi.clearAllMocks();
   });
 
-  it("redirects root '/' to '/login' so every user lands on the login page", async () => {
-    const req = new NextRequest("http://localhost:3000/");
+  it("redirects root '/' to '/login' and clears any residual sessions so users land on login page", async () => {
+    const req = new NextRequest("http://localhost:3000/", {
+      headers: {
+        cookie: "linq_session_token=old_token_123",
+      },
+    });
     const res = await (proxyMiddleware as any)(() => null, req);
 
     expect(res.status).toBe(307);
     const location = res.headers.get("location");
     expect(location).toBe("http://localhost:3000/login");
+
+    const setCookie = res.headers.get("set-cookie") || "";
+    expect(setCookie).toContain("linq_session_token");
+    expect(setCookie.toLowerCase()).toContain("max-age=0");
   });
 
   it("allows access to '/login' and clears any residual sessions so users must authenticate freshly", async () => {
@@ -81,6 +89,28 @@ describe("Authentication & Dashboard Routing Rules", () => {
     expect(location).toBe("http://localhost:3000/login");
   });
 
+  it("blocks unauthenticated users from viewing protected cards/new and redirects to '/login'", async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue(null);
+
+    const req = new NextRequest("http://localhost:3000/cards/new");
+    const res = await (proxyMiddleware as any)(() => null, req);
+
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location");
+    expect(location).toBe("http://localhost:3000/login");
+  });
+
+  it("blocks unauthenticated users from viewing protected events and redirects to '/login'", async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue(null);
+
+    const req = new NextRequest("http://localhost:3000/events");
+    const res = await (proxyMiddleware as any)(() => null, req);
+
+    expect(res.status).toBe(307);
+    const location = res.headers.get("location");
+    expect(location).toBe("http://localhost:3000/login");
+  });
+
   it("allows authenticated users to view the dashboard after authentication", async () => {
     vi.mocked(verifySessionToken).mockResolvedValue({
       userId: "user_active_789",
@@ -94,9 +124,36 @@ describe("Authentication & Dashboard Routing Rules", () => {
     });
     const res = await (proxyMiddleware as any)(() => null, req);
 
-    // It allows through to the dashboard
     expect(res.status).toBe(200);
     const location = res.headers.get("location");
     expect(location).toBeNull();
+  });
+
+  it("allows authenticated users to move forward into /cards/new after putting credentials", async () => {
+    vi.mocked(verifySessionToken).mockResolvedValue({
+      userId: "user_active_789",
+      email: "user@example.com",
+    });
+
+    const req = new NextRequest("http://localhost:3000/cards/new", {
+      headers: {
+        cookie: "linq_session_token=valid_token_789",
+      },
+    });
+    const res = await (proxyMiddleware as any)(() => null, req);
+
+    expect(res.status).toBe(200);
+    const location = res.headers.get("location");
+    expect(location).toBeNull();
+  });
+
+  it("allows public signup and organization register pages for non-registered users", async () => {
+    const signupReq = new NextRequest("http://localhost:3000/signup");
+    const signupRes = await (proxyMiddleware as any)(() => null, signupReq);
+    expect(signupRes.status).toBe(200);
+
+    const orgReq = new NextRequest("http://localhost:3000/organization/register");
+    const orgRes = await (proxyMiddleware as any)(() => null, orgReq);
+    expect(orgRes.status).toBe(200);
   });
 });
