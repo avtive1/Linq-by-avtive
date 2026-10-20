@@ -31,14 +31,44 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
   const host = process.env.SMTP_HOST || "smtp.gmail.com";
   const port = Number(process.env.SMTP_PORT || "587");
 
-  if (!user || !pass) {
-    return { sent: false, error: "Email provider not configured. Please set SMTP_USER and SMTP_PASS." };
-  }
-
   // Ensure from header is RFC 5322 formatted (e.g. "Acme Corp <hello@avtive.app>")
   const formattedFrom = rawFrom.includes("<")
     ? rawFrom
     : `"${fromName.replace(/"/g, "")}" <${rawFrom.trim()}>`;
+
+  // 1. Primary path: Use Resend API if RESEND_API_KEY is configured
+  const resendApiKey = process.env.RESEND_API_KEY;
+  if (resendApiKey) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: formattedFrom,
+          to: [input.to],
+          subject: input.subject,
+          text: input.text,
+          html: input.html,
+          reply_to: replyTo,
+        }),
+      });
+
+      if (res.ok) {
+        return { sent: true };
+      }
+      const errJson = await res.json().catch(() => ({}));
+      logger.warn({ errJson }, "Resend API call failed, falling back to SMTP transport if available");
+    } catch (err) {
+      logger.warn({ err }, "Resend API call error, falling back to SMTP transport if available");
+    }
+  }
+
+  if (!user || !pass) {
+    return { sent: false, error: "Email provider not configured. Please set RESEND_API_KEY or SMTP_USER and SMTP_PASS." };
+  }
 
   try {
     const transporter = nodemailer.createTransport({
