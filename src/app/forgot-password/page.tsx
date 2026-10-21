@@ -48,24 +48,33 @@ export default function ForgotPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
-        // Must be listed under Authentication → URL Configuration → Redirect URLs
-        redirectTo: `${window.location.origin}/reset-password`,
+      // 1. Call server API which uses the Supabase service-role key (mirrors Supabase Dashboard)
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: trimmed }),
       });
 
-      if (resetError) {
-        // Supabase rate limit (too many emails requested)
-        if (resetError.status === 429 || /rate limit|security purposes/i.test(resetError.message)) {
-          setCooldown(RESEND_COOLDOWN_SECONDS);
-          throw new Error("Too many requests. Please wait a minute and try again.");
+      if (!res.ok) {
+        // Fallback to client-side Supabase auth if API returns error
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (resetError) {
+          if (resetError.status === 429 || /rate limit|security purposes/i.test(resetError.message)) {
+            setCooldown(RESEND_COOLDOWN_SECONDS);
+            throw new Error("Too many requests. Please wait a minute and try again.");
+          }
+          throw new Error(resetError.message || "Failed to send reset link.");
         }
-        throw new Error(resetError.message || "Failed to send reset link.");
       }
 
-      // Always show the same success state, so we never reveal whether an email is registered
+      const data = await res.json().catch(() => ({}));
+
+      // Always show success state so we never reveal whether an email exists
       setEmail(trimmed);
       setLinkSent(true);
-      setCooldown(RESEND_COOLDOWN_SECONDS);
+      setCooldown(data?.data?.cooldownSeconds || RESEND_COOLDOWN_SECONDS);
       toast.success("If an account exists, a reset link has been sent.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send reset link.");
