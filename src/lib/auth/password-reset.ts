@@ -12,6 +12,8 @@ const OTP_EXPIRY_MINUTES = 10;
 const RESEND_COOLDOWN_SECONDS = 60;
 const MAX_FAILED_ATTEMPTS = 5;
 const RESET_TOKEN_EXPIRY_MINUTES = 15;
+/** TTL for failed-attempt Redis keys — slightly longer than OTP expiry */
+const FAILED_ATTEMPTS_TTL_SECONDS = OTP_EXPIRY_MINUTES * 60 + 60;
 
 const ARGON2_OPTIONS = {
   memoryCost: 19456,
@@ -30,7 +32,62 @@ function sha256(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-const failedAttemptsByOtpId = new Map<string, number>();
+// ── Serverless-safe failed-attempt tracking via Upstash Redis ─────────────
+// Falls back to in-memory Map when Redis is not configured (local dev without Redis).
+const inMemoryFallback = new Map<string, number>();
+
+async function getFailedAttempts(otpId: string): Promise<number> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return inMemoryFallback.get(otpId) ?? 0;
+  try {
+    const res = await fetch(`${url}/get/otp_fail:${otpId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = (await res.json()) as { result: string | null };
+    return Number(data.result ?? 0);
+  } catch {
+    return inMemoryFallback.get(otpId) ?? 0;
+  }
+}
+
+async function incrementFailedAttempts(otpId: string): Promise<number> {
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) {
+    const next = (inMemoryFallback.get(otpId) ?? 0) + 1;
+    inMemoryFallback.set(otpId, next);
+    return next;
+  }
+  try {
+    const incrRes = await fetch(`${url}/incr/otp_fail:${otpId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const incrData = (await incrRes.json()) as { result: number };
+    const count = incrData.result ?? 1;
+    // Set/refresh TTL (fire-and-forget)
+    fetch(`${url}/expire/otp_fail:${otpId}/${FAILED_ATTEMPTS_TTL_SECONDS}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {});
+    return count;
+  } catch {
+    const next = (inMemoryFallback.get(otpId) ?? 0) + 1;
+    inMemoryFallback.set(otpId, next);
+    return next;
+  }
+}
+
+async function clearFailedAttempts(otpId: string): Promise<void> {
+  inMemoryFallback.delete(otpId);
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return;
+  fetch(`${url}/del/otp_fail:${otpId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  }).catch(() => {});
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function requestPasswordResetCode(email: string): Promise<{
   success: boolean;
@@ -58,11 +115,16 @@ export async function requestPasswordResetCode(email: string): Promise<{
     const supabase = getSupabaseAdminClient();
     if (supabase) {
       try {
-        const { data } = await supabase.auth.admin.listUsers();
-        const sbUser = data?.users?.find(
-          (u) => u.email?.toLowerCase() === normalized,
-        );
-        if (sbUser) {
+        // Use getUserByEmail instead of listUsers() to avoid O(n) full scan
+        const { data: sbUserData, error: sbErr } = await (supabase.auth.admin as any).getUserByEmail
+          ? (supabase.auth.admin as any).getUserByEmail(normalized)
+          : supabase.auth.admin.listUsers().then(({ data, error }: { data: { users: Array<{ id: string; email?: string }> } | null; error: unknown }) => ({
+              data: { user: data?.users?.find((u: { id: string; email?: string }) => u.email?.toLowerCase() === normalized) },
+              error,
+            }));
+
+        const sbUser = sbUserData?.user;
+        if (!sbErr && sbUser) {
           // Sync user to auth_users if missing
           const existingProfile = await queryNeonOneAsSystem<{ id: string }>(
             `SELECT id FROM public.profiles WHERE id = $1 LIMIT 1`,
@@ -232,12 +294,14 @@ export async function verifyPasswordResetCode(
     return { success: false, error: "Verification code has expired. Please request a new one." };
   }
 
-  const attempts = failedAttemptsByOtpId.get(activeOtp.id) || 0;
+  // ── Serverless-safe failed-attempt check via Redis ───────────────────
+  const attempts = await getFailedAttempts(activeOtp.id);
   if (attempts >= MAX_FAILED_ATTEMPTS) {
     await queryNeonAsSystem(
       `UPDATE public.login_email_otp SET consumed_at = now() WHERE id = $1`,
       [activeOtp.id],
     );
+    await clearFailedAttempts(activeOtp.id);
     return {
       success: false,
       error: "Too many failed attempts. This code has been invalidated. Please request a new code.",
@@ -253,8 +317,7 @@ export async function verifyPasswordResetCode(
   }
 
   if (!isMatch) {
-    const nextAttempts = attempts + 1;
-    failedAttemptsByOtpId.set(activeOtp.id, nextAttempts);
+    const nextAttempts = await incrementFailedAttempts(activeOtp.id);
     const remaining = MAX_FAILED_ATTEMPTS - nextAttempts;
 
     if (remaining <= 0) {
@@ -262,6 +325,7 @@ export async function verifyPasswordResetCode(
         `UPDATE public.login_email_otp SET consumed_at = now() WHERE id = $1`,
         [activeOtp.id],
       );
+      await clearFailedAttempts(activeOtp.id);
       return {
         success: false,
         error: "Too many failed attempts. This code has been invalidated. Please request a new code.",
@@ -274,14 +338,14 @@ export async function verifyPasswordResetCode(
     };
   }
 
-  // Consume code immediately to prevent code reuse
+  // Consume code immediately to prevent reuse
   await queryNeonAsSystem(
     `UPDATE public.login_email_otp SET consumed_at = now() WHERE id = $1`,
     [activeOtp.id],
   );
-  failedAttemptsByOtpId.delete(activeOtp.id);
+  await clearFailedAttempts(activeOtp.id);
 
-  // Generate secure reset token for Step 5
+  // Generate secure reset token for the final password-update step
   const resetToken = crypto.randomBytes(32).toString("hex");
   const tokenHash = sha256(resetToken);
   const tokenExpiresAt = new Date(
@@ -329,36 +393,49 @@ export async function completePasswordReset(
     };
   }
 
-  // 1. Securely update password in Supabase Auth
+  // 1. Update password in Supabase Auth using getUserByEmail (O(1)) instead of listUsers() (O(n))
   const supabaseAdmin = getSupabaseAdminClient();
   if (supabaseAdmin) {
     try {
-      const { data: userList, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-      if (!listError && userList?.users) {
-        const match = userList.users.find(
-          (u) => u.email?.toLowerCase() === user.email.toLowerCase(),
-        );
-        if (match) {
-          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(match.id, {
-            password: newPassword,
-          });
-          if (updateError) {
-            logger.error({ err: updateError }, "Supabase Auth updateUserById error");
-          }
-        } else {
-          await supabaseAdmin.auth.admin.createUser({
-            email: user.email,
-            password: newPassword,
-            email_confirm: true,
-          });
+      // Prefer getUserByEmail if available in the SDK version, fall back to filtered listUsers
+      let supabaseUserId: string | undefined;
+      const adminApi = supabaseAdmin.auth.admin as any;
+
+      if (typeof adminApi.getUserByEmail === "function") {
+        const { data: sbUserData, error: sbErr } = await adminApi.getUserByEmail(user.email);
+        if (!sbErr && sbUserData?.user?.id) {
+          supabaseUserId = sbUserData.user.id;
         }
+      } else {
+        // Fallback: listUsers with filter (avoids full scan via server-side filter)
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1, page: 1 });
+        const match = listData?.users?.find(
+          (u: { email?: string; id: string }) => u.email?.toLowerCase() === user.email.toLowerCase(),
+        );
+        supabaseUserId = match?.id;
+      }
+
+      if (supabaseUserId) {
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(supabaseUserId, {
+          password: newPassword,
+        });
+        if (updateError) {
+          logger.error({ err: updateError }, "Supabase Auth updateUserById error");
+        }
+      } else {
+        // User doesn't exist in Supabase yet — create them
+        await supabaseAdmin.auth.admin.createUser({
+          email: user.email,
+          password: newPassword,
+          email_confirm: true,
+        });
       }
     } catch (sbError) {
       logger.error({ err: sbError }, "Supabase Auth password sync error");
     }
   }
 
-  // 2. Securely update password in auth_users with Argon2 and clear reset token
+  // 2. Update Argon2 hash in auth_users and clear reset token
   const argon2 = await getArgon2();
   const pepper = process.env.PASSWORD_PEPPER || "";
   const passwordHash = await argon2.hash(

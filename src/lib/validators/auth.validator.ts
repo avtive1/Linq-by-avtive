@@ -3,7 +3,7 @@ import { emailFieldSchema } from "@/lib/validators/common.validator";
 
 export const registerBodySchema = z.object({
   email: emailFieldSchema,
-  password: z.string().min(8, "Password must be at least 8 characters.").max(128),
+  password: z.string().min(12, "Password must be at least 12 characters.").max(128),
   username: z
     .string()
     .trim()
@@ -33,5 +33,5 @@ export const verifyResetCodeBodySchema = z.object({
 
 export const resetPasswordBodySchema = z.object({
   token: z.string().trim().min(16, "Invalid reset token.").max(256),
-  password: z.string().min(8, "Password must be at least 8 characters.").max(128),
+  password: z.string().min(12, "Password must be at least 12 characters.").max(128),
 });

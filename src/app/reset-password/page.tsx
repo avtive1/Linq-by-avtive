@@ -38,46 +38,67 @@ function ResetPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Check URL parameters and validate Supabase recovery session
+  // Validate the Supabase recovery link / session
   useEffect(() => {
     let isMounted = true;
 
+    const fail = (message: string) => {
+      if (!isMounted) return;
+      setSessionError(message);
+      setIsValidSession(false);
+      setCheckingSession(false);
+    };
+
     async function checkRecoverySession() {
       try {
-        const errorParam = searchParams.get("error");
-        const errorDescParam = searchParams.get("error_description");
+        // Supabase can return errors in the query string OR in the URL hash (#error=...)
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const errorParam = searchParams.get("error") || hash.get("error");
+        const errorDescParam =
+          searchParams.get("error_description") || hash.get("error_description");
         if (errorParam || errorDescParam) {
-          if (isMounted) {
-            setSessionError(errorDescParam || errorParam || "Invalid or expired recovery link.");
-            setIsValidSession(false);
-            setCheckingSession(false);
-          }
+          fail((errorDescParam || errorParam || "Invalid or expired recovery link.").replace(/\+/g, " "));
           return;
         }
 
-        // If a code query parameter exists in URL (e.g. direct redirect without /auth/callback)
-        const code = searchParams.get("code");
-        if (code) {
-          const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeErr) {
-            if (isMounted) {
-              setSessionError(exchangeErr.message || "Failed to exchange recovery code.");
-              setIsValidSession(false);
-              setCheckingSession(false);
-            }
+        // Case 1: token_hash link (custom email template). Works in any browser.
+        const tokenHash = searchParams.get("token_hash");
+        if (tokenHash && searchParams.get("type") === "recovery") {
+          const { error: otpErr } = await supabase.auth.verifyOtp({
+            type: "recovery",
+            token_hash: tokenHash,
+          });
+          if (otpErr) {
+            fail(otpErr.message || "Invalid or expired recovery link.");
             return;
           }
         }
 
-        // Check whether Supabase has an active session / user
-        const { data: { user }, error: userErr } = await supabase.auth.getUser();
+        // Case 2: PKCE link with ?code=
+        const code = searchParams.get("code");
+        if (code) {
+          const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeErr) {
+            // The client may already have exchanged the code (auto-detect / Strict Mode).
+            // Only fail if there is genuinely no session.
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (!session) {
+              fail(exchangeErr.message || "Failed to exchange recovery code.");
+              return;
+            }
+          }
+        }
+
+        // Final check: is there an authenticated user now?
+        const {
+          data: { user },
+          error: userErr,
+        } = await supabase.auth.getUser();
 
         if (userErr || !user) {
-          if (isMounted) {
-            setSessionError("No active password recovery session found. Please request a new link.");
-            setIsValidSession(false);
-            setCheckingSession(false);
-          }
+          fail("No active password recovery session found. Please request a new link.");
           return;
         }
 
@@ -87,22 +108,19 @@ function ResetPasswordForm() {
           setCheckingSession(false);
         }
       } catch (err) {
-        if (isMounted) {
-          setSessionError(err instanceof Error ? err.message : "Session verification failed.");
-          setIsValidSession(false);
-          setCheckingSession(false);
-        }
+        fail(err instanceof Error ? err.message : "Session verification failed.");
       }
     }
 
-    // Also listen to PASSWORD_RECOVERY event from auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session?.user)) {
-        if (isMounted) {
-          setUserEmail(session?.user?.email || "");
-          setIsValidSession(true);
-          setCheckingSession(false);
-        }
+    // Also listen for the PASSWORD_RECOVERY event
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Only trust PASSWORD_RECOVERY (not SIGNED_IN) to establish a recovery session.
+      if (event === "PASSWORD_RECOVERY" && isMounted) {
+        setUserEmail(session?.user?.email || "");
+        setIsValidSession(true);
+        setCheckingSession(false);
       }
     });
 
@@ -114,7 +132,7 @@ function ResetPasswordForm() {
     };
   }, [searchParams, supabase]);
 
-  // Live password validation checks based on project PASSWORD_POLICY
+  // Live password checks based on project PASSWORD_POLICY
   const hasMinLength = password.length >= PASSWORD_POLICY.minLength;
   const hasUpper = /[A-Z]/.test(password);
   const hasLower = /[a-z]/.test(password);
@@ -146,25 +164,27 @@ function ResetPasswordForm() {
 
     setIsSubmitting(true);
     try {
-      // 1. Update password via Supabase Auth
-      const { error: updateError } = await supabase.auth.updateUser({
-        password,
-      });
-
+      // 1. Update password in Supabase Auth
+      const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) {
         throw new Error(updateError.message || "Could not update password.");
       }
 
-      // 2. Synchronize new password with database public.auth_users
-      try {
-        await fetch("/api/auth/reset-password", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password }),
-        });
-      } catch {
-        // Non-blocking sync
+      // 2. Sync new password to public.auth_users (must succeed, otherwise login may fail)
+      const syncRes = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!syncRes.ok) {
+        const data = await syncRes.json().catch(() => ({}));
+        throw new Error(
+          data.error || "Password updated, but account sync failed. Please contact support."
+        );
       }
+
+      // 3. End the recovery session so the user signs in fresh with the new password
+      await supabase.auth.signOut();
 
       toast.success("Password updated successfully!");
       setIsSuccess(true);
@@ -181,9 +201,7 @@ function ResetPasswordForm() {
       {checkingSession && (
         <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
           <Loader2 size={36} className="animate-spin text-[#743BE8]" />
-          <p className="text-[15px] font-medium text-[#555555]">
-            Verifying recovery session...
-          </p>
+          <p className="text-[15px] font-medium text-[#555555]">Verifying recovery session...</p>
         </div>
       )}
 
@@ -199,12 +217,14 @@ function ResetPasswordForm() {
               Recovery link expired or invalid
             </h1>
             <p className="text-[14px] sm:text-[15px] text-[#666666] leading-relaxed max-w-[380px]">
-              {sessionError || "This password reset link is invalid, has expired, or has already been used."}
+              {sessionError ||
+                "This password reset link is invalid, has expired, or has already been used."}
             </p>
           </div>
 
           <p className="text-[13px] text-[#858585] leading-relaxed max-w-[360px]">
-            For your security, password reset links can only be used once. Please request a new link to choose a new password.
+            For your security, password reset links can only be used once. Please request a new
+            link to choose a new password.
           </p>
 
           <div className="w-full flex flex-col gap-3 pt-2">
@@ -272,7 +292,8 @@ function ResetPasswordForm() {
             <p className="text-[14px] sm:text-[15px] text-[#858585] leading-[1.6]">
               {userEmail ? (
                 <>
-                  Creating a new password for <strong className="text-[#171717]">{userEmail}</strong>
+                  Creating a new password for{" "}
+                  <strong className="text-[#171717]">{userEmail}</strong>
                 </>
               ) : (
                 "Create a strong, secure password for your account."
@@ -316,9 +337,8 @@ function ResetPasswordForm() {
                     setErrors((prev) => ({ ...prev, password: "", form: "" }));
                   }
                 }}
-                className={`w-full h-[52px] sm:h-[56px] pl-11 pr-12 rounded-[12px] border ${
-                  errors.password ? "border-[#DC2626]" : "border-[#D8D8D8]"
-                } bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all`}
+                className={`w-full h-[52px] sm:h-[56px] pl-11 pr-12 rounded-[12px] border ${errors.password ? "border-[#DC2626]" : "border-[#D8D8D8]"
+                  } bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all`}
               />
               <button
                 type="button"
@@ -361,9 +381,8 @@ function ResetPasswordForm() {
                     setErrors((prev) => ({ ...prev, confirmPassword: "", form: "" }));
                   }
                 }}
-                className={`w-full h-[52px] sm:h-[56px] pl-11 pr-12 rounded-[12px] border ${
-                  errors.confirmPassword ? "border-[#DC2626]" : "border-[#D8D8D8]"
-                } bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all`}
+                className={`w-full h-[52px] sm:h-[56px] pl-11 pr-12 rounded-[12px] border ${errors.confirmPassword ? "border-[#DC2626]" : "border-[#D8D8D8]"
+                  } bg-[#FFFFFF] text-[15px] sm:text-[16px] text-[#202020] placeholder:text-[#A0A0A0] focus:outline-none focus:border-[#743BE8] focus:ring-2 focus:ring-[#743BE8]/15 transition-all`}
               />
               <button
                 type="button"
@@ -385,46 +404,23 @@ function ResetPasswordForm() {
           <div className="p-3.5 rounded-[12px] bg-[#F7F7F8] border border-[#ECECEC] flex flex-col gap-2 text-left">
             <span className="text-[12px] font-medium text-[#555555]">Password requirements:</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[12px]">
-              <div className="flex items-center gap-1.5">
-                {hasMinLength ? (
-                  <Check size={14} className="text-[#16A34A] shrink-0" strokeWidth={3} />
-                ) : (
-                  <X size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
-                )}
-                <span className={hasMinLength ? "text-[#16A34A] font-medium" : "text-[#737373]"}>
-                  At least 12 characters
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {hasUpper && hasLower ? (
-                  <Check size={14} className="text-[#16A34A] shrink-0" strokeWidth={3} />
-                ) : (
-                  <X size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
-                )}
-                <span className={hasUpper && hasLower ? "text-[#16A34A] font-medium" : "text-[#737373]"}>
-                  Upper & lower case
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {hasNumber && hasSymbol ? (
-                  <Check size={14} className="text-[#16A34A] shrink-0" strokeWidth={3} />
-                ) : (
-                  <X size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
-                )}
-                <span className={hasNumber && hasSymbol ? "text-[#16A34A] font-medium" : "text-[#737373]"}>
-                  Number & symbol
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {isMatch ? (
-                  <Check size={14} className="text-[#16A34A] shrink-0" strokeWidth={3} />
-                ) : (
-                  <X size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
-                )}
-                <span className={isMatch ? "text-[#16A34A] font-medium" : "text-[#737373]"}>
-                  Passwords match
-                </span>
-              </div>
+              {[
+                { ok: hasMinLength, label: `At least ${PASSWORD_POLICY.minLength} characters` },
+                { ok: hasUpper && hasLower, label: "Upper & lower case" },
+                { ok: hasNumber && hasSymbol, label: "Number & symbol" },
+                { ok: isMatch, label: "Passwords match" },
+              ].map(({ ok, label }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  {ok ? (
+                    <Check size={14} className="text-[#16A34A] shrink-0" strokeWidth={3} />
+                  ) : (
+                    <X size={14} className="text-[#A3A3A3] shrink-0" strokeWidth={2} />
+                  )}
+                  <span className={ok ? "text-[#16A34A] font-medium" : "text-[#737373]"}>
+                    {label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -482,7 +478,10 @@ export default function ResetPasswordPage() {
           className="mb-5 inline-flex items-center gap-2 text-[13px] font-normal text-text-muted hover:text-text-primary hover:underline underline-offset-4 transition-all duration-150 rounded-lg group"
         >
           <div className="w-9 h-9 rounded-lg bg-canvas/80 backdrop-blur-sm border border-border flex items-center justify-center group-hover:bg-canvas group-hover:border-border shadow-sm">
-            <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform text-text-primary" />
+            <ArrowLeft
+              size={16}
+              className="group-hover:-translate-x-0.5 transition-transform text-text-primary"
+            />
           </div>
           <span>Back to sign in</span>
         </Link>

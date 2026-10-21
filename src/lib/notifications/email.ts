@@ -74,7 +74,20 @@ export async function sendTransactionalEmail(input: AccessRequestEmailInput): Pr
         return { sent: true };
       }
       const errJson = await res.json().catch(() => ({}));
-      logger.warn({ errJson }, "Resend API call failed, falling back to SMTP transport if available");
+      // Common cause: Resend does not allow Gmail/Yahoo/Hotmail sender addresses.
+      // The EMAIL_FROM domain must be verified in the Resend dashboard.
+      // See: https://resend.com/docs/dashboard/domains/introduction
+      logger.warn(
+        {
+          errJson,
+          resendHttpStatus: res.status,
+          fromEmail: rawFrom,
+          hint: res.status === 403 || res.status === 422
+            ? "Resend rejected the sender domain. Verify a custom domain at resend.com/domains and update EMAIL_FROM. Gmail addresses are not permitted."
+            : undefined,
+        },
+        "Resend API call failed — falling back to SMTP transport if available",
+      );
     } catch (err) {
       logger.warn({ err }, "Resend API call error, falling back to SMTP transport if available");
     }
