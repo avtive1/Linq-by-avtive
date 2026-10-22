@@ -1,3 +1,4 @@
+// File location: app/reset-password/page.tsx
 "use client";
 
 import { Suspense, useState, useEffect, useMemo } from "react";
@@ -38,12 +39,25 @@ function ResetPasswordForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  // Validate the Supabase recovery link / session
+  // Validate the emailed reset link and establish a recovery session
   useEffect(() => {
     let isMounted = true;
+    let resolved = false;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const succeed = (email: string) => {
+      if (!isMounted) return;
+      resolved = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      setUserEmail(email);
+      setIsValidSession(true);
+      setCheckingSession(false);
+    };
 
     const fail = (message: string) => {
-      if (!isMounted) return;
+      if (!isMounted || resolved) return;
+      resolved = true;
+      if (timeoutId) clearTimeout(timeoutId);
       setSessionError(message);
       setIsValidSession(false);
       setCheckingSession(false);
@@ -57,11 +71,13 @@ function ResetPasswordForm() {
         const errorDescParam =
           searchParams.get("error_description") || hash.get("error_description");
         if (errorParam || errorDescParam) {
-          fail((errorDescParam || errorParam || "Invalid or expired recovery link.").replace(/\+/g, " "));
+          fail(
+            (errorDescParam || errorParam || "Invalid or expired recovery link.").replace(/\+/g, " ")
+          );
           return;
         }
 
-        // Case 1: token_hash link (custom email template). Works in any browser.
+        // Case 1 (main flow): link contains ?token_hash=...&type=recovery
         const tokenHash = searchParams.get("token_hash");
         if (tokenHash && searchParams.get("type") === "recovery") {
           const { error: otpErr } = await supabase.auth.verifyOtp({
@@ -69,18 +85,24 @@ function ResetPasswordForm() {
             token_hash: tokenHash,
           });
           if (otpErr) {
-            fail(otpErr.message || "Invalid or expired recovery link.");
-            return;
+            // The token is single use. In dev (React Strict Mode) this effect runs twice,
+            // so the second call fails even though the first one succeeded.
+            // Only fail if there is genuinely no session.
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+            if (!session) {
+              fail(otpErr.message || "Invalid or expired recovery link.");
+              return;
+            }
           }
         }
 
-        // Case 2: PKCE link with ?code=
+        // Case 2: PKCE style link with ?code=
         const code = searchParams.get("code");
         if (code) {
           const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
           if (exchangeErr) {
-            // The client may already have exchanged the code (auto-detect / Strict Mode).
-            // Only fail if there is genuinely no session.
             const {
               data: { session },
             } = await supabase.auth.getSession();
@@ -91,22 +113,26 @@ function ResetPasswordForm() {
           }
         }
 
-        // Final check: is there an authenticated user now?
+        // Final check: is there an authenticated recovery user now?
         const {
           data: { user },
-          error: userErr,
         } = await supabase.auth.getUser();
 
-        if (userErr || !user) {
-          fail("No active password recovery session found. Please request a new link.");
+        if (user) {
+          succeed(user.email || "");
           return;
         }
 
-        if (isMounted) {
-          setUserEmail(user.email || "");
-          setIsValidSession(true);
-          setCheckingSession(false);
+        // Case 3: implicit link (#access_token=...). The client may still be reading the hash,
+        // so give the PASSWORD_RECOVERY event a few seconds before failing.
+        if (hash.get("access_token") || hash.get("type") === "recovery") {
+          timeoutId = setTimeout(() => {
+            fail("No active password recovery session found. Please request a new link.");
+          }, 4000);
+          return;
         }
+
+        fail("No active password recovery session found. Please request a new link.");
       } catch (err) {
         fail(err instanceof Error ? err.message : "Session verification failed.");
       }
@@ -117,10 +143,8 @@ function ResetPasswordForm() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       // Only trust PASSWORD_RECOVERY (not SIGNED_IN) to establish a recovery session.
-      if (event === "PASSWORD_RECOVERY" && isMounted) {
-        setUserEmail(session?.user?.email || "");
-        setIsValidSession(true);
-        setCheckingSession(false);
+      if (event === "PASSWORD_RECOVERY") {
+        succeed(session?.user?.email || "");
       }
     });
 
@@ -128,6 +152,7 @@ function ResetPasswordForm() {
 
     return () => {
       isMounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, [searchParams, supabase]);
@@ -164,26 +189,32 @@ function ResetPasswordForm() {
 
     setIsSubmitting(true);
     try {
-      // 1. Update password in Supabase Auth
-      const { error: updateError } = await supabase.auth.updateUser({ password });
-      if (updateError) {
-        throw new Error(updateError.message || "Could not update password.");
+      // The recovery session created by the emailed link
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error("Your recovery session has expired. Please request a new reset link.");
       }
 
-      // 2. Sync new password to public.auth_users (must succeed, otherwise login may fail)
-      const syncRes = await fetch("/api/auth/reset-password", {
+      // The server is the single place that updates the password
+      // (Supabase Auth + public.auth_users hash sync).
+      const res = await fetch("/api/auth/reset-password", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ password }),
       });
-      if (!syncRes.ok) {
-        const data = await syncRes.json().catch(() => ({}));
-        throw new Error(
-          data.error || "Password updated, but account sync failed. Please contact support."
-        );
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to update password.");
       }
 
-      // 3. End the recovery session so the user signs in fresh with the new password
+      // End the recovery session so the user signs in fresh with the new password
       await supabase.auth.signOut();
 
       toast.success("Password updated successfully!");
@@ -201,7 +232,7 @@ function ResetPasswordForm() {
       {checkingSession && (
         <div className="flex flex-col items-center justify-center py-10 gap-4 text-center">
           <Loader2 size={36} className="animate-spin text-[#743BE8]" />
-          <p className="text-[15px] font-medium text-[#555555]">Verifying recovery session...</p>
+          <p className="text-[15px] font-medium text-[#555555]">Verifying recovery link...</p>
         </div>
       )}
 
@@ -284,7 +315,7 @@ function ResetPasswordForm() {
           <div className="flex flex-col gap-2">
             <div className="inline-flex items-center gap-2 text-[12px] font-medium text-[#743BE8] bg-[#743BE8]/10 w-fit px-2.5 py-1 rounded-full">
               <ShieldCheck size={14} />
-              <span>Verified recovery session</span>
+              <span>Verified recovery link</span>
             </div>
             <h1 className="text-[24px] sm:text-[28px] font-semibold text-[#171717] tracking-tight leading-[1.2]">
               Set new password

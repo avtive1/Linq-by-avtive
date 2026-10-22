@@ -1,6 +1,7 @@
+// File location: app/forgot-password/page.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import GradientBackground from "@/components/GradientBackground";
@@ -13,13 +14,10 @@ import {
   RotateCw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { createClient } from "@/utils/supabase/client";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
 export default function ForgotPasswordPage() {
-  const supabase = useMemo(() => createClient(), []);
-
   const [email, setEmail] = useState("");
   const [linkSent, setLinkSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
@@ -32,7 +30,7 @@ export default function ForgotPasswordPage() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  // Sends the Supabase recovery email containing a link to /reset-password
+  // Asks our API to send the Supabase recovery email (contains a reset LINK)
   const sendResetLink = async (targetEmail: string) => {
     setError("");
     const trimmed = targetEmail.trim().toLowerCase();
@@ -48,30 +46,21 @@ export default function ForgotPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      // 1. Call server API which uses the Supabase service-role key (mirrors Supabase Dashboard)
       const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: trimmed }),
       });
 
-      if (!res.ok) {
-        // Fallback to client-side Supabase auth if API returns error
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmed, {
-          redirectTo: `${window.location.origin}/reset-password`,
-        });
-        if (resetError) {
-          if (resetError.status === 429 || /rate limit|security purposes/i.test(resetError.message)) {
-            setCooldown(RESEND_COOLDOWN_SECONDS);
-            throw new Error("Too many requests. Please wait a minute and try again.");
-          }
-          throw new Error(resetError.message || "Failed to send reset link.");
-        }
-      }
-
       const data = await res.json().catch(() => ({}));
 
-      // Always show success state so we never reveal whether an email exists
+      if (!res.ok) {
+        if (res.status === 429) {
+          setCooldown(data?.data?.cooldownSeconds || RESEND_COOLDOWN_SECONDS);
+        }
+        throw new Error(data?.error || "Failed to send reset link.");
+      }
+
       setEmail(trimmed);
       setLinkSent(true);
       setCooldown(data?.data?.cooldownSeconds || RESEND_COOLDOWN_SECONDS);
@@ -222,8 +211,7 @@ export default function ForgotPasswordPage() {
                   password reset link. Click it to choose a new password.
                 </p>
                 <p className="text-[13px] text-[#858585] leading-[1.6]">
-                  Can&apos;t find it? Check your spam folder. For best results, open the link in the same browser
-                  you used here.
+                  Can&apos;t find it? Check your spam folder. The link can only be used once.
                 </p>
               </div>
 

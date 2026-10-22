@@ -1,95 +1,104 @@
+// File location: app/api/auth/forgot-password/route.ts
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { parseJsonBody } from "@/lib/middlewares/validateRequest";
 import { forgotPasswordBodySchema } from "@/lib/validators/auth.validator";
 import { logger } from "@/lib/logger-server";
-import { createClient } from "@supabase/supabase-js";
+
+const COOLDOWN_SECONDS = 60;
+
+/**
+ * Works out the public origin of the app (used to build the link in the email).
+ * Set NEXT_PUBLIC_SITE_URL in production for the most predictable result.
+ */
+function getOrigin(req: Request): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+  if (configured) return configured;
+
+  const host =
+    req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
+  const protocol =
+    req.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
+  return `${protocol}://${host}`;
+}
 
 /**
  * POST /api/auth/forgot-password
  *
- * Sends a Supabase password-recovery email using the **service-role** key
- * on the server side. This mirrors the exact behaviour you see when clicking
- * "Send recovery link" in the Supabase Dashboard → Auth → Users table.
+ * Asks Supabase to send the "Reset Password" email (through your configured SMTP).
+ * The email contains a LINK that opens /reset-password in the browser.
+ * No OTP / code is sent or typed anywhere.
  *
- * The email contains a magic link that redirects the user to /auth/callback
- * which exchanges the PKCE code for a session and then forwards to /reset-password.
- *
- * Always returns 200 to avoid leaking whether an email is registered.
+ * Supabase returns success for emails that do not exist, so surfacing real errors
+ * (SMTP failure, rate limit) does NOT leak whether an account exists.
  */
 export async function POST(req: Request) {
   try {
     const parsed = await parseJsonBody(req, forgotPasswordBodySchema);
     if (!parsed.ok) return parsed.response;
-    const { email } = parsed.data;
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = parsed.data.email.trim().toLowerCase();
 
     const supabaseUrl = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-    const supabaseServiceKey =
+    const supabaseKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
       process.env.SUPABASE_SECRET_KEY ||
       process.env.SUPABASE_SERVICE_ROLE_KEY ||
       "";
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      logger.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY for password reset");
+    if (!supabaseUrl || !supabaseKey) {
+      logger.error("Missing Supabase URL or key for forgot-password route");
       return NextResponse.json(
         { error: "Server configuration error. Please contact support." },
         { status: 500 },
       );
     }
 
-    // Create a one-off Supabase client with the service-role key.
-    // Using the service-role key is what makes this work identically to the
-    // Supabase Dashboard "Send recovery email" feature.
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Determine the app origin from request headers (works in both dev & prod)
-    const host =
-      req.headers.get("x-forwarded-host") || req.headers.get("host") || "localhost:3000";
-    const protocol =
-      req.headers.get("x-forwarded-proto") || (host.startsWith("localhost") ? "http" : "https");
-    const origin = `${protocol}://${host}`;
+    // IMPORTANT: no query string here. The email template appends
+    // ?token_hash=...&type=recovery to this URL.
+    // This exact URL must be in Supabase -> Auth -> URL Configuration -> Redirect URLs.
+    const redirectTo = `${getOrigin(req)}/reset-password`;
 
-    // resetPasswordForEmail with the service-role key triggers Supabase's
-    // built-in email delivery (same SMTP / email template configured in the
-    // Supabase Dashboard under Authentication → Email Templates).
-    //
-    // The redirectTo must be listed in Authentication → URL Configuration →
-    // Redirect URLs on the Supabase Dashboard.
-    const { error: resetError } = await supabaseAdmin.auth.resetPasswordForEmail(
-      normalizedEmail,
-      {
-        redirectTo: `${origin}/auth/callback?next=/reset-password`,
-      },
-    );
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo,
+    });
 
     if (resetError) {
-      // Log it but still return 200 to avoid leaking whether the email exists
-      logger.warn(
-        { err: resetError, email: normalizedEmail },
-        "Supabase resetPasswordForEmail failed — returning silent 200",
+      logger.error(
+        { err: resetError, status: resetError.status, email: normalizedEmail },
+        "Supabase resetPasswordForEmail failed",
+      );
+
+      if (resetError.status === 429 || /rate limit|security purposes/i.test(resetError.message)) {
+        return NextResponse.json(
+          {
+            error: "Too many requests. Please wait a minute and try again.",
+            data: { cooldownSeconds: COOLDOWN_SECONDS },
+          },
+          { status: 429 },
+        );
+      }
+
+      return NextResponse.json(
+        { error: "We couldn't send the reset email right now. Please try again shortly." },
+        { status: 500 },
       );
     }
 
-    // Always return success to avoid email enumeration attacks
     return NextResponse.json(
-      {
-        data: {
-          ok: true,
-          email: normalizedEmail,
-          cooldownSeconds: 60,
-        },
-      },
+      { data: { ok: true, cooldownSeconds: COOLDOWN_SECONDS } },
       { status: 200 },
     );
   } catch (error: unknown) {
     logger.error({ err: error instanceof Error ? error : undefined }, "Forgot password error");
-    const message = error instanceof Error ? error.message : "Failed to start password reset.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to start password reset. Please try again." },
+      { status: 500 },
+    );
   }
 }
